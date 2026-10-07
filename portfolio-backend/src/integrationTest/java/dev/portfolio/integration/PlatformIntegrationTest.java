@@ -206,7 +206,9 @@ class PlatformIntegrationTest {
         assertThat(statuses).as("estados recibidos").contains(HttpStatus.UNAUTHORIZED.value());
         assertThat(limited.headers().firstValue("Retry-After")).isPresent();
         assertThat(limited.headers().firstValue("X-RateLimit-Limit")).contains(String.valueOf(AUTH_ATTEMPTS));
-        assertThat(limited.headers().firstValue("Content-Type").orElse("")).startsWith("application/problem+json");
+        // El cuerpo es un ProblemDetail (RFC 7807); el contrato lo declara como application/json.
+        assertThat(limited.headers().firstValue("Content-Type").orElse("")).startsWith("application/json");
+        assertThat(limited.body()).contains("\"status\":429");
     }
 
     /** Estado del limitador en Redis, para entender un fallo: clave = valor (ms que le quedan). */
