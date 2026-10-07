@@ -1,0 +1,16 @@
+# Caddy pide y renueva solo el certificado de api.<DOMINIO>. Requisitos: el registro DNS de
+# api.<DOMINIO> apunta a este servidor y los puertos 80 y 443 están abiertos.
+api.{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+
+	reverse_proxy backend:8080 {
+		# Sin búfer: /v1/telemetry/live-stream es un stream SSE y cada evento debe salir al momento.
+		flush_interval -1
+	}
+}

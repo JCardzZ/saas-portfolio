@@ -1,0 +1,51 @@
+# Backend + Caddy (HTTPS automático) para un servidor con Docker.
+# PostgreSQL (con la extensión vector) y Redis son externos: sus datos de conexión van en .env.
+#
+# El despliegue lo hace deploy/remote-deploy.sh (lo lanza el workflow "Deploy backend"), que
+# escribe la imagen a usar en .image.env. A mano:
+#   docker compose --env-file .env --env-file .image.env up -d
+name: saas-portfolio
+
+services:
+  backend:
+    image: ${BACKEND_IMAGE:?Falta BACKEND_IMAGE (lo escribe remote-deploy.sh en .image.env)}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Caddy va delante: sin esto todas las peticiones llegarían con la IP de Caddy y los límites
+      # por IP (login, preguntas a la IA, Terraform) se compartirían entre todos los visitantes.
+      # Tomcat solo se fía de X-Forwarded-For si viene de una red privada, y el backend no publica
+      # ningún puerto: solo Caddy puede alcanzarlo.
+      SERVER_FORWARD_HEADERS_STRATEGY: native
+    volumes:
+      # La foto de perfil que se sube desde administración.
+      - backend-data:/app/data
+    expose:
+      - "8080"
+    mem_limit: ${BACKEND_MEMORY:-768m}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?Falta DOMAIN en .env (la API se sirve en api.DOMAIN)}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificados y claves de Let's Encrypt: si se pierden, se piden de nuevo (hay límites semanales).
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  backend-data:
+  caddy-data:
+  caddy-config:
