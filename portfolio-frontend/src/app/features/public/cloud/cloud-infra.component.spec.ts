@@ -973,7 +973,7 @@ describe('CloudInfraComponent', () => {
         expect(tags()).toContain('Check: VPC Isolation OK');
 
         openMenu(fixture, element, 'Plantillas');
-        menuItem(element, 'Modernización BCR').click();
+        menuItem(element, 'Modernización bancaria').click();
         fixture.detectChanges();
         expect(provider(element, 'Azure').getAttribute('aria-checked')).toBe('true');
         expect(services(element)).toEqual(jasmine.arrayContaining(['API Management', 'AKS', 'Entra External ID', 'Cache for Redis']));
@@ -1280,9 +1280,9 @@ describe('CloudInfraComponent', () => {
       expect(element.querySelector('#menu-presets')!.textContent).toContain('Plantillas y proyectos servidos por el backend.');
       expect(Array.from(element.querySelectorAll('#menu-presets button')).map((item) => item.querySelector('span')!.textContent!.trim())).toEqual([
         'Arquitectura de referencia',
-        'Modernización BCR (Spring Boot + Azure AKS + OAuth2 + Redis)',
+        'Modernización bancaria (AKS + OAuth2 + Redis)',
         'Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)',
-        'Plataforma electoral TSE (AWS ECS + WAF anti-DDoS + PostgreSQL Multi-AZ)',
+        'Plataforma electoral anti-DDoS',
         'Arquitectura Event-Driven de Alto Rendimiento (Kafka + Spring Cloud Stream + DynamoDB)',
         'E-Commerce Global Multi-Region (CQRS + Event Sourcing + Aurora Multi-AZ)',
         'Plataforma SaaS B2B Multi-Inquilino (API Gateway + Micro-Frontends + Isolated Tenant Schemas)',
@@ -1296,7 +1296,7 @@ describe('CloudInfraComponent', () => {
       const { fixture, element } = create();
       tick(400);
       openMenu(fixture, element, 'Plantillas');
-      menuItem(element, 'Modernización BCR').click();
+      menuItem(element, 'Modernización bancaria').click();
       fixture.detectChanges();
       // Todavía no ha llegado: el lienzo sigue como estaba.
       expect(element.querySelectorAll('g.node').length).toBe(12);

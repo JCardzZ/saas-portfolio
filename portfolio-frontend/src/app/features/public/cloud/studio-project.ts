@@ -189,7 +189,7 @@ export const STUDIO_PRESETS: StudioPreset[] = [
   { id: 'reference', name: 'Arquitectura de referencia', summary: 'La de esta plataforma', build: referenceProject },
   {
     id: 'aks-oauth2',
-    name: 'Modernización BCR (Spring Boot + Azure AKS + OAuth2 + Redis)',
+    name: 'Modernización bancaria (AKS + OAuth2 + Redis)',
     summary: 'Microservicios en Kubernetes con APIs protegidas',
     description: `Microservicios Spring Boot en AKS detrás de un gestor de APIs que valida tokens OAuth2, con Redis como caché. ${ILLUSTRATIVE}`,
     build: () => ({
@@ -238,7 +238,7 @@ export const STUDIO_PRESETS: StudioPreset[] = [
   },
   {
     id: 'electoral',
-    name: 'Plataforma electoral TSE (AWS ECS + WAF anti-DDoS + PostgreSQL Multi-AZ)',
+    name: 'Plataforma electoral anti-DDoS',
     summary: 'Picos de tráfico el día de la votación',
     description: `Borde y cortafuegos que absorben el tráfico hostil, dos réplicas de la API y una base de datos con réplica en espera en otra zona. ${ILLUSTRATIVE}`,
     build: () => ({

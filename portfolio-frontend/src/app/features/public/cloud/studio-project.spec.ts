@@ -55,9 +55,9 @@ describe('presets', () => {
   it('offers the reference architecture, three banking and electoral scenarios and a blank canvas', () => {
     expect(STUDIO_PRESETS.map((preset) => preset.name)).toEqual([
       'Arquitectura de referencia',
-      'Modernización BCR (Spring Boot + Azure AKS + OAuth2 + Redis)',
+      'Modernización bancaria (AKS + OAuth2 + Redis)',
       'Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)',
-      'Plataforma electoral TSE (AWS ECS + WAF anti-DDoS + PostgreSQL Multi-AZ)',
+      'Plataforma electoral anti-DDoS',
       'Arquitectura Event-Driven de Alto Rendimiento (Kafka + Spring Cloud Stream + DynamoDB)',
       'E-Commerce Global Multi-Region (CQRS + Event Sourcing + Aurora Multi-AZ)',
       'Plataforma SaaS B2B Multi-Inquilino (API Gateway + Micro-Frontends + Isolated Tenant Schemas)',
