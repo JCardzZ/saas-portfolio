@@ -31,10 +31,10 @@ class ArchitecturePresetSeederTest {
         assertThat(presets).allMatch(ArchitectureProjectDomain::preset);
         assertThat(presets).extracting(ArchitectureProjectDomain::id).containsExactlyInAnyOrder("aks-oauth2", "core-banking", "electoral",
                 "event-driven", "ecommerce-cqrs", "saas-multitenant", "fintech-payments", "rag-enterprise");
-        assertThat(service.findById("aks-oauth2").title()).isEqualTo("Modernización BCR (Spring Boot + Azure AKS + OAuth2 + Redis)");
+        assertThat(service.findById("aks-oauth2").title()).isEqualTo("Modernización bancaria (AKS + OAuth2 + Redis)");
         assertThat(service.findById("aks-oauth2").cloudProvider()).isEqualTo(CloudProviderDomain.AZURE);
         assertThat(service.findById("core-banking").title()).isEqualTo("Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)");
-        assertThat(service.findById("electoral").title()).isEqualTo("Plataforma electoral TSE (AWS ECS + WAF anti-DDoS + PostgreSQL Multi-AZ)");
+        assertThat(service.findById("electoral").title()).isEqualTo("Plataforma electoral anti-DDoS");
         // Todas dicen que son un escenario ilustrativo, no la infraestructura de nadie.
         assertThat(presets).allSatisfy(preset -> assertThat(preset.description()).contains("no describe la infraestructura real de ninguna entidad"));
     }
