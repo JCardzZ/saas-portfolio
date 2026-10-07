@@ -50,7 +50,8 @@ check "Proyectos públicos" GET /public/projects 200 application/json 'type == "
 check "Catálogo cloud (sembrado al arrancar)" GET /public/architecture/catalog 200 application/json 'type == "array" and length > 0'
 check "Plantillas del Estudio (sembradas)" GET /public/architecture/projects 200 application/json 'type == "array" and length > 0'
 check "CV en PDF" GET '/public/cv/download?lang=es&type=ats' 200 application/pdf
-check "Escritura sin token rechazada" POST /admin/technologies 401 application/problem+json '.status == 401' '{}'
+# Los errores son ProblemDetail (RFC 7807), que el contrato declara como application/json.
+check "Escritura sin token rechazada" POST /admin/technologies 401 application/json '.status == 401' '{}'
 
 rm -f "$body"
 exit "$failed"

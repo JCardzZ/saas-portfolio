@@ -1,0 +1,12 @@
+# Vulnerabilidades que Trivy no debe contar, cada una con su motivo y fecha de revisión.
+# Al llegar `expired_at` la excepción deja de valer y el CI vuelve a fallar: hay que revisarla.
+# Uso: trivy image --ignorefile .trivyignore.yaml ...
+vulnerabilities:
+  - id: CVE-2026-47884
+    # Spring MVC: ejecución remota a través de XsltView cuando una ruta "/**" acaba renderizando
+    # una vista sin nombre explícito. Esta API es solo REST: no usa XsltView ni ningún otro
+    # motor de vistas, y no tiene rutas que rendericen vistas.
+    # La corrección de código abierto solo existe en Spring Framework 7.0.9 (Spring Boot 4);
+    # la línea 6.2 de Spring Boot 3.5 ya no recibe parches públicos. Se quita al migrar a Spring Boot 4.
+    statement: No aplica (la API no usa XsltView ni renderiza vistas). Pendiente de migrar a Spring Boot 4.
+    expired_at: 2027-01-31
