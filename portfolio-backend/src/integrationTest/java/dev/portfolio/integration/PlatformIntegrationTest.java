@@ -184,13 +184,24 @@ class PlatformIntegrationTest {
             }
         }
 
-        assertThat(limited).as("ningún intento fue limitado; estados recibidos: %s", statuses).isNotNull();
+        assertThat(limited)
+                .as("ningún intento fue limitado; estados recibidos: %s; contadores en Redis: %s", statuses, rateLimitKeys())
+                .isNotNull();
         // Antes de agotar el cupo, las credenciales malas se rechazan como tales.
         assertThat(statuses).as("estados recibidos").contains(HttpStatus.UNAUTHORIZED.value());
         assertThat(limited.getHeaders().getFirst("Retry-After")).isNotBlank();
         assertThat(limited.getHeaders().getFirst("X-RateLimit-Limit")).isEqualTo(String.valueOf(AUTH_ATTEMPTS));
         assertThat(limited.getHeaders().getContentType()).isNotNull();
         assertThat(limited.getHeaders().getContentType().toString()).startsWith("application/problem+json");
+    }
+
+    /** Estado del limitador en Redis, para entender un fallo: clave = valor (ms que le quedan). */
+    private List<String> rateLimitKeys() {
+        List<String> state = new ArrayList<>();
+        for (String key : redis.keys("portfolio:ratelimit:*")) {
+            state.add(key + " = " + redis.opsForValue().get(key) + " (" + redis.getExpire(key, java.util.concurrent.TimeUnit.MILLISECONDS) + " ms)");
+        }
+        return state;
     }
 
     private String token() {
