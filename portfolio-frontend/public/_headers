@@ -1,0 +1,24 @@
+# Cabeceras de Cloudflare Pages (https://developers.cloudflare.com/pages/configuration/headers/).
+# El origen de la API en connect-src debe ser el mismo que el de /config.json: al desplegar,
+# tools/write-deploy-config.mjs escribe los dos a partir de API_BASE_URL.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.portfolio.dev; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+# El documento y la configuración cambian en cada despliegue sin cambiar de nombre.
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/config.json
+  Cache-Control: no-store
+
+# JavaScript y CSS llevan un hash en el nombre: si cambia el contenido, cambia la URL.
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
