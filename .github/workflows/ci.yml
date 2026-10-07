@@ -1,5 +1,14 @@
 name: CI
 
+# Grafo: 🔍 Cambios → 📜 Contrato → 🧪 Tests → 📦 Build → ✅ CI gate, con 🛡️ seguridad en paralelo.
+# El único check que hay que exigir en la protección de rama es "✅ CI gate".
+#
+# Variables opcionales del repositorio:
+#   CLOUDFLARE_PAGES_PROJECT  activa la preview del frontend en cada PR (con los secrets
+#                             CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID)
+#   ENABLE_CODE_SCANNING      'true' para ejecutar CodeQL en un repositorio privado (requiere
+#                             GitHub Advanced Security; en uno público se ejecuta siempre)
+
 on:
   pull_request:
   push:
@@ -7,100 +16,618 @@ on:
 
 # Un push nuevo a la misma rama o PR cancela la ejecución anterior.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
+env:
+  SPEC: portfolio-api-spec/saas-portfolio-v1.openapi.yaml
+  GITLEAKS_IMAGE: ghcr.io/gitleaks/gitleaks:v8.30.1
+  OASDIFF_IMAGE: tufin/oasdiff:v1.33.0
+  TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.75.0
+  SPECTRAL_VERSION: 6.17.0
+  LHCI_VERSION: 0.15.1
+  WRANGLER_VERSION: 4.148.0
+  FRONTEND_SHARDS: 3
+  BUNDLE_BUDGET_KB: 500
+
 jobs:
-  # Decide qué partes cambiaron. Se filtra aquí y no con `on.paths` para que el workflow se
-  # ejecute siempre: un job omitido cuenta como aprobado en una regla de protección de rama,
-  # un workflow que no arranca la deja esperando.
+  # ───────────────────────────── 🔍 Detección ─────────────────────────────
   changes:
-    name: Cambios
+    name: 🔍 Cambios
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
       pull-requests: read
     outputs:
+      spec: ${{ steps.filter.outputs.spec }}
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Se filtra aquí y no con `on.paths` para que el workflow se ejecute siempre: así el gate
+      # siempre informa, y lo que no cambió se omite en vez de dejar el check esperando.
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           filters: |
+            spec:
+              - 'portfolio-api-spec/**'
+              - '.spectral.yaml'
+              - '.github/workflows/ci.yml'
             backend:
               - 'portfolio-backend/**'
               - 'portfolio-api-spec/**'
-              - 'docs/career/**'
+              - 'docs/**'
+              - '.dockerignore'
               - '.github/workflows/ci.yml'
+              - '.github/scripts/**'
             frontend:
               - 'portfolio-frontend/**'
+              - 'portfolio-api-spec/**'
               - '.github/workflows/ci.yml'
+      - name: Resumen
+        run: |
+          {
+            echo "### Qué cambió"
+            echo ""
+            echo "| Contrato | Backend | Frontend |"
+            echo "| :---: | :---: | :---: |"
+            echo "| ${{ steps.filter.outputs.spec }} | ${{ steps.filter.outputs.backend }} | ${{ steps.filter.outputs.frontend }} |"
+            echo ""
+            echo "Los jobs de lo que no cambió se omiten y no bloquean el gate."
+          } >> "$GITHUB_STEP_SUMMARY"
 
-  backend:
-    name: Backend (tests)
-    needs: changes
-    if: needs.changes.outputs.backend == 'true'
+  # ───────────────────────────── 🛡️ Seguridad ─────────────────────────────
+  gitleaks:
+    name: 🛡️ gitleaks
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: portfolio-backend
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Todo el historial: un secreto borrado en un commit posterior sigue en el repositorio.
+          fetch-depth: 0
+      - name: Buscar secretos en todo el historial
+        run: |
+          set -o pipefail
+          docker run --rm -v "$PWD:/repo:ro" \
+            -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='*' \
+            "$GITLEAKS_IMAGE" detect --source /repo --config /repo/.gitleaks.toml --redact --no-banner 2>&1 \
+            | tee gitleaks.log
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo "### gitleaks"
+            echo ""
+            echo '```'
+            sed 's/\x1b\[[0-9;]*m//g' gitleaks.log 2>/dev/null | tail -n 15 || echo "sin salida"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  codeql:
+    name: 🛡️ CodeQL (${{ matrix.language }})
+    # El análisis de código de GitHub es gratuito en repositorios públicos; en uno privado
+    # necesita Advanced Security y, sin ella, el job fallaría por licencia y no por el código.
+    if: github.event.repository.private == false || vars.ENABLE_CODE_SCANNING == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        if: matrix.build-mode == 'manual'
         with:
           distribution: temurin
           java-version: '21'
-      - name: Caché de Gradle
-        uses: gradle/actions/setup-gradle@v4
-      - name: Tests
-        run: ./gradlew test --no-daemon
-      - name: Informe de tests
-        if: failure()
-        uses: actions/upload-artifact@v4
+          cache: gradle
+      - uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
         with:
-          name: backend-test-report
-          path: portfolio-backend/build/reports/tests/test
-          retention-days: 7
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+      - name: Compilar el backend
+        if: matrix.build-mode == 'manual'
+        working-directory: portfolio-backend
+        run: ./gradlew compileJava --no-daemon
+      - uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          category: /language:${{ matrix.language }}
+      - name: Resumen
+        run: echo "### CodeQL (${{ matrix.language }})  —  resultados en la pestaña Security → Code scanning." >> "$GITHUB_STEP_SUMMARY"
 
-  frontend:
-    name: Frontend (tests y build)
+  # ───────────────────────────── 📜 Contrato ─────────────────────────────
+  spec-lint:
+    name: 📜 Lint spec
     needs: changes
-    if: needs.changes.outputs.frontend == 'true'
+    if: needs.changes.outputs.spec == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+      - name: Spectral
+        run: |
+          set -o pipefail
+          npx --yes "@stoplight/spectral-cli@$SPECTRAL_VERSION" lint "$SPEC" --fail-severity=error 2>&1 | tee spectral.log
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo "### Lint del contrato (Spectral)"
+            echo ""
+            echo "Falla solo con errores; los avisos son deuda del contrato."
+            echo ""
+            echo '```'
+            tail -n 3 spectral.log 2>/dev/null || echo "sin salida"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  spec-breaking:
+    name: 📜 Breaking
+    needs: changes
+    if: needs.changes.outputs.spec == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Contrato de referencia
+        id: base
+        env:
+          # En un PR, la rama destino; en un push a main, el commit anterior.
+          BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: |
+          if git cat-file -e "$BASE_REF:$SPEC" 2>/dev/null; then
+            git show "$BASE_REF:$SPEC" > base-spec.yaml
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No hay contrato en $BASE_REF: no hay con qué comparar."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: oasdiff
+        if: steps.base.outputs.found == 'true'
+        run: |
+          set -o pipefail
+          docker run --rm -v "$PWD:/work:ro" "$OASDIFF_IMAGE" \
+            breaking /work/base-spec.yaml "/work/$SPEC" --fail-on ERR 2>&1 | tee oasdiff.log
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo "### Cambios incompatibles del contrato (oasdiff)"
+            echo ""
+            if [ "${{ steps.base.outputs.found }}" = "true" ]; then
+              echo '```'
+              tail -n 40 oasdiff.log 2>/dev/null || echo "sin salida"
+              echo '```'
+            else
+              echo "Sin contrato de referencia con el que comparar."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  spec-codegen:
+    name: 📜 Codegen
+    needs: changes
+    if: needs.changes.outputs.spec == 'true' || needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: portfolio-frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: portfolio-frontend/package-lock.json
-      - name: Dependencias
-        run: npm ci
-      - name: Tests
-        run: npx ng test --watch=false --browsers=ChromeHeadlessCI
+      - run: npm ci
+      - name: Regenerar el cliente TypeScript
+        run: npm run generate:api
+      # El cliente del backend se genera en cada compilación; el del frontend está en el
+      # repositorio y tiene que coincidir con lo que sale del contrato.
+      - name: El cliente del repositorio coincide con el contrato
+        id: diff
+        run: |
+          git add -N src/app/core/api
+          git diff --exit-code --stat -- src/app/core/api
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo "### Código generado del contrato"
+            echo ""
+            if [ "${{ steps.diff.outcome }}" = "success" ]; then
+              echo "✅ El cliente TypeScript del repositorio coincide con el contrato."
+            else
+              echo "❌ El cliente no coincide: ejecuta \`npm run generate:api\` en \`portfolio-frontend\` y sube el resultado."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ───────────────────────────── 🧪 Tests ─────────────────────────────
+  backend-unit:
+    name: 🧪 Backend unit
+    needs: [changes, spec-lint, spec-breaking, spec-codegen]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Tests y cobertura
+        working-directory: portfolio-backend
+        run: ./gradlew test --no-daemon
+      - name: Resumen
+        if: always()
+        run: |
+          python3 .github/scripts/junit-summary.py portfolio-backend/build/test-results/test "Backend · tests unitarios" >> "$GITHUB_STEP_SUMMARY"
+          CSV=portfolio-backend/build/reports/jacoco/test/jacocoTestReport.csv
+          if [ -f "$CSV" ]; then
+            python3 .github/scripts/jacoco-summary.py "$CSV" coverage.json >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Informes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: backend-unit-reports
+          path: |
+            portfolio-backend/build/reports/tests/test
+            portfolio-backend/build/reports/jacoco/test
+            coverage.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+  backend-integration:
+    name: 🧪 Integración
+    needs: [changes, spec-lint, spec-breaking, spec-codegen]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      # Testcontainers arranca PostgreSQL (pgvector) y Redis con el Docker del runner.
+      - name: Tests de integración
+        working-directory: portfolio-backend
+        run: ./gradlew integrationTest --no-daemon
+      - name: Resumen
+        if: always()
+        run: python3 .github/scripts/junit-summary.py portfolio-backend/build/test-results/integrationTest "Backend · integración (PostgreSQL + pgvector + Redis)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Informes
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: backend-integration-reports
+          path: portfolio-backend/build/reports/tests/integrationTest
+          retention-days: 7
+          if-no-files-found: ignore
+
+  backend-arch:
+    name: 🧪 ArchUnit
+    needs: [changes, spec-lint, spec-breaking, spec-codegen]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Reglas de arquitectura
+        working-directory: portfolio-backend
+        run: ./gradlew architectureTest --no-daemon
+      - name: Resumen
+        if: always()
+        run: python3 .github/scripts/junit-summary.py portfolio-backend/build/test-results/architectureTest "Backend · reglas de arquitectura (ArchUnit)" >> "$GITHUB_STEP_SUMMARY"
+
+  frontend-test:
+    name: 🧪 Frontend (${{ matrix.shard }}/3)
+    needs: [changes, spec-lint, spec-breaking, spec-codegen]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    defaults:
+      run:
+        working-directory: portfolio-frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: portfolio-frontend/package-lock.json
+      - run: npm ci
+      - name: Tests (grupo ${{ matrix.shard }} de ${{ env.FRONTEND_SHARDS }})
+        run: |
+          set -o pipefail
+          INCLUDES="$(node tools/shard-specs.mjs ${{ matrix.shard }} "$FRONTEND_SHARDS")"
+          # shellcheck disable=SC2086
+          npx ng test --watch=false --browsers=ChromeHeadlessCI $INCLUDES 2>&1 | tee test.log
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo "### Frontend · tests (grupo ${{ matrix.shard }} de $FRONTEND_SHARDS)"
+            echo ""
+            echo '```'
+            sed 's/\x1b\[[0-9;]*[A-Za-z]//g' test.log 2>/dev/null | grep -E "TOTAL|FAILED" | tail -n 20 || echo "sin resultado"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ───────────────────────────── 📦 Build ─────────────────────────────
+  frontend-build:
+    name: 📦 Build front
+    needs: [changes, backend-unit, backend-integration, backend-arch, frontend-test]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: portfolio-frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: portfolio-frontend/package-lock.json
+      - run: npm ci
       - name: Build de producción
         run: npm run build
+      - name: Presupuesto de bundle
+        run: |
+          set -o pipefail
+          node tools/bundle-report.mjs dist/portfolio-frontend/browser "$BUNDLE_BUDGET_KB" | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: frontend-dist
+          path: portfolio-frontend/dist/portfolio-frontend/browser
+          include-hidden-files: true
+          retention-days: 3
 
-  gitleaks:
-    name: Secretos (gitleaks)
+  lighthouse:
+    name: 📦 Lighthouse
+    needs: frontend-build
+    if: ${{ !cancelled() && needs.frontend-build.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: portfolio-frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: frontend-dist
+          path: portfolio-frontend/dist/portfolio-frontend/browser
+      # Umbrales en lighthouserc.json. Se mide el build tal cual, servido en local.
+      - name: Lighthouse CI
+        run: npx --yes "@lhci/cli@$LHCI_VERSION" autorun
+      - name: Resumen
+        if: always()
+        run: node tools/lighthouse-summary.mjs >> "$GITHUB_STEP_SUMMARY" || echo "### Lighthouse — sin resultados" >> "$GITHUB_STEP_SUMMARY"
+      - name: Informes
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lighthouse-reports
+          path: portfolio-frontend/.lighthouseci/report
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: ignore
+
+  preview:
+    name: 📦 Preview URL
+    needs: frontend-build
+    # Solo en PR de este repositorio (un fork no ve los secrets) y con Cloudflare configurado.
+    if: >-
+      ${{ !cancelled() && needs.frontend-build.result == 'success'
+          && github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name == github.repository
+          && vars.CLOUDFLARE_PAGES_PROJECT != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          # Todo el historial: un secreto borrado en un commit posterior sigue estando en el repositorio.
-          fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+          node-version: '22'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: frontend-dist
+          path: dist
+      - name: Desplegar la preview en Cloudflare Pages
+        id: deploy
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_CONFIG: .gitleaks.toml
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          set -o pipefail
+          npx --yes "wrangler@$WRANGLER_VERSION" pages deploy dist --project-name="$PROJECT" --branch="$BRANCH" 2>&1 | tee wrangler.log
+          URL="$(grep -oE 'https://[a-z0-9-]+\.[a-z0-9-]+\.pages\.dev' wrangler.log | tail -n 1)"
+          if [ -z "$URL" ]; then
+            echo "::error::No se encontró la URL de la preview en la salida de wrangler."
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "### Preview — $URL" >> "$GITHUB_STEP_SUMMARY"
+      - name: Comentar la URL en el PR
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+        with:
+          script: |
+            const marker = '<!-- preview-url -->';
+            const body = `${marker}\n**Preview del frontend:** ${process.env.PREVIEW_URL}\n\nCommit \`${context.payload.pull_request.head.sha.slice(0, 7)}\`. La preview no está entre los orígenes CORS de la API, así que funciona en modo demo.`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const previous = comments.find((comment) => comment.body?.includes(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: previous.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+  docker:
+    name: 📦 Imagen + Trivy
+    needs: [changes, backend-unit, backend-integration, backend-arch, frontend-test]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Construir la imagen (sin publicar)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: portfolio-backend/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: saas-portfolio-backend:ci
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+      - name: Trivy
+        id: trivy
+        run: |
+          mkdir -p "$HOME/.cache/trivy"
+          trivy() {
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$HOME/.cache/trivy:/root/.cache/trivy" \
+              "$TRIVY_IMAGE" image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --no-progress "$@" saas-portfolio-backend:ci
+          }
+          trivy --format table --exit-code 0 | tee trivy.txt
+          # Falla con vulnerabilidades altas o críticas que ya tienen versión corregida.
+          trivy --format table --exit-code 1 --quiet > /dev/null
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo "### Imagen del backend · Trivy (HIGH y CRITICAL con corrección disponible)"
+            echo ""
+            if [ "${{ steps.trivy.outcome }}" = "success" ]; then echo "✅ Sin vulnerabilidades que bloqueen."; else echo "❌ Hay vulnerabilidades por corregir (o el escaneo no terminó)."; fi
+            echo ""
+            echo '```'
+            head -c 60000 trivy.txt 2>/dev/null || echo "sin informe"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # La insignia de cobertura del README lee un JSON de la rama `badges` (solo ese archivo).
+  # Se actualiza al integrar en main; no forma parte del gate porque publica, no verifica.
+  coverage-badge:
+    name: 📦 Insignia de cobertura
+    needs: backend-unit
+    if: ${{ !cancelled() && needs.backend-unit.result == 'success' && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: backend-unit-reports
+          path: reports
+      - name: Publicar coverage.json en la rama badges
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$REMOTE" badges > /dev/null; then
+            git clone --quiet --depth 1 --branch badges "$REMOTE" badges
+          else
+            git init --quiet badges
+            git -C badges checkout --quiet --orphan badges
+          fi
+          cp "$(find reports -name coverage.json | head -n 1)" badges/coverage.json
+          cd badges
+          git add coverage.json
+          if git diff --cached --quiet; then
+            echo "La cobertura no cambió."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit --quiet -m "chore: update coverage badge"
+          git push --quiet "$REMOTE" HEAD:badges
+
+  # ───────────────────────────── ✅ Gate ─────────────────────────────
+  gate:
+    name: ✅ CI gate
+    needs:
+      - changes
+      - gitleaks
+      - codeql
+      - spec-lint
+      - spec-breaking
+      - spec-codegen
+      - backend-unit
+      - backend-integration
+      - backend-arch
+      - frontend-test
+      - frontend-build
+      - lighthouse
+      - preview
+      - docker
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Todos los jobs terminaron bien o se omitieron
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          {
+            echo "### Resultado de la CI"
+            echo ""
+            echo "| Job | Resultado |"
+            echo "| --- | --- |"
+            echo "$NEEDS" | jq -r 'to_entries[] | "| \(.key) | \(.value.result) |"'
+          } >> "$GITHUB_STEP_SUMMARY"
+          # Omitido (lo filtró paths-filter o no aplica) cuenta como correcto; fallado o cancelado, no.
+          BAD="$(echo "$NEEDS" | jq -r '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key] | join(", ")')"
+          if [ -n "$BAD" ]; then
+            echo "::error::Jobs fallidos o cancelados: $BAD"
+            exit 1
+          fi
+          echo "Todo correcto."

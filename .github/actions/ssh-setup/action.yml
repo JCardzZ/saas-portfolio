@@ -1,0 +1,54 @@
+name: Preparar SSH
+description: Deja configurado el acceso SSH al servidor como host "vps" (clave, known_hosts y opciones).
+inputs:
+  host:
+    description: Nombre o IP del servidor
+    required: true
+  user:
+    description: Usuario SSH
+    required: true
+  key:
+    description: Clave privada con acceso al servidor
+    required: true
+  known-hosts:
+    description: Salida de ssh-keyscan del servidor, comprobada a mano. Vacío = se acepta la clave que presente.
+    required: false
+    default: ''
+  port:
+    description: Puerto SSH
+    required: false
+    default: '22'
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        VPS_HOST: ${{ inputs.host }}
+        VPS_USER: ${{ inputs.user }}
+        VPS_SSH_KEY: ${{ inputs.key }}
+        VPS_KNOWN_HOSTS: ${{ inputs.known-hosts }}
+        VPS_SSH_PORT: ${{ inputs.port }}
+      run: |
+        if [ -z "$VPS_HOST" ] || [ -z "$VPS_USER" ] || [ -z "$VPS_SSH_KEY" ]; then
+          echo "::error::Faltan los secrets VPS_HOST, VPS_USER o VPS_SSH_KEY."
+          exit 1
+        fi
+        install -m 700 -d ~/.ssh
+        printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        if [ -n "$VPS_KNOWN_HOSTS" ]; then
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+        else
+          echo "::warning::Sin VPS_KNOWN_HOSTS la clave del servidor se acepta sin comprobar. Añade ese secret."
+          ssh-keyscan -p "$VPS_SSH_PORT" "$VPS_HOST" > ~/.ssh/known_hosts
+        fi
+        {
+          echo "Host vps"
+          echo "  HostName $VPS_HOST"
+          echo "  User $VPS_USER"
+          echo "  Port $VPS_SSH_PORT"
+          echo "  IdentityFile ~/.ssh/deploy_key"
+          echo "  IdentitiesOnly yes"
+          echo "  StrictHostKeyChecking yes"
+          echo "  BatchMode yes"
+        } > ~/.ssh/config
