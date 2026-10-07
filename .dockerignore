@@ -1,0 +1,14 @@
+# Contexto de build del backend (raíz del monorepo): solo hacen falta el contrato,
+# portfolio-backend/src, su build.gradle y docs/.
+.git
+**/.gradle
+**/.idea
+**/build
+**/node_modules
+**/dist
+**/.angular
+portfolio-frontend
+infra
+terraform
+**/*.log
+**/.env*

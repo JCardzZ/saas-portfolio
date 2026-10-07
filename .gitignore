@@ -1,0 +1,42 @@
+# Sistema y editores
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Secretos y configuración local: nunca al repositorio
+.env
+.env.*
+!.env.example
+application-local*.yml
+application-local*.yaml
+application-local*.properties
+*.pem
+*.key
+*.p12
+*.jks
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraform/
+crash.log
+
+# Backend (Gradle)
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Frontend (Node / Angular)
+node_modules/
+dist/
+.angular/
+coverage/
+npm-debug.log*
+
+# Datos locales
+*.log
