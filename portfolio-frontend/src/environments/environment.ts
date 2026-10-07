@@ -4,7 +4,7 @@
  */
 export const environment = {
   production: false,
-  apiBaseUrl: 'https://api.portfolio.dev/v1',
+  apiBaseUrl: 'https://api.example.com/v1',
   // Con true la aplicación no llama a la API y usa datos simulados (core/mock).
   mockMode: true,
 };
