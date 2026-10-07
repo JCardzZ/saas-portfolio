@@ -1,0 +1,30 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+out/
+bin/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+
+# Secretos y configuración local
+.env
+.env.*
+!.env.example
+application-local*.yml
+application-local*.yaml
+application-local*.properties
+src/main/resources/application-local*
+
+# Datos generados al ejecutar en local
+/data/
+*.log
+hs_err_pid*

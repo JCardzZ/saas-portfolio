@@ -1,0 +1,357 @@
+{
+  "cloudProvider": "aws",
+  "nodes": [
+    {
+      "id": "users",
+      "type": "users",
+      "x": 64,
+      "y": 250,
+      "zone": "outside",
+      "role": "Navegador",
+      "service": "Visitantes",
+      "icon": null,
+      "terraform": null,
+      "why": "Entran por HTTPS; nunca hablan directamente con la nube."
+    },
+    {
+      "id": "edge",
+      "type": "edge",
+      "x": 196,
+      "y": 250,
+      "zone": "outside",
+      "role": "Anti-DDoS · CDN · DNS",
+      "service": "Cloudflare",
+      "icon": "cloudflare",
+      "terraform": "cloudflare_record",
+      "why": "Borde común a las tres nubes: caché, protección y la IP real del visitante."
+    },
+    {
+      "id": "static",
+      "type": "static",
+      "x": 402,
+      "y": 95,
+      "zone": "global",
+      "role": "Frontend Angular",
+      "icon": {
+        "default": "provider",
+        "gcp": "gcpStorage",
+        "aws": "awsCloudFront",
+        "azure": "azFrontDoor"
+      },
+      "service": {
+        "aws": "S3 + CloudFront",
+        "gcp": "Cloud Storage + CDN",
+        "azure": "Storage + Front Door"
+      },
+      "terraform": {
+        "aws": "aws_cloudfront_distribution",
+        "gcp": "google_storage_bucket",
+        "azure": "azurerm_cdn_frontdoor_profile"
+      },
+      "why": "El build estático del frontend, servido desde almacenamiento de objetos."
+    },
+    {
+      "id": "waf",
+      "type": "waf",
+      "x": 402,
+      "y": 250,
+      "zone": "public",
+      "role": "Cortafuegos de aplicación",
+      "service": {
+        "aws": "WAF",
+        "gcp": "Cloud Armor",
+        "azure": "Web Application Firewall"
+      },
+      "icon": {
+        "default": "provider",
+        "aws": "awsWaf",
+        "gcp": "gcpArmor",
+        "azure": "azWaf"
+      },
+      "terraform": {
+        "aws": "aws_wafv2_web_acl",
+        "gcp": "google_compute_security_policy",
+        "azure": "azurerm_web_application_firewall_policy"
+      },
+      "why": "Filtra tráfico malicioso antes de que llegue a la aplicación.",
+      "custom": true
+    },
+    {
+      "id": "lb",
+      "type": "lb",
+      "x": 402,
+      "y": 340,
+      "zone": "public",
+      "role": "Balanceador",
+      "icon": {
+        "default": "provider",
+        "aws": "awsElb",
+        "azure": "azAppGateway"
+      },
+      "service": {
+        "aws": "Application LB",
+        "gcp": "Cloud Load Balancing",
+        "azure": "Application Gateway"
+      },
+      "terraform": {
+        "aws": "aws_lb",
+        "gcp": "google_compute_global_forwarding_rule",
+        "azure": "azurerm_application_gateway"
+      },
+      "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
+    },
+    {
+      "id": "api",
+      "type": "containers",
+      "x": 556,
+      "y": 250,
+      "zone": "compute",
+      "role": "API de resultados",
+      "icon": {
+        "default": "docker",
+        "aws": "awsFargate",
+        "gcp": "gcpCloudRun",
+        "azure": "azContainerApps"
+      },
+      "service": {
+        "aws": "ECS Fargate",
+        "gcp": "Cloud Run",
+        "azure": "Container Apps"
+      },
+      "terraform": {
+        "aws": "aws_ecs_service",
+        "gcp": "google_cloud_run_v2_service",
+        "azure": "azurerm_container_app"
+      },
+      "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS.",
+      "props": {
+        "instance": "1 vCPU · 2 GB",
+        "ports": "8080"
+      }
+    },
+    {
+      "id": "api-2",
+      "type": "containers",
+      "x": 556,
+      "y": 340,
+      "zone": "compute",
+      "role": "API de resultados",
+      "service": {
+        "aws": "ECS Fargate",
+        "gcp": "Cloud Run",
+        "azure": "Container Apps"
+      },
+      "icon": {
+        "default": "docker",
+        "aws": "awsFargate",
+        "gcp": "gcpCloudRun",
+        "azure": "azContainerApps"
+      },
+      "terraform": {
+        "aws": "aws_ecs_service",
+        "gcp": "google_cloud_run_v2_service",
+        "azure": "azurerm_container_app"
+      },
+      "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
+      "custom": true
+    },
+    {
+      "id": "postgres",
+      "type": "postgres",
+      "x": 710,
+      "y": 340,
+      "zone": "data",
+      "role": "PostgreSQL + pgvector",
+      "icon": {
+        "default": "postgresql",
+        "aws": "awsRds",
+        "gcp": "gcpCloudSql",
+        "azure": "azPostgresql"
+      },
+      "service": {
+        "aws": "RDS PostgreSQL",
+        "gcp": "Cloud SQL",
+        "azure": "PostgreSQL Flexible"
+      },
+      "terraform": {
+        "aws": "aws_db_instance",
+        "gcp": "google_sql_database_instance",
+        "azure": "azurerm_postgresql_flexible_server"
+      },
+      "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
+    },
+    {
+      "id": "postgres-standby",
+      "type": "postgres",
+      "x": 710,
+      "y": 430,
+      "zone": "data",
+      "role": "En espera en otra zona",
+      "icon": {
+        "default": "postgresql",
+        "aws": "awsRds",
+        "gcp": "gcpCloudSql",
+        "azure": "azPostgresql"
+      },
+      "service": {
+        "aws": "RDS PostgreSQL",
+        "gcp": "Cloud SQL",
+        "azure": "PostgreSQL Flexible"
+      },
+      "terraform": {
+        "aws": "aws_db_instance",
+        "gcp": "google_sql_database_instance",
+        "azure": "azurerm_postgresql_flexible_server"
+      },
+      "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet.",
+      "name": "RDS · réplica Multi-AZ",
+      "custom": true
+    },
+    {
+      "id": "redis",
+      "type": "redis",
+      "x": 710,
+      "y": 250,
+      "zone": "data",
+      "role": "Redis",
+      "icon": {
+        "default": "redis",
+        "aws": "awsElastiCache",
+        "azure": "azRedis"
+      },
+      "service": {
+        "aws": "ElastiCache",
+        "gcp": "Memorystore",
+        "azure": "Cache for Redis"
+      },
+      "terraform": {
+        "aws": "aws_elasticache_replication_group",
+        "gcp": "google_redis_instance",
+        "azure": "azurerm_redis_cache"
+      },
+      "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
+    },
+    {
+      "id": "queue",
+      "type": "queue",
+      "x": 865,
+      "y": 215,
+      "zone": "managed",
+      "role": "Recuento asíncrono",
+      "service": {
+        "aws": "SQS",
+        "gcp": "Pub/Sub",
+        "azure": "Service Bus"
+      },
+      "icon": {
+        "default": "provider",
+        "gcp": "gcpPubSub",
+        "aws": "awsSqs",
+        "azure": "azServiceBus"
+      },
+      "terraform": {
+        "aws": "aws_sqs_queue",
+        "gcp": "google_pubsub_subscription",
+        "azure": "azurerm_servicebus_queue"
+      },
+      "why": "Cola de trabajo para tareas en segundo plano, como la reindexación.",
+      "custom": true
+    },
+    {
+      "id": "observability",
+      "type": "native-monitoring",
+      "x": 865,
+      "y": 300,
+      "zone": "managed",
+      "role": "Logs y métricas",
+      "icon": {
+        "default": "provider",
+        "aws": "awsCloudWatch",
+        "azure": "azMonitor"
+      },
+      "service": {
+        "aws": "CloudWatch",
+        "gcp": "Cloud Monitoring",
+        "azure": "Azure Monitor"
+      },
+      "terraform": {
+        "aws": "aws_cloudwatch_log_group",
+        "gcp": "google_monitoring_alert_policy",
+        "azure": "azurerm_log_analytics_workspace"
+      },
+      "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
+    },
+    {
+      "id": "secrets",
+      "type": "secrets",
+      "x": 865,
+      "y": 385,
+      "zone": "managed",
+      "role": "Secretos",
+      "icon": {
+        "default": "provider",
+        "aws": "awsSecretsManager",
+        "azure": "azKeyVault"
+      },
+      "service": {
+        "aws": "Secrets Manager",
+        "gcp": "Secret Manager",
+        "azure": "Key Vault"
+      },
+      "terraform": {
+        "aws": "aws_secretsmanager_secret",
+        "gcp": "google_secret_manager_secret",
+        "azure": "azurerm_key_vault"
+      },
+      "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
+    }
+  ],
+  "connections": [
+    {
+      "from": "users",
+      "to": "edge"
+    },
+    {
+      "from": "edge",
+      "to": "static",
+      "label": "resultados"
+    },
+    {
+      "from": "edge",
+      "to": "waf"
+    },
+    {
+      "from": "waf",
+      "to": "lb"
+    },
+    {
+      "from": "lb",
+      "to": "api"
+    },
+    {
+      "from": "lb",
+      "to": "api-2"
+    },
+    {
+      "from": "api",
+      "to": "postgres"
+    },
+    {
+      "from": "api-2",
+      "to": "postgres"
+    },
+    {
+      "from": "postgres",
+      "to": "postgres-standby",
+      "label": "replicación"
+    },
+    {
+      "from": "api",
+      "to": "redis"
+    },
+    {
+      "from": "api",
+      "to": "queue"
+    }
+  ]
+}

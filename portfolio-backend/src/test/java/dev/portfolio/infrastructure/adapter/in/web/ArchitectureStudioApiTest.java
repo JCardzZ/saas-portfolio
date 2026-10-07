@@ -1,0 +1,219 @@
+package dev.portfolio.infrastructure.adapter.in.web;
+
+import dev.portfolio.application.port.in.ArchitectureProjectUseCase;
+import dev.portfolio.application.port.in.ArchitectureProjectUseCase.Draft;
+import dev.portfolio.application.port.in.CloudCatalogUseCase;
+import dev.portfolio.application.port.in.TerraformUseCase;
+import dev.portfolio.domain.model.CloudCatalogItemDomain;
+import java.math.BigDecimal;
+import java.util.Optional;
+import dev.portfolio.application.port.out.TelemetryPort;
+import dev.portfolio.domain.exception.InvalidRequestException;
+import dev.portfolio.domain.exception.RateLimitExceededException;
+import dev.portfolio.domain.exception.ResourceNotFoundException;
+import dev.portfolio.domain.model.ArchitectureProjectDomain;
+import dev.portfolio.domain.model.CloudProviderDomain;
+import dev.portfolio.domain.model.TerraformBundleDomain;
+import dev.portfolio.infrastructure.adapter.in.web.controller.ArchitectureStudioController;
+import dev.portfolio.infrastructure.adapter.in.web.error.GlobalExceptionHandler;
+import dev.portfolio.infrastructure.adapter.in.web.error.ProblemDetailFactory;
+import dev.portfolio.infrastructure.adapter.in.web.mapper.ArchitectureWebMapper;
+import dev.portfolio.infrastructure.config.SecurityConfig;
+import dev.portfolio.infrastructure.security.JwtTokenService;
+import dev.portfolio.infrastructure.security.ProblemDetailSecurityHandler;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(controllers = ArchitectureStudioController.class)
+@Import({SecurityConfig.class, JwtTokenService.class, ProblemDetailSecurityHandler.class, ProblemDetailFactory.class,
+        GlobalExceptionHandler.class, ArchitectureWebMapper.class})
+@TestPropertySource(properties = "security.jwt.secret=" + ArchitectureStudioApiTest.SECRET)
+class ArchitectureStudioApiTest {
+
+    static final String SECRET = "dGVzdC1vbmx5LWhtYWMta2V5LTAxMjM0NTY3ODlhYmNkZWY=";
+    private static final Instant CREATED = Instant.parse("2026-10-05T12:00:00Z");
+    private static final ArchitectureProjectDomain PRESET = new ArchitectureProjectDomain(
+            "core-banking", "Core bancario", "Escenario ilustrativo", CloudProviderDomain.AWS,
+            List.of(Map.of("id", "api", "x", 556)), List.of(Map.of("from", "api", "to", "mq")), List.of(Map.of("id", "cloud")), true, CREATED);
+    private static final String BODY = """
+            {"title":"Mi arquitectura","description":"d","cloudProvider":"gcp",
+             "nodes":[{"id":"api","service":{"aws":"ECS","gcp":"Cloud Run","azure":"Container Apps"}}],
+             "connections":[{"from":"api","to":"api"}],"zones":[]}""";
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private ArchitectureProjectUseCase projects;
+
+    @MockBean
+    private TerraformUseCase terraform;
+
+    @MockBean
+    private CloudCatalogUseCase catalog;
+
+    @MockBean
+    private TelemetryPort telemetryPort;
+
+    private static String adminToken() {
+        return "Bearer " + Jwts.builder().subject("admin-ui").claim("roles", List.of("ROLE_ADMIN"))
+                .expiration(Date.from(Instant.now().plusSeconds(300)))
+                .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET))).compact();
+    }
+
+    @Test
+    void anyoneCanListTheProjectsWithoutTheirGraph() throws Exception {
+        given(projects.findAll()).willReturn(List.of(PRESET));
+
+        mockMvc.perform(get("/public/architecture/projects"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value("core-banking"))
+                .andExpect(jsonPath("$[0].cloudProvider").value("aws"))
+                .andExpect(jsonPath("$[0].isPreset").value(true))
+                .andExpect(jsonPath("$[0].createdAt").value("2026-10-05T12:00:00Z"))
+                .andExpect(jsonPath("$[0].nodes").doesNotExist());
+    }
+
+    @Test
+    void anyoneCanLoadAProjectWithItsWholeGraph() throws Exception {
+        given(projects.findById("core-banking")).willReturn(PRESET);
+        given(projects.findById("nope")).willThrow(new ResourceNotFoundException("ArchitectureProject", "nope"));
+
+        mockMvc.perform(get("/public/architecture/projects/core-banking"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Core bancario"))
+                .andExpect(jsonPath("$.nodes[0].id").value("api"))
+                .andExpect(jsonPath("$.nodes[0].x").value(556))
+                .andExpect(jsonPath("$.connections[0].to").value("mq"))
+                .andExpect(jsonPath("$.zones[0].id").value("cloud"));
+        mockMvc.perform(get("/public/architecture/projects/nope"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    @Test
+    void savingRequiresAnAdministratorAndThePublicPathsCannotWrite() throws Exception {
+        // Lo guardado se sirve a todos los visitantes: nadie anónimo puede escribirlo.
+        mockMvc.perform(post("/admin/architecture/projects").contentType(MediaType.APPLICATION_JSON).content(BODY))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(put("/admin/architecture/projects/abc").contentType(MediaType.APPLICATION_JSON).content(BODY))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/public/architecture/projects").contentType(MediaType.APPLICATION_JSON).content(BODY))
+                .andExpect(status().is4xxClientError());
+        mockMvc.perform(put("/public/architecture/projects/core-banking").contentType(MediaType.APPLICATION_JSON).content(BODY))
+                .andExpect(status().is4xxClientError());
+        mockMvc.perform(delete("/public/architecture/projects/core-banking")).andExpect(status().is4xxClientError());
+        verifyNoInteractions(projects);
+    }
+
+    @Test
+    void anAdministratorSavesAndUpdatesProjects() throws Exception {
+        ArchitectureProjectDomain saved = new ArchitectureProjectDomain("id-1", "Mi arquitectura", "d", CloudProviderDomain.GCP,
+                List.of(Map.of("id", "api")), List.of(), List.of(), false, CREATED);
+        given(projects.create(any())).willReturn(saved);
+        given(projects.update(eq("id-1"), any())).willReturn(saved);
+
+        mockMvc.perform(post("/admin/architecture/projects").header(HttpHeaders.AUTHORIZATION, adminToken())
+                        .contentType(MediaType.APPLICATION_JSON).content(BODY))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value("id-1"))
+                .andExpect(jsonPath("$.isPreset").value(false));
+
+        ArgumentCaptor<Draft> draft = ArgumentCaptor.forClass(Draft.class);
+        verify(projects).create(draft.capture());
+        assertThat(draft.getValue().title()).isEqualTo("Mi arquitectura");
+        assertThat(draft.getValue().cloudProvider()).isEqualTo(CloudProviderDomain.GCP);
+        assertThat(draft.getValue().nodes().get(0)).containsEntry("id", "api")
+                .containsEntry("service", Map.of("aws", "ECS", "gcp", "Cloud Run", "azure", "Container Apps"));
+
+        mockMvc.perform(put("/admin/architecture/projects/id-1").header(HttpHeaders.AUTHORIZATION, adminToken())
+                        .contentType(MediaType.APPLICATION_JSON).content(BODY))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void presetsAndInvalidProjectsAreRejectedWithAProblemDetail() throws Exception {
+        given(projects.update(eq("core-banking"), any())).willThrow(new InvalidRequestException("Las plantillas no se pueden modificar"));
+
+        mockMvc.perform(put("/admin/architecture/projects/core-banking").header(HttpHeaders.AUTHORIZATION, adminToken())
+                        .contentType(MediaType.APPLICATION_JSON).content(BODY))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.detail").value("Las plantillas no se pueden modificar"));
+        mockMvc.perform(post("/admin/architecture/projects").header(HttpHeaders.AUTHORIZATION, adminToken())
+                        .contentType(MediaType.APPLICATION_JSON).content(BODY.replace("\"gcp\"", "\"oracle\"")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void anyoneCanReadTheCatalogWholeOrForOneCloud() throws Exception {
+        CloudCatalogItemDomain apigee = new CloudCatalogItemDomain("gcp:api-gateway", CloudProviderDomain.GCP, "api-gateway", "Apigee",
+                "api-management", new BigDecimal("365.00"), true);
+        given(catalog.find(Optional.empty())).willReturn(List.of(apigee));
+        given(catalog.find(Optional.of(CloudProviderDomain.GCP))).willReturn(List.of(apigee));
+
+        mockMvc.perform(get("/public/architecture/catalog"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value("gcp:api-gateway"))
+                .andExpect(jsonPath("$[0].provider").value("gcp"))
+                .andExpect(jsonPath("$[0].code").value("api-gateway"))
+                .andExpect(jsonPath("$[0].name").value("Apigee"))
+                .andExpect(jsonPath("$[0].category").value("api-management"))
+                .andExpect(jsonPath("$[0].defaultMonthlyCost").value(365.0))
+                .andExpect(jsonPath("$[0].isEnterprise").value(true));
+        mockMvc.perform(get("/public/architecture/catalog").param("provider", "gcp")).andExpect(status().isOk());
+        verify(catalog).find(Optional.of(CloudProviderDomain.GCP));
+
+        mockMvc.perform(get("/public/architecture/catalog").param("provider", "oracle"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void terraformIsCompiledForAnyoneWithinTheRateLimit() throws Exception {
+        given(terraform.generate(eq(CloudProviderDomain.GCP), any(), any(), any()))
+                .willReturn(new TerraformBundleDomain("provider \"google\" {}", "variable \"region\" {}"));
+
+        mockMvc.perform(post("/public/architecture/generate-terraform").contentType(MediaType.APPLICATION_JSON).content(BODY))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mainTf").value("provider \"google\" {}"))
+                .andExpect(jsonPath("$.variablesTf").value("variable \"region\" {}"));
+
+        given(terraform.generate(any(), any(), any(), any())).willThrow(new RateLimitExceededException(30, Duration.ofSeconds(20)));
+        mockMvc.perform(post("/public/architecture/generate-terraform").contentType(MediaType.APPLICATION_JSON).content(BODY))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, "20"))
+                .andExpect(jsonPath("$.code").value("RATE_LIMIT_EXCEEDED"));
+    }
+}

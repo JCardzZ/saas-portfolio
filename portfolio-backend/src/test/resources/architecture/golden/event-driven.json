@@ -1,0 +1,231 @@
+{
+  "cloudProvider": "aws",
+  "nodes": [
+    {
+      "id": "users",
+      "type": "users",
+      "x": 64,
+      "y": 250,
+      "zone": "outside",
+      "role": "Navegador",
+      "service": "Visitantes",
+      "icon": null,
+      "terraform": null,
+      "why": "Entran por HTTPS; nunca hablan directamente con la nube."
+    },
+    {
+      "id": "edge",
+      "type": "edge",
+      "x": 196,
+      "y": 250,
+      "zone": "outside",
+      "role": "CDN · WAF · DNS",
+      "service": "Cloudflare",
+      "icon": "cloudflare",
+      "terraform": "cloudflare_record",
+      "why": "Borde común a las tres nubes: caché, protección y la IP real del visitante."
+    },
+    {
+      "id": "lb",
+      "type": "lb",
+      "x": 402,
+      "y": 250,
+      "zone": "public",
+      "role": "Balanceador",
+      "icon": {
+        "default": "provider",
+        "aws": "awsElb",
+        "azure": "azAppGateway"
+      },
+      "service": {
+        "aws": "Application LB",
+        "gcp": "Cloud Load Balancing",
+        "azure": "Application Gateway"
+      },
+      "terraform": {
+        "aws": "aws_lb",
+        "gcp": "google_compute_global_forwarding_rule",
+        "azure": "azurerm_application_gateway"
+      },
+      "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
+    },
+    {
+      "id": "api",
+      "type": "containers",
+      "x": 556,
+      "y": 250,
+      "zone": "compute",
+      "role": "Productores (Cloud Stream)",
+      "icon": {
+        "default": "docker",
+        "aws": "awsFargate",
+        "gcp": "gcpCloudRun",
+        "azure": "azContainerApps"
+      },
+      "service": {
+        "aws": "ECS Fargate",
+        "gcp": "Cloud Run",
+        "azure": "Container Apps"
+      },
+      "terraform": {
+        "aws": "aws_ecs_service",
+        "gcp": "google_cloud_run_v2_service",
+        "azure": "azurerm_container_app"
+      },
+      "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
+    },
+    {
+      "id": "kafka",
+      "type": "streaming",
+      "x": 556,
+      "y": 340,
+      "zone": "compute",
+      "role": "Bus de eventos",
+      "service": {
+        "aws": "MSK (Kafka)",
+        "gcp": "Managed Kafka",
+        "azure": "Event Hubs"
+      },
+      "icon": {
+        "default": "kafka",
+        "aws": "awsMsk",
+        "azure": "azEventHubs"
+      },
+      "terraform": {
+        "aws": "aws_msk_cluster",
+        "gcp": "google_managed_kafka_cluster",
+        "azure": "azurerm_eventhub_namespace"
+      },
+      "why": "Bus de eventos para desacoplar productores y consumidores.",
+      "custom": true
+    },
+    {
+      "id": "consumers",
+      "type": "containers",
+      "x": 556,
+      "y": 430,
+      "zone": "compute",
+      "role": "Consumidores (Cloud Stream)",
+      "service": {
+        "aws": "ECS Fargate",
+        "gcp": "Cloud Run",
+        "azure": "Container Apps"
+      },
+      "icon": {
+        "default": "docker",
+        "aws": "awsFargate",
+        "gcp": "gcpCloudRun",
+        "azure": "azContainerApps"
+      },
+      "terraform": {
+        "aws": "aws_ecs_service",
+        "gcp": "google_cloud_run_v2_service",
+        "azure": "azurerm_container_app"
+      },
+      "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
+      "custom": true
+    },
+    {
+      "id": "store",
+      "type": "nosql",
+      "x": 710,
+      "y": 250,
+      "zone": "data",
+      "role": "Estado por clave",
+      "service": {
+        "aws": "DynamoDB",
+        "gcp": "Firestore (Datastore)",
+        "azure": "Cosmos DB"
+      },
+      "icon": {
+        "default": "provider",
+        "gcp": "firebase",
+        "aws": "awsDynamoDb",
+        "azure": "azCosmosDb"
+      },
+      "terraform": {
+        "aws": "aws_dynamodb_table",
+        "gcp": "google_firestore_database",
+        "azure": "azurerm_cosmosdb_account"
+      },
+      "why": "Almacén clave-valor para datos de acceso muy frecuente.",
+      "custom": true
+    },
+    {
+      "id": "secrets",
+      "type": "secrets",
+      "x": 865,
+      "y": 215,
+      "zone": "managed",
+      "role": "Secretos",
+      "icon": {
+        "default": "provider",
+        "aws": "awsSecretsManager",
+        "azure": "azKeyVault"
+      },
+      "service": {
+        "aws": "Secrets Manager",
+        "gcp": "Secret Manager",
+        "azure": "Key Vault"
+      },
+      "terraform": {
+        "aws": "aws_secretsmanager_secret",
+        "gcp": "google_secret_manager_secret",
+        "azure": "azurerm_key_vault"
+      },
+      "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
+    },
+    {
+      "id": "observability",
+      "type": "native-monitoring",
+      "x": 865,
+      "y": 300,
+      "zone": "managed",
+      "role": "Logs y métricas",
+      "icon": {
+        "default": "provider",
+        "aws": "awsCloudWatch",
+        "azure": "azMonitor"
+      },
+      "service": {
+        "aws": "CloudWatch",
+        "gcp": "Cloud Monitoring",
+        "azure": "Azure Monitor"
+      },
+      "terraform": {
+        "aws": "aws_cloudwatch_log_group",
+        "gcp": "google_monitoring_alert_policy",
+        "azure": "azurerm_log_analytics_workspace"
+      },
+      "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
+    }
+  ],
+  "connections": [
+    {
+      "from": "users",
+      "to": "edge"
+    },
+    {
+      "from": "edge",
+      "to": "lb"
+    },
+    {
+      "from": "lb",
+      "to": "api"
+    },
+    {
+      "from": "api",
+      "to": "kafka",
+      "label": "publica"
+    },
+    {
+      "from": "kafka",
+      "to": "consumers",
+      "label": "consume"
+    },
+    {
+      "from": "consumers",
+      "to": "store"
+    }
+  ]
+}

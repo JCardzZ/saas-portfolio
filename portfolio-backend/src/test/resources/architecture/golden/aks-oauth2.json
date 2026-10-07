@@ -1,0 +1,262 @@
+{
+  "cloudProvider": "azure",
+  "nodes": [
+    {
+      "id": "users",
+      "type": "users",
+      "x": 64,
+      "y": 250,
+      "zone": "outside",
+      "role": "Navegador",
+      "service": "Visitantes",
+      "icon": null,
+      "terraform": null,
+      "why": "Entran por HTTPS; nunca hablan directamente con la nube."
+    },
+    {
+      "id": "edge",
+      "type": "edge",
+      "x": 196,
+      "y": 250,
+      "zone": "outside",
+      "role": "CDN · WAF · DNS",
+      "service": "Cloudflare",
+      "icon": "cloudflare",
+      "terraform": "cloudflare_record",
+      "why": "Borde común a las tres nubes: caché, protección y la IP real del visitante."
+    },
+    {
+      "id": "apim",
+      "type": "api-gateway",
+      "x": 402,
+      "y": 250,
+      "zone": "public",
+      "role": "Entrada de las APIs · OAuth2",
+      "service": {
+        "aws": "Amazon API Gateway",
+        "gcp": "Apigee",
+        "azure": "API Management"
+      },
+      "icon": {
+        "default": "provider",
+        "aws": "awsApiGateway",
+        "gcp": "gcpApigee",
+        "azure": "azApiManagement"
+      },
+      "terraform": {
+        "aws": "aws_apigatewayv2_api",
+        "gcp": "google_apigee_organization",
+        "azure": "azurerm_api_management"
+      },
+      "why": "Puerta de entrada con cuotas, claves, versionado y portal de desarrolladores.",
+      "custom": true,
+      "props": {
+        "ports": "443"
+      }
+    },
+    {
+      "id": "aks",
+      "type": "kubernetes",
+      "x": 556,
+      "y": 250,
+      "zone": "compute",
+      "role": "Microservicios Spring Boot",
+      "service": {
+        "aws": "EKS",
+        "gcp": "GKE",
+        "azure": "AKS"
+      },
+      "icon": {
+        "default": "kubernetes",
+        "aws": "awsEks",
+        "gcp": "gcpGke",
+        "azure": "azAks"
+      },
+      "terraform": {
+        "aws": "aws_eks_cluster",
+        "gcp": "google_container_cluster",
+        "azure": "azurerm_kubernetes_cluster"
+      },
+      "why": "Orquestación de contenedores para varias réplicas y despliegues graduales.",
+      "custom": true,
+      "props": {
+        "instance": "3 nodos · Standard_D4s_v5",
+        "ports": "8080"
+      }
+    },
+    {
+      "id": "postgres",
+      "type": "postgres",
+      "x": 710,
+      "y": 250,
+      "zone": "data",
+      "role": "PostgreSQL + pgvector",
+      "icon": {
+        "default": "postgresql",
+        "aws": "awsRds",
+        "gcp": "gcpCloudSql",
+        "azure": "azPostgresql"
+      },
+      "service": {
+        "aws": "RDS PostgreSQL",
+        "gcp": "Cloud SQL",
+        "azure": "PostgreSQL Flexible"
+      },
+      "terraform": {
+        "aws": "aws_db_instance",
+        "gcp": "google_sql_database_instance",
+        "azure": "azurerm_postgresql_flexible_server"
+      },
+      "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
+    },
+    {
+      "id": "redis",
+      "type": "redis",
+      "x": 710,
+      "y": 340,
+      "zone": "data",
+      "role": "Redis",
+      "icon": {
+        "default": "redis",
+        "aws": "awsElastiCache",
+        "azure": "azRedis"
+      },
+      "service": {
+        "aws": "ElastiCache",
+        "gcp": "Memorystore",
+        "azure": "Cache for Redis"
+      },
+      "terraform": {
+        "aws": "aws_elasticache_replication_group",
+        "gcp": "google_redis_instance",
+        "azure": "azurerm_redis_cache"
+      },
+      "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
+    },
+    {
+      "id": "identity",
+      "type": "identity",
+      "x": 865,
+      "y": 215,
+      "zone": "managed",
+      "role": "Emisor de tokens OAuth2 / JWT",
+      "service": {
+        "aws": "Cognito",
+        "gcp": "Identity Platform",
+        "azure": "Entra External ID"
+      },
+      "icon": {
+        "default": "provider",
+        "aws": "awsCognito",
+        "azure": "azExternalId"
+      },
+      "terraform": {
+        "aws": "aws_cognito_user_pool",
+        "gcp": "google_identity_platform_config",
+        "azure": "azuread_application"
+      },
+      "why": "Registro e inicio de sesión de usuarios finales.",
+      "custom": true
+    },
+    {
+      "id": "secrets",
+      "type": "secrets",
+      "x": 865,
+      "y": 300,
+      "zone": "managed",
+      "role": "Secretos",
+      "icon": {
+        "default": "provider",
+        "aws": "awsSecretsManager",
+        "azure": "azKeyVault"
+      },
+      "service": {
+        "aws": "Secrets Manager",
+        "gcp": "Secret Manager",
+        "azure": "Key Vault"
+      },
+      "terraform": {
+        "aws": "aws_secretsmanager_secret",
+        "gcp": "google_secret_manager_secret",
+        "azure": "azurerm_key_vault"
+      },
+      "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
+    },
+    {
+      "id": "observability",
+      "type": "native-monitoring",
+      "x": 865,
+      "y": 385,
+      "zone": "managed",
+      "role": "Logs y métricas",
+      "icon": {
+        "default": "provider",
+        "aws": "awsCloudWatch",
+        "azure": "azMonitor"
+      },
+      "service": {
+        "aws": "CloudWatch",
+        "gcp": "Cloud Monitoring",
+        "azure": "Azure Monitor"
+      },
+      "terraform": {
+        "aws": "aws_cloudwatch_log_group",
+        "gcp": "google_monitoring_alert_policy",
+        "azure": "azurerm_log_analytics_workspace"
+      },
+      "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
+    },
+    {
+      "id": "registry",
+      "type": "registry",
+      "x": 1005,
+      "y": 215,
+      "zone": "managed",
+      "role": "Registro de imágenes",
+      "icon": {
+        "default": "docker",
+        "aws": "awsEcr",
+        "azure": "azContainerRegistry"
+      },
+      "service": {
+        "aws": "ECR",
+        "gcp": "Artifact Registry",
+        "azure": "Container Registry"
+      },
+      "terraform": {
+        "aws": "aws_ecr_repository",
+        "gcp": "google_artifact_registry_repository",
+        "azure": "azurerm_container_registry"
+      },
+      "why": "Guarda la imagen del backend que despliega la capa de cómputo."
+    }
+  ],
+  "connections": [
+    {
+      "from": "users",
+      "to": "edge"
+    },
+    {
+      "from": "edge",
+      "to": "apim",
+      "label": "OAuth2"
+    },
+    {
+      "from": "apim",
+      "to": "aks"
+    },
+    {
+      "from": "aks",
+      "to": "postgres"
+    },
+    {
+      "from": "aks",
+      "to": "redis"
+    },
+    {
+      "from": "apim",
+      "to": "identity",
+      "label": "valida JWT"
+    }
+  ]
+}

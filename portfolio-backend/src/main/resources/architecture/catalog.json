@@ -1,0 +1,866 @@
+[
+  {
+    "id": "aws:kubernetes",
+    "provider": "aws",
+    "code": "kubernetes",
+    "name": "EKS",
+    "category": "compute",
+    "defaultMonthlyCost": 133,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:kubernetes",
+    "provider": "gcp",
+    "code": "kubernetes",
+    "name": "GKE",
+    "category": "compute",
+    "defaultMonthlyCost": 133,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:kubernetes",
+    "provider": "azure",
+    "code": "kubernetes",
+    "name": "AKS",
+    "category": "compute",
+    "defaultMonthlyCost": 65,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:vm",
+    "provider": "aws",
+    "code": "vm",
+    "name": "EC2",
+    "category": "compute",
+    "defaultMonthlyCost": 30,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:vm",
+    "provider": "gcp",
+    "code": "vm",
+    "name": "Compute Engine",
+    "category": "compute",
+    "defaultMonthlyCost": 25,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:vm",
+    "provider": "azure",
+    "code": "vm",
+    "name": "Virtual Machines",
+    "category": "compute",
+    "defaultMonthlyCost": 30,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:containers",
+    "provider": "aws",
+    "code": "containers",
+    "name": "ECS Fargate",
+    "category": "serverless",
+    "defaultMonthlyCost": 36,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:containers",
+    "provider": "gcp",
+    "code": "containers",
+    "name": "Cloud Run",
+    "category": "serverless",
+    "defaultMonthlyCost": 30,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:containers",
+    "provider": "azure",
+    "code": "containers",
+    "name": "Container Apps",
+    "category": "serverless",
+    "defaultMonthlyCost": 40,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:functions",
+    "provider": "aws",
+    "code": "functions",
+    "name": "Lambda",
+    "category": "serverless",
+    "defaultMonthlyCost": 2,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:functions",
+    "provider": "gcp",
+    "code": "functions",
+    "name": "Cloud Functions",
+    "category": "serverless",
+    "defaultMonthlyCost": 2,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:functions",
+    "provider": "azure",
+    "code": "functions",
+    "name": "Functions",
+    "category": "serverless",
+    "defaultMonthlyCost": 2,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:app-platform",
+    "provider": "aws",
+    "code": "app-platform",
+    "name": "App Runner",
+    "category": "serverless",
+    "defaultMonthlyCost": 25,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:app-platform",
+    "provider": "gcp",
+    "code": "app-platform",
+    "name": "App Engine",
+    "category": "serverless",
+    "defaultMonthlyCost": 20,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:app-platform",
+    "provider": "azure",
+    "code": "app-platform",
+    "name": "App Service",
+    "category": "serverless",
+    "defaultMonthlyCost": 13,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:ml-platform",
+    "provider": "aws",
+    "code": "ml-platform",
+    "name": "Bedrock",
+    "category": "serverless",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:ml-platform",
+    "provider": "gcp",
+    "code": "ml-platform",
+    "name": "Vertex AI",
+    "category": "serverless",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:ml-platform",
+    "provider": "azure",
+    "code": "ml-platform",
+    "name": "Azure OpenAI",
+    "category": "serverless",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:nosql",
+    "provider": "aws",
+    "code": "nosql",
+    "name": "DynamoDB",
+    "category": "data",
+    "defaultMonthlyCost": 5,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:nosql",
+    "provider": "gcp",
+    "code": "nosql",
+    "name": "Firestore (Datastore)",
+    "category": "data",
+    "defaultMonthlyCost": 5,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:nosql",
+    "provider": "azure",
+    "code": "nosql",
+    "name": "Cosmos DB",
+    "category": "data",
+    "defaultMonthlyCost": 24,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:newsql-pg",
+    "provider": "aws",
+    "code": "newsql-pg",
+    "name": "Aurora PostgreSQL",
+    "category": "data",
+    "defaultMonthlyCost": 60,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:newsql-pg",
+    "provider": "gcp",
+    "code": "newsql-pg",
+    "name": "AlloyDB",
+    "category": "data",
+    "defaultMonthlyCost": 150,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:newsql-pg",
+    "provider": "azure",
+    "code": "newsql-pg",
+    "name": "Cosmos DB for PostgreSQL",
+    "category": "data",
+    "defaultMonthlyCost": 110,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:global-sql",
+    "provider": "aws",
+    "code": "global-sql",
+    "name": "Aurora DSQL",
+    "category": "data",
+    "defaultMonthlyCost": 30,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:global-sql",
+    "provider": "gcp",
+    "code": "global-sql",
+    "name": "Cloud Spanner",
+    "category": "data",
+    "defaultMonthlyCost": 65,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:global-sql",
+    "provider": "azure",
+    "code": "global-sql",
+    "name": "Cosmos DB (multirregión)",
+    "category": "data",
+    "defaultMonthlyCost": 24,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:graph",
+    "provider": "aws",
+    "code": "graph",
+    "name": "Neptune",
+    "category": "data",
+    "defaultMonthlyCost": 75,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:graph",
+    "provider": "gcp",
+    "code": "graph",
+    "name": "Spanner Graph",
+    "category": "data",
+    "defaultMonthlyCost": 65,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:graph",
+    "provider": "azure",
+    "code": "graph",
+    "name": "Cosmos DB (Gremlin)",
+    "category": "data",
+    "defaultMonthlyCost": 24,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:mongodb",
+    "provider": "aws",
+    "code": "mongodb",
+    "name": "MongoDB Atlas",
+    "category": "data",
+    "defaultMonthlyCost": 57,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:mongodb",
+    "provider": "gcp",
+    "code": "mongodb",
+    "name": "MongoDB Atlas",
+    "category": "data",
+    "defaultMonthlyCost": 57,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:mongodb",
+    "provider": "azure",
+    "code": "mongodb",
+    "name": "MongoDB Atlas",
+    "category": "data",
+    "defaultMonthlyCost": 57,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:wide-column",
+    "provider": "aws",
+    "code": "wide-column",
+    "name": "Keyspaces",
+    "category": "data",
+    "defaultMonthlyCost": 10,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:wide-column",
+    "provider": "gcp",
+    "code": "wide-column",
+    "name": "Bigtable",
+    "category": "data",
+    "defaultMonthlyCost": 470,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:wide-column",
+    "provider": "azure",
+    "code": "wide-column",
+    "name": "Managed Cassandra",
+    "category": "data",
+    "defaultMonthlyCost": 350,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:search",
+    "provider": "aws",
+    "code": "search",
+    "name": "Elasticsearch",
+    "category": "data",
+    "defaultMonthlyCost": 95,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:search",
+    "provider": "gcp",
+    "code": "search",
+    "name": "Elasticsearch",
+    "category": "data",
+    "defaultMonthlyCost": 95,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:search",
+    "provider": "azure",
+    "code": "search",
+    "name": "Elasticsearch",
+    "category": "data",
+    "defaultMonthlyCost": 95,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:warehouse",
+    "provider": "aws",
+    "code": "warehouse",
+    "name": "Redshift",
+    "category": "data",
+    "defaultMonthlyCost": 180,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:warehouse",
+    "provider": "gcp",
+    "code": "warehouse",
+    "name": "BigQuery",
+    "category": "data",
+    "defaultMonthlyCost": 20,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:warehouse",
+    "provider": "azure",
+    "code": "warehouse",
+    "name": "Synapse Analytics",
+    "category": "data",
+    "defaultMonthlyCost": 150,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:sql-query",
+    "provider": "aws",
+    "code": "sql-query",
+    "name": "Athena",
+    "category": "data",
+    "defaultMonthlyCost": 5,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:sql-query",
+    "provider": "gcp",
+    "code": "sql-query",
+    "name": "BigQuery (tablas externas)",
+    "category": "data",
+    "defaultMonthlyCost": 5,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:sql-query",
+    "provider": "azure",
+    "code": "sql-query",
+    "name": "Synapse serverless SQL",
+    "category": "data",
+    "defaultMonthlyCost": 5,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:streaming",
+    "provider": "aws",
+    "code": "streaming",
+    "name": "MSK (Kafka)",
+    "category": "messaging",
+    "defaultMonthlyCost": 70,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:streaming",
+    "provider": "gcp",
+    "code": "streaming",
+    "name": "Managed Kafka",
+    "category": "messaging",
+    "defaultMonthlyCost": 130,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:streaming",
+    "provider": "azure",
+    "code": "streaming",
+    "name": "Event Hubs",
+    "category": "messaging",
+    "defaultMonthlyCost": 22,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:queue",
+    "provider": "aws",
+    "code": "queue",
+    "name": "SQS",
+    "category": "messaging",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:queue",
+    "provider": "gcp",
+    "code": "queue",
+    "name": "Pub/Sub",
+    "category": "messaging",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:queue",
+    "provider": "azure",
+    "code": "queue",
+    "name": "Service Bus",
+    "category": "messaging",
+    "defaultMonthlyCost": 10,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:pubsub",
+    "provider": "aws",
+    "code": "pubsub",
+    "name": "SNS",
+    "category": "messaging",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:pubsub",
+    "provider": "gcp",
+    "code": "pubsub",
+    "name": "Pub/Sub",
+    "category": "messaging",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:pubsub",
+    "provider": "azure",
+    "code": "pubsub",
+    "name": "Event Grid",
+    "category": "messaging",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:rabbitmq",
+    "provider": "aws",
+    "code": "rabbitmq",
+    "name": "RabbitMQ",
+    "category": "messaging",
+    "defaultMonthlyCost": 20,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:rabbitmq",
+    "provider": "gcp",
+    "code": "rabbitmq",
+    "name": "RabbitMQ",
+    "category": "messaging",
+    "defaultMonthlyCost": 15,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:rabbitmq",
+    "provider": "azure",
+    "code": "rabbitmq",
+    "name": "RabbitMQ",
+    "category": "messaging",
+    "defaultMonthlyCost": 15,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:stream-processing",
+    "provider": "aws",
+    "code": "stream-processing",
+    "name": "Managed Flink",
+    "category": "messaging",
+    "defaultMonthlyCost": 80,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:stream-processing",
+    "provider": "gcp",
+    "code": "stream-processing",
+    "name": "Dataflow",
+    "category": "messaging",
+    "defaultMonthlyCost": 70,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:stream-processing",
+    "provider": "azure",
+    "code": "stream-processing",
+    "name": "Stream Analytics",
+    "category": "messaging",
+    "defaultMonthlyCost": 80,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:prometheus",
+    "provider": "aws",
+    "code": "prometheus",
+    "name": "Prometheus + Grafana",
+    "category": "observability",
+    "defaultMonthlyCost": 15,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:prometheus",
+    "provider": "gcp",
+    "code": "prometheus",
+    "name": "Prometheus + Grafana",
+    "category": "observability",
+    "defaultMonthlyCost": 15,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:prometheus",
+    "provider": "azure",
+    "code": "prometheus",
+    "name": "Prometheus + Grafana",
+    "category": "observability",
+    "defaultMonthlyCost": 15,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:datadog",
+    "provider": "aws",
+    "code": "datadog",
+    "name": "Datadog",
+    "category": "observability",
+    "defaultMonthlyCost": 30,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:datadog",
+    "provider": "gcp",
+    "code": "datadog",
+    "name": "Datadog",
+    "category": "observability",
+    "defaultMonthlyCost": 30,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:datadog",
+    "provider": "azure",
+    "code": "datadog",
+    "name": "Datadog",
+    "category": "observability",
+    "defaultMonthlyCost": 30,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:opentelemetry",
+    "provider": "aws",
+    "code": "opentelemetry",
+    "name": "OpenTelemetry",
+    "category": "observability",
+    "defaultMonthlyCost": 5,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:opentelemetry",
+    "provider": "gcp",
+    "code": "opentelemetry",
+    "name": "OpenTelemetry",
+    "category": "observability",
+    "defaultMonthlyCost": 5,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:opentelemetry",
+    "provider": "azure",
+    "code": "opentelemetry",
+    "name": "OpenTelemetry",
+    "category": "observability",
+    "defaultMonthlyCost": 5,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:native-monitoring",
+    "provider": "aws",
+    "code": "native-monitoring",
+    "name": "CloudWatch",
+    "category": "observability",
+    "defaultMonthlyCost": 10,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:native-monitoring",
+    "provider": "gcp",
+    "code": "native-monitoring",
+    "name": "Cloud Monitoring",
+    "category": "observability",
+    "defaultMonthlyCost": 8,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:native-monitoring",
+    "provider": "azure",
+    "code": "native-monitoring",
+    "name": "Azure Monitor",
+    "category": "observability",
+    "defaultMonthlyCost": 12,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:api-gateway",
+    "provider": "aws",
+    "code": "api-gateway",
+    "name": "Amazon API Gateway",
+    "category": "api-management",
+    "defaultMonthlyCost": 4,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:api-gateway",
+    "provider": "gcp",
+    "code": "api-gateway",
+    "name": "Apigee",
+    "category": "api-management",
+    "defaultMonthlyCost": 365,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:api-gateway",
+    "provider": "azure",
+    "code": "api-gateway",
+    "name": "API Management",
+    "category": "api-management",
+    "defaultMonthlyCost": 4,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:workflow",
+    "provider": "aws",
+    "code": "workflow",
+    "name": "Step Functions",
+    "category": "api-management",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:workflow",
+    "provider": "gcp",
+    "code": "workflow",
+    "name": "Workflows",
+    "category": "api-management",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:workflow",
+    "provider": "azure",
+    "code": "workflow",
+    "name": "Logic Apps",
+    "category": "api-management",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:waf",
+    "provider": "aws",
+    "code": "waf",
+    "name": "WAF",
+    "category": "network-security",
+    "defaultMonthlyCost": 10,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:waf",
+    "provider": "gcp",
+    "code": "waf",
+    "name": "Cloud Armor",
+    "category": "network-security",
+    "defaultMonthlyCost": 8,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:waf",
+    "provider": "azure",
+    "code": "waf",
+    "name": "Web Application Firewall",
+    "category": "network-security",
+    "defaultMonthlyCost": 20,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:dns",
+    "provider": "aws",
+    "code": "dns",
+    "name": "Route 53",
+    "category": "network-security",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:dns",
+    "provider": "gcp",
+    "code": "dns",
+    "name": "Cloud DNS",
+    "category": "network-security",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:dns",
+    "provider": "azure",
+    "code": "dns",
+    "name": "Azure DNS",
+    "category": "network-security",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:bucket",
+    "provider": "aws",
+    "code": "bucket",
+    "name": "S3",
+    "category": "network-security",
+    "defaultMonthlyCost": 3,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:bucket",
+    "provider": "gcp",
+    "code": "bucket",
+    "name": "Cloud Storage",
+    "category": "network-security",
+    "defaultMonthlyCost": 3,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:bucket",
+    "provider": "azure",
+    "code": "bucket",
+    "name": "Blob Storage",
+    "category": "network-security",
+    "defaultMonthlyCost": 3,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:identity",
+    "provider": "aws",
+    "code": "identity",
+    "name": "Cognito",
+    "category": "network-security",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:identity",
+    "provider": "gcp",
+    "code": "identity",
+    "name": "Identity Platform",
+    "category": "network-security",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:identity",
+    "provider": "azure",
+    "code": "identity",
+    "name": "Entra External ID",
+    "category": "network-security",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:secrets",
+    "provider": "aws",
+    "code": "secrets",
+    "name": "Secrets Manager",
+    "category": "network-security",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:secrets",
+    "provider": "gcp",
+    "code": "secrets",
+    "name": "Secret Manager",
+    "category": "network-security",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:secrets",
+    "provider": "azure",
+    "code": "secrets",
+    "name": "Key Vault",
+    "category": "network-security",
+    "defaultMonthlyCost": 1,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:vault",
+    "provider": "aws",
+    "code": "vault",
+    "name": "HashiCorp Vault",
+    "category": "network-security",
+    "defaultMonthlyCost": 25,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:vault",
+    "provider": "gcp",
+    "code": "vault",
+    "name": "HashiCorp Vault",
+    "category": "network-security",
+    "defaultMonthlyCost": 25,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:vault",
+    "provider": "azure",
+    "code": "vault",
+    "name": "HashiCorp Vault",
+    "category": "network-security",
+    "defaultMonthlyCost": 25,
+    "isEnterprise": false
+  }
+]

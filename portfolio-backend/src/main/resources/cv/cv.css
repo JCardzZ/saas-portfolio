@@ -1,0 +1,60 @@
+/* Plantilla del CV (variantes short y full). La procesa openhtmltopdf: CSS 2.1 con algunos
+   extras (border-radius, @font-face), sin flexbox ni grid; por eso las columnas son flotantes.
+   Sin letter-spacing: el conversor coloca cada letra por separado y el texto del PDF dejaría
+   de poder buscarse y copiarse como palabras. */
+@page { size: A4; margin: 12mm 0 11mm 0; }
+@page :first { margin-top: 0; }
+
+body { margin: 0; font-family: 'Inter', sans-serif; font-size: 9.2pt; line-height: 1.45; color: #1E293B; }
+p { margin: 0 0 4pt 0; }
+ul { margin: 0; padding: 0 0 0 11pt; }
+li { margin: 0 0 2.5pt 0; }
+strong { font-weight: 700; color: #0F172A; }
+
+/* Cabecera oscura a sangre en la primera página. */
+.header { background-color: #0F172A; color: #F8FAFC; padding: 13mm 14mm 9mm 14mm; }
+.name { font-size: 23pt; font-weight: 700; line-height: 1.15; }
+.headline { margin-top: 3pt; font-size: 11.5pt; font-weight: 600; color: #93C5FD; }
+.accent { height: 3pt; background-color: #2563EB; }
+
+.page { padding: 8mm 14mm 0 14mm; }
+.side { float: left; width: 31%; }
+.main { margin-left: 35%; }
+
+/* Marco de la foto de perfil, centrado sobre la tarjeta. */
+.portrait { margin: 0 0 9pt 0; text-align: center; }
+
+/* Barra lateral: tarjeta oscura con contacto, tecnologías y formación. */
+.card { background-color: #0F172A; border: 0.75pt solid #1E293B; border-radius: 9pt; padding: 11pt 11pt 6pt 11pt; color: #CBD5E1; font-size: 8.3pt; }
+.card h2 { margin: 0 0 6pt 0; font-size: 7.4pt; font-weight: 700; text-transform: uppercase; color: #F8FAFC; }
+.card h2 svg { float: left; margin: -0.5pt 5pt 0 0; }
+.card .block { margin-bottom: 11pt; }
+.card p { margin-bottom: 5pt; }
+.card strong { color: #F8FAFC; }
+.badge { display: inline-block; margin: 0 3pt 4pt 0; padding: 2pt 7pt; border-radius: 8pt; background-color: #172554; color: #93C5FD; font-size: 7.6pt; font-weight: 600; }
+
+/* Columna principal. */
+.main h2 { margin: 0 0 7pt 0; padding-bottom: 3pt; border-bottom: 0.75pt solid #E2E8F0; font-size: 8.4pt; font-weight: 700; text-transform: uppercase; color: #2563EB; }
+.section { margin-bottom: 11pt; }
+
+/* Historial como línea de tiempo: raya vertical y un punto por entrada. */
+.entry { position: relative; margin-left: 4pt; padding: 0 0 9pt 13pt; border-left: 1.2pt solid #E2E8F0; page-break-inside: avoid; }
+.entry.last { padding-bottom: 2pt; }
+.dot { position: absolute; left: -4.6pt; top: 2.5pt; width: 8pt; height: 8pt; border-radius: 4pt; background-color: #2563EB; }
+.period { font-size: 7.6pt; font-weight: 700; text-transform: uppercase; color: #2563EB; }
+.title { font-size: 10.6pt; font-weight: 700; color: #0F172A; line-height: 1.25; }
+.meta { margin: 1pt 0 3pt 0; font-size: 8.6pt; font-weight: 600; color: #475569; }
+.chips { margin-top: 3pt; }
+.chip { display: inline-block; margin: 0 3pt 3pt 0; padding: 1.2pt 6pt; border-radius: 7pt; border: 0.6pt solid #CBD5E1; background-color: #F8FAFC; color: #334155; font-size: 7.3pt; font-weight: 600; }
+
+/* Variante de una página: todo algo más apretado. */
+body.compact { font-size: 8.5pt; line-height: 1.38; }
+.compact .header { padding: 10mm 14mm 7mm 14mm; }
+.compact .name { font-size: 20pt; }
+.compact .page { padding-top: 6mm; }
+.compact .entry { padding-bottom: 6pt; }
+.compact .section { margin-bottom: 8pt; }
+.compact .title { font-size: 9.8pt; }
+.compact .card .block { margin-bottom: 8pt; }
+/* En una página, las tecnologías de cada entrada no caben: quedan resumidas en la barra lateral. */
+.compact .chips { display: none; }

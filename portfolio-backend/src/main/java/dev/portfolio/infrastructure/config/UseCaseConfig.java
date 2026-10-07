@@ -1,0 +1,149 @@
+package dev.portfolio.infrastructure.config;
+
+import dev.portfolio.application.port.in.ArchitectureCopilotUseCase;
+import dev.portfolio.application.port.in.ArchitectureProjectUseCase;
+import dev.portfolio.application.port.in.ArticleUseCase;
+import dev.portfolio.application.port.in.TerraformUseCase;
+import dev.portfolio.application.port.in.AuthUseCase;
+import dev.portfolio.application.port.in.CareerUseCase;
+import dev.portfolio.application.port.in.CloudCatalogUseCase;
+import dev.portfolio.application.port.in.CvUseCase;
+import dev.portfolio.application.port.in.ProfilePhotoUseCase;
+import dev.portfolio.application.port.in.ProjectUseCase;
+import dev.portfolio.application.port.in.RAGIndexingUseCase;
+import dev.portfolio.application.port.in.RAGUseCase;
+import dev.portfolio.application.port.in.SystemHealthUseCase;
+import dev.portfolio.application.port.in.TechnologyUseCase;
+import dev.portfolio.application.port.out.ArchitectureProjectRepositoryPort;
+import dev.portfolio.application.port.out.ArticleRepositoryPort;
+import dev.portfolio.application.port.out.CachePort;
+import dev.portfolio.application.port.out.CareerStoryPort;
+import dev.portfolio.application.port.out.ClientAuthenticatorPort;
+import dev.portfolio.application.port.out.CloudCatalogRepositoryPort;
+import dev.portfolio.application.port.out.CodeSourcePort;
+import dev.portfolio.application.port.out.CvRendererPort;
+import dev.portfolio.application.port.out.ProfilePhotoPort;
+import dev.portfolio.application.port.out.GeminiAiPort;
+import dev.portfolio.application.port.out.ProjectRepositoryPort;
+import dev.portfolio.application.port.out.RateLimiterPort;
+import dev.portfolio.application.port.out.SystemProbePort;
+import dev.portfolio.application.port.out.TechnologyRepositoryPort;
+import dev.portfolio.application.port.out.TelemetryPort;
+import dev.portfolio.application.port.out.TokenIssuerPort;
+import dev.portfolio.application.port.out.VectorRepositoryPort;
+import dev.portfolio.application.service.ArchitectureCopilotService;
+import dev.portfolio.application.service.ArchitectureProjectService;
+import dev.portfolio.application.service.ArticleService;
+import dev.portfolio.application.service.TerraformService;
+import dev.portfolio.application.service.AuthService;
+import dev.portfolio.application.service.CareerService;
+import dev.portfolio.application.service.CloudCatalogService;
+import dev.portfolio.application.service.CvService;
+import dev.portfolio.application.service.ProfilePhotoService;
+import dev.portfolio.application.service.ProjectService;
+import dev.portfolio.application.service.RAGIndexingService;
+import dev.portfolio.application.service.RAGService;
+import dev.portfolio.application.service.SystemHealthService;
+import dev.portfolio.application.service.TechnologyService;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@EnableConfigurationProperties(RateLimitProperties.class)
+public class UseCaseConfig {
+
+    @Bean
+    public TechnologyUseCase technologyUseCase(TechnologyRepositoryPort repository, CachePort cache) {
+        return new TechnologyService(repository, cache);
+    }
+
+    @Bean
+    public ProjectUseCase projectUseCase(ProjectRepositoryPort repository, CachePort cache) {
+        return new ProjectService(repository, cache);
+    }
+
+    @Bean
+    public AuthUseCase authUseCase(ClientAuthenticatorPort clientAuthenticator,
+                                   TokenIssuerPort tokenIssuer,
+                                   RateLimiterPort rateLimiter,
+                                   RateLimitProperties rateLimitProperties) {
+        return new AuthService(
+                clientAuthenticator, tokenIssuer, rateLimiter, rateLimitProperties.authToken().toPolicy());
+    }
+
+    @Bean
+    public RAGUseCase ragUseCase(GeminiAiPort ai,
+                                 VectorRepositoryPort vectorRepository,
+                                 RateLimiterPort rateLimiter,
+                                 RateLimitProperties rateLimitProperties,
+                                 TelemetryPort telemetry) {
+        return new RAGService(ai, vectorRepository, rateLimiter,
+                rateLimitProperties.ragQuery().toPolicy(), rateLimitProperties.ragQueryGlobal().toPolicy(),
+                telemetry);
+    }
+
+    @Bean
+    public RAGIndexingUseCase ragIndexingUseCase(TechnologyRepositoryPort technologyRepository,
+                                                 ProjectRepositoryPort projectRepository,
+                                                 ArticleRepositoryPort articleRepository,
+                                                 CareerStoryPort careerStory,
+                                                 CodeSourcePort codeSource,
+                                                 GeminiAiPort ai,
+                                                 VectorRepositoryPort vectorRepository,
+                                                 ArchitectureProjectRepositoryPort architectureProjects) {
+        return new RAGIndexingService(technologyRepository, projectRepository, articleRepository, careerStory,
+                codeSource, ai, vectorRepository, architectureProjects);
+    }
+
+    @Bean
+    public SystemHealthUseCase systemHealthUseCase(SystemProbePort probe) {
+        return new SystemHealthService(probe);
+    }
+
+    @Bean
+    public CareerUseCase careerUseCase(CareerStoryPort careerStory) {
+        return new CareerService(careerStory);
+    }
+
+    @Bean
+    public CvUseCase cvUseCase(CareerStoryPort careerStory, CvRendererPort renderer, ProfilePhotoPort photos) {
+        return new CvService(careerStory, renderer, photos);
+    }
+
+    @Bean
+    public ArchitectureProjectUseCase architectureProjectUseCase(ArchitectureProjectRepositoryPort repository) {
+        return new ArchitectureProjectService(repository);
+    }
+
+    @Bean
+    public ArchitectureCopilotUseCase architectureCopilotUseCase(GeminiAiPort ai,
+                                                               VectorRepositoryPort vectorRepository,
+                                                               CloudCatalogUseCase catalog,
+                                                               RateLimiterPort rateLimiter,
+                                                               RateLimitProperties rateLimitProperties,
+                                                               TelemetryPort telemetry) {
+        return new ArchitectureCopilotService(ai, vectorRepository, catalog, rateLimiter,
+                rateLimitProperties.ragQuery().toPolicy(), rateLimitProperties.ragQueryGlobal().toPolicy(), telemetry);
+    }
+
+    @Bean
+    public CloudCatalogUseCase cloudCatalogUseCase(CloudCatalogRepositoryPort repository, CachePort cache) {
+        return new CloudCatalogService(repository, cache);
+    }
+
+    @Bean
+    public TerraformUseCase terraformUseCase(RateLimiterPort rateLimiter, RateLimitProperties rateLimitProperties) {
+        return new TerraformService(rateLimiter, rateLimitProperties.terraform().toPolicy());
+    }
+
+    @Bean
+    public ProfilePhotoUseCase profilePhotoUseCase(ProfilePhotoPort photos) {
+        return new ProfilePhotoService(photos);
+    }
+
+    @Bean
+    public ArticleUseCase articleUseCase(ArticleRepositoryPort repository, CachePort cache) {
+        return new ArticleService(repository, cache);
+    }
+}
