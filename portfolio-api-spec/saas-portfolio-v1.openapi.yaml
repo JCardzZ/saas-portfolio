@@ -876,7 +876,7 @@ components:
         type:
           type: string
           format: uri
-          example: "https://api.portfolio.dev/saas-portfolio/errors/validation-error"
+          example: "https://api.example.com/saas-portfolio/errors/validation-error"
         title:
           type: string
           example: "Error de validación"
@@ -932,7 +932,7 @@ components:
         name: { type: string, example: "Java 21 (Virtual Threads)" }
         category: { type: string, example: "Backend Frameworks" }
         proficiencyLevel: { type: string, example: "Expert / Staff Level" }
-        iconUrl: { type: string, example: "https://cdn.portfolio.dev/icons/java.svg" }
+        iconUrl: { type: string, example: "https://cdn.example.com/icons/java.svg" }
         isFeatured: { type: boolean, example: true }
 
     TechnologyRequest:
@@ -942,7 +942,7 @@ components:
         name: { type: string, example: "Spring Boot 3" }
         category: { type: string, example: "Backend" }
         proficiencyLevel: { type: string, example: "Expert" }
-        iconUrl: { type: string, example: "https://cdn.portfolio.dev/icons/spring.svg" }
+        iconUrl: { type: string, example: "https://cdn.example.com/icons/spring.svg" }
         isFeatured: { type: boolean, example: true }
 
     Project:

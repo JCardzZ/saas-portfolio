@@ -191,7 +191,7 @@ class AdminApiSecurityTest {
         mockMvc.perform(delete("/admin/technologies/nope").header(HttpHeaders.AUTHORIZATION, bearer("ROLE_ADMIN")))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.type").value("https://api.portfolio.dev/saas-portfolio/errors/resource-not-found"))
+                .andExpect(jsonPath("$.type").value("https://api.example.com/saas-portfolio/errors/resource-not-found"))
                 .andExpect(jsonPath("$.title").value("Recurso no encontrado"))
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"))

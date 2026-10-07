@@ -15,7 +15,7 @@ import java.util.UUID;
 @Component
 public class ProblemDetailFactory {
 
-    private static final String ERROR_TYPE_BASE = "https://api.portfolio.dev/saas-portfolio/errors/";
+    private static final String ERROR_TYPE_BASE = "https://api.example.com/saas-portfolio/errors/";
 
     public ProblemDetail create(ApiError error, String detail, HttpServletRequest request) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(error.status(), detail);

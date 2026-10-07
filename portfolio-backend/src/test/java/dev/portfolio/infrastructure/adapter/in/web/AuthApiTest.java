@@ -77,7 +77,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "security.jwt.expiration=15m",
         "security.admin-client.id=admin-ui",
         "security.admin-client.secret=s3cret-for-tests",
-        "security.cors.allowed-origins=http://localhost:4200,https://portfolio.dev",
+        "security.cors.allowed-origins=http://localhost:4200,https://example.com",
         "security.rate-limit.auth-token.max-requests=5",
         "security.rate-limit.auth-token.window=1m",
         "security.rate-limit.rag-query.max-requests=10",
