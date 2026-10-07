@@ -6,6 +6,11 @@ Thumbs.db
 .vscode/
 *.swp
 
+# Notas de trabajo con asistentes: se quedan en local
+CLAUDE.md
+GEMINI.md
+.claude/
+
 # Secretos y configuración local: nunca al repositorio
 .env
 .env.*

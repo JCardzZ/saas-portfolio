@@ -75,7 +75,3 @@ Para que el frontend use este backend, pon `mockMode: false` en
 cd portfolio-backend  && ./gradlew test
 cd portfolio-frontend && npx ng test --watch=false --browsers=ChromeHeadless && npm run build
 ```
-
-## Más detalle
-
-`CLAUDE.md` documenta la arquitectura, las decisiones de seguridad y el estado de cada módulo.
