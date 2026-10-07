@@ -1,0 +1,64 @@
+@if (error(); as message) {
+  <div class="glass max-w-md rounded-3xl p-6 text-center" role="alert">
+    <p class="text-sm text-zinc-300">{{ message }}</p>
+    <button type="button" class="focus-ring mt-3 rounded-full px-3 py-1 text-sm font-medium text-accent hover:text-accent-hover" (click)="load()">
+      Reintentar
+    </button>
+  </div>
+} @else {
+  <div class="bento-grid">
+    @if (loading()) {
+      @for (skeleton of skeletons; track skeleton) {
+        <div class="glass h-44 animate-pulse rounded-3xl md:col-span-2" aria-hidden="true"></div>
+      }
+    } @else {
+      @for (article of articles(); track article.id; let index = $index) {
+        <button
+          type="button"
+          class="bento-card focus-ring flex animate-slide-up flex-col text-left"
+          [class]="index === 0 ? 'md:col-span-4' : 'md:col-span-2'"
+          [style.animation-delay.ms]="index * 60"
+          (click)="reading.set(article)"
+        >
+          <span class="font-mono text-xs text-accent">{{ article.publishedAt | date: 'd MMM y' }}</span>
+          <span class="mt-1 font-semibold tracking-tight text-white" [class]="index === 0 ? 'text-2xl' : 'text-lg'">{{ article.title }}</span>
+          <span class="mt-2 text-sm leading-relaxed text-zinc-400">{{ excerpt(article) }}</span>
+          <span class="mt-auto pt-5 text-sm font-medium text-accent">Leer artículo →</span>
+        </button>
+      } @empty {
+        <p class="glass rounded-3xl p-6 text-sm text-zinc-400 md:col-span-6">Aún no hay artículos publicados.</p>
+      }
+    }
+  </div>
+}
+
+@if (reading(); as article) {
+  <div
+    class="fixed inset-0 z-50 flex animate-fade-in items-start justify-center overflow-y-auto bg-black/70 px-4 py-[6vh] backdrop-blur-sm"
+    (click)="reading.set(null)"
+    (keydown.escape)="reading.set(null)"
+  >
+    <article
+      appFocusTrap
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="article.title"
+      class="relative w-full max-w-2xl animate-scale-up rounded-3xl border border-white/10 bg-zinc-900/85 p-6 text-zinc-100 shadow-2xl shadow-black/70 backdrop-blur-2xl sm:p-10"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        appAutofocus
+        type="button"
+        class="focus-ring absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-zinc-300 transition hover:bg-white/20 hover:text-white"
+        aria-label="Cerrar el artículo"
+        (click)="reading.set(null)"
+      >
+        <svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+      </button>
+
+      <p class="font-mono text-xs text-accent">{{ article.publishedAt | date: 'd MMM y' }}</p>
+      <h3 class="mt-1 pr-10 text-3xl font-semibold tracking-tight text-white">{{ article.title }}</h3>
+      <app-markdown class="mt-6 block text-[15px] leading-relaxed text-zinc-200" [text]="article.contentMarkdown ?? ''" />
+    </article>
+  </div>
+}

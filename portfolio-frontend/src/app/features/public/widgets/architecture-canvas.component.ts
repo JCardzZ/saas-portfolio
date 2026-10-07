@@ -1,0 +1,447 @@
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+
+import { IconPopService } from '../../../shared/ui/icon-pop.service';
+import { TECH_ICONS, TechIcon, TechIconKey } from '../../../shared/ui/tech-icons';
+import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
+import { TheaterDirective } from '../../../shared/ui/theater.directive';
+import { SystemEventsService } from '../data/system-events.service';
+import { TraceInspectorService } from '../data/trace-inspector.service';
+
+interface ArchitectureNode {
+  id: string;
+  label: string;
+  role: string;
+  x: number;
+  y: number;
+  /** Datos de la configuración real del sistema, no mediciones en vivo. */
+  facts: string[];
+  /** Logo de la tecnología que implementa el nodo, si es una concreta. */
+  icon?: TechIconKey;
+  /** Color de la regla de arquitectura que representa el nodo (nivel de código). */
+  tone?: 'pure' | 'framework';
+}
+
+interface C4Level {
+  id: string;
+  tab: string;
+  title: string;
+  description: string;
+  defaultNode: string;
+  /** Ancho de los nodos; los nombres de paquete necesitan más que el valor por defecto. */
+  nodeWidth?: number;
+  nodes: ArchitectureNode[];
+  /** Pares [origen, destino]; la ruta se calcula a partir de las posiciones. */
+  links: [from: string, to: string][];
+}
+
+interface ArchitectureEdge {
+  from: string;
+  to: string;
+  path: string;
+  /** Duración del pulso en segundos: cada conexión late a su ritmo. */
+  duration: number;
+}
+
+const NODE_WIDTH = 136;
+const NODE_HEIGHT = 52;
+
+const LEVELS: C4Level[] = [
+  {
+    id: 'context',
+    tab: 'Contexto',
+    title: 'Nivel 1 · Contexto del sistema',
+    description: 'Quién usa la plataforma y de qué servicios externos depende.',
+    defaultNode: 'system',
+    nodes: [
+      { id: 'visitor', label: 'Visitante', role: 'Reclutador o cliente', x: 80, y: 96, facts: ['Landing pública', 'Chat RAG · 10 preguntas/min'] },
+      { id: 'admin', label: 'Administrador', role: 'Dueño del portafolio', x: 80, y: 204, facts: ['Login client_credentials', 'CMS de proyectos y tecnologías', 'Lanza la reindexación'] },
+      { id: 'system', label: 'SaaS Portfolio', role: 'Plataforma', x: 290, y: 150, facts: ['Contract-first · OpenAPI 3', 'Arquitectura hexagonal', 'tenant_id en cada tabla'] },
+      { icon: 'neon', id: 'neon', label: 'Neon', role: 'PostgreSQL gestionado', x: 510, y: 56, facts: ['PostgreSQL 16 + pgvector', 'Migraciones Flyway'] },
+      { icon: 'upstash', id: 'upstash', label: 'Upstash', role: 'Redis gestionado', x: 510, y: 150, facts: ['Caché cache-aside', 'Contadores de límites'] },
+      { icon: 'gemini', id: 'gemini', label: 'Gemini API', role: 'Google AI', x: 510, y: 244, facts: ['Embeddings de 768 dimensiones', 'Generación de respuestas'] },
+    ],
+    links: [['visitor', 'system'], ['admin', 'system'], ['system', 'neon'], ['system', 'upstash'], ['system', 'gemini']],
+  },
+  {
+    id: 'container',
+    tab: 'Contenedores',
+    title: 'Nivel 2 · Contenedores',
+    description: 'Las piezas desplegables y cómo se hablan.',
+    defaultNode: 'api',
+    nodes: [
+      { icon: 'angular', id: 'frontend', label: 'Angular 18', role: 'Single Page App', x: 80, y: 150, facts: ['Standalone + Signals', 'Cliente generado desde OpenAPI', 'JWT en cabecera'] },
+      { icon: 'spring', id: 'api', label: 'Spring Boot 3', role: 'API REST', x: 290, y: 150, facts: ['Java 21', 'Puertos y adaptadores', 'Errores RFC 7807', 'Login: 5 intentos/min'] },
+      { icon: 'redis', id: 'redis', label: 'Redis', role: 'Caché y límites', x: 510, y: 56, facts: ['Cache-aside · TTL 10 min', 'Timeout 2 s · best-effort', 'Límites atómicos con Lua'] },
+      { icon: 'postgresql', id: 'postgres', label: 'PostgreSQL', role: 'Datos y vectores', x: 510, y: 150, facts: ['pgvector · 768 dimensiones', 'Distancia coseno · HNSW', 'Flyway'] },
+      { icon: 'gemini', id: 'gemini', label: 'Gemini', role: 'Motor RAG', x: 510, y: 244, facts: ['Embeddings + respuesta', 'Circuit breaker 50 % · 30 s', 'Timeout 30 s'] },
+    ],
+    links: [['frontend', 'api'], ['api', 'redis'], ['api', 'postgres'], ['api', 'gemini']],
+  },
+  {
+    id: 'component',
+    tab: 'Componentes',
+    title: 'Nivel 3 · Componentes (hexagonal)',
+    description: 'Dentro de la API: las dependencias apuntan siempre hacia el núcleo.',
+    defaultNode: 'services',
+    nodes: [
+      { icon: 'spring', id: 'controllers', label: 'Controllers', role: 'Adaptadores de entrada', x: 70, y: 150, facts: ['Implementan las interfaces OpenAPI', 'MapStruct: DTO ↔ dominio', 'Solo delegan'] },
+      { icon: 'java', id: 'services', label: 'Casos de uso', role: 'Núcleo · Java puro', x: 222, y: 150, facts: ['Sin Spring ni JPA', 'Cache-aside y límites', 'Registrados en UseCaseConfig'] },
+      { icon: 'java', id: 'ports', label: 'Puertos', role: 'Interfaces de salida', x: 374, y: 150, facts: ['RepositoryPort · CachePort', 'GeminiAiPort · VectorRepositoryPort', 'RateLimiterPort'] },
+      { icon: 'postgresql', id: 'persistence', label: 'Persistencia', role: 'JPA · pgvector', x: 530, y: 56, facts: ['Entidades y repositorios JPA', 'JDBC para vectores', 'Las transacciones viven aquí'] },
+      { icon: 'redis', id: 'cache', label: 'Caché y límites', role: 'Redis', x: 530, y: 150, facts: ['StringRedisTemplate', 'Fail-open si Redis cae'] },
+      { icon: 'gemini', id: 'ai', label: 'IA', role: 'Gemini', x: 530, y: 244, facts: ['RestClient', 'Circuit breaker Resilience4j'] },
+    ],
+    links: [['controllers', 'services'], ['services', 'ports'], ['ports', 'persistence'], ['ports', 'cache'], ['ports', 'ai']],
+  },
+  {
+    id: 'code',
+    tab: 'Código',
+    title: 'Nivel 4 · Código y dominio puro',
+    description: 'Paquetes del backend. Cada flecha es un import: todas acaban en domain.',
+    defaultNode: 'domain',
+    nodeWidth: 160,
+    nodes: [
+      { icon: 'spring', id: 'adapter', label: 'infrastructure.adapter', role: 'in.web · out.*', x: 96, y: 86, tone: 'framework', facts: ['Adapters & Frameworks', 'Spring, JPA, Redis, RestClient', 'Implementa los puertos'] },
+      { icon: 'spring', id: 'config', label: 'infrastructure.config', role: 'UseCaseConfig', x: 96, y: 214, tone: 'framework', facts: ['Adapters & Frameworks', 'Registra los servicios como beans', 'Único lugar que conoce ambas capas'] },
+      { icon: 'java', id: 'port', label: 'application.port', role: 'in · out', x: 306, y: 86, tone: 'pure', facts: ['Solo interfaces', 'Depende únicamente de domain', '0 imports de frameworks'] },
+      { icon: 'java', id: 'service', label: 'application.service', role: 'Casos de uso', x: 306, y: 214, tone: 'pure', facts: ['Java puro', 'Usa puertos, nunca adaptadores', '0 imports de Spring/JPA'] },
+      { icon: 'java', id: 'domain', label: 'domain', role: 'model · exception', x: 512, y: 150, tone: 'pure', facts: ['0 importaciones de Spring/JPA/Frameworks', 'Records de Java 21', 'No depende de ningún otro paquete'] },
+    ],
+    links: [['adapter', 'port'], ['config', 'service'], ['service', 'port'], ['port', 'domain'], ['service', 'domain']],
+  },
+];
+
+/**
+ * Diagrama de arquitectura con los tres primeros niveles del modelo C4. Pasar por un nodo
+ * muestra su configuración; los pulsos recorren las conexiones en el sentido de la petición.
+ */
+@Component({
+  selector: 'app-architecture-canvas',
+  standalone: true,
+  imports: [TheaterToggleComponent],
+  hostDirectives: [TheaterDirective],
+  host: { class: 'bento-card block' },
+  template: `
+    <app-theater-toggle name="Arquitectura en vivo" />
+    <div class="flex flex-wrap items-center justify-between gap-3 pr-10">
+      <h3 class="text-xl font-semibold tracking-tight text-white">Arquitectura en vivo</h3>
+
+      <div class="glass flex max-w-full overflow-x-auto rounded-full p-1 [scrollbar-width:none]" role="tablist" aria-label="Nivel del modelo C4" (keydown)="onTabKeydown($event)">
+        @for (candidate of levels; track candidate.id) {
+          <button
+            type="button"
+            role="tab"
+            class="focus-ring shrink-0 rounded-full px-3 py-1 text-xs font-medium transition duration-500 ease-spring"
+            [class]="candidate.id === level().id ? 'bg-white/15 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'"
+            [id]="'c4-tab-' + candidate.id"
+            [attr.aria-selected]="candidate.id === level().id"
+            [attr.tabindex]="candidate.id === level().id ? 0 : -1"
+            aria-controls="c4-panel"
+            (click)="selectLevel(candidate.id)"
+          >
+            {{ candidate.tab }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div id="c4-panel" role="tabpanel" [attr.aria-labelledby]="'c4-tab-' + level().id">
+      <p class="mt-3 text-sm text-zinc-400">
+        <span class="font-medium text-zinc-200">{{ level().title }}.</span> {{ level().description }}
+      </p>
+
+      <div class="theater-stage mt-3 overflow-x-auto">
+        <svg viewBox="0 0 600 300" class="w-full min-w-[520px]" role="group" [attr.aria-label]="level().title">
+          <!-- Cambiar de nivel recrea el grupo: los nodos entran escalonados en lugar de saltar. -->
+          @for (current of [level()]; track current.id) {
+            <g class="level">
+              @for (edge of edges(); track edge.from + edge.to) {
+                <path class="edge" [class.edge-active]="isEdgeActive(edge)" [attr.d]="edge.path" />
+                <path class="pulse" [class.pulse-active]="isEdgeActive(edge)" [attr.d]="edge.path" pathLength="100" [style.animation-duration.s]="edge.duration" />
+              }
+
+              @for (node of current.nodes; track node.id; let index = $index) {
+                <g
+                  class="node"
+                  [class.node-active]="node.id === activeId()"
+                  [class.node-pure]="node.tone === 'pure'"
+                  [class.node-framework]="node.tone === 'framework'"
+                  [class.node-code]="current.id === 'code'"
+                  [style.animation-delay.ms]="index * 55"
+                  [style.--brand]="iconOf(node)?.color"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-label]="node.label + ': ' + node.role"
+                  [attr.aria-pressed]="node.id === activeId()"
+                  (mouseenter)="activate(node); hoverPop(node, $event)"
+                  (mouseleave)="hoverLeave($event)"
+                  (focus)="activate(node)"
+                  (click)="activate(node); pop(node, $event)"
+                >
+                  <rect [attr.x]="node.x - width() / 2" [attr.y]="node.y - halfHeight" [attr.width]="width()" [attr.height]="height" rx="16" />
+                  @if (iconOf(node); as icon) {
+                    <svg class="node-icon" [attr.x]="iconBox(node).x" [attr.y]="iconBox(node).y" [attr.width]="iconBox(node).size" [attr.height]="iconBox(node).size" viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="icon.path" [attr.fill]="icon.color" />
+                    </svg>
+                  }
+                  <text class="node-label" [attr.x]="textX(node)" [attr.y]="node.y - 3" text-anchor="middle">{{ node.label }}</text>
+                  <text class="node-role" [attr.x]="textX(node)" [attr.y]="node.y + 14" text-anchor="middle">{{ node.role }}</text>
+                </g>
+              }
+            </g>
+          }
+        </svg>
+      </div>
+
+      <div class="mt-3 flex min-h-[3.25rem] flex-wrap items-center gap-2" aria-live="polite">
+        <p class="mr-1 text-sm font-medium text-white">{{ active().label }}</p>
+        @for (fact of active().facts; track level().id + active().id + fact) {
+          <span
+            class="animate-slide-up rounded-full border px-2.5 py-1 font-mono text-[11px]"
+            [class]="active().tone === 'pure' ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300' : active().tone === 'framework' ? 'border-accent/50 bg-accent/10 text-sky-300' : 'border-white/10 bg-white/5 text-zinc-300'"
+          >{{ fact }}</span>
+        }
+      </div>
+    </div>
+  `,
+  styles: `
+    /* Al pasar por la tarjeta (o en modo teatro) el diagrama gana contraste y los logos brillan más. */
+    :host(:hover) .edge:not(.edge-active),
+    :host(.theater-expanded) .edge:not(.edge-active) {
+      stroke: rgb(255 255 255 / 0.26);
+    }
+    :host(:hover) .pulse,
+    :host(.theater-expanded) .pulse {
+      opacity: 1;
+    }
+    :host(:hover) .node rect,
+    :host(.theater-expanded) .node rect {
+      stroke-width: 1.4;
+    }
+    :host(:hover) .node-icon,
+    :host(.theater-expanded) .node-icon {
+      filter: drop-shadow(0 0 4px var(--brand, #0a84ff));
+    }
+    :host(:hover) .node-active .node-icon,
+    :host(.theater-expanded) .node-active .node-icon {
+      filter: drop-shadow(0 0 9px var(--brand, #0a84ff));
+    }
+    .edge {
+      fill: none;
+      stroke: rgb(255 255 255 / 0.12);
+      stroke-width: 1.5;
+      transition: stroke 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: fade 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+    .edge-active {
+      stroke: rgb(10 132 255 / 0.55);
+    }
+    /* Un trazo corto que recorre la línea: el "pulso de luz" de la petición. */
+    .pulse {
+      fill: none;
+      stroke: #7dd3fc;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-dasharray: 5 95;
+      opacity: 0.55;
+      filter: drop-shadow(0 0 4px #38bdf8);
+      animation: flow linear infinite;
+      transition: opacity 0.5s;
+    }
+    .pulse-active {
+      opacity: 1;
+      stroke: #fff;
+      filter: drop-shadow(0 0 6px #0a84ff);
+    }
+    @keyframes flow {
+      from { stroke-dashoffset: 100; }
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes fade {
+      from { opacity: 0; }
+    }
+    @keyframes node-in {
+      from { opacity: 0; transform: translateY(10px) scale(0.94); }
+    }
+    .node {
+      cursor: pointer;
+      outline: none;
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: node-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+    .node rect {
+      fill: rgb(255 255 255 / 0.05);
+      stroke: rgb(255 255 255 / 0.14);
+      stroke-width: 1;
+      transition: fill 0.5s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    /* brand-glow: el nodo activo brilla con el color de marca de su tecnología (azul si no tiene). */
+    .node-active rect {
+      fill: color-mix(in srgb, var(--brand, #0a84ff) 16%, transparent);
+      stroke: var(--brand, #0a84ff);
+      filter: drop-shadow(0 0 14px color-mix(in srgb, var(--brand, #0a84ff) 65%, transparent));
+    }
+    .node-icon {
+      pointer-events: none;
+      transition: filter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .node-active .node-icon {
+      filter: drop-shadow(0 0 5px var(--brand, #0a84ff));
+    }
+    /* Nivel de código: verde para el núcleo sin frameworks, azul para adaptadores y frameworks. */
+    .node-pure rect {
+      stroke: rgb(52 211 153 / 0.45);
+    }
+    .node-pure.node-active rect {
+      fill: rgb(52 211 153 / 0.14);
+      stroke: #34d399;
+      filter: drop-shadow(0 0 14px rgb(52 211 153 / 0.6));
+    }
+    .node-framework rect {
+      stroke: rgb(10 132 255 / 0.5);
+    }
+    .node-framework.node-active rect {
+      fill: rgb(10 132 255 / 0.16);
+      stroke: #0a84ff;
+      filter: drop-shadow(0 0 14px rgb(10 132 255 / 0.65));
+    }
+    .node-code .node-label {
+      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      font-size: 11.5px;
+    }
+    .node:focus-visible rect {
+      stroke: #fff;
+      stroke-width: 2;
+    }
+    .node-label {
+      fill: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      pointer-events: none;
+    }
+    .node-role {
+      fill: #a1a1aa;
+      font-size: 10px;
+      pointer-events: none;
+    }
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ArchitectureCanvasComponent {
+  private readonly events = inject(SystemEventsService);
+  private readonly inspector = inject(TraceInspectorService);
+  private readonly iconPop = inject(IconPopService);
+
+  readonly levels = LEVELS;
+  readonly height = NODE_HEIGHT;
+  readonly halfHeight = NODE_HEIGHT / 2;
+
+  private readonly levelId = signal('container');
+  readonly level = computed(() => LEVELS.find((level) => level.id === this.levelId()) ?? LEVELS[1]);
+
+  readonly width = computed(() => this.level().nodeWidth ?? NODE_WIDTH);
+
+  readonly activeId = signal(this.level().defaultNode);
+  readonly active = computed(
+    () => this.level().nodes.find((node) => node.id === this.activeId()) ?? this.level().nodes[0],
+  );
+
+  readonly edges = computed<ArchitectureEdge[]>(() => {
+    const nodes = new Map(this.level().nodes.map((node) => [node.id, node]));
+    return this.level().links.map(([from, to], index) => ({
+      from,
+      to,
+      path: connect(nodes.get(from)!, nodes.get(to)!, this.width()),
+      duration: 1.6 + (index % 4) * 0.35,
+    }));
+  });
+
+  /** Al pulsar un nodo, su logo se desprende y flota en 3D por encima del diagrama. */
+  pop(node: ArchitectureNode, event: Event): void {
+    const logo = (event.currentTarget as Element).querySelector('.node-icon');
+    if (node.icon && logo) {
+      this.iconPop.pop(TECH_ICONS[node.icon], logo, true, event.currentTarget as Element);
+    }
+  }
+
+  /** Con el cursor sobre el nodo, su logo despega solo; al salir, vuelve. */
+  hoverPop(node: ArchitectureNode, event: Event): void {
+    const logo = (event.currentTarget as Element).querySelector('.node-icon');
+    if (node.icon && logo) {
+      this.iconPop.hoverEnter(TECH_ICONS[node.icon], logo, event.currentTarget as Element);
+    }
+  }
+
+  hoverLeave(event: Event): void {
+    const logo = (event.currentTarget as Element).querySelector('.node-icon');
+    if (logo) {
+      this.iconPop.hoverLeave(logo);
+    }
+  }
+
+  /** Resalta el nodo y abre el inspector de traza de su tecnología, si tiene una propia. */
+  activate(node: ArchitectureNode): void {
+    this.activeId.set(node.id);
+    this.inspector.select(node.icon);
+  }
+
+  selectLevel(id: string): void {
+    if (id === this.levelId()) {
+      return;
+    }
+    this.levelId.set(id);
+    this.activeId.set(this.level().defaultNode);
+    this.events.emitFromUser([['info', 'C4', this.level().title]]);
+  }
+
+  // Patrón de pestañas: las flechas cambian de nivel y mueven el foco.
+  onTabKeydown(event: KeyboardEvent): void {
+    const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+    if (step === 0) {
+      return;
+    }
+    event.preventDefault();
+    const index = LEVELS.findIndex((level) => level.id === this.levelId());
+    const next = LEVELS[(index + step + LEVELS.length) % LEVELS.length];
+    this.selectLevel(next.id);
+    (event.currentTarget as HTMLElement).querySelector<HTMLElement>(`#c4-tab-${next.id}`)?.focus();
+  }
+
+  iconOf(node: ArchitectureNode): TechIcon | null {
+    return node.icon ? TECH_ICONS[node.icon] : null;
+  }
+
+  /** En el nivel de código el nombre del paquete ocupa todo el ancho: el logo baja a la línea del rol. */
+  iconBox(node: ArchitectureNode): { x: number; y: number; size: number } {
+    const left = node.x - this.width() / 2;
+    return this.level().id === 'code'
+      ? { x: left + 12, y: node.y + 4, size: 13 }
+      : { x: left + 10, y: node.y - 16, size: 15 };
+  }
+
+  /** Con el logo a la izquierda, el texto se desplaza para seguir centrado en el hueco libre. */
+  textX(node: ArchitectureNode): number {
+    return node.icon && this.level().id !== 'code' ? node.x + 10 : node.x;
+  }
+
+  isEdgeActive(edge: ArchitectureEdge): boolean {
+    return edge.from === this.activeId() || edge.to === this.activeId();
+  }
+}
+
+/** Recta entre nodos alineados (en horizontal o en vertical); curva suave en cualquier otro caso. */
+function connect(from: ArchitectureNode, to: ArchitectureNode, width: number): string {
+  if (from.x === to.x) {
+    const direction = Math.sign(to.y - from.y);
+    return `M${from.x} ${from.y + (direction * NODE_HEIGHT) / 2} V${to.y - (direction * NODE_HEIGHT) / 2}`;
+  }
+  const startX = from.x + width / 2;
+  const endX = to.x - width / 2;
+  if (from.y === to.y) {
+    return `M${startX} ${from.y} H${endX}`;
+  }
+  const middle = (startX + endX) / 2;
+  return `M${startX} ${from.y} C${middle} ${from.y} ${middle} ${to.y} ${endX} ${to.y}`;
+}

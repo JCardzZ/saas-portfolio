@@ -1,0 +1,38 @@
+<div class="flex min-h-screen items-center justify-center px-4">
+  <form class="card w-full max-w-sm space-y-5" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div>
+      <h1 class="text-xl font-semibold">Portfolio CMS</h1>
+      <p class="mt-1 text-sm text-slate-500">Inicia sesión con las credenciales del cliente administrador.</p>
+    </div>
+
+    @if (error(); as message) {
+      <app-alert [message]="message" />
+    }
+
+    <div>
+      <label class="label" for="clientId">Client ID</label>
+      <input id="clientId" class="input" type="text" formControlName="clientId" autocomplete="username" />
+      @if (form.controls.clientId.touched && form.controls.clientId.invalid) {
+        <p class="field-error">El Client ID es obligatorio.</p>
+      }
+    </div>
+
+    <div>
+      <label class="label" for="clientSecret">Client Secret</label>
+      <input
+        id="clientSecret"
+        class="input"
+        type="password"
+        formControlName="clientSecret"
+        autocomplete="current-password"
+      />
+      @if (form.controls.clientSecret.touched && form.controls.clientSecret.invalid) {
+        <p class="field-error">El Client Secret es obligatorio.</p>
+      }
+    </div>
+
+    <button type="submit" class="btn-primary w-full" [disabled]="submitting()">
+      {{ submitting() ? 'Entrando…' : 'Entrar' }}
+    </button>
+  </form>
+</div>

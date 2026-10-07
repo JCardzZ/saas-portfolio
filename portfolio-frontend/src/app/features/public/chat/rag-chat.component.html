@@ -1,0 +1,114 @@
+@if (open()) {
+  <div
+    class="fixed inset-0 z-50 flex animate-fade-in items-start justify-center bg-black/60 px-4 pt-[10vh] backdrop-blur-sm"
+    (click)="close()"
+    (keydown.escape)="close()"
+  >
+    <section
+      appFocusTrap
+      role="dialog"
+      aria-modal="true"
+      aria-label="Asistente del portafolio"
+      class="relative flex max-h-[78vh] min-h-[19rem] w-full max-w-2xl animate-scale-up flex-col overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/70 text-zinc-100 shadow-2xl shadow-black/70 backdrop-blur-2xl"
+      (click)="$event.stopPropagation()"
+    >
+      <form class="flex items-center gap-3 border-b border-white/10 px-5 py-4" (submit)="submit($event)">
+        <svg class="h-5 w-5 shrink-0 text-zinc-400" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.8" />
+          <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+        <label class="sr-only" for="rag-prompt">Tu pregunta</label>
+        <input
+          appAutofocus
+          id="rag-prompt"
+          type="text"
+          autocomplete="off"
+          class="min-w-0 flex-1 bg-transparent text-lg text-white placeholder:text-zinc-500 focus:outline-none"
+          placeholder="Pregunta sobre el portafolio…"
+          [formControl]="prompt"
+          [attr.maxlength]="maxLength"
+        />
+        <button
+          type="button"
+          class="focus-ring rounded-md border border-white/10 px-1.5 py-0.5 font-mono text-[11px] text-zinc-400 hover:text-zinc-200"
+          aria-label="Cerrar"
+          (click)="close()"
+        >
+          esc
+        </button>
+      </form>
+
+      <div #feed class="flex-1 space-y-4 overflow-y-auto px-5 py-5" aria-live="polite">
+        @for (message of store.messages(); track message.id) {
+          @if (message.role === 'user') {
+            <div class="flex animate-slide-up justify-end">
+              <p class="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-accent px-4 py-2 text-sm text-white">{{ message.text }}</p>
+            </div>
+          } @else {
+            <div class="max-w-[92%] animate-slide-up space-y-2">
+              @if (message.failed) {
+                <p class="whitespace-pre-wrap rounded-2xl rounded-bl-md border border-red-400/30 bg-red-500/10 px-4 py-2 text-sm leading-relaxed text-red-200" role="alert">{{ message.text }}</p>
+              } @else {
+                <app-markdown class="block rounded-2xl rounded-bl-md bg-white/10 px-4 py-2.5 text-sm leading-relaxed text-zinc-100" [text]="message.text" />
+              }
+
+              @if (message.citations.length) {
+                <div class="flex flex-wrap gap-2" aria-label="Fuentes de la respuesta">
+                  @for (citation of message.citations; track $index) {
+                    <app-citation-pill [citation]="citation" />
+                  }
+                </div>
+              }
+            </div>
+          }
+        } @empty {
+          <div class="space-y-2 py-2">
+            <p class="px-1 text-xs font-medium uppercase tracking-wider text-zinc-500">Sugerencias</p>
+            @for (suggestion of suggestions; track suggestion) {
+              <button
+                type="button"
+                class="focus-ring block w-full rounded-xl px-3 py-2.5 text-left text-sm text-zinc-200 transition duration-300 ease-spring hover:bg-white/10"
+                (click)="ask(suggestion)"
+              >
+                {{ suggestion }}
+              </button>
+            }
+          </div>
+        }
+
+        @if (store.pending()) {
+          <div class="flex animate-fade-in items-center gap-1 px-2" role="status" aria-label="Buscando la respuesta">
+            <span class="h-1.5 w-1.5 animate-typing rounded-full bg-zinc-400"></span>
+            <span class="h-1.5 w-1.5 animate-typing rounded-full bg-zinc-400 [animation-delay:0.15s]"></span>
+            <span class="h-1.5 w-1.5 animate-typing rounded-full bg-zinc-400 [animation-delay:0.3s]"></span>
+          </div>
+        }
+      </div>
+
+      @if (store.alert(); as alert) {
+        <div class="absolute inset-0 z-10 flex animate-fade-in items-center justify-center bg-black/50 px-6">
+          <div
+            appFocusTrap
+            role="alertdialog"
+            aria-labelledby="rag-alert-title"
+            aria-describedby="rag-alert-message"
+            class="w-full max-w-[17rem] animate-scale-up overflow-hidden rounded-2xl border border-white/10 bg-zinc-800/90 text-center backdrop-blur-xl"
+          >
+            <div class="px-4 pb-4 pt-5">
+              <h2 id="rag-alert-title" class="text-base font-semibold text-white">{{ alert.title }}</h2>
+              <p id="rag-alert-message" class="mt-1 text-[13px] leading-snug text-zinc-300">{{ alert.message }}</p>
+            </div>
+            <button
+              appAutofocus
+              type="button"
+              class="w-full border-t border-white/10 py-2.5 text-base font-semibold text-accent transition hover:bg-white/5 focus:outline-none focus-visible:bg-white/10"
+              (click)="dismissAlert()"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+  </div>
+}

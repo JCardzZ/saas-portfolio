@@ -1,0 +1,59 @@
+<div class="space-y-6">
+  <h1 class="text-2xl font-semibold">Asistente IA</h1>
+
+  @if (error(); as message) {
+    <app-alert [message]="message" />
+  }
+
+  <div class="card space-y-4">
+    <div>
+      <h2 class="text-base font-semibold">Contenido indexado</h2>
+      <p class="mt-1 max-w-prose text-sm text-slate-600">
+        El asistente responde a partir de las tecnologías y los proyectos del CMS y del código fuente configurado en el
+        servidor. Reindexa después de cambiar ese contenido: el índice anterior se sustituye por completo.
+      </p>
+    </div>
+
+    <button type="button" class="btn-primary" [disabled]="starting()" (click)="reindex()">
+      {{ starting() ? 'Iniciando…' : 'Reindexar contenido' }}
+    </button>
+
+    @if (started()) {
+      <p class="text-sm text-slate-600" role="status">
+        Reindexación iniciada. Continúa en segundo plano y puede tardar unos segundos; el resultado queda en el log del
+        servidor.
+      </p>
+    }
+  </div>
+
+  <app-profile-photo-card />
+
+  <div class="card space-y-4">
+    <div>
+      <h2 class="text-base font-semibold">Trayectoria y CV</h2>
+      <p class="mt-1 max-w-prose text-sm text-slate-600">
+        La línea de tiempo, el CV descargable y lo que el asistente sabe de la trayectoria salen de
+        <code>docs/career/CAREER_STORY.md</code> (y de <code>CAREER_STORY.en.md</code> para el CV en inglés). Al editar
+        esos archivos, la línea de tiempo y el CV cambian solos en la siguiente petición; el asistente necesita que
+        reindexes.
+      </p>
+    </div>
+
+    <button type="button" class="btn-primary" [disabled]="starting()" (click)="reindex()">
+      {{ starting() ? 'Iniciando…' : 'Reindexar trayectoria y contenido' }}
+    </button>
+
+    <div>
+      <h3 class="text-sm font-medium">Comprobar el CV publicado</h3>
+      <ul class="mt-2 flex flex-wrap gap-2">
+        @for (option of cvOptions; track option.lang + option.type) {
+          <li>
+            <a class="inline-block rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-50" [href]="cvUrl(option.lang, option.type)" target="_blank" rel="noopener">
+              {{ option.label }}
+            </a>
+          </li>
+        }
+      </ul>
+    </div>
+  </div>
+</div>

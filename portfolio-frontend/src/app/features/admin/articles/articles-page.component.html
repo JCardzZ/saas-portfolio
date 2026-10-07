@@ -1,0 +1,66 @@
+<div class="space-y-6">
+  <h1 class="text-2xl font-semibold">Artículos</h1>
+
+  @if (error(); as message) {
+    <app-alert [message]="message" />
+  }
+
+  <form class="card space-y-4" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <h2 class="text-base font-semibold">Nuevo artículo</h2>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="label" for="article-title">Título</label>
+        <input id="article-title" class="input" type="text" formControlName="title" (input)="suggestSlug()" />
+        @if (form.controls.title.touched && form.controls.title.invalid) {
+          <p class="field-error">El título es obligatorio.</p>
+        }
+      </div>
+      <div>
+        <label class="label" for="article-slug">Slug</label>
+        <input id="article-slug" class="input font-mono" type="text" formControlName="slug" />
+        @if (form.controls.slug.touched && form.controls.slug.invalid) {
+          <p class="field-error">Solo minúsculas, cifras y guiones (p. ej. mi-articulo).</p>
+        }
+      </div>
+    </div>
+
+    <div>
+      <label class="label" for="article-content">Contenido (Markdown)</label>
+      <textarea id="article-content" class="input font-mono" rows="12" formControlName="contentMarkdown"></textarea>
+      @if (form.controls.contentMarkdown.touched && form.controls.contentMarkdown.invalid) {
+        <p class="field-error">El contenido es obligatorio.</p>
+      }
+    </div>
+
+    <div class="flex flex-wrap items-center gap-4">
+      <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Publicando…' : 'Publicar artículo' }}</button>
+      <p class="text-sm text-slate-500">Tras publicar, reindexa en «Asistente IA» para que el chat pueda citarlo.</p>
+    </div>
+  </form>
+
+  <div class="card overflow-x-auto p-0">
+    <table class="min-w-full divide-y divide-slate-200">
+      <thead class="bg-slate-50">
+        <tr>
+          <th scope="col" class="table-header">Título</th>
+          <th scope="col" class="table-header">Slug</th>
+          <th scope="col" class="table-header">Publicado</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        @for (article of articles(); track article.id) {
+          <tr>
+            <td class="table-cell font-medium text-slate-900">{{ article.title }}</td>
+            <td class="table-cell font-mono text-xs">{{ article.slug }}</td>
+            <td class="table-cell">{{ article.publishedAt | date: 'd MMM y, HH:mm' }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td class="table-cell text-center text-slate-500" colspan="3">{{ loading() ? 'Cargando…' : 'Aún no hay artículos.' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

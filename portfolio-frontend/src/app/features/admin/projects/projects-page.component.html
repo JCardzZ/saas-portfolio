@@ -1,0 +1,125 @@
+<div class="space-y-6">
+  <h1 class="text-2xl font-semibold">Proyectos</h1>
+
+  @if (store.error(); as message) {
+    <app-alert [message]="message" />
+  }
+  @if (technologies.error(); as message) {
+    <app-alert [message]="message" />
+  }
+
+  <form class="card space-y-4" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <h2 class="text-base font-semibold">{{ editingId() ? 'Editar proyecto' : 'Nuevo proyecto' }}</h2>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="label" for="title">Título</label>
+        <input id="title" class="input" type="text" formControlName="title" />
+        @if (form.controls.title.touched && form.controls.title.invalid) {
+          <p class="field-error">El título es obligatorio.</p>
+        }
+      </div>
+      <div>
+        <label class="label" for="githubRepoUrl">Repositorio de GitHub</label>
+        <input id="githubRepoUrl" class="input" type="url" formControlName="githubRepoUrl" />
+        @if (form.controls.githubRepoUrl.touched && form.controls.githubRepoUrl.invalid) {
+          <p class="field-error">La URL del repositorio es obligatoria.</p>
+        }
+      </div>
+      <div class="sm:col-span-2">
+        <label class="label" for="summary">Resumen</label>
+        <textarea id="summary" class="input" rows="3" formControlName="summary"></textarea>
+        @if (form.controls.summary.touched && form.controls.summary.invalid) {
+          <p class="field-error">El resumen es obligatorio.</p>
+        }
+      </div>
+      <div>
+        <label class="label" for="demoVideoUrl">Vídeo de demo (opcional)</label>
+        <input id="demoVideoUrl" class="input" type="url" formControlName="demoVideoUrl" />
+      </div>
+      <div>
+        <label class="label" for="metricsImpact">Impacto / métricas (opcional)</label>
+        <input id="metricsImpact" class="input" type="text" formControlName="metricsImpact" />
+      </div>
+    </div>
+
+    <fieldset>
+      <legend class="label">Tecnologías usadas</legend>
+      <div class="flex flex-wrap gap-x-5 gap-y-2">
+        @for (technology of technologies.items(); track technology.id) {
+          @if (technology.id; as id) {
+            <label class="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                class="h-4 w-4 rounded border-slate-300"
+                [checked]="isTechnologySelected(id)"
+                (change)="toggleTechnology(id)"
+              />
+              {{ technology.name }}
+            </label>
+          }
+        } @empty {
+          <p class="text-sm text-slate-500">
+            {{ technologies.loading() ? 'Cargando…' : 'Crea primero alguna tecnología para poder asociarla.' }}
+          </p>
+        }
+      </div>
+    </fieldset>
+
+    <div class="flex gap-3">
+      <button type="submit" class="btn-primary" [disabled]="store.saving()">
+        {{ editingId() ? 'Guardar cambios' : 'Crear proyecto' }}
+      </button>
+      @if (editingId()) {
+        <button type="button" class="btn-secondary" (click)="cancelEdit()">Cancelar</button>
+      }
+    </div>
+  </form>
+
+  <div class="card overflow-x-auto p-0">
+    <table class="min-w-full divide-y divide-slate-200">
+      <thead class="bg-slate-50">
+        <tr>
+          <th scope="col" class="table-header">Título</th>
+          <th scope="col" class="table-header">Tecnologías</th>
+          <th scope="col" class="table-header">Impacto</th>
+          <th scope="col" class="table-header"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        @for (project of store.items(); track project.id) {
+          <tr>
+            <td class="table-cell">
+              <p class="font-medium text-slate-900">{{ project.title }}</p>
+              <p class="text-slate-500">{{ project.summary }}</p>
+            </td>
+            <td class="table-cell">
+              <div class="flex flex-wrap gap-1">
+                @for (id of project.technologiesUsed ?? []; track id) {
+                  <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                    {{ technologyName(id) }}
+                  </span>
+                }
+              </div>
+            </td>
+            <td class="table-cell">{{ project.metricsImpact }}</td>
+            <td class="table-cell">
+              <div class="flex justify-end gap-2">
+                <button type="button" class="btn-secondary" (click)="edit(project)">Editar</button>
+                <button type="button" class="btn-danger" [disabled]="store.saving()" (click)="remove(project)">
+                  Eliminar
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td class="table-cell text-center text-slate-500" colspan="4">
+              {{ store.loading() ? 'Cargando…' : 'Aún no hay proyectos.' }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

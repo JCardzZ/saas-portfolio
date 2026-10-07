@@ -1,0 +1,94 @@
+<div class="space-y-6">
+  <h1 class="text-2xl font-semibold">Tecnologías</h1>
+
+  @if (store.error(); as message) {
+    <app-alert [message]="message" />
+  }
+
+  <form class="card space-y-4" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <h2 class="text-base font-semibold">{{ editingId() ? 'Editar tecnología' : 'Nueva tecnología' }}</h2>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="label" for="name">Nombre</label>
+        <input id="name" class="input" type="text" formControlName="name" />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <p class="field-error">El nombre es obligatorio.</p>
+        }
+      </div>
+      <div>
+        <label class="label" for="category">Categoría</label>
+        <input id="category" class="input" type="text" formControlName="category" />
+        @if (form.controls.category.touched && form.controls.category.invalid) {
+          <p class="field-error">La categoría es obligatoria.</p>
+        }
+      </div>
+      <div>
+        <label class="label" for="proficiencyLevel">Nivel de dominio</label>
+        <input id="proficiencyLevel" class="input" type="text" formControlName="proficiencyLevel" />
+        @if (form.controls.proficiencyLevel.touched && form.controls.proficiencyLevel.invalid) {
+          <p class="field-error">El nivel de dominio es obligatorio.</p>
+        }
+      </div>
+      <div>
+        <label class="label" for="iconUrl">URL del icono</label>
+        <input id="iconUrl" class="input" type="url" formControlName="iconUrl" />
+        @if (form.controls.iconUrl.touched && form.controls.iconUrl.invalid) {
+          <p class="field-error">La URL del icono es obligatoria.</p>
+        }
+      </div>
+    </div>
+
+    <label class="flex items-center gap-2 text-sm text-slate-700">
+      <input type="checkbox" class="h-4 w-4 rounded border-slate-300" formControlName="isFeatured" />
+      Destacada
+    </label>
+
+    <div class="flex gap-3">
+      <button type="submit" class="btn-primary" [disabled]="store.saving()">
+        {{ editingId() ? 'Guardar cambios' : 'Crear tecnología' }}
+      </button>
+      @if (editingId()) {
+        <button type="button" class="btn-secondary" (click)="cancelEdit()">Cancelar</button>
+      }
+    </div>
+  </form>
+
+  <div class="card overflow-x-auto p-0">
+    <table class="min-w-full divide-y divide-slate-200">
+      <thead class="bg-slate-50">
+        <tr>
+          <th scope="col" class="table-header">Nombre</th>
+          <th scope="col" class="table-header">Categoría</th>
+          <th scope="col" class="table-header">Nivel</th>
+          <th scope="col" class="table-header">Destacada</th>
+          <th scope="col" class="table-header"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        @for (technology of store.items(); track technology.id) {
+          <tr>
+            <td class="table-cell font-medium text-slate-900">{{ technology.name }}</td>
+            <td class="table-cell">{{ technology.category }}</td>
+            <td class="table-cell">{{ technology.proficiencyLevel }}</td>
+            <td class="table-cell">{{ technology.isFeatured ? 'Sí' : 'No' }}</td>
+            <td class="table-cell">
+              <div class="flex justify-end gap-2">
+                <button type="button" class="btn-secondary" (click)="edit(technology)">Editar</button>
+                <button type="button" class="btn-danger" [disabled]="store.saving()" (click)="remove(technology)">
+                  Eliminar
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td class="table-cell text-center text-slate-500" colspan="5">
+              {{ store.loading() ? 'Cargando…' : 'Aún no hay tecnologías.' }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

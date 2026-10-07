@@ -1,0 +1,105 @@
+<app-theater-toggle name="Resiliencia ante fallos" />
+<div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pr-10">
+  <h3 class="text-xl font-semibold tracking-tight text-white">Resiliencia ante fallos</h3>
+  <p class="font-mono text-[11px] text-zinc-500">
+    /telemetry/health:
+    <span class="transition-colors duration-500" [class]="health() === 'UP' ? 'text-emerald-400' : 'text-amber-300'">{{ health() }}</span>
+  </p>
+</div>
+
+<div class="theater-stage mt-3 overflow-x-auto">
+  <svg viewBox="0 0 620 200" class="w-full min-w-[420px]" role="img" [attr.aria-label]="'Recorrido de una petición. Redis ' + (redisDown() ? 'caído: se sirve desde PostgreSQL' : 'operativo') + '. Circuito de Gemini ' + (geminiDown() ? 'abierto: responde 503' : 'cerrado') + '.'">
+    <!-- Desvío fail-open: solo se enciende cuando Redis no responde. -->
+    <path class="pipe pipe-bypass" [class.pipe-bypass-on]="redisDown()" d="M64 106 C64 34 392 34 392 106" />
+    <path class="pulse pulse-bypass" [class.pulse-hidden]="!redisDown()" d="M64 106 C64 34 392 34 392 106" pathLength="100" />
+    <text class="pipe-label badge" [class.badge-on]="redisDown()" x="228" y="40" text-anchor="middle" fill="#34d399">fail-open · log WARN</text>
+
+    <path class="pipe" [class.pipe-cut]="redisDown()" d="M118 130 H170" />
+    <path class="pulse" [class.pulse-hidden]="redisDown()" d="M118 130 H170" pathLength="100" />
+    <text class="pipe-label" x="144" y="120" text-anchor="middle">caché</text>
+
+    <path class="pipe" [class.pipe-off]="redisDown()" d="M278 130 H338" />
+    <path class="pulse" [class.pulse-hidden]="redisDown()" d="M278 130 H338" pathLength="100" />
+    <text class="pipe-label" x="308" y="120" text-anchor="middle">miss</text>
+
+    <!-- Circuit breaker entre la base de datos y el motor de IA. -->
+    <path class="pipe" [class.pipe-cut]="geminiDown()" d="M446 130 H462" />
+    <path class="pipe" [class.pipe-cut]="geminiDown()" d="M486 130 H502" />
+    <line class="lever" [class.lever-open]="geminiDown()" x1="462" y1="130" x2="486" y2="130" />
+    <circle cx="462" cy="130" r="3" fill="#e4e4e7" />
+    <circle cx="486" cy="130" r="3" fill="#e4e4e7" />
+    <path class="pulse" [class.pulse-hidden]="geminiDown()" d="M446 130 H502" pathLength="100" />
+    <text class="pipe-label" x="474" y="160" text-anchor="middle" [attr.fill]="geminiDown() ? '#f87171' : null">{{ geminiDown() ? 'OPEN' : 'CLOSED' }}</text>
+
+    <g class="stage">
+      <rect x="10" y="106" width="108" height="48" rx="14" />
+      <text class="stage-label" x="64" y="127" text-anchor="middle">Petición HTTP</text>
+      <text class="stage-role" x="64" y="143" text-anchor="middle">visitante</text>
+    </g>
+    <g class="stage stage-tech" [class.stage-down]="redisDown()" tabindex="0" role="button" aria-label="Inspeccionar la traza de Redis" (mouseenter)="inspect('redis', $event)" (mouseleave)="leave($event)" (focus)="inspect('redis')" (click)="inspect('redis', $event)">
+      <rect x="170" y="106" width="108" height="48" rx="14" />
+      <svg x="180" y="116" width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" [style.--brand]="icons.redis.color"><path [attr.d]="icons.redis.path" [attr.fill]="icons.redis.color" /></svg>
+      <text class="stage-label" x="233" y="127" text-anchor="middle">Redis</text>
+      <text class="stage-role" x="233" y="143" text-anchor="middle">timeout 2 s</text>
+      <g class="badge" [class.badge-on]="redisDown()">
+        <circle cx="274" cy="108" r="9" fill="#ef4444" />
+        <text x="274" y="112" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">!</text>
+      </g>
+    </g>
+    <g class="stage stage-tech" [class.stage-hot]="redisDown()" tabindex="0" role="button" aria-label="Inspeccionar la traza de PostgreSQL" (mouseenter)="inspect('postgresql', $event)" (mouseleave)="leave($event)" (focus)="inspect('postgresql')" (click)="inspect('postgresql', $event)">
+      <rect x="338" y="106" width="108" height="48" rx="14" />
+      <svg x="348" y="116" width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" [style.--brand]="icons.postgresql.color"><path [attr.d]="icons.postgresql.path" [attr.fill]="icons.postgresql.color" /></svg>
+      <text class="stage-label" x="401" y="127" text-anchor="middle">PostgreSQL</text>
+      <text class="stage-role" x="401" y="143" text-anchor="middle">fuente de verdad</text>
+    </g>
+    <g class="stage stage-tech" [class.stage-down]="geminiDown()" tabindex="0" role="button" aria-label="Inspeccionar la traza de Gemini" (mouseenter)="inspect('gemini', $event)" (mouseleave)="leave($event)" (focus)="inspect('gemini')" (click)="inspect('gemini', $event)">
+      <rect x="502" y="106" width="108" height="48" rx="14" />
+      <svg x="512" y="116" width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" [style.--brand]="icons.gemini.color"><path [attr.d]="icons.gemini.path" [attr.fill]="icons.gemini.color" /></svg>
+      <text class="stage-label" x="565" y="127" text-anchor="middle">Gemini API</text>
+      <text class="stage-role" x="565" y="143" text-anchor="middle">circuit breaker</text>
+      <g class="badge" [class.badge-on]="geminiDown()">
+        <circle cx="606" cy="108" r="9" fill="#ef4444" />
+        <text x="606" y="112" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">!</text>
+      </g>
+    </g>
+  </svg>
+</div>
+
+<div class="mt-2 flex flex-wrap gap-x-6 gap-y-3">
+  <button type="button" role="switch" class="focus-ring group flex items-center gap-2.5 rounded-full text-sm text-zinc-200" [attr.aria-checked]="redisDown()" (click)="toggleRedis()">
+    <span class="relative h-6 w-10 rounded-full transition-colors duration-500 ease-spring" [class]="redisDown() ? 'bg-red-500' : 'bg-white/15'">
+      <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-500 ease-spring" [class.translate-x-4]="redisDown()"></span>
+    </span>
+    Simular caída de Redis
+  </button>
+  <button type="button" role="switch" class="focus-ring group flex items-center gap-2.5 rounded-full text-sm text-zinc-200" [attr.aria-checked]="geminiDown()" (click)="toggleGemini()">
+    <span class="relative h-6 w-10 rounded-full transition-colors duration-500 ease-spring" [class]="geminiDown() ? 'bg-red-500' : 'bg-white/15'">
+      <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-500 ease-spring" [class.translate-x-4]="geminiDown()"></span>
+    </span>
+    Simular agotamiento de cuota de Gemini
+  </button>
+</div>
+
+<div class="mt-4 grid gap-3 sm:grid-cols-2" aria-live="polite">
+  <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
+    <p class="font-mono text-[11px] text-zinc-500">GET /public/projects</p>
+    @if (redisDown()) {
+      <p class="mt-1 animate-slide-up text-sm font-medium text-emerald-400">200 OK · Fail-open</p>
+      <p class="animate-slide-up text-xs text-zinc-400">Redis no responde en 2 s: se registra un aviso y se sirve desde PostgreSQL.</p>
+    } @else {
+      <p class="mt-1 animate-slide-up text-sm font-medium text-emerald-400">200 OK · caché</p>
+      <p class="animate-slide-up text-xs text-zinc-400">Servido desde Redis; en un fallo de caché se consulta PostgreSQL y se repuebla.</p>
+    }
+  </div>
+
+  <div class="min-w-0 rounded-2xl border border-white/10 bg-white/5 p-3">
+    <p class="font-mono text-[11px] text-zinc-500">POST /ai/rag/query</p>
+    @if (geminiDown()) {
+      <p class="mt-1 animate-slide-up text-sm font-medium text-red-400">503 Service Unavailable · RFC 7807</p>
+      <pre class="mt-2 max-h-40 animate-slide-up overflow-auto rounded-xl border border-white/10 bg-black/40 p-2.5 font-mono text-[10px] leading-relaxed text-zinc-300">{{ problem }}</pre>
+    } @else {
+      <p class="mt-1 animate-slide-up text-sm font-medium text-emerald-400">200 OK · respuesta con citas</p>
+      <p class="animate-slide-up text-xs text-zinc-400">Circuito cerrado. Se abre con un 50 % de fallos del proveedor y reintenta a los 30 s.</p>
+    }
+  </div>
+</div>
