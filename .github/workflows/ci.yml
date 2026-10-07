@@ -75,6 +75,7 @@ jobs:
               - 'portfolio-api-spec/**'
               - 'docs/**'
               - '.dockerignore'
+              - '.trivyignore.yaml'
               - '.github/workflows/ci.yml'
               - '.github/scripts/**'
             frontend:
@@ -550,10 +551,13 @@ jobs:
           mkdir -p "$HOME/.cache/trivy"
           trivy() {
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$HOME/.cache/trivy:/root/.cache/trivy" \
-              "$TRIVY_IMAGE" image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --no-progress "$@" saas-portfolio-backend:ci
+              -v "$PWD/.trivyignore.yaml:/work/.trivyignore.yaml:ro" \
+              "$TRIVY_IMAGE" image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --no-progress \
+              --ignorefile /work/.trivyignore.yaml "$@" saas-portfolio-backend:ci
           }
           trivy --format table --exit-code 0 | tee trivy.txt
           # Falla con vulnerabilidades altas o críticas que ya tienen versión corregida.
+          # Las excepciones, con motivo y fecha de caducidad, están en .trivyignore.yaml.
           trivy --format table --exit-code 1 --quiet > /dev/null
       - name: Resumen
         if: always()
