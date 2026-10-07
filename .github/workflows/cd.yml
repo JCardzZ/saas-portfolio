@@ -43,7 +43,7 @@ env:
 jobs:
   changes:
     name: 🔍 Cambios
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       # A mano se construye todo; en un push, solo lo que cambió.
@@ -71,7 +71,7 @@ jobs:
     name: 📦 Build frontend
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
       run:
@@ -107,7 +107,7 @@ jobs:
     needs: frontend-build
     # Hasta que exista el proyecto en Cloudflare se omite, en vez de fallar en cada push.
     if: vars.CLOUDFLARE_PAGES_PROJECT != ''
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -139,7 +139,7 @@ jobs:
     name: 📦 Imagen Docker
     needs: changes
     if: needs.changes.outputs.backend == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       contents: read
@@ -213,7 +213,7 @@ jobs:
     needs: image
     # Solo a mano y pidiéndolo expresamente: un push a main nunca despliega.
     if: github.event_name == 'workflow_dispatch' && inputs.deploy_backend
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     # La aprobación se configura en el environment (Settings → Environments → production).
     environment:
@@ -258,7 +258,7 @@ jobs:
   smoke:
     name: 🧪 Health + smoke
     needs: deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -276,7 +276,7 @@ jobs:
   release:
     name: ✅ Release
     needs: [image, smoke]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: write
@@ -304,7 +304,7 @@ jobs:
     # El despliegue terminó pero las pruebas de humo fallaron: se vuelve a la imagen anterior.
     # (Si falla el propio despliegue, remote-deploy.sh ya vuelve atrás él solo.)
     if: ${{ always() && needs.deploy.result == 'success' && needs.smoke.result == 'failure' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     # Sin environment a propósito: volver atrás no debe quedarse esperando una aprobación.
     env:

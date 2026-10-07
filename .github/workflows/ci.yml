@@ -43,7 +43,7 @@ jobs:
   # ───────────────────────────── 🔍 Detección ─────────────────────────────
   changes:
     name: 🔍 Cambios
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: read
@@ -98,7 +98,7 @@ jobs:
   # ───────────────────────────── 🛡️ Seguridad ─────────────────────────────
   gitleaks:
     name: 🛡️ gitleaks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -128,7 +128,7 @@ jobs:
     # El análisis de código de GitHub es gratuito en repositorios públicos; en uno privado
     # necesita Advanced Security y, sin ella, el job fallaría por licencia y no por el código.
     if: github.event.repository.private == false || vars.ENABLE_CODE_SCANNING == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       contents: read
@@ -168,7 +168,7 @@ jobs:
     name: 📜 Lint spec
     needs: changes
     if: needs.changes.outputs.spec == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -196,7 +196,7 @@ jobs:
     name: 📜 Breaking
     needs: changes
     if: needs.changes.outputs.spec == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -240,7 +240,7 @@ jobs:
     name: 📜 Codegen
     needs: changes
     if: needs.changes.outputs.spec == 'true' || needs.changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
       run:
@@ -284,7 +284,7 @@ jobs:
     name: 🧪 Backend unit
     needs: [changes, spec-lint, spec-breaking, spec-codegen]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.backend == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -320,7 +320,7 @@ jobs:
     name: 🧪 Integración
     needs: [changes, spec-lint, spec-breaking, spec-codegen]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.backend == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -349,7 +349,7 @@ jobs:
     name: 🧪 ArchUnit
     needs: [changes, spec-lint, spec-breaking, spec-codegen]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.backend == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -369,7 +369,7 @@ jobs:
     name: 🧪 Frontend (${{ matrix.shard }}/3)
     needs: [changes, spec-lint, spec-breaking, spec-codegen]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.frontend == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -408,7 +408,7 @@ jobs:
     name: 📦 Build front
     needs: [changes, backend-unit, backend-integration, backend-arch, frontend-test]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.frontend == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
       run:
@@ -438,7 +438,7 @@ jobs:
     name: 📦 Lighthouse
     needs: frontend-build
     if: ${{ !cancelled() && needs.frontend-build.result == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
       run:
@@ -477,7 +477,7 @@ jobs:
           && github.event_name == 'pull_request'
           && github.event.pull_request.head.repo.full_name == github.repository
           && vars.CLOUDFLARE_PAGES_PROJECT != '' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -529,7 +529,7 @@ jobs:
     name: 📦 Imagen + Trivy
     needs: [changes, backend-unit, backend-integration, backend-arch, frontend-test]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.backend == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -574,7 +574,7 @@ jobs:
     name: 📦 Insignia de cobertura
     needs: backend-unit
     if: ${{ !cancelled() && needs.backend-unit.result == 'success' && github.event_name == 'push' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: write
@@ -624,7 +624,7 @@ jobs:
       - preview
       - docker
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Todos los jobs terminaron bien o se omitieron
