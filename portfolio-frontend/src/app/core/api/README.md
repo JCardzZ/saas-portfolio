@@ -1,6 +1,6 @@
 # @
 
-### Master OpenAPI 3.0.3 Specification Contract-First API specification for the Enterprise SaaS Portfolio System (`saas-portfolio`). Designed to Staff/Principal Architect standards.  All error responses strictly comply with the **RFC 7807 Problem Details** standard format. 
+Contract-first API for the portfolio platform: content management, a retrieval-augmented assistant, the architecture studio and live telemetry.  Errors follow RFC 7807 (Problem Details). 
 
 The version of the OpenAPI document: 1.0.0
 
