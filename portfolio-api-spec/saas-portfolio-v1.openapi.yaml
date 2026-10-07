@@ -7,14 +7,8 @@ info:
 
     Errors follow RFC 7807 (Problem Details).
   version: 1.0.0
-  contact:
-    name: Principal Staff Engineer
-    email: staff-engineer@portfolio.dev
-    url: https://portfolio.dev
 
 servers:
-  - url: https://api.portfolio.dev/v1
-    description: Production Edge Gateway (Cloudflare WAF + OCI K3s)
   - url: http://localhost:8080/v1
     description: Local Sandbox Environment
 
