@@ -2,6 +2,10 @@ package dev.portfolio.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +17,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -72,6 +77,8 @@ class PlatformIntegrationTest {
         registry.add("security.rate-limit.auth-token.max-requests", () -> AUTH_ATTEMPTS);
     }
 
+    @LocalServerPort
+    int port;
     @Autowired
     TestRestTemplate http;
     @Autowired
@@ -170,16 +177,24 @@ class PlatformIntegrationTest {
 
     @Test
     @Order(6)
-    void login_attempts_are_limited_by_the_lua_script_in_redis() {
+    void login_attempts_are_limited_by_the_lua_script_in_redis() throws Exception {
         // Va el último: agota el cupo de /auth/token para esta dirección.
-        // El límite es por dirección de origen y "localhost" puede llegar como 127.0.0.1 o como ::1
-        // según la conexión, así que se insiste lo bastante para agotar el cupo de las dos.
+        // Con el cliente del JDK y no con TestRestTemplate: el de Apache reintenta él solo las
+        // respuestas 429 esperando lo que diga Retry-After, y el test nunca llegaría a verlas.
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest attempt = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/v1/auth/token"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        "{\"clientId\":\"admin-ui\",\"clientSecret\":\"wrong-secret\",\"grantType\":\"client_credentials\"}"))
+                .build();
+
         List<Integer> statuses = new ArrayList<>();
-        ResponseEntity<JsonNode> limited = null;
-        for (int attempt = 0; attempt < 2 * AUTH_ATTEMPTS + 2 && limited == null; attempt++) {
-            ResponseEntity<JsonNode> response = http.postForEntity("/auth/token", credentials("wrong-secret"), JsonNode.class);
-            statuses.add(response.getStatusCode().value());
-            if (response.getStatusCode().value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
+        HttpResponse<String> limited = null;
+        // El token del test anterior ya gastó un intento: con AUTH_ATTEMPTS más, alguno tiene que pasarse.
+        for (int i = 0; i < AUTH_ATTEMPTS && limited == null; i++) {
+            HttpResponse<String> response = client.send(attempt, HttpResponse.BodyHandlers.ofString());
+            statuses.add(response.statusCode());
+            if (response.statusCode() == HttpStatus.TOO_MANY_REQUESTS.value()) {
                 limited = response;
             }
         }
@@ -189,10 +204,9 @@ class PlatformIntegrationTest {
                 .isNotNull();
         // Antes de agotar el cupo, las credenciales malas se rechazan como tales.
         assertThat(statuses).as("estados recibidos").contains(HttpStatus.UNAUTHORIZED.value());
-        assertThat(limited.getHeaders().getFirst("Retry-After")).isNotBlank();
-        assertThat(limited.getHeaders().getFirst("X-RateLimit-Limit")).isEqualTo(String.valueOf(AUTH_ATTEMPTS));
-        assertThat(limited.getHeaders().getContentType()).isNotNull();
-        assertThat(limited.getHeaders().getContentType().toString()).startsWith("application/problem+json");
+        assertThat(limited.headers().firstValue("Retry-After")).isPresent();
+        assertThat(limited.headers().firstValue("X-RateLimit-Limit")).contains(String.valueOf(AUTH_ATTEMPTS));
+        assertThat(limited.headers().firstValue("Content-Type").orElse("")).startsWith("application/problem+json");
     }
 
     /** Estado del limitador en Redis, para entender un fallo: clave = valor (ms que le quedan). */
