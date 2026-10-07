@@ -1,0 +1,235 @@
+name: Nightly security
+
+# Cada noche, aunque nadie haya tocado el código: las vulnerabilidades nuevas aparecen en
+# dependencias que ya estaban ahí. También se puede lanzar a mano.
+#
+# CodeQL y la revisión de dependencias usan funciones de GitHub que son gratuitas en
+# repositorios públicos; en uno privado necesitan Advanced Security. Sin ella esos dos jobs se
+# omiten (variable ENABLE_CODE_SCANNING = 'true' para forzarlos). Trivy funciona siempre.
+
+on:
+  schedule:
+    # 03:17 UTC: fuera de las horas en punto, que es cuando más se retrasan los cron de GitHub.
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-security
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.75.0
+  IMAGE_NAME: saas-portfolio-backend
+
+jobs:
+  scope:
+    name: 🔍 Alcance
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code-scanning: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: ¿Hay análisis de código disponible?
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE: ${{ vars.ENABLE_CODE_SCANNING }}
+        run: |
+          PRIVATE="$(gh api "repos/$GITHUB_REPOSITORY" --jq .private)"
+          if [ "$PRIVATE" = "false" ] || [ "$FORCE" = "true" ]; then ENABLED=true; else ENABLED=false; fi
+          echo "enabled=$ENABLED" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Alcance"
+            echo ""
+            echo "- Repositorio privado: \`$PRIVATE\`"
+            echo "- CodeQL y revisión de dependencias: \`$ENABLED\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  codeql:
+    name: 🛡️ CodeQL completo (${{ matrix.language }})
+    needs: scope
+    if: needs.scope.outputs.code-scanning == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        if: matrix.build-mode == 'manual'
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # Más consultas que en la CI de cada PR: seguridad ampliada y calidad.
+          queries: security-extended,security-and-quality
+      - name: Compilar el backend
+        if: matrix.build-mode == 'manual'
+        working-directory: portfolio-backend
+        run: ./gradlew compileJava --no-daemon
+      - uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          category: /language:${{ matrix.language }}
+      - name: Resumen
+        run: echo "### CodeQL completo (${{ matrix.language }}) — resultados en Security → Code scanning." >> "$GITHUB_STEP_SUMMARY"
+
+  trivy-image:
+    name: 🛡️ Trivy (imagen de main)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Imagen publicada de main (o construida aquí si aún no existe)
+        id: image
+        run: |
+          PUBLISHED="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/$IMAGE_NAME:latest"
+          if docker pull --quiet "$PUBLISHED"; then
+            docker tag "$PUBLISHED" scan-target:latest
+            echo "origin=$PUBLISHED" >> "$GITHUB_OUTPUT"
+          else
+            echo "No hay imagen publicada todavía: se construye desde main."
+            docker build --quiet -f portfolio-backend/Dockerfile -t scan-target:latest .
+            echo "origin=construida desde ${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Trivy
+        id: trivy
+        run: |
+          mkdir -p "$HOME/.cache/trivy"
+          trivy() {
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$HOME/.cache/trivy:/root/.cache/trivy" \
+              "$TRIVY_IMAGE" image --scanners vuln --no-progress "$@" scan-target:latest
+          }
+          # Informe completo (todas las severidades, con y sin corrección) para el resumen…
+          trivy --format table --exit-code 0 | tee trivy.txt
+          # …y fallo solo con altas o críticas que ya tienen versión corregida.
+          trivy --severity HIGH,CRITICAL --ignore-unfixed --format table --exit-code 1 --quiet > /dev/null
+      - name: Resumen
+        if: always()
+        env:
+          ORIGIN: ${{ steps.image.outputs.origin }}
+        run: |
+          {
+            echo "### Trivy · imagen del backend ($ORIGIN)"
+            echo ""
+            if [ "${{ steps.trivy.outcome }}" = "success" ]; then echo "✅ Sin vulnerabilidades altas o críticas con corrección disponible."; else echo "❌ Hay vulnerabilidades altas o críticas con corrección disponible (o el escaneo no terminó)."; fi
+            echo ""
+            echo "<details><summary>Informe completo</summary>"
+            echo ""
+            echo '```'
+            head -c 60000 trivy.txt 2>/dev/null || echo "sin informe"
+            echo '```'
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  trivy-deps:
+    name: 🛡️ Trivy (dependencias npm)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Trivy sobre package-lock.json
+        id: trivy
+        run: |
+          mkdir -p "$HOME/.cache/trivy"
+          trivy() {
+            docker run --rm -v "$PWD/portfolio-frontend:/src:ro" -v "$HOME/.cache/trivy:/root/.cache/trivy" \
+              "$TRIVY_IMAGE" fs --scanners vuln --no-progress "$@" /src
+          }
+          trivy --format table --exit-code 0 | tee trivy-deps.txt
+          trivy --severity HIGH,CRITICAL --ignore-unfixed --format table --exit-code 1 --quiet > /dev/null
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo "### Trivy · dependencias del frontend"
+            echo ""
+            if [ "${{ steps.trivy.outcome }}" = "success" ]; then echo "✅ Sin vulnerabilidades altas o críticas con corrección disponible."; else echo "❌ Hay vulnerabilidades altas o críticas con corrección disponible (o el escaneo no terminó)."; fi
+            echo ""
+            echo "Incluye las dependencias de desarrollo, que no llegan al navegador."
+            echo ""
+            echo "<details><summary>Informe completo</summary>"
+            echo ""
+            echo '```'
+            head -c 60000 trivy-deps.txt 2>/dev/null || echo "sin informe"
+            echo '```'
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  dependency-review:
+    name: 🛡️ Dependency review
+    needs: scope
+    if: needs.scope.outputs.code-scanning == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      # La revisión compara dos commits. De noche no hay PR, así que se compara main con cómo
+      # estaba hace una semana: lo que entró desde entonces.
+      - name: Commits a comparar
+        id: range
+        run: |
+          BASE="$(git rev-list -n 1 --before='7 days ago' HEAD)"
+          if [ -z "$BASE" ]; then BASE="$(git rev-list --max-parents=0 HEAD | tail -n 1)"; fi
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          if [ "$BASE" = "$GITHUB_SHA" ]; then echo "changed=false" >> "$GITHUB_OUTPUT"; else echo "changed=true" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        if: steps.range.outputs.changed == 'true'
+        with:
+          base-ref: ${{ steps.range.outputs.base }}
+          head-ref: ${{ github.sha }}
+          fail-on-severity: high
+      - name: Sin cambios
+        if: steps.range.outputs.changed != 'true'
+        run: echo "### Dependency review — main no cambió en la última semana." >> "$GITHUB_STEP_SUMMARY"
+
+  summary:
+    name: ✅ Resumen
+    needs: [scope, codeql, trivy-image, trivy-deps, dependency-review]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Resultado de la revisión nocturna
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          {
+            echo "### Seguridad · revisión nocturna"
+            echo ""
+            echo "| Job | Resultado |"
+            echo "| --- | --- |"
+            echo "$NEEDS" | jq -r 'to_entries[] | "| \(.key) | \(.value.result) |"'
+            echo ""
+            echo "El detalle de cada escaneo está en el resumen de su job, más arriba."
+          } >> "$GITHUB_STEP_SUMMARY"
+          BAD="$(echo "$NEEDS" | jq -r '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key] | join(", ")')"
+          if [ -n "$BAD" ]; then
+            echo "::error::Hay hallazgos o fallos en: $BAD"
+            exit 1
+          fi
