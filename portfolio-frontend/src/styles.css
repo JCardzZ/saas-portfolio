@@ -6,6 +6,11 @@
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
   }
+
+  /* Lo que se ve antes de que Angular arranque; Angular lo sustituye al pintar la aplicación. */
+  .boot-splash {
+    @apply fixed inset-0 m-0 flex items-center justify-center bg-black text-sm text-white/50;
+  }
 }
 
 @layer components {

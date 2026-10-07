@@ -18,7 +18,8 @@ export const appConfig: ApplicationConfig = {
         jwtInterceptor,
         unauthorizedInterceptor,
         // El último de la cadena: en modo demo responde él y ninguna petición sale a la red.
-        ...(runtimeConfig.mockMode ? [lazyMockApiInterceptor] : []),
+        // Va siempre registrado porque el modo demo puede activarse al arrancar (API caída).
+        lazyMockApiInterceptor,
       ]),
     ),
     // Con fábrica y no con valor: la dirección llega de /config.json después de evaluarse este módulo.

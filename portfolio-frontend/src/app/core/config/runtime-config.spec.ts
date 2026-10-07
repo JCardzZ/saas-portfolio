@@ -1,6 +1,6 @@
 import { environment } from '../../../environments/environment';
 import {
-  loadRuntimeConfig, normalizeApiBaseUrl, parseRuntimeConfig, resetRuntimeConfig, runtimeConfig,
+  backendResponds, fallBackToDemoIfBackendIsDown, loadRuntimeConfig, normalizeApiBaseUrl, parseRuntimeConfig, resetRuntimeConfig, runtimeConfig,
 } from './runtime-config';
 
 function respond(body: unknown, ok = true): typeof fetch {
@@ -85,5 +85,64 @@ describe('normalizeApiBaseUrl', () => {
     ]) {
       expect(normalizeApiBaseUrl(value)).withContext(value).toBeNull();
     }
+  });
+});
+
+describe('demo fallback', () => {
+  /** Los tests corren con el modo demo compilado; aquí se parte de una aplicación de producción. */
+  function production(): void {
+    Object.assign(runtimeConfig, { mockMode: false, demoReason: null, apiBaseUrl: 'https://api.example.dev/v1' });
+  }
+
+  const never: typeof fetch = (_url, init) =>
+    new Promise((_resolve, reject) => init?.signal?.addEventListener('abort', () => reject(new Error('aborted'))));
+
+  beforeEach(() => production());
+  afterEach(() => resetRuntimeConfig());
+
+  it('asks the health endpoint of the configured API', async () => {
+    const fetcher = jasmine.createSpy('fetch').and.callFake(respond({ status: 'UP' }));
+
+    await backendResponds(fetcher);
+
+    expect(fetcher).toHaveBeenCalledOnceWith(
+      'https://api.example.dev/v1/telemetry/health', jasmine.objectContaining({ cache: 'no-store', credentials: 'omit' }),
+    );
+  });
+
+  it('keeps talking to the API when it answers', async () => {
+    await fallBackToDemoIfBackendIsDown(respond({ status: 'DEGRADED' }));
+
+    expect(runtimeConfig.mockMode).toBeFalse();
+    expect(runtimeConfig.demoReason).toBeNull();
+  });
+
+  it('switches to demo mode when the API does not answer in time', async () => {
+    await fallBackToDemoIfBackendIsDown(never, 10);
+
+    expect(runtimeConfig.mockMode).toBeTrue();
+    expect(runtimeConfig.demoReason).toBe('backend-unavailable');
+  });
+
+  it('switches to demo mode when the request fails', async () => {
+    await fallBackToDemoIfBackendIsDown(() => Promise.reject(new TypeError('Failed to fetch')));
+
+    expect(runtimeConfig.mockMode).toBeTrue();
+  });
+
+  it('switches to demo mode when the API reports that it cannot serve', async () => {
+    await fallBackToDemoIfBackendIsDown(respond({ status: 503 }, false));
+
+    expect(runtimeConfig.demoReason).toBe('backend-unavailable');
+  });
+
+  it('does not ask anything when demo mode is already on', async () => {
+    resetRuntimeConfig();
+    const fetcher = jasmine.createSpy('fetch');
+
+    await fallBackToDemoIfBackendIsDown(fetcher);
+
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(runtimeConfig.demoReason).toBe('configured');
   });
 });

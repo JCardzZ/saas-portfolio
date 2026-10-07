@@ -6,10 +6,19 @@ export interface RuntimeConfig {
   apiBaseUrl: string;
   /** Con `true` la aplicación no llama a la API y usa datos simulados (core/mock). */
   mockMode: boolean;
+  /**
+   * Por qué está activo el modo demo: `configured` si viene compilado así y `backend-unavailable`
+   * si se activó al arrancar porque la API no respondía. `null` con el modo demo apagado.
+   */
+  demoReason: DemoReason | null;
 }
+
+export type DemoReason = 'configured' | 'backend-unavailable';
 
 export const RUNTIME_CONFIG_URL = 'config.json';
 const LOAD_TIMEOUT_MS = 2000;
+/** Espera máxima a `/telemetry/health` al arrancar antes de pasar al modo demo. */
+export const HEALTH_TIMEOUT_MS = 3000;
 
 const state: RuntimeConfig = defaults();
 
@@ -69,11 +78,51 @@ export function normalizeApiBaseUrl(value: unknown): string | null {
   }
 }
 
+/**
+ * Comprueba que la API responde y, si no, activa el modo demo para toda la aplicación: mejor
+ * un sitio navegable con datos simulados (y la insignia que lo dice) que una página de errores.
+ * Se llama antes de iniciar Angular, porque los componentes leen `mockMode` al crearse. No
+ * hace nada si el modo demo ya estaba activo. Se decide una vez por carga de página.
+ */
+export async function fallBackToDemoIfBackendIsDown(
+  fetcher: typeof fetch = fetch, timeoutMs = HEALTH_TIMEOUT_MS,
+): Promise<void> {
+  if (state.mockMode || (await backendResponds(fetcher, timeoutMs))) {
+    return;
+  }
+  state.mockMode = true;
+  state.demoReason = 'backend-unavailable';
+}
+
+/**
+ * `true` si `/telemetry/health` contesta 2xx a tiempo (`DEGRADED` también es 200: sin Redis o
+ * sin IA la API sigue sirviendo). Un 503 (sin base de datos), un error de red o de CORS, o el
+ * silencio cuentan como que no responde.
+ */
+export async function backendResponds(fetcher: typeof fetch = fetch, timeoutMs = HEALTH_TIMEOUT_MS): Promise<boolean> {
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), timeoutMs);
+  try {
+    const response = await fetcher(`${state.apiBaseUrl}/telemetry/health`, {
+      cache: 'no-store', credentials: 'omit', signal: abort.signal,
+    });
+    return response.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Vuelve a los valores compilados. Para los tests. */
 export function resetRuntimeConfig(): void {
   Object.assign(state, defaults());
 }
 
 function defaults(): RuntimeConfig {
-  return { apiBaseUrl: environment.apiBaseUrl, mockMode: environment.mockMode };
+  return {
+    apiBaseUrl: environment.apiBaseUrl,
+    mockMode: environment.mockMode,
+    demoReason: environment.mockMode ? 'configured' : null,
+  };
 }
