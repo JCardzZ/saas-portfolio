@@ -2,8 +2,10 @@
 .gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
-out/
-bin/
+# Ancladas a esta carpeta: sin la barra inicial, `out/` ignoraría también los paquetes Java
+# `port/out` y `adapter/out`.
+/out/
+/bin/
 
 # IDE
 .idea/
