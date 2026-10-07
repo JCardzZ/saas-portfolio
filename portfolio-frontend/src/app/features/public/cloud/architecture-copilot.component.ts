@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, inject, input, output, signal, viewChild } from '@angular/core';
 import { finalize } from 'rxjs';
 
-import { environment } from '../../../../environments/environment';
+import { runtimeConfig } from '../../../core/config/runtime-config';
 import { AppliedAIRAGService } from '../../../core/api';
 import { describeHttpError } from '../../../core/errors/http-error';
 import { AutofocusDirective } from '../../../shared/ui/autofocus.directive';
@@ -147,7 +147,7 @@ export class ArchitectureCopilotComponent {
   readonly applied = output<{ additions: CopilotAddition[]; done: (count: number) => void }>();
   readonly closed = output<void>();
 
-  readonly demo = environment.mockMode;
+  readonly demo = runtimeConfig.mockMode;
   readonly suggestions = SUGGESTIONS;
   readonly maxPrompt = COPILOT_MAX_PROMPT;
   readonly exchanges = signal<Exchange[]>([]);

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Injectable, inject, input, signal } from '@angular/core';
 
-import { environment } from '../../../environments/environment';
+import { runtimeConfig } from '../../core/config/runtime-config';
 import { AutofocusDirective } from './autofocus.directive';
 import { FocusTrapDirective } from './focus-trap.directive';
 
@@ -36,7 +36,7 @@ export const CV_OPTIONS: CvOption[] = [...CV_DESIGNED, ...CV_ATS];
  * (`./gradlew exportCv`).
  */
 export function cvUrl(
-  lang: CvLanguage, type: CvType, withPhoto = true, env: { mockMode: boolean; apiBaseUrl: string } = environment,
+  lang: CvLanguage, type: CvType, withPhoto = true, env: { mockMode: boolean; apiBaseUrl: string } = runtimeConfig,
 ): string {
   if (env.mockMode) {
     return `cv/${exportedName(lang, type, withPhoto)}.pdf`;
@@ -55,7 +55,9 @@ function exportedName(lang: CvLanguage, type: CvType, withPhoto: boolean): strin
 }
 
 /** Hitos de la trayectoria en JSON, para quien prefiera leerlos por API; solo existe con backend. */
-export const CAREER_JSON_URL = environment.mockMode ? null : `${environment.apiBaseUrl}/public/career-timeline`;
+export function careerJsonUrl(): string | null {
+  return runtimeConfig.mockMode ? null : `${runtimeConfig.apiBaseUrl}/public/career-timeline`;
+}
 
 /** Estado del selector de CV: lo abren los botones repartidos por la página y lo pinta un único modal. */
 @Injectable({ providedIn: 'root' })
@@ -175,8 +177,8 @@ export class CvPickerComponent {
   readonly picker = inject(CvPickerService);
   readonly designed = CV_DESIGNED;
   readonly ats = CV_ATS;
-  readonly jsonUrl = CAREER_JSON_URL;
-  readonly demo = environment.mockMode;
+  readonly jsonUrl = careerJsonUrl();
+  readonly demo = runtimeConfig.mockMode;
 
   urlOf(option: CvOption): string {
     return cvUrl(option.lang, option.type, this.picker.withPhoto());

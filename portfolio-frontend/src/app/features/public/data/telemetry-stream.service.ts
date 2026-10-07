@@ -1,6 +1,6 @@
 import { Injectable, InjectionToken, inject, signal } from '@angular/core';
 
-import { environment } from '../../../../environments/environment';
+import { runtimeConfig } from '../../../core/config/runtime-config';
 import { TelemetryEvent } from '../../../core/api';
 import { SystemEventKind, SystemEventsService } from './system-events.service';
 
@@ -15,8 +15,8 @@ export interface TelemetryStreamConfig {
 export const TELEMETRY_STREAM_CONFIG = new InjectionToken<TelemetryStreamConfig>('TELEMETRY_STREAM_CONFIG', {
   providedIn: 'root',
   factory: () => ({
-    enabled: !environment.mockMode,
-    url: `${environment.apiBaseUrl}/telemetry/live-stream`,
+    enabled: !runtimeConfig.mockMode,
+    url: `${runtimeConfig.apiBaseUrl}/telemetry/live-stream`,
     maxFailures: 3,
   }),
 });

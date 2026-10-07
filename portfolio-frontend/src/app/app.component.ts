@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
-import { environment } from '../environments/environment';
+import { runtimeConfig } from './core/config/runtime-config';
 
 @Component({
   selector: 'app-root',
@@ -21,5 +21,5 @@ import { environment } from '../environments/environment';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
-  readonly mockMode = environment.mockMode;
+  readonly mockMode = runtimeConfig.mockMode;
 }
