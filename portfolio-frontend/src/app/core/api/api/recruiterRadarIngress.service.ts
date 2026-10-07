@@ -1,5 +1,5 @@
 /**
- * Enterprise SaaS Portfolio System API - Full Master Spec (RFC 7807 Standardized)
+ * Portfolio Platform API
  *
  * Contact: staff-engineer@portfolio.dev
  *
