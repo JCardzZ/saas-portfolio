@@ -1,0 +1,1259 @@
+openapi: 3.0.3
+info:
+  title: Enterprise SaaS Portfolio System API - Full Master Spec (RFC 7807 Standardized)
+  description: |
+    ### Master OpenAPI 3.0.3 Specification
+    Contract-First API specification for the Enterprise SaaS Portfolio System (`saas-portfolio`).
+    Designed to Staff/Principal Architect standards.
+    
+    All error responses strictly comply with the **RFC 7807 Problem Details** standard format.
+  version: 1.0.0
+  contact:
+    name: Principal Staff Engineer
+    email: staff-engineer@portfolio.dev
+    url: https://portfolio.dev
+
+servers:
+  - url: https://api.portfolio.dev/v1
+    description: Production Edge Gateway (Cloudflare WAF + OCI K3s)
+  - url: http://localhost:8080/v1
+    description: Local Sandbox Environment
+
+tags:
+  - name: Auth & RBAC
+  - name: Admin - Technologies CMS
+  - name: Admin - Projects CMS
+  - name: Admin - Architecture C4 CMS
+  - name: Admin - Technical Blog CMS
+  - name: Admin - Media Demos CMS
+  - name: Admin - Infrastructure & GitOps
+  - name: Admin - Chaos Engineering & Resilience
+  - name: Recruiter Radar & Ingress
+  - name: Telemetry & Observability
+  - name: Applied AI (RAG)
+  - name: Public Catalog & Showcases
+  - name: Profile
+  - name: Architecture Studio
+
+paths:
+  /auth/token:
+    post:
+      tags: [Auth & RBAC]
+      summary: Issue OAuth2 / JWT Access Token
+      operationId: generateToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+      responses:
+        '200':
+          description: Token issued successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /auth/validate:
+    get:
+      tags: [Auth & RBAC]
+      summary: Validate Token & Inspect RBAC Claims
+      operationId: validateToken
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Token is valid and active.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenIntrospection'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /admin/technologies:
+    get:
+      tags: [Admin - Technologies CMS]
+      summary: List all registered technologies (Admin)
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Technologies list retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Technology'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+    post:
+      tags: [Admin - Technologies CMS]
+      summary: Add new technology or tool
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TechnologyRequest'
+      responses:
+        '201':
+          description: Technology created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Technology'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /admin/technologies/{id}:
+    put:
+      tags: [Admin - Technologies CMS]
+      summary: Update existing technology
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TechnologyRequest'
+      responses:
+        '200':
+          description: Technology updated successfully.
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags: [Admin - Technologies CMS]
+      summary: Remove technology entry
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: Deleted successfully.
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /admin/projects:
+    get:
+      tags: [Admin - Projects CMS]
+      summary: List projects with internal engineering metrics
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Projects list retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags: [Admin - Projects CMS]
+      summary: Create new portfolio project
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+      responses:
+        '201':
+          description: Project created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /admin/projects/{id}:
+    put:
+      tags: [Admin - Projects CMS]
+      summary: Update project details and benchmarks
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+      responses:
+        '200':
+          description: Project updated.
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags: [Admin - Projects CMS]
+      summary: Delete project
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: Project removed.
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /admin/architecture/diagrams:
+    get:
+      tags: [Admin - Architecture C4 CMS]
+      summary: List registered C4 architecture diagrams
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Architecture diagrams retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArchitectureDiagram'
+    post:
+      tags: [Admin - Architecture C4 CMS]
+      summary: Upload/Create new C4 Diagram (Mermaid/JSON)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArchitectureDiagramRequest'
+      responses:
+        '201':
+          description: Architecture diagram created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArchitectureDiagram'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+
+  /admin/architecture/diagrams/{id}:
+    put:
+      tags: [Admin - Architecture C4 CMS]
+      summary: Update C4 Diagram definition
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArchitectureDiagramRequest'
+      responses:
+        '200':
+          description: Diagram updated.
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /admin/articles:
+    post:
+      tags: [Admin - Technical Blog CMS]
+      summary: Publish new technical article (MarkDown)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+      responses:
+        '201':
+          description: Article published successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+
+  /admin/media/videos:
+    post:
+      tags: [Admin - Media Demos CMS]
+      summary: Attach video demo link (Loom, YouTube, MP4)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VideoMediaRequest'
+      responses:
+        '201':
+          description: Video demo attached successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoMedia'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+
+  /admin/infrastructure/deployments/trigger:
+    post:
+      tags: [Admin - Infrastructure & GitOps]
+      summary: Trigger Infrastructure Deployment Pipeline
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetService, environment]
+              properties:
+                targetService: { type: string, example: "portfolio-backend-service" }
+                environment: { type: string, enum: [staging, production], example: "production" }
+                forceRebuildNative: { type: boolean, default: false }
+      responses:
+        '202':
+          description: GitOps pipeline triggered.
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /admin/infrastructure/cache/purge:
+    post:
+      tags: [Admin - Infrastructure & GitOps]
+      summary: Purge Edge CDN Cache (Cloudflare)
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Cloudflare cache purged globally.
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /admin/infrastructure/cluster/scale:
+    post:
+      tags: [Admin - Infrastructure & GitOps]
+      summary: Auto-Scale Kubernetes Pod Replicas
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deploymentName, replicas]
+              properties:
+                deploymentName: { type: string, example: "spring-boot-core-deployment" }
+                replicas: { type: integer, example: 3 }
+      responses:
+        '200':
+          description: Pod replicas updated.
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+
+  /admin/infrastructure/chaos/simulate-failure:
+    post:
+      tags: [Admin - Chaos Engineering & Resilience]
+      summary: Simulate Fault Injection (Chaos Engineering)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetComponent, failureType]
+              properties:
+                targetComponent: { type: string, enum: [database, redis, event_broker], example: "database" }
+                failureType: { type: string, enum: [LATENCY_INJECTION, SERVICE_DOWN], example: "LATENCY_INJECTION" }
+                durationSeconds: { type: integer, example: 30 }
+      responses:
+        '200':
+          description: Chaos experiment initiated.
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+
+  /recruiter/track-ingress:
+    post:
+      tags: [Recruiter Radar & Ingress]
+      summary: Record Recruiter Ingress & Trigger Radar Alert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngressTrackingRequest'
+      responses:
+        '202':
+          description: Event published to RabbitMQ/NATS.
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /admin/recruiter/visits:
+    get:
+      tags: [Recruiter Radar & Ingress]
+      summary: List High-Priority Recruiter Ingress Audit Logs
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Recruiter visit logs retrieved.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecruiterVisitLog'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /telemetry/live-stream:
+    get:
+      tags: [Telemetry & Observability]
+      summary: Stream Real-Time Telemetry (SSE)
+      description: |
+        Server-Sent Events stream of system telemetry. Each `data:` line carries one
+        `TelemetryEvent` serialized as JSON. Lines starting with `:` are keep-alive comments.
+        Events never include prompts, client addresses, token subjects or credentials.
+      responses:
+        '200':
+          description: Active Server-Sent Events stream.
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/TelemetryStream'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
+  /telemetry/health:
+    get:
+      tags: [Telemetry & Observability]
+      summary: Extended System Health & Circuit Breakers
+      responses:
+        '200':
+          description: Health check and circuit status retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemHealthResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
+  /ai/rag/query:
+    post:
+      tags: [Applied AI (RAG)]
+      summary: Query Codebase & Architecture via AI (RAG)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIQueryRequest'
+      responses:
+        '200':
+          description: RAG query answer generated with citations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIQueryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
+  /ai/architecture/copilot:
+    post:
+      tags: [Applied AI (RAG)]
+      summary: Ask the architecture copilot about a topology
+      description: >
+        Sends the question, the topology on the canvas and the most relevant indexed fragments to
+        the AI engine and returns recommendations with their trade-offs. The components it proposes
+        are limited to the service catalog (or marked as custom) and must be reviewed by the
+        person before applying them. Shares the rate limits of the RAG assistant.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArchitectureCopilotRequest'
+      responses:
+        '200':
+          description: Recommendations generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArchitectureCopilotResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+        '503':
+          description: The AI engine is not available.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /admin/ai/rag/reindex:
+    post:
+      tags: [Applied AI (RAG)]
+      summary: Trigger Vector Re-indexing Pipeline
+      security: [{ BearerAuth: [] }]
+      responses:
+        '202':
+          description: Embeddings re-indexing started.
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /public/technologies:
+    get:
+      tags: [Public Catalog & Showcases]
+      summary: Fetch public technologies matrix
+      responses:
+        '200':
+          description: Public technologies fetched successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Technology'
+
+  /public/projects:
+    get:
+      tags: [Public Catalog & Showcases]
+      summary: Fetch public project catalog with tech filters
+      responses:
+        '200':
+          description: Public projects fetched successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+
+  /public/career-timeline:
+    get:
+      tags: [Public Catalog & Showcases]
+      summary: Fetch career timeline milestones
+      description: Milestones in the order they appear in the career story document, most recent first.
+      responses:
+        '200':
+          description: Career milestones fetched successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CareerMilestone'
+
+  /public/cv/download:
+    get:
+      tags: [Public Catalog & Showcases]
+      summary: Download the CV as a PDF
+      description: >
+        PDF generated from the career story document, so it always matches the public timeline.
+        `short` is a one-page summary, `full` the detailed CV and `ats` a plain single-column
+        version for applicant tracking systems.
+      parameters:
+        - name: lang
+          in: query
+          description: Language of the CV.
+          schema: { type: string, enum: [es, en], default: es }
+        - name: type
+          in: query
+          description: Variant of the CV.
+          schema: { type: string, enum: [short, full, ats], default: full }
+        - name: photo
+          in: query
+          description: >
+            Whether the designed variants carry the profile picture (or the initials avatar when
+            none has been uploaded). Some selection processes ask for a CV without a photo.
+            Ignored by `ats`, which never has one.
+          schema: { type: boolean, default: true }
+      responses:
+        '200':
+          description: The CV as a PDF attachment.
+          headers:
+            Content-Disposition:
+              schema: { type: string, example: 'attachment; filename="cv-manuel-cardoza-es-full.pdf"' }
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /public/profile/photo:
+    get:
+      tags: [Profile]
+      summary: Fetch the profile picture
+      responses:
+        '200':
+          description: The profile picture.
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /admin/profile/photo:
+    put:
+      tags: [Profile]
+      summary: Upload or replace the profile picture
+      description: JPEG or PNG, up to 2 MB. It is used by the CV from the next download on.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '204':
+          description: Profile picture stored.
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    delete:
+      tags: [Profile]
+      summary: Remove the profile picture
+      security: [{ BearerAuth: [] }]
+      responses:
+        '204':
+          description: Profile picture removed (or there was none).
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /public/architecture/projects:
+    get:
+      tags: [Architecture Studio]
+      summary: List architecture presets and saved projects
+      description: Presets first, then saved projects from newest to oldest. Without the graph; fetch one by id for that.
+      responses:
+        '200':
+          description: Projects fetched successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArchitectureProjectSummary'
+
+  /public/architecture/projects/{id}:
+    get:
+      tags: [Architecture Studio]
+      summary: Fetch an architecture project with its whole graph
+      parameters:
+        - $ref: '#/components/parameters/ArchitectureProjectId'
+      responses:
+        '200':
+          description: Project fetched successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArchitectureProject'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /public/architecture/catalog:
+    get:
+      tags: [Architecture Studio]
+      summary: Fetch the cloud service catalog
+      description: >
+        One entry per service and cloud: its name there, its category and an indicative monthly
+        cost in USD for the smallest production-grade size. The costs are estimates kept in the
+        database, not live prices.
+      parameters:
+        - name: provider
+          in: query
+          description: Only the entries of this cloud.
+          schema: { type: string, enum: [aws, gcp, azure] }
+      responses:
+        '200':
+          description: Catalog fetched successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CloudCatalogItem'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+
+  /public/architecture/generate-terraform:
+    post:
+      tags: [Architecture Studio]
+      summary: Compile the Terraform skeleton of a topology
+      description: >
+        Stateless: nothing is stored. Returns `main.tf` and `variables.tf` for the topology sent.
+        The result is a skeleton (resources and dependencies, no arguments) and cannot be applied
+        as is. Rate limited per client address.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArchitectureTopology'
+      responses:
+        '200':
+          description: Terraform generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TerraformBundle'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /admin/architecture/projects:
+    post:
+      tags: [Architecture Studio]
+      summary: Save a new architecture project
+      description: Saved projects are listed publicly, so only an administrator can create them.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArchitectureProjectRequest'
+      responses:
+        '201':
+          description: Project saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArchitectureProject'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /admin/architecture/projects/{id}:
+    put:
+      tags: [Architecture Studio]
+      summary: Update a saved architecture project
+      description: Presets are read-only; updating one answers 400.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ArchitectureProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArchitectureProjectRequest'
+      responses:
+        '200':
+          description: Project updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArchitectureProject'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /public/architecture/c4/{level}:
+    get:
+      tags: [Public Catalog & Showcases]
+      summary: Fetch C4 architecture diagram by level
+      parameters:
+        - name: level
+          in: path
+          required: true
+          schema: { type: string, enum: [context, container, component, code] }
+      responses:
+        '200':
+          description: C4 Diagram definition fetched successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArchitectureDiagram'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /public/articles:
+    get:
+      tags: [Public Catalog & Showcases]
+      summary: List public technical engineering articles
+      responses:
+        '200':
+          description: Technical articles fetched successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Article'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+
+  parameters:
+    ArchitectureProjectId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, pattern: '^[A-Za-z0-9_-]{1,64}$' }
+
+  schemas:
+    FieldError:
+      type: object
+      required: [field, code, message]
+      properties:
+        field:
+          type: string
+          example: "capacity"
+        code:
+          type: string
+          example: "POSITIVE"
+        message:
+          type: string
+          example: "debe ser mayor que 0"
+
+    ProblemDetails:
+      type: object
+      required: [type, title, status, detail, instance, code, timestamp, traceId]
+      properties:
+        type:
+          type: string
+          format: uri
+          example: "https://api.portfolio.dev/saas-portfolio/errors/validation-error"
+        title:
+          type: string
+          example: "Error de validación"
+        status:
+          type: integer
+          example: 400
+        detail:
+          type: string
+          example: "Uno o más campos no son válidos"
+        instance:
+          type: string
+          example: "/saas-portfolio/api/v1/projects"
+        code:
+          type: string
+          example: "VALIDATION_ERROR"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-10-03T21:30:00Z"
+        traceId:
+          type: string
+          example: "3f1c9a52-8d4e-4b7a-9c61-2e5f0b7d4a18"
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+
+    TokenRequest:
+      type: object
+      required: [clientId, clientSecret, grantType]
+      properties:
+        clientId: { type: string, example: "admin-ui" }
+        clientSecret: { type: string, example: "sec_admin_998877" }
+        grantType: { type: string, example: "client_credentials" }
+
+    TokenResponse:
+      type: object
+      properties:
+        accessToken: { type: string, example: "eyJhbGciOiJ..." }
+        expiresInSeconds: { type: integer, example: 3600 }
+
+    TokenIntrospection:
+      type: object
+      properties:
+        active: { type: boolean, example: true }
+        subject: { type: string, example: "usr_admin_principal" }
+        roles: { type: array, items: { type: string }, example: ["ROLE_ADMIN"] }
+
+    Technology:
+      type: object
+      properties:
+        id: { type: string, example: "tech_java21" }
+        name: { type: string, example: "Java 21 (Virtual Threads)" }
+        category: { type: string, example: "Backend Frameworks" }
+        proficiencyLevel: { type: string, example: "Expert / Staff Level" }
+        iconUrl: { type: string, example: "https://cdn.portfolio.dev/icons/java.svg" }
+        isFeatured: { type: boolean, example: true }
+
+    TechnologyRequest:
+      type: object
+      required: [name, category, proficiencyLevel, iconUrl]
+      properties:
+        name: { type: string, example: "Spring Boot 3" }
+        category: { type: string, example: "Backend" }
+        proficiencyLevel: { type: string, example: "Expert" }
+        iconUrl: { type: string, example: "https://cdn.portfolio.dev/icons/spring.svg" }
+        isFeatured: { type: boolean, example: true }
+
+    Project:
+      type: object
+      properties:
+        id: { type: string, example: "prj_01" }
+        title: { type: string, example: "Multi-Cloud Event-Driven SaaS" }
+        summary: { type: string, example: "High-throughput microservices SaaS platform." }
+        githubRepoUrl: { type: string, example: "https://github.com/user/saas-portfolio" }
+        demoVideoUrl: { type: string, example: "https://loom.com/share/12345" }
+        technologiesUsed: { type: array, items: { type: string }, example: ["Java 21", "Spring Boot 3", "Angular 18"] }
+        metricsImpact: { type: string, example: "Reduced P99 latency to 1.2ms" }
+
+    ProjectRequest:
+      type: object
+      required: [title, summary, githubRepoUrl]
+      properties:
+        title: { type: string, example: "Distributed Microservices Engine" }
+        summary: { type: string, example: "Event-driven architecture showcase." }
+        githubRepoUrl: { type: string, example: "https://github.com/user/saas-portfolio" }
+        demoVideoUrl: { type: string, example: "https://loom.com/share/998877" }
+        technologiesUsed: { type: array, items: { type: string } }
+        metricsImpact: { type: string, example: "99.99% Uptime SLA" }
+
+    CareerMilestone:
+      type: object
+      required: [period, title, summary]
+      properties:
+        period: { type: string, example: "2023 - 2025" }
+        title: { type: string, example: "Migración a arquitectura hexagonal" }
+        role: { type: string, example: "Staff Software Engineer" }
+        organization: { type: string, example: "Acme Corp" }
+        technologies: { type: array, items: { type: string }, example: ["Java 21", "Spring Boot 3"] }
+        summary: { type: string, example: "Qué problema había, qué se hizo y qué resultado tuvo." }
+
+    ArchitectureCopilotRequest:
+      type: object
+      required: [prompt, cloudProvider, nodes, connections]
+      properties:
+        prompt: { type: string, maxLength: 1000, example: "¿Cómo hago esta arquitectura más resiliente?" }
+        cloudProvider: { type: string, enum: [aws, gcp, azure] }
+        nodes: { type: array, maxItems: 60, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+        connections: { type: array, maxItems: 200, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+
+    ArchitectureCopilotResponse:
+      type: object
+      required: [answer, recommendations]
+      properties:
+        answer: { type: string, description: "Short answer in Markdown." }
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArchitectureRecommendation'
+
+    ArchitectureRecommendation:
+      type: object
+      required: [title, pros, cons, additions]
+      properties:
+        title: { type: string }
+        pros: { type: array, items: { type: string } }
+        cons: { type: array, items: { type: string } }
+        snippetLanguage: { type: string, example: "terraform" }
+        snippet: { type: string, description: "Illustrative code or configuration; not verified." }
+        additions:
+          type: array
+          description: Components the recommendation would add to the canvas.
+          items:
+            $ref: '#/components/schemas/ArchitectureAddition'
+
+    ArchitectureAddition:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, description: "A code of the service catalog, or `custom` for a technology outside it.", example: "queue" }
+        name: { type: string, description: "Name of a custom technology.", example: "IPFS" }
+        role: { type: string, example: "Cola de reintentos" }
+        connectFrom: { type: string, description: "Id of the existing node it should be wired from.", example: "api" }
+
+    CloudCatalogItem:
+      type: object
+      required: [id, provider, code, name, category, defaultMonthlyCost, isEnterprise]
+      properties:
+        id: { type: string, example: "aws:nosql" }
+        provider: { type: string, enum: [aws, gcp, azure] }
+        code: { type: string, description: "Kind of service, shared by its equivalents in every cloud.", example: "nosql" }
+        name: { type: string, example: "DynamoDB" }
+        category: { type: string, example: "data" }
+        defaultMonthlyCost: { type: number, description: "Indicative monthly cost in USD.", example: 5 }
+        isEnterprise: { type: boolean, description: "Typically adopted at enterprise scale." }
+
+    ArchitectureGraphElement:
+      description: A node, connection or zone of the canvas. Its shape belongs to the Architecture Studio editor, which validates it on load.
+      type: object
+      additionalProperties: true
+
+    ArchitectureProjectSummary:
+      type: object
+      required: [id, title, cloudProvider, isPreset, createdAt]
+      properties:
+        id: { type: string, example: "core-banking" }
+        title: { type: string, example: "Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)" }
+        description: { type: string }
+        cloudProvider: { type: string, enum: [aws, gcp, azure] }
+        isPreset: { type: boolean, description: "Shipped with the platform and read-only." }
+        createdAt: { type: string, format: date-time }
+
+    ArchitectureProject:
+      allOf:
+        - $ref: '#/components/schemas/ArchitectureProjectSummary'
+        - type: object
+          required: [nodes, connections, zones]
+          properties:
+            nodes: { type: array, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+            connections: { type: array, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+            zones: { type: array, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+
+    ArchitectureProjectRequest:
+      type: object
+      required: [title, cloudProvider, nodes, connections, zones]
+      properties:
+        title: { type: string, maxLength: 120 }
+        description: { type: string, maxLength: 500 }
+        cloudProvider: { type: string, enum: [aws, gcp, azure] }
+        nodes: { type: array, maxItems: 60, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+        connections: { type: array, maxItems: 200, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+        zones: { type: array, maxItems: 24, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+
+    ArchitectureTopology:
+      type: object
+      required: [cloudProvider, nodes, connections]
+      properties:
+        cloudProvider: { type: string, enum: [aws, gcp, azure] }
+        nodes: { type: array, maxItems: 60, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+        connections: { type: array, maxItems: 200, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+
+    TerraformBundle:
+      type: object
+      required: [mainTf, variablesTf]
+      properties:
+        mainTf: { type: string }
+        variablesTf: { type: string }
+
+    ArchitectureDiagram:
+      type: object
+      properties:
+        id: { type: string, example: "diag_c4_container" }
+        title: { type: string, example: "Container Level C4 Diagram" }
+        c4Level: { type: string, example: "container" }
+        mermaidScript: { type: string, example: "graph TD; A[Angular]-->B[Spring Boot];" }
+        excalidrawUrl: { type: string, example: "https://excalidraw.com/#json=123" }
+
+    ArchitectureDiagramRequest:
+      type: object
+      required: [title, c4Level, mermaidScript]
+      properties:
+        title: { type: string, example: "Component Level C4 Diagram" }
+        c4Level: { type: string, example: "component" }
+        mermaidScript: { type: string, example: "graph TD; Auth-->UserRepo;" }
+
+    Article:
+      type: object
+      properties:
+        id: { type: string, example: "art_01" }
+        title: { type: string, example: "Migrating Spring Boot 3 to GraalVM Native Image" }
+        slug: { type: string, example: "migrating-spring-boot-graalvm" }
+        contentMarkdown: { type: string, example: "# GraalVM Tutorial..." }
+        publishedAt: { type: string, format: date-time }
+
+    ArticleRequest:
+      type: object
+      required: [title, slug, contentMarkdown]
+      properties:
+        title: { type: string }
+        slug: { type: string }
+        contentMarkdown: { type: string }
+
+    VideoMedia:
+      type: object
+      properties:
+        id: { type: string, example: "vid_01" }
+        title: { type: string, example: "GitOps CI/CD Live Walkthrough" }
+        provider: { type: string, example: "Loom" }
+        embedUrl: { type: string, example: "https://www.loom.com/embed/12345" }
+
+    VideoMediaRequest:
+      type: object
+      required: [title, provider, embedUrl]
+      properties:
+        title: { type: string }
+        provider: { type: string, example: "YouTube" }
+        embedUrl: { type: string }
+
+    IngressTrackingRequest:
+      type: object
+      required: [referrer, userAgent]
+      properties:
+        referrer: { type: string, example: "https://linkedin.com/in/recruiter" }
+        userAgent: { type: string, example: "Mozilla/5.0..." }
+        recruiterRefCode: { type: string, example: "META-2026" }
+
+    RecruiterVisitLog:
+      type: object
+      properties:
+        visitId: { type: string, example: "vst_12345" }
+        organization: { type: string, example: "Meta Platforms Inc." }
+        country: { type: string, example: "United States" }
+        timestamp: { type: string, format: date-time }
+
+    SystemHealthResponse:
+      type: object
+      properties:
+        status: { type: string, example: "UP" }
+        database: { type: string, example: "PostgreSQL 16 - Connected" }
+        redisCache: { type: string, example: "Redis Cluster - Healthy" }
+        circuitBreakers:
+          type: object
+          properties:
+            aiEngine: { type: string, example: "CLOSED" }
+
+    TelemetryStream:
+      type: string
+      description: Server-Sent Events body; each event's data is a TelemetryEvent in JSON.
+
+    TelemetryEvent:
+      type: object
+      required: [timestamp, eventType, details, traceId]
+      properties:
+        timestamp: { type: string, format: date-time }
+        eventType:
+          type: string
+          enum: [CACHE_HIT, CACHE_MISS, VECTOR_SEARCH, RAG_QUERY, JWT_VERIFIED]
+        details: { type: string, example: "5 fragmentos · 12 ms" }
+        traceId: { type: string, example: "3f1c9a52-8d4e-4b7a-9c61-2e5f0b7d4a18" }
+
+    AIQueryRequest:
+      type: object
+      required: [prompt]
+      properties:
+        prompt: { type: string, example: "How does the circuit breaker handle database timeouts?" }
+
+    AIQueryResponse:
+      type: object
+      properties:
+        answer: { type: string, example: "The backend leverages Resilience4j CircuitBreaker..." }
+        citations:
+          type: array
+          items:
+            type: object
+            properties:
+              filePath: { type: string, example: "backend/ResilienceConfig.java" }
+              lineNumberRange: { type: string, example: "40-55" }
+              codeSnippet: { type: string, example: "@Bean public CircuitBreaker..." }
+
+  responses:
+    BadRequestError:
+      description: "Error de validación de sintaxis o reglas de negocio (HTTP 400)."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+    UnauthorizedError:
+      description: "Fallo de autenticación o token JWT ausente/inválido (HTTP 401)."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+    ForbiddenError:
+      description: "El usuario no cuenta con los roles/permisos necesarios (HTTP 403)."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+    NotFoundError:
+      description: "El recurso solicitado no fue encontrado (HTTP 404)."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+    RateLimitError:
+      description: "Límite de tasa de peticiones excedido (HTTP 429)."
+      headers:
+        X-RateLimit-Limit:
+          schema: { type: integer }
+        X-RateLimit-Remaining:
+          schema: { type: integer }
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+    InternalServerError:
+      description: "Error interno no controlado en el servidor (HTTP 500)."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+    ServiceUnavailableError:
+      description: "Servicio o componente dependiente no disponible (HTTP 503)."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
