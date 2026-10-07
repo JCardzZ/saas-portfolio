@@ -9,7 +9,7 @@ import { TraceInspectorService } from '../data/trace-inspector.service';
 
 /** Cuerpo RFC 7807 que devuelve la API con el circuito abierto (mismo formato que ProblemDetailFactory). */
 const CIRCUIT_OPEN_PROBLEM = `{
-  "type": "https://api.portfolio.dev/saas-portfolio/errors/service-unavailable",
+  "type": "https://api.example.com/saas-portfolio/errors/service-unavailable",
   "title": "Servicio no disponible",
   "status": 503,
   "detail": "El motor de IA está pausado temporalmente tras fallos repetidos. Inténtalo en unos segundos.",

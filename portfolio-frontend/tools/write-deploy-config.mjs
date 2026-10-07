@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const DEFAULT_ORIGIN = 'https://api.portfolio.dev';
+const DEFAULT_ORIGIN = 'https://api.example.com';
 const dir = process.argv[2] ?? 'dist/portfolio-frontend/browser';
 const raw = (process.env.API_BASE_URL ?? '').trim().replace(/\/+$/, '');
 

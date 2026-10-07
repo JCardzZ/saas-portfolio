@@ -5,7 +5,7 @@
  */
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://api.portfolio.dev/v1',
+  apiBaseUrl: 'https://api.example.com/v1',
   // En producción siempre se habla con el backend real: datos, login y telemetría SSE.
   mockMode: false,
 };
