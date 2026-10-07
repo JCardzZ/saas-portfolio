@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpHeaders, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { of, switchMap, throwError, timer } from 'rxjs';
 
-import { environment } from '../../../environments/environment';
+import { runtimeConfig } from '../config/runtime-config';
 import { Article, ArticleRequest, Project, ProjectRequest, Technology, TechnologyRequest } from '../api';
 import { MOCK_ARTICLES, MOCK_CAREER, MOCK_PROJECTS, MOCK_TECHNOLOGIES, mockRagAnswer } from './mock-data';
 // El modo demo sirve las mismas plantillas y el mismo Terraform que el backend, con el código del estudio.
@@ -29,13 +29,13 @@ let savedArchitectures: Record<string, unknown>[] = [];
 
 /**
  * Modo demo: responde a todas las llamadas a la API con datos simulados, sin tocar la red.
- * Solo se registra cuando `environment.mockMode` es true.
+ * Solo se registra cuando `runtimeConfig.mockMode` es true.
  */
 export const mockApiInterceptor: HttpInterceptorFn = (request, next) => {
-  if (!request.url.startsWith(environment.apiBaseUrl)) {
+  if (!request.url.startsWith(runtimeConfig.apiBaseUrl)) {
     return next(request);
   }
-  const path = request.url.slice(environment.apiBaseUrl.length);
+  const path = request.url.slice(runtimeConfig.apiBaseUrl.length);
   const response = route(request.method, path, request.body);
 
   return timer(MOCK_LATENCY_MS).pipe(

@@ -2,9 +2,9 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 
-import { environment } from '../environments/environment';
 import { routes } from './app.routes';
-import { provideApi } from './core/api';
+import { BASE_PATH } from './core/api';
+import { runtimeConfig } from './core/config/runtime-config';
 import { jwtInterceptor } from './core/interceptors/jwt.interceptor';
 import { unauthorizedInterceptor } from './core/interceptors/unauthorized.interceptor';
 import { lazyMockApiInterceptor } from './core/mock/mock-api.loader';
@@ -18,9 +18,10 @@ export const appConfig: ApplicationConfig = {
         jwtInterceptor,
         unauthorizedInterceptor,
         // El último de la cadena: en modo demo responde él y ninguna petición sale a la red.
-        ...(environment.mockMode ? [lazyMockApiInterceptor] : []),
+        ...(runtimeConfig.mockMode ? [lazyMockApiInterceptor] : []),
       ]),
     ),
-    provideApi(environment.apiBaseUrl),
+    // Con fábrica y no con valor: la dirección llega de /config.json después de evaluarse este módulo.
+    { provide: BASE_PATH, useFactory: () => runtimeConfig.apiBaseUrl },
   ],
 };

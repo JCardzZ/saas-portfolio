@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { finalize } from 'rxjs';
 
-import { environment } from '../../../../environments/environment';
+import { runtimeConfig } from '../../../core/config/runtime-config';
 import { ProfileService } from '../../../core/api';
 import { describeHttpError } from '../../../core/errors/http-error';
 
@@ -64,7 +64,7 @@ export class ProfilePhotoCardComponent {
   readonly error = signal<string | null>(null);
   readonly notice = signal<string | null>(null);
   /** En modo demo no hay backend que guarde la foto: se parte de "sin foto". */
-  readonly hasPhoto = signal(!environment.mockMode);
+  readonly hasPhoto = signal(!runtimeConfig.mockMode);
   /** Cambia tras cada subida para que el navegador vuelva a pedir la imagen. */
   private readonly version = signal(0);
   /** Vista previa local de lo recién subido, para el modo demo. */
@@ -74,7 +74,7 @@ export class ProfilePhotoCardComponent {
     if (!this.hasPhoto()) {
       return null;
     }
-    return this.localPreview() ?? `${environment.apiBaseUrl}/public/profile/photo?v=${this.version()}`;
+    return this.localPreview() ?? `${runtimeConfig.apiBaseUrl}/public/profile/photo?v=${this.version()}`;
   });
 
   onFileChosen(event: Event): void {
@@ -101,10 +101,10 @@ export class ProfilePhotoCardComponent {
     this.busy.set(true);
     this.api.adminProfilePhotoPut(file).pipe(finalize(() => this.busy.set(false))).subscribe({
       next: () => {
-        this.localPreview.set(environment.mockMode ? URL.createObjectURL(file) : null);
+        this.localPreview.set(runtimeConfig.mockMode ? URL.createObjectURL(file) : null);
         this.version.update((version) => version + 1);
         this.hasPhoto.set(true);
-        this.notice.set(environment.mockMode
+        this.notice.set(runtimeConfig.mockMode
           ? 'Modo demo: la foto no se guarda. Con el backend, el CV la usa desde la siguiente descarga.'
           : 'Foto guardada. El CV la usa desde la siguiente descarga; las miniaturas del selector se actualizan con ./gradlew exportCv.');
       },

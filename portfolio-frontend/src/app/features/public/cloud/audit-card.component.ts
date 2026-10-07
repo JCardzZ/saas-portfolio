@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { environment } from '../../../../environments/environment';
+import { runtimeConfig } from '../../../core/config/runtime-config';
 import { AppliedAIRAGService } from '../../../core/api';
 import { describeHttpError } from '../../../core/errors/http-error';
 import { AutofocusDirective } from '../../../shared/ui/autofocus.directive';
@@ -84,7 +84,7 @@ export class AuditCardComponent implements OnInit {
   /** La consulta al asistente ha terminado: `true` si respondió. */
   readonly answered = output<boolean>();
 
-  readonly demo = environment.mockMode;
+  readonly demo = runtimeConfig.mockMode;
   readonly pending = signal(false);
   readonly answer = signal('');
   readonly sources = signal(0);
