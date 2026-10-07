@@ -1,0 +1,8 @@
+# Reglas de lint del contrato OpenAPI (https://docs.stoplight.io/docs/spectral).
+# Uso: npx @stoplight/spectral-cli lint portfolio-api-spec/saas-portfolio-v1.openapi.yaml
+# El CI falla solo con errores; los avisos quedan en el resumen del job.
+extends: ["spectral:oas"]
+rules:
+  # Los nombres de método del código generado salen del tag y la ruta. Añadir operationId
+  # los cambiaría todos a la vez: es una decisión de contrato, no de lint.
+  operation-operationId: off
