@@ -70,6 +70,8 @@ dependencies {
     
     // Persistence, Migrations & Cache
     implementation 'org.flywaydb:flyway-core'
+    // Desde Flyway 10 el soporte de cada base de datos va en su propio módulo: sin este, no arranca.
+    runtimeOnly 'org.flywaydb:flyway-database-postgresql'
     runtimeOnly 'org.postgresql:postgresql'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
