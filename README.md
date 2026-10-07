@@ -1,5 +1,9 @@
 # saas-portfolio
 
+[![CI](https://github.com/JCardzZ/saas-portfolio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/JCardzZ/saas-portfolio/actions/workflows/ci.yml)
+[![CD](https://github.com/JCardzZ/saas-portfolio/actions/workflows/cd.yml/badge.svg?branch=main)](https://github.com/JCardzZ/saas-portfolio/actions/workflows/cd.yml)
+[![Cobertura](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JCardzZ/saas-portfolio/badges/coverage.json)](https://github.com/JCardzZ/saas-portfolio/actions/workflows/ci.yml)
+
 Portafolio profesional construido como una plataforma: un CMS con API propia, un asistente que
 responde sobre el contenido (RAG con pgvector y Gemini) y un estudio de arquitectura multi-cloud
 que se ejecuta en el navegador.
@@ -72,6 +76,17 @@ Para que el frontend use este backend, pon `mockMode: false` en
 ### Tests
 
 ```bash
-cd portfolio-backend  && ./gradlew test
+cd portfolio-backend  && ./gradlew test               # unitarios, reglas de arquitectura y cobertura
+cd portfolio-backend  && ./gradlew integrationTest    # PostgreSQL (pgvector) y Redis en contenedores; necesita Docker
 cd portfolio-frontend && npx ng test --watch=false --browsers=ChromeHeadless && npm run build
 ```
+
+## CI/CD
+
+| Workflow | Cuándo | Qué hace |
+| --- | --- | --- |
+| `ci.yml` | cada PR y cada push a `main` | Contrato (lint, cambios incompatibles, código generado) → tests (unitarios, integración, arquitectura, frontend en 3 grupos) → build (presupuesto de bundle, Lighthouse, preview, imagen escaneada con Trivy) → **✅ CI gate**. En paralelo, gitleaks y CodeQL. |
+| `cd.yml` | push a `main` | Frontend a Cloudflare Pages. Imagen del backend a GHCR con SBOM y firma cosign. El despliegue al servidor es manual: pruebas de humo, y release con etiqueta semver o vuelta a la imagen anterior. |
+| `nightly-security.yml` | cada noche | CodeQL ampliado, Trivy sobre la imagen y las dependencias, revisión de dependencias. |
+
+Lo que no cambió en un PR no se ejecuta, y un job omitido no bloquea el gate.
