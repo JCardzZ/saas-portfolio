@@ -172,17 +172,25 @@ class PlatformIntegrationTest {
     @Order(6)
     void login_attempts_are_limited_by_the_lua_script_in_redis() {
         // Va el último: agota el cupo de /auth/token para esta dirección.
-        List<HttpStatus> statuses = new ArrayList<>();
-        ResponseEntity<JsonNode> last = null;
-        for (int attempt = 0; attempt <= AUTH_ATTEMPTS; attempt++) {
-            last = http.postForEntity("/auth/token", credentials("wrong-secret"), JsonNode.class);
-            statuses.add(HttpStatus.valueOf(last.getStatusCode().value()));
+        // El límite es por dirección de origen y "localhost" puede llegar como 127.0.0.1 o como ::1
+        // según la conexión, así que se insiste lo bastante para agotar el cupo de las dos.
+        List<Integer> statuses = new ArrayList<>();
+        ResponseEntity<JsonNode> limited = null;
+        for (int attempt = 0; attempt < 2 * AUTH_ATTEMPTS + 2 && limited == null; attempt++) {
+            ResponseEntity<JsonNode> response = http.postForEntity("/auth/token", credentials("wrong-secret"), JsonNode.class);
+            statuses.add(response.getStatusCode().value());
+            if (response.getStatusCode().value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
+                limited = response;
+            }
         }
 
-        assertThat(statuses).contains(HttpStatus.UNAUTHORIZED);
-        assertThat(statuses.get(statuses.size() - 1)).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
-        assertThat(last.getHeaders().getFirst("Retry-After")).isNotBlank();
-        assertThat(last.getHeaders().getFirst("X-RateLimit-Limit")).isEqualTo(String.valueOf(AUTH_ATTEMPTS));
+        assertThat(limited).as("ningún intento fue limitado; estados recibidos: %s", statuses).isNotNull();
+        // Antes de agotar el cupo, las credenciales malas se rechazan como tales.
+        assertThat(statuses).as("estados recibidos").contains(HttpStatus.UNAUTHORIZED.value());
+        assertThat(limited.getHeaders().getFirst("Retry-After")).isNotBlank();
+        assertThat(limited.getHeaders().getFirst("X-RateLimit-Limit")).isEqualTo(String.valueOf(AUTH_ATTEMPTS));
+        assertThat(limited.getHeaders().getContentType()).isNotNull();
+        assertThat(limited.getHeaders().getContentType().toString()).startsWith("application/problem+json");
     }
 
     private String token() {
