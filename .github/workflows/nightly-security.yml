@@ -121,12 +121,13 @@ jobs:
           mkdir -p "$HOME/.cache/trivy"
           trivy() {
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$HOME/.cache/trivy:/root/.cache/trivy" \
+              -v "$PWD/.trivyignore.yaml:/work/.trivyignore.yaml:ro" \
               "$TRIVY_IMAGE" image --scanners vuln --no-progress "$@" scan-target:latest
           }
           # Informe completo (todas las severidades, con y sin corrección) para el resumen…
           trivy --format table --exit-code 0 | tee trivy.txt
           # …y fallo solo con altas o críticas que ya tienen versión corregida.
-          trivy --severity HIGH,CRITICAL --ignore-unfixed --format table --exit-code 1 --quiet > /dev/null
+          trivy --severity HIGH,CRITICAL --ignore-unfixed --ignorefile /work/.trivyignore.yaml --format table --exit-code 1 --quiet > /dev/null
       - name: Resumen
         if: always()
         env:
