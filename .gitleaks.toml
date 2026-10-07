@@ -1,0 +1,20 @@
+# Reglas de gitleaks para este repositorio: las de serie más las excepciones de abajo.
+# Uso local: gitleaks detect --source . --config .gitleaks.toml
+title = "saas-portfolio"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Valores de prueba que no dan acceso a nada y archivos de terceros"
+# Clave HMAC y secreto de cliente fijos de los tests (no se usan fuera de ellos).
+regexes = [
+  '''dGVzdC1vbmx5LWhtYWMta2V5LTAxMjM0NTY3ODlhYmNkZWY=''',
+  '''s3cret-for-tests''',
+  '''JWT_SECRET=super-secret''',
+]
+paths = [
+  '''portfolio-frontend/package-lock\.json''',
+  '''portfolio-frontend/public/cloud-icons/.*\.svg''',
+  '''portfolio-backend/gradle/wrapper/gradle-wrapper\.jar''',
+]

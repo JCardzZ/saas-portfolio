@@ -1,1 +1,81 @@
-# saas-portfolio — Enterprise SaaS Platform
+# saas-portfolio
+
+Portafolio profesional construido como una plataforma: un CMS con API propia, un asistente que
+responde sobre el contenido (RAG con pgvector y Gemini) y un estudio de arquitectura multi-cloud
+que se ejecuta en el navegador.
+
+**Demo:** pendiente de publicar.
+
+## Qué incluye
+
+- **Sitio público**: proyectos, tecnologías, artículos, trayectoria y CV descargable en PDF
+  (español e inglés; corto, completo y ATS).
+- **Asistente**: preguntas en lenguaje natural con citas a las fuentes indexadas.
+- **Estudio de arquitectura**: editor de diagramas con traducción entre AWS, GCP y Azure,
+  esqueleto de Terraform, comprobaciones de seguridad y estimación de costes orientativa.
+- **Administración**: gestión del contenido, reindexado y foto de perfil.
+
+Buena parte de lo que el sitio muestra "en vivo" (telemetría, caos, tráfico) es una simulación en
+el navegador y está etiquetada así en la interfaz.
+
+## Stack
+
+| Parte | Tecnología |
+| --- | --- |
+| Contrato | OpenAPI 3.0.3 (`portfolio-api-spec/`), del que se generan el servidor y el cliente |
+| Backend | Java 21, Spring Boot 3.2, arquitectura hexagonal, PostgreSQL 16 + pgvector, Redis, Flyway |
+| Frontend | Angular 18 (standalone, signals), Tailwind CSS 3 |
+| Entrega | GitHub Actions, Cloudflare Pages (frontend), imagen Docker en GHCR (backend) |
+
+## Estructura
+
+```
+portfolio-api-spec/   Contrato OpenAPI (fuente única de URLs y DTOs)
+portfolio-backend/    API Spring Boot
+portfolio-frontend/   Cliente Angular
+docs/                 Documento de trayectoria (fuente del CV y de la línea de tiempo)
+deploy/               Docker Compose y Caddy para el servidor del backend
+infra/                Esqueleto de Terraform
+```
+
+## Cómo ejecutarlo
+
+### Solo el frontend (modo demo, sin backend)
+
+Requiere Node 22.
+
+```bash
+cd portfolio-frontend
+npm ci
+npm start            # http://localhost:4200
+```
+
+En desarrollo el frontend responde con datos simulados y muestra la insignia "Modo demo".
+
+### Backend
+
+Requiere Java 21, PostgreSQL 16 con la extensión `vector` y Redis.
+
+```bash
+cd portfolio-backend
+export JWT_SECRET="$(openssl rand -base64 32)"
+export ADMIN_CLIENT_SECRET="<elige uno>"
+export DB_URL=jdbc:postgresql://localhost:5432/portfolio_db
+export DB_USERNAME=postgres DB_PASSWORD=postgres
+./gradlew bootRun    # http://localhost:8080/v1
+```
+
+`GEMINI_API_KEY` es opcional: sin ella la aplicación arranca y las funciones de IA responden 503.
+Para que el frontend use este backend, pon `mockMode: false` en
+`portfolio-frontend/src/environments/environment.development.ts`.
+
+### Tests
+
+```bash
+cd portfolio-backend  && ./gradlew test
+cd portfolio-frontend && npx ng test --watch=false --browsers=ChromeHeadless && npm run build
+```
+
+## Más detalle
+
+`CLAUDE.md` documenta la arquitectura, las decisiones de seguridad y el estado de cada módulo.
