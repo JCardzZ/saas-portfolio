@@ -51,6 +51,8 @@ dependencies {
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // Reglas de arquitectura sobre el bytecode (HexagonalArchitectureTest)
+    testImplementation 'com.tngtech.archunit:archunit-junit5:1.3.0'
 }
 
 openApiGenerate {
@@ -85,6 +87,17 @@ compileJava.dependsOn tasks.openApiGenerate
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+// Solo las reglas de arquitectura (también forman parte de `test`):
+//   ./gradlew architectureTest
+tasks.register('architectureTest', Test) {
+    description = 'Comprueba las reglas de la arquitectura hexagonal con ArchUnit'
+    group = 'verification'
+    useJUnitPlatform()
+    filter { includeTestsMatching 'dev.portfolio.architecture.*' }
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
 }
 
 // Exporta los CV en PDF a los estáticos del frontend, para el modo demo (sin backend):
