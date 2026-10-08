@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "repository": "JCardzZ/saas-portfolio",
+  "public": false,
+  "updatedAt": "2026-10-08T15:20:43.173Z",
+  "workflows": {
+    "ci": {
+      "runId": 37797892028,
+      "runNumber": 27,
+      "sha": "2eb428012e13d72330c50b2f47a4d7ad695ce247",
+      "event": "push",
+      "startedAt": "2026-10-08T15:05:43Z",
+      "finishedAt": "2026-10-08T15:20:43.173Z",
+      "durationSeconds": 900,
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": "gitleaks",
+          "status": "success",
+          "durationSeconds": 10,
+          "runs": 1
+        },
+        {
+          "id": "codeql",
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
+        },
+        {
+          "id": "spec-lint",
+          "status": "success",
+          "durationSeconds": 23,
+          "runs": 1
+        },
+        {
+          "id": "spec-breaking",
+          "status": "success",
+          "durationSeconds": 8,
+          "runs": 1
+        },
+        {
+          "id": "spec-codegen",
+          "status": "success",
+          "durationSeconds": 56,
+          "runs": 1
+        },
+        {
+          "id": "backend-unit",
+          "status": "success",
+          "durationSeconds": 60,
+          "runs": 1,
+          "metrics": {
+            "tests": 186,
+            "failed": 0,
+            "skipped": 1,
+            "coverage": 88.9
+          }
+        },
+        {
+          "id": "backend-integration",
+          "status": "success",
+          "durationSeconds": 97,
+          "runs": 1,
+          "metrics": {
+            "tests": 6,
+            "failed": 0,
+            "skipped": 0
+          }
+        },
+        {
+          "id": "backend-arch",
+          "status": "success",
+          "durationSeconds": 41,
+          "runs": 1,
+          "metrics": {
+            "tests": 12,
+            "failed": 0,
+            "skipped": 0
+          }
+        },
+        {
+          "id": "frontend-test",
+          "status": "success",
+          "durationSeconds": 68,
+          "runs": 3,
+          "metrics": {
+            "tests": 315
+          }
+        },
+        {
+          "id": "frontend-build",
+          "status": "success",
+          "durationSeconds": 117,
+          "runs": 1,
+          "metrics": {
+            "bundleKb": 416,
+            "bundleGzipKb": 117.2
+          }
+        },
+        {
+          "id": "lighthouse",
+          "status": "success",
+          "durationSeconds": 150,
+          "runs": 1,
+          "metrics": {
+            "performance": 88,
+            "accessibility": 97,
+            "bestPractices": 93,
+            "seo": 83
+          }
+        },
+        {
+          "id": "responsive",
+          "status": "success",
+          "durationSeconds": 586,
+          "runs": 1,
+          "metrics": {
+            "tests": 114,
+            "failed": 0,
+            "profiles": 13
+          }
+        },
+        {
+          "id": "preview",
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
+        },
+        {
+          "id": "docker",
+          "status": "success",
+          "durationSeconds": 125,
+          "runs": 1,
+          "metrics": {
+            "vulnerabilities": 0
+          }
+        },
+        {
+          "id": "publish-image",
+          "status": "success",
+          "durationSeconds": 134,
+          "runs": 1,
+          "metrics": {
+            "digest": "sha256:9a18bc21bdac131c470cbeb7f0d3b49247a979fe94c5f37d14ef99c92c27fc69",
+            "sbomPackages": 196
+          }
+        },
+        {
+          "id": "coverage-badge",
+          "status": "success",
+          "durationSeconds": 5,
+          "runs": 1
+        },
+        {
+          "id": "gate",
+          "status": "success",
+          "durationSeconds": 4,
+          "runs": 1
+        }
+      ]
+    }
+  }
+}
