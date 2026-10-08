@@ -321,12 +321,15 @@ test.describe('página pública en móviles y tabletas', () => {
     for (const view of ['app-production-architecture', 'app-pipeline-view']) {
       const columns = await page.locator(`${view} button.node`).evaluateAll((nodes) =>
         new Set(nodes.map((node) => Math.round(node.getBoundingClientRect().left))).size);
-      // En el móvil, una sola columna con las etapas apiladas; en pantallas anchas, una columna por etapa.
+      // En el móvil, una sola columna con las etapas apiladas; con más ancho, tantas columnas como
+      // quepan (al menos dos), y el resto en otra franja.
       if (narrow) {
         expect(columns, `${view}: columnas en el móvil`).toBe(1);
       } else {
-        expect(columns, `${view}: columnas en pantalla ancha`).toBeGreaterThan(2);
+        expect(columns, `${view}: columnas en pantalla ancha`).toBeGreaterThanOrEqual(2);
       }
+      const overflow = await page.locator(`${view} .scroller`).evaluate((scroller) => scroller.scrollWidth - scroller.clientWidth);
+      expect(overflow, `${view}: el diagrama se reorganiza, no desborda`).toBeLessThanOrEqual(0);
     }
 
     // Tocar un job abre su ficha a la vista, con datos de la ejecución real.
