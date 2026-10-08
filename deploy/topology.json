@@ -1,0 +1,162 @@
+{
+  "$comment": "Fuente única de la vista «Arquitectura en producción». status: live = desplegado hoy; planned = decidido pero aún sin desplegar. Al desplegar una pieza, cambia aquí su estado: el diagrama se genera de este archivo.",
+  "stages": [
+    "Código",
+    "CI/CD",
+    "Artefactos",
+    "Ejecución",
+    "Datos"
+  ],
+  "nodes": [
+    {
+      "id": "github",
+      "label": "GitHub",
+      "role": "Repositorio",
+      "icon": "github",
+      "stage": 0,
+      "status": "live",
+      "what": "Monorepo con el contrato OpenAPI, el backend, el frontend y los workflows.",
+      "why": "Un solo repositorio: un cambio de contrato y el código que lo usa viajan en el mismo PR, a cambio de una CI que tiene que filtrar por carpeta.",
+      "facts": "repo"
+    },
+    {
+      "id": "actions",
+      "label": "GitHub Actions",
+      "role": "CI/CD",
+      "icon": "githubActions",
+      "stage": 1,
+      "status": "live",
+      "what": "Verifica cada cambio (contrato, tests, build, escaneo) y despliega lo que construyó.",
+      "why": "Vive junto al código y no hay servidor de CI que mantener; a cambio, los runners son lentos y WebKit solo se prueba a demanda.",
+      "facts": "ci"
+    },
+    {
+      "id": "ghcr",
+      "label": "GHCR",
+      "role": "Imagen firmada",
+      "icon": "docker",
+      "stage": 2,
+      "status": "live",
+      "what": "Registro con la imagen del backend: la misma que pasó Trivy, firmada con cosign y con SBOM.",
+      "why": "Mismos permisos que el repositorio y sin credenciales extra; se despliega por digest, no por etiqueta.",
+      "facts": "image"
+    },
+    {
+      "id": "pages",
+      "label": "Cloudflare Pages",
+      "role": "Frontend en CDN",
+      "icon": "cloudflarePages",
+      "stage": 2,
+      "status": "live",
+      "what": "Sirve el build de Angular desde la red de Cloudflare, con las cabeceras de seguridad del repositorio.",
+      "why": "Estáticos en el borde sin servidor que operar; a cambio, la configuración de la API se inyecta al desplegar y no al compilar.",
+      "facts": "frontend"
+    },
+    {
+      "id": "visitor",
+      "label": "Visitante",
+      "role": "Navegador",
+      "icon": null,
+      "stage": 3,
+      "status": "live",
+      "what": "Quien abre el sitio. Hoy recibe la aplicación completa en modo demo, porque la API aún no está desplegada.",
+      "why": "Si la API no responde al arrancar, el sitio sigue siendo navegable con datos simulados y lo dice.",
+      "facts": null
+    },
+    {
+      "id": "backend",
+      "label": "VPS",
+      "role": "Docker + Caddy",
+      "icon": "caddy",
+      "stage": 3,
+      "status": "planned",
+      "what": "La API en un contenedor detrás de Caddy, que pone HTTPS automático.",
+      "why": "Un VPS con Compose cuesta poco y se entiende entero; a cambio, no hay autoescalado ni alta disponibilidad.",
+      "facts": "backend",
+      "health": "status"
+    },
+    {
+      "id": "neon",
+      "label": "Neon",
+      "role": "PostgreSQL",
+      "icon": "neon",
+      "stage": 4,
+      "status": "planned",
+      "what": "Base de datos del CMS y de los vectores del asistente.",
+      "why": "PostgreSQL gestionado con pgvector y escala a cero; a cambio, la primera consulta tras un rato parado tarda más.",
+      "facts": null,
+      "health": "database"
+    },
+    {
+      "id": "upstash",
+      "label": "Upstash",
+      "role": "Redis",
+      "icon": "upstash",
+      "stage": 4,
+      "status": "planned",
+      "what": "Caché de lectura y contadores del límite de peticiones.",
+      "why": "Redis gestionado de pago por uso; si falla, la API sigue sirviendo desde PostgreSQL.",
+      "facts": null,
+      "health": "redisCache"
+    },
+    {
+      "id": "gemini",
+      "label": "Gemini",
+      "role": "IA generativa",
+      "icon": "gemini",
+      "stage": 4,
+      "status": "planned",
+      "what": "Modelo que genera los embeddings y redacta las respuestas del asistente.",
+      "why": "API gestionada con cuota gratuita; un circuit breaker corta las llamadas cuando el proveedor falla.",
+      "facts": null,
+      "health": "aiEngine"
+    }
+  ],
+  "links": [
+    {
+      "from": "github",
+      "to": "actions",
+      "label": "push y pull request"
+    },
+    {
+      "from": "actions",
+      "to": "ghcr",
+      "label": "imagen escaneada y firmada"
+    },
+    {
+      "from": "actions",
+      "to": "pages",
+      "label": "build verificado"
+    },
+    {
+      "from": "pages",
+      "to": "visitor",
+      "label": "HTTPS"
+    },
+    {
+      "from": "ghcr",
+      "to": "backend",
+      "label": "pull por digest"
+    },
+    {
+      "from": "visitor",
+      "to": "backend",
+      "label": "API /v1"
+    },
+    {
+      "from": "backend",
+      "to": "neon",
+      "label": "JDBC"
+    },
+    {
+      "from": "backend",
+      "to": "upstash",
+      "label": "caché y límites"
+    },
+    {
+      "from": "backend",
+      "to": "gemini",
+      "label": "HTTPS"
+    }
+  ]
+}

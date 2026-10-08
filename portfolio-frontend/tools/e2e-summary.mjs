@@ -1,6 +1,6 @@
 // Resume el resultado de Playwright (reporter json) como Markdown, para el resumen del job.
 // Uso: node tools/e2e-summary.mjs [e2e-results/results.json]
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 const report = JSON.parse(readFileSync(process.argv[2] ?? 'e2e-results/results.json', 'utf8'));
 const projects = new Map();
@@ -37,3 +37,13 @@ if (failures.length > 0) {
 }
 console.log('');
 console.log('Las capturas de cada sección, por perfil, están en el artefacto de capturas de este job.');
+
+// Para pipeline-status.json.
+if (process.env.E2E_METRICS) {
+  const totals = [...projects.values()];
+  writeFileSync(process.env.E2E_METRICS, JSON.stringify({
+    tests: totals.reduce((sum, stats) => sum + stats.passed + stats.failed + stats.flaky, 0),
+    failed: totals.reduce((sum, stats) => sum + stats.failed, 0),
+    profiles: projects.size,
+  }));
+}

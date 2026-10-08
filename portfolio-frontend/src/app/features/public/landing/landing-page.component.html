@@ -51,6 +51,19 @@
       </div>
     </section>
 
+    <!-- Lo que hay desplegado de verdad y cómo llega hasta ahí. Datos reales o etiquetados como planificados. -->
+    <section id="entrega" class="mb-20 scroll-mt-24" aria-labelledby="entrega-titulo">
+      <h2 id="entrega-titulo" class="mb-6 text-3xl font-semibold tracking-tight text-white">Arquitectura real y entrega</h2>
+      @defer (on viewport; prefetch on idle) {
+        <div class="grid gap-4 [&>*]:min-w-0">
+          <app-production-architecture class="animate-slide-up" />
+          <app-pipeline-view class="animate-slide-up" />
+        </div>
+      } @placeholder {
+        <div class="bento-card flex min-h-[24rem] items-center justify-center text-sm text-zinc-500">Cargando la arquitectura en producción…</div>
+      }
+    </section>
+
     <section id="cloud" class="mb-20 scroll-mt-24" aria-labelledby="cloud-titulo">
       <h2 id="cloud-titulo" class="mb-6 text-3xl font-semibold tracking-tight text-white">Cloud &amp; DevOps</h2>
       <!-- El estudio pesa: su código se descarga cuando la sección está a punto de verse. -->

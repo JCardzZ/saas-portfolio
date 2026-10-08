@@ -6,7 +6,7 @@ import { SystemEvent, SystemEventsService } from './system-events.service';
 /** Tecnologías con actividad propia en el flujo de eventos y que, por tanto, se pueden inspeccionar. */
 export const INSPECTABLE_TECHS: readonly TechIconKey[] = [
   'angular', 'spring', 'redis', 'postgresql', 'gemini', 'jwt',
-  'aws', 'gcp', 'azure', 'terraform', 'kubernetes', 'cloudflare', 'docker',
+  'aws', 'gcp', 'azure', 'terraform', 'kubernetes', 'cloudflare', 'docker', 'githubActions',
 ];
 
 // Servicios gestionados que son, a efectos de traza, la tecnología que alojan.

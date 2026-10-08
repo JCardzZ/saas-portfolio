@@ -8,6 +8,8 @@ import { ArticlesHubComponent } from '../articles/articles-hub.component';
 import { CareerTimelineComponent } from '../career/career-timeline.component';
 import { RagChatComponent } from '../chat/rag-chat.component';
 import { CloudInfraComponent } from '../cloud/cloud-infra.component';
+import { PipelineViewComponent } from '../delivery/pipeline-view.component';
+import { ProductionArchitectureComponent } from '../delivery/production-architecture.component';
 import { CatalogStore } from '../data/catalog.store';
 import { TraceInspectorService } from '../data/trace-inspector.service';
 import { PublicNavbarComponent } from '../navbar/public-navbar.component';
@@ -32,6 +34,8 @@ import { VectorMatrixComponent } from '../widgets/vector-matrix.component';
     CareerTimelineComponent,
     ArticlesHubComponent,
     CloudInfraComponent,
+    PipelineViewComponent,
+    ProductionArchitectureComponent,
     TechIconComponent,
     IconPopLayerComponent,
     ArchitectureCanvasComponent,

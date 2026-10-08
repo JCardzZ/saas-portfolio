@@ -2,7 +2,7 @@ import { expect, Page, test, TestInfo } from '@playwright/test';
 import { join } from 'node:path';
 
 /** Secciones de la página pública, en el orden en que aparecen. */
-const SECTIONS = ['plataforma', 'cloud', 'proyectos', 'tecnologias', 'articulos', 'trayectoria'];
+const SECTIONS = ['plataforma', 'entrega', 'cloud', 'proyectos', 'tecnologias', 'articulos', 'trayectoria'];
 /** Lado mínimo de un control táctil (WCAG 2.5.5 y guías de iOS y Android). */
 const MIN_TARGET = 44;
 
@@ -16,6 +16,8 @@ const INTERACTIVE =
  */
 async function openLanding(page: Page, path = '/'): Promise<void> {
   await page.route(/^https:\/\/api\.example\.com\//, (route) => route.abort());
+  // El estado del pipeline se lee de la copia incluida en el build, como pasa con el repositorio privado.
+  await page.route(/^https:\/\/raw\.githubusercontent\.com\//, (route) => route.abort());
   await page.goto(path);
   await expect(page.locator('h1')).toBeVisible();
   // Las transiciones de CSS falsean las medidas: se quitan para medir el estado final.
@@ -33,6 +35,7 @@ async function loadEverything(page: Page): Promise<void> {
     window.scrollTo(0, 0);
   });
   await expect(page.locator('#cloud app-cloud-infra')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('#entrega app-pipeline-view button.node').first()).toBeVisible({ timeout: 15_000 });
   await page.waitForTimeout(400);
 }
 
@@ -308,6 +311,48 @@ test.describe('página pública en móviles y tabletas', () => {
     await edit.tap();
     await expect(page.locator('app-service-catalog')).toBeVisible();
     await check('estudio-en-edicion', 'app-cloud-infra');
+  });
+
+  test('los grafos de arquitectura y de pipeline pasan a vertical en el móvil y se manejan con el dedo', async ({ page }, testInfo) => {
+    await openLanding(page);
+    await loadEverything(page);
+    const narrow = page.viewportSize()!.width < 640;
+
+    for (const view of ['app-production-architecture', 'app-pipeline-view']) {
+      const columns = await page.locator(`${view} button.node`).evaluateAll((nodes) =>
+        new Set(nodes.map((node) => Math.round(node.getBoundingClientRect().left))).size);
+      // En el móvil, una sola columna con las etapas apiladas; en pantallas anchas, una columna por etapa.
+      if (narrow) {
+        expect(columns, `${view}: columnas en el móvil`).toBe(1);
+      } else {
+        expect(columns, `${view}: columnas en pantalla ancha`).toBeGreaterThan(2);
+      }
+    }
+
+    // Tocar un job abre su ficha a la vista, con datos de la ejecución real.
+    const job = page.locator('app-pipeline-view button.node', { hasText: 'Backend unit' });
+    await job.scrollIntoViewIfNeeded();
+    await job.tap();
+    const detail = page.locator('app-pipeline-view div[aria-live="polite"]');
+    await expect(detail).toContainText('Por qué existe');
+    await expect(detail).toBeInViewport();
+    await capture(page, testInfo, 'pipeline-job');
+
+    // La reproducción se anuncia como tal y vuelve a los datos de la ejecución.
+    const replay = page.getByRole('button', { name: 'Reproducir última ejecución' });
+    await replay.scrollIntoViewIfNeeded();
+    await replay.tap();
+    await expect(page.locator('app-pipeline-view')).toContainText('Reproducción animada');
+    await expect(page.locator('app-pipeline-view')).toContainText('Datos de la ejecución del', { timeout: 15_000 });
+    await page.getByRole('button', { name: 'Cerrar el inspector de traza' }).first().tap();
+
+    // Una pieza planificada lo dice y no enseña datos de despliegue.
+    const planned = page.locator('app-production-architecture button.node.tone-planned').first();
+    await planned.scrollIntoViewIfNeeded();
+    await planned.tap();
+    await expect(page.locator('app-production-architecture div[aria-live="polite"]')).toContainText('planificado');
+    await capture(page, testInfo, 'arquitectura-pieza-planificada');
+    await expectNoHorizontalScroll(page, 'arquitectura real y entrega');
   });
 
   for (const scheme of ['light', 'dark'] as const) {

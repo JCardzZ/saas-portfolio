@@ -1,0 +1,375 @@
+{
+  "ci": {
+    "file": "ci.yml",
+    "name": "CI",
+    "jobs": [
+      {
+        "id": "changes",
+        "name": "🔍 Cambios",
+        "needs": [],
+        "matrix": false,
+        "namePattern": "^🔍 Cambios$",
+        "stage": 0
+      },
+      {
+        "id": "gitleaks",
+        "name": "🛡️ gitleaks",
+        "needs": [],
+        "matrix": false,
+        "namePattern": "^🛡️ gitleaks$",
+        "stage": 0
+      },
+      {
+        "id": "codeql",
+        "name": "🛡️ CodeQL",
+        "needs": [],
+        "matrix": true,
+        "namePattern": "^🛡️ CodeQL \\(.+\\)$",
+        "stage": 0
+      },
+      {
+        "id": "spec-lint",
+        "name": "📜 Lint spec",
+        "needs": [
+          "changes"
+        ],
+        "matrix": false,
+        "namePattern": "^📜 Lint spec$",
+        "stage": 1
+      },
+      {
+        "id": "spec-breaking",
+        "name": "📜 Breaking",
+        "needs": [
+          "changes"
+        ],
+        "matrix": false,
+        "namePattern": "^📜 Breaking$",
+        "stage": 1
+      },
+      {
+        "id": "spec-codegen",
+        "name": "📜 Codegen",
+        "needs": [
+          "changes"
+        ],
+        "matrix": false,
+        "namePattern": "^📜 Codegen$",
+        "stage": 1
+      },
+      {
+        "id": "backend-unit",
+        "name": "🧪 Backend unit",
+        "needs": [
+          "changes",
+          "spec-lint",
+          "spec-breaking",
+          "spec-codegen"
+        ],
+        "matrix": false,
+        "namePattern": "^🧪 Backend unit$",
+        "stage": 2
+      },
+      {
+        "id": "backend-integration",
+        "name": "🧪 Integración",
+        "needs": [
+          "changes",
+          "spec-lint",
+          "spec-breaking",
+          "spec-codegen"
+        ],
+        "matrix": false,
+        "namePattern": "^🧪 Integración$",
+        "stage": 2
+      },
+      {
+        "id": "backend-arch",
+        "name": "🧪 ArchUnit",
+        "needs": [
+          "changes",
+          "spec-lint",
+          "spec-breaking",
+          "spec-codegen"
+        ],
+        "matrix": false,
+        "namePattern": "^🧪 ArchUnit$",
+        "stage": 2
+      },
+      {
+        "id": "frontend-test",
+        "name": "🧪 Frontend",
+        "needs": [
+          "changes",
+          "spec-lint",
+          "spec-breaking",
+          "spec-codegen"
+        ],
+        "matrix": true,
+        "namePattern": "^🧪 Frontend \\(.+/3\\)$",
+        "stage": 2
+      },
+      {
+        "id": "frontend-build",
+        "name": "📦 Build front",
+        "needs": [
+          "changes",
+          "backend-unit",
+          "backend-integration",
+          "backend-arch",
+          "frontend-test"
+        ],
+        "matrix": false,
+        "namePattern": "^📦 Build front$",
+        "stage": 3
+      },
+      {
+        "id": "lighthouse",
+        "name": "📦 Lighthouse",
+        "needs": [
+          "frontend-build"
+        ],
+        "matrix": false,
+        "namePattern": "^📦 Lighthouse$",
+        "stage": 4
+      },
+      {
+        "id": "responsive",
+        "name": "🧪 Móvil",
+        "needs": [
+          "frontend-build"
+        ],
+        "matrix": true,
+        "namePattern": "^🧪 Móvil \\(.+\\)$",
+        "stage": 4
+      },
+      {
+        "id": "preview",
+        "name": "📦 Preview URL",
+        "needs": [
+          "frontend-build"
+        ],
+        "matrix": false,
+        "namePattern": "^📦 Preview URL$",
+        "stage": 4
+      },
+      {
+        "id": "docker",
+        "name": "📦 Imagen + Trivy",
+        "needs": [
+          "changes",
+          "backend-unit",
+          "backend-integration",
+          "backend-arch",
+          "frontend-test"
+        ],
+        "matrix": false,
+        "namePattern": "^📦 Imagen \\+ Trivy$",
+        "stage": 3
+      },
+      {
+        "id": "publish-image",
+        "name": "📦 Publicar imagen",
+        "needs": [
+          "docker"
+        ],
+        "matrix": false,
+        "namePattern": "^📦 Publicar imagen$",
+        "stage": 4
+      },
+      {
+        "id": "coverage-badge",
+        "name": "📦 Insignia de cobertura",
+        "needs": [
+          "backend-unit"
+        ],
+        "matrix": false,
+        "namePattern": "^📦 Insignia de cobertura$",
+        "stage": 3
+      },
+      {
+        "id": "gate",
+        "name": "✅ CI gate",
+        "needs": [
+          "changes",
+          "gitleaks",
+          "codeql",
+          "spec-lint",
+          "spec-breaking",
+          "spec-codegen",
+          "backend-unit",
+          "backend-integration",
+          "backend-arch",
+          "frontend-test",
+          "frontend-build",
+          "lighthouse",
+          "responsive",
+          "preview",
+          "docker"
+        ],
+        "matrix": false,
+        "namePattern": "^✅ CI gate$",
+        "stage": 5
+      },
+      {
+        "id": "pipeline-status",
+        "name": "📦 Estado del pipeline",
+        "needs": [
+          "gate",
+          "publish-image",
+          "coverage-badge"
+        ],
+        "matrix": false,
+        "namePattern": "^📦 Estado del pipeline$",
+        "stage": 6
+      }
+    ]
+  },
+  "cd": {
+    "file": "cd.yml",
+    "name": "CD",
+    "jobs": [
+      {
+        "id": "source",
+        "name": "🔍 Origen",
+        "needs": [],
+        "matrix": false,
+        "namePattern": "^🔍 Origen$",
+        "stage": 0
+      },
+      {
+        "id": "frontend-deploy",
+        "name": "🚀 Cloudflare Pages",
+        "needs": [
+          "source"
+        ],
+        "matrix": false,
+        "namePattern": "^🚀 Cloudflare Pages$",
+        "stage": 1
+      },
+      {
+        "id": "deploy",
+        "name": "🚀 Deploy VPS",
+        "needs": [
+          "source"
+        ],
+        "matrix": false,
+        "namePattern": "^🚀 Deploy VPS$",
+        "stage": 1
+      },
+      {
+        "id": "smoke",
+        "name": "🧪 Health + smoke",
+        "needs": [
+          "source",
+          "deploy"
+        ],
+        "matrix": false,
+        "namePattern": "^🧪 Health \\+ smoke$",
+        "stage": 2
+      },
+      {
+        "id": "release",
+        "name": "✅ Release",
+        "needs": [
+          "source",
+          "smoke"
+        ],
+        "matrix": false,
+        "namePattern": "^✅ Release$",
+        "stage": 3
+      },
+      {
+        "id": "rollback",
+        "name": "🚀 Rollback",
+        "needs": [
+          "source",
+          "deploy",
+          "smoke"
+        ],
+        "matrix": false,
+        "namePattern": "^🚀 Rollback$",
+        "stage": 3
+      },
+      {
+        "id": "pipeline-status",
+        "name": "✅ Resumen",
+        "needs": [
+          "source",
+          "frontend-deploy",
+          "deploy",
+          "smoke",
+          "release",
+          "rollback"
+        ],
+        "matrix": false,
+        "namePattern": "^✅ Resumen$",
+        "stage": 4
+      }
+    ]
+  },
+  "nightly": {
+    "file": "nightly-security.yml",
+    "name": "Nightly security",
+    "jobs": [
+      {
+        "id": "scope",
+        "name": "🔍 Alcance",
+        "needs": [],
+        "matrix": false,
+        "namePattern": "^🔍 Alcance$",
+        "stage": 0
+      },
+      {
+        "id": "codeql",
+        "name": "🛡️ CodeQL completo",
+        "needs": [
+          "scope"
+        ],
+        "matrix": true,
+        "namePattern": "^🛡️ CodeQL completo \\(.+\\)$",
+        "stage": 1
+      },
+      {
+        "id": "trivy-image",
+        "name": "🛡️ Trivy (imagen de main)",
+        "needs": [],
+        "matrix": false,
+        "namePattern": "^🛡️ Trivy \\(imagen de main\\)$",
+        "stage": 0
+      },
+      {
+        "id": "trivy-deps",
+        "name": "🛡️ Trivy (dependencias npm)",
+        "needs": [],
+        "matrix": false,
+        "namePattern": "^🛡️ Trivy \\(dependencias npm\\)$",
+        "stage": 0
+      },
+      {
+        "id": "dependency-review",
+        "name": "🛡️ Dependency review",
+        "needs": [
+          "scope"
+        ],
+        "matrix": false,
+        "namePattern": "^🛡️ Dependency review$",
+        "stage": 1
+      },
+      {
+        "id": "summary",
+        "name": "✅ Resumen",
+        "needs": [
+          "scope",
+          "codeql",
+          "trivy-image",
+          "trivy-deps",
+          "dependency-review"
+        ],
+        "matrix": false,
+        "namePattern": "^✅ Resumen$",
+        "stage": 2
+      }
+    ]
+  }
+}

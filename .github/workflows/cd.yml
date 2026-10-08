@@ -58,7 +58,9 @@ jobs:
     permissions:
       contents: read
       actions: read
+      packages: read
     outputs:
+      signature: ${{ steps.verify.outcome }}
       frontend-run: ${{ steps.find.outputs.frontend_run }}
       frontend-sha: ${{ steps.find.outputs.frontend_sha }}
       image-run: ${{ steps.find.outputs.image_run }}
@@ -70,6 +72,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TRIGGER_RUN: ${{ github.event.workflow_run.id }}
+          # Quién hizo el merge que disparó la CI (o quién lanzó este workflow a mano).
+          ACTOR: ${{ github.event.workflow_run.triggering_actor.login || github.actor }}
         run: |
           set -euo pipefail
           REPO="$GITHUB_REPOSITORY"
@@ -94,12 +98,14 @@ jobs:
 
           FRONTEND_RUN="$(run_with frontend-dist)"
           IMAGE_RUN="$(run_with backend-image)"
-          FRONTEND_SHA=""; IMAGE_SHA=""; IMAGE_REF=""
+          FRONTEND_SHA=""; IMAGE_SHA=""; IMAGE_REF=""; SBOM="—"; VULNS="—"
           if [ -n "$FRONTEND_RUN" ]; then FRONTEND_SHA="$(sha_of "$FRONTEND_RUN")"; fi
           if [ -n "$IMAGE_RUN" ]; then
             gh run download "$IMAGE_RUN" --repo "$REPO" --name backend-image --dir image
             IMAGE_REF="$(jq -r .ref image/backend-image.json)"
             IMAGE_SHA="$(jq -r .sha image/backend-image.json)"
+            SBOM="$(jq -r '.sbomPackages // "—"' image/backend-image.json)"
+            VULNS="$(jq -r '.vulnerabilities // "—"' image/backend-image.json)"
             # La referencia sale de un artefacto: se comprueba su forma antes de usarla.
             if ! [[ "$IMAGE_REF" =~ ^ghcr\.io/[a-z0-9._/-]+@sha256:[0-9a-f]{64}$ ]] || ! [[ "$IMAGE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
               echo "::error::backend-image.json no tiene una referencia de imagen válida."
@@ -114,16 +120,50 @@ jobs:
             echo "image_sha=$IMAGE_SHA"
             echo "image_ref=$IMAGE_REF"
           } >> "$GITHUB_OUTPUT"
+          REPO_URL="$GITHUB_SERVER_URL/$REPO"
+          if [ -n "$FRONTEND_RUN" ]; then FRONTEND_WHAT='artefacto `frontend-dist`'; else FRONTEND_WHAT='no cambió: no se despliega'; fi
+          if [ -n "$IMAGE_REF" ]; then IMAGE_WHAT="\`$IMAGE_REF\`"; else IMAGE_WHAT='no cambió: no hay imagen nueva'; fi
+          link_run() { if [ -n "$1" ]; then echo "[#$1]($REPO_URL/actions/runs/$1)"; else echo "—"; fi; }
+          link_sha() { if [ -n "$1" ]; then echo "[\`${1:0:7}\`]($REPO_URL/commit/$1)"; else echo "—"; fi; }
           {
-            echo "### Qué se despliega (construido y verificado por la CI, sin reconstruir)"
+            echo "### Qué se despliega — construido y verificado por la CI, sin reconstruir"
             echo ""
-            echo "| Pieza | Ejecución de la CI | Commit | Artefacto |"
+            echo "| Pieza | CI | Commit | Qué es |"
             echo "| --- | --- | --- | --- |"
-            echo "| Frontend | ${FRONTEND_RUN:-—} | \`${FRONTEND_SHA:0:7}\` | ${FRONTEND_RUN:+frontend-dist} |"
-            echo "| Backend | ${IMAGE_RUN:-—} | \`${IMAGE_SHA:0:7}\` | ${IMAGE_REF:+\`$IMAGE_REF\`} |"
+            echo "| Frontend | $(link_run "$FRONTEND_RUN") | $(link_sha "$FRONTEND_SHA") | $FRONTEND_WHAT |"
+            echo "| Backend | $(link_run "$IMAGE_RUN") | $(link_sha "$IMAGE_SHA") | $IMAGE_WHAT |"
             echo ""
-            echo "Una pieza sin ejecución no cambió en ese push (o su artefacto caducó) y no se despliega."
+            if [ -n "$IMAGE_REF" ]; then
+              echo "- **Imagen:** Trivy $VULNS vulnerabilidades altas o críticas con corrección · SBOM con $SBOM paquetes."
+            fi
+            echo "- **Lanzado por:** ${ACTOR:-—} (${GITHUB_EVENT_NAME})."
           } >> "$GITHUB_STEP_SUMMARY"
+      # Antes de desplegar nada: la imagen tiene que estar firmada por un workflow de este repositorio.
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        if: steps.find.outputs.image_ref != ''
+      - name: Verificar la firma de la imagen (cosign)
+        id: verify
+        if: steps.find.outputs.image_ref != ''
+        env:
+          REF: ${{ steps.find.outputs.image_ref }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "$GH_TOKEN" | cosign login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          cosign verify "$REF" \
+            --certificate-identity-regexp "^$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com > /dev/null
+          echo "- **Firma:** ✅ verificada con cosign (identidad: un workflow de este repositorio)." >> "$GITHUB_STEP_SUMMARY"
+      - name: Métricas
+        if: always()
+        run: |
+          mkdir -p metrics
+          jq -n --arg signature "${{ steps.verify.outcome }}" '{} + (if $signature == "success" then {signatureVerified: true} elif $signature == "failure" then {signatureVerified: false} else {} end)' > metrics/source.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: metrics-source
+          path: metrics
+          retention-days: 1
 
   # ───────────────────────────── Frontend ─────────────────────────────
   frontend-deploy:
@@ -159,12 +199,26 @@ jobs:
         env:
           API_BASE_URL: ${{ vars.API_BASE_URL }}
         run: node portfolio-frontend/tools/write-deploy-config.mjs dist
+      # Los datos de la vista «Pipeline CI/CD»: lo último publicado en la rama badges (la CI acaba de
+      # escribirlo). Es un archivo de datos, como config.json; si no se puede leer, queda el del build.
+      - name: Incluir el estado del pipeline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/contents/pipeline-status.json?ref=badges" -H "Accept: application/vnd.github.raw" > status.json \
+            && jq -e '.schema == 1' status.json > /dev/null; then
+            cp status.json dist/pipeline-status.json
+            echo "Estado del pipeline actualizado."
+          else
+            echo "::warning::No se pudo leer pipeline-status.json de la rama badges: se despliega con el del build."
+          fi
       - name: Desplegar
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
           BUILD_SHA: ${{ needs.source.outputs.frontend-sha }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
         run: |
           set -o pipefail
           npx --yes "wrangler@$WRANGLER_VERSION" pages deploy dist --project-name="$PROJECT" --branch=main \
@@ -175,15 +229,25 @@ jobs:
             echo ""
             echo "- Proyecto: \`$PROJECT\`"
             echo "- Despliegue: ${URL:-(sin URL en la salida de wrangler)}"
-            echo "- Build del commit \`${BUILD_SHA::7}\`, el mismo artefacto que pasó la CI."
+            echo "- Build del commit [\`${BUILD_SHA::7}\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$BUILD_SHA), el mismo artefacto que pasó la CI."
+            echo "- Configuración del entorno: API \`${API_BASE_URL:-la del build (modo demo si no responde)}\`."
           } >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p metrics
+          jq -n --arg sha "$BUILD_SHA" --arg url "$URL" '{deployedSha: $sha} + (if $url != "" then {deploymentUrl: $url} else {} end)' > metrics/frontend-deploy.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: metrics-frontend-deploy
+          path: metrics
+          retention-days: 1
+          if-no-files-found: ignore
 
   # ───────────────────────────── Backend ─────────────────────────────
   deploy:
     name: 🚀 Deploy VPS
     needs: source
     # Solo a mano y pidiéndolo expresamente: la CI nunca despliega el backend por sí sola.
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy_backend && needs.source.outputs.image-ref != ''
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_backend && needs.source.outputs.image-ref != '' && needs.source.outputs.signature == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     # La aprobación se configura en el environment (Settings → Environments → production).
@@ -223,8 +287,25 @@ jobs:
               "$IMAGE" "$GHCR_USER" "$GHCR_TOKEN" "$DEPLOY_PATH"
             echo 'set -- deploy'
             cat deploy/remote-deploy.sh
-          } | ssh vps 'bash -s'
-          echo "### Desplegado en el VPS — \`$IMAGE\`" >> "$GITHUB_STEP_SUMMARY"
+          } | ssh vps 'bash -s' | tee deploy.log
+          PREVIOUS="$(sed -n 's/^Desplegando .* (anterior: \(.*\))$/\1/p' deploy.log | tail -n 1)"
+          {
+            echo "### Desplegado en el VPS"
+            echo ""
+            echo "- **Ahora:** \`$IMAGE\` (firma verificada)."
+            echo "- **Antes:** \`${PREVIOUS:-ninguna}\`."
+            echo "- **Salud dentro del contenedor:** ✅ \`/v1/telemetry/health\` responde."
+            echo "- **Para volver atrás:** si las pruebas de humo fallan, el job Rollback lo hace solo. A mano, en el servidor: \`bash remote-deploy.sh rollback\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p metrics
+          jq -n --arg digest "${IMAGE##*@}" --arg previous "${PREVIOUS:-}" '{digest: $digest} + (if $previous != "" and $previous != "ninguna" then {previousDigest: ($previous | split("@") | last)} else {} end)' > metrics/deploy.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: metrics-deploy
+          path: metrics
+          retention-days: 1
+          if-no-files-found: ignore
       - name: Borrar la clave
         if: always()
         run: rm -f ~/.ssh/deploy_key
@@ -309,3 +390,54 @@ jobs:
       - name: Borrar la clave
         if: always()
         run: rm -f ~/.ssh/deploy_key
+
+  # Cierre: duración total y resultado de cada paso, y el estado publicado para el sitio.
+  pipeline-status:
+    name: ✅ Resumen
+    needs: [source, frontend-deploy, deploy, smoke, release, rollback]
+    if: ${{ always() && needs.source.result != 'skipped' }}
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            portfolio-frontend/tools
+            portfolio-frontend/src/app/features/public/delivery/generated
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: metrics-*
+          path: metrics
+      - name: Resumen del despliegue
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          STARTED: ${{ github.event.workflow_run.run_started_at || github.event.repository.pushed_at }}
+        run: |
+          {
+            echo "### Despliegue en 10 segundos"
+            echo ""
+            echo "| Paso | Resultado |"
+            echo "| --- | --- |"
+            echo "$NEEDS" | jq -r 'to_entries[] | "| \(.key) | \(.value.result | if . == "success" then "✅ correcto" elif . == "skipped" then "➖ omitido" else "❌ " + . end) |"'
+            echo ""
+            echo "- **Firma de la imagen:** ${{ needs.source.outputs.signature == 'success' && '✅ verificada' || needs.source.outputs.signature == 'failure' && '❌ no válida' || 'sin imagen nueva' }}."
+            echo "- **Pruebas de humo:** ${{ needs.smoke.result == 'success' && '✅ correctas' || needs.smoke.result == 'failure' && '❌ fallidas (se vuelve a la imagen anterior)' || 'no aplican (sin despliegue del backend)' }}."
+            echo "- **Ejecución:** [#$GITHUB_RUN_NUMBER]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Publicar pipeline-status.json en la rama badges
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+          WORKFLOW_KEY: cd
+        run: |
+          bash portfolio-frontend/tools/publish-pipeline-status.sh metrics
+          DURATION="$(gh api "repos/$GITHUB_REPOSITORY/contents/pipeline-status.json?ref=badges" -H "Accept: application/vnd.github.raw" | jq -r '.workflows.cd.durationSeconds // empty')"
+          if [ -n "$DURATION" ]; then echo "- **Duración total:** $((DURATION / 60)) min $((DURATION % 60)) s." >> "$GITHUB_STEP_SUMMARY"; fi
+
