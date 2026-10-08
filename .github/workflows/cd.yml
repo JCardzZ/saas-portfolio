@@ -232,8 +232,27 @@ jobs:
             echo "- Build del commit [\`${BUILD_SHA::7}\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$BUILD_SHA), el mismo artefacto que pasó la CI."
             echo "- Configuración del entorno: API \`${API_BASE_URL:-la del build (modo demo si no responde)}\`."
           } >> "$GITHUB_STEP_SUMMARY"
+          # Salud: el despliegue recién creado sirve la aplicación.
+          HEALTHY=false
+          if [ -n "$URL" ]; then
+            for attempt in 1 2 3 4 5 6; do
+              if curl -fsS --max-time 15 "$URL/" | grep -q '<app-root'; then HEALTHY=true; break; fi
+              sleep 5
+            done
+          fi
+          echo "- Salud: $([ "$HEALTHY" = true ] && echo '✅ responde y sirve la aplicación' || echo '❌ no respondió con la aplicación')." >> "$GITHUB_STEP_SUMMARY"
+          # Identificador del despliegue en Cloudflare: es lo que necesita rollback.yml para volver a él.
+          SHORT_ID="$(echo "$URL" | sed -E 's#https://([a-z0-9]+)\..*#\1#')"
+          DEPLOYMENT_ID="$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJECT/deployments?env=production" \
+            | jq -r --arg short "$SHORT_ID" '[.result[] | select(.short_id == $short)][0].id // empty' || true)"
           mkdir -p metrics
-          jq -n --arg sha "$BUILD_SHA" --arg url "$URL" '{deployedSha: $sha} + (if $url != "" then {deploymentUrl: $url} else {} end)' > metrics/frontend-deploy.json
+          jq -n --arg sha "$BUILD_SHA" --arg url "$URL" --arg id "$DEPLOYMENT_ID" --argjson healthy "$HEALTHY" \
+            '{deployedSha: $sha, healthy: $healthy} + (if $url != "" then {deploymentUrl: $url} else {} end) + (if $id != "" then {deploymentId: $id} else {} end)' > metrics/frontend-deploy.json
+          if [ "$HEALTHY" != true ]; then
+            echo "::error::El despliegue no sirve la aplicación. Para volver a la versión anterior: workflow «Rollback»."
+            exit 1
+          fi
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
@@ -407,6 +426,7 @@ jobs:
         with:
           sparse-checkout: |
             portfolio-frontend/tools
+            portfolio-frontend/public/pipeline-status.json
             portfolio-frontend/src/app/features/public/delivery/generated
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -436,6 +456,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.run_id }}
           WORKFLOW_KEY: cd
+          # Quién hizo el merge que disparó la CI, o quién lanzó el despliegue a mano.
+          DEPLOYED_BY: ${{ github.event.workflow_run.triggering_actor.login || github.actor }}
         run: |
           bash portfolio-frontend/tools/publish-pipeline-status.sh metrics
           DURATION="$(gh api "repos/$GITHUB_REPOSITORY/contents/pipeline-status.json?ref=badges" -H "Accept: application/vnd.github.raw" | jq -r '.workflows.cd.durationSeconds // empty')"
