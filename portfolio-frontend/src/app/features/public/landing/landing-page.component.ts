@@ -8,6 +8,7 @@ import { ArticlesHubComponent } from '../articles/articles-hub.component';
 import { CareerTimelineComponent } from '../career/career-timeline.component';
 import { RagChatComponent } from '../chat/rag-chat.component';
 import { CloudInfraComponent } from '../cloud/cloud-infra.component';
+import { DeployTimelineComponent } from '../delivery/deploy-timeline.component';
 import { PipelineViewComponent } from '../delivery/pipeline-view.component';
 import { ProductionArchitectureComponent } from '../delivery/production-architecture.component';
 import { CatalogStore } from '../data/catalog.store';
@@ -34,6 +35,7 @@ import { VectorMatrixComponent } from '../widgets/vector-matrix.component';
     CareerTimelineComponent,
     ArticlesHubComponent,
     CloudInfraComponent,
+    DeployTimelineComponent,
     PipelineViewComponent,
     ProductionArchitectureComponent,
     TechIconComponent,

@@ -7,6 +7,7 @@ import { TECH_ICONS } from '../../../shared/ui/tech-icons';
 import { SystemEventsService } from '../data/system-events.service';
 import { TraceInspectorService } from '../data/trace-inspector.service';
 import { TOPOLOGY, WORKFLOWS } from './delivery-data';
+import { DeployTimelineComponent } from './deploy-timeline.component';
 import { DeliveryStatusService, STATUS_REMOTE_URL, STATUS_SNAPSHOT_URL } from './delivery-status.service';
 import { PipelineViewComponent } from './pipeline-view.component';
 import { ProductionArchitectureComponent } from './production-architecture.component';
@@ -241,5 +242,83 @@ describe('ProductionArchitectureComponent', () => {
       expect(detail()).toContain('todavía no existe en producción');
       expect(detail()).not.toContain('sha256');
     }
+  });
+});
+
+describe('DeployTimelineComponent', () => {
+  const deployment = (runNumber: number, sha: string, healthy: boolean | null, kind = 'deploy') => ({
+    kind, sha, at: `2026-10-0${runNumber}T03:00:00Z`, by: 'JCardzZ', runNumber, runId: 100 + runNumber, healthy,
+  });
+  const withHistory = (frontend: object[]) => ({ ...statusFile(), deployments: { frontend, backend: [] } });
+  const entries = (element: HTMLElement) => Array.from(element.querySelectorAll<HTMLElement>('[aria-label="Despliegues de Frontend"] .entry'));
+  const button = (element: HTMLElement) => Array.from(element.querySelectorAll<HTMLButtonElement>('button')).find((item) => /rollback|simulación/i.test(item.textContent!))!;
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('lists the frontend deployments, newest first, with version, commit, date, author and health', () => {
+    const { fixture, backend, element } = setup(DeployTimelineComponent);
+    serveSnapshot(backend, withHistory([deployment(3, 'cccccccdddd', true), deployment(2, 'bbbbbbbcccc', false), deployment(1, 'aaaaaaabbbb', null)]), fixture);
+
+    const [current, failed, unchecked] = entries(element);
+    expect(entries(element).length).toBe(3);
+    expect(current.textContent).toContain('#3');
+    expect(current.textContent).toContain('ccccccc');
+    expect(current.textContent).toContain('JCardzZ');
+    expect(current.textContent).toContain('en producción');
+    expect(current.textContent).toContain('Salud comprobada');
+    expect(current.classList).toContain('current');
+    expect(failed.textContent).toContain('No pasó la comprobación de salud');
+    expect(failed.textContent).not.toContain('en producción');
+    expect(unchecked.textContent).toContain('Salud sin comprobar');
+  });
+
+  it('shows the backend lane as planned, with no invented deployments', () => {
+    const { fixture, backend, element } = setup(DeployTimelineComponent);
+    serveSnapshot(backend, withHistory([deployment(1, 'aaaaaaabbbb', true)]), fixture);
+    const lane = element.querySelector('[aria-label="Despliegues de Backend"]')!;
+
+    expect(lane.textContent).toContain('planificado');
+    expect(lane.textContent).toContain('todavía no existe en producción');
+    expect(lane.querySelectorAll('.entry').length).toBe(0);
+  });
+
+  it('simulates a rollback on screen, labelled as a simulation, without calling anything', fakeAsync(() => {
+    const { fixture, backend, element } = setup(DeployTimelineComponent);
+    serveSnapshot(backend, withHistory([deployment(2, 'bbbbbbbcccc', true), deployment(1, 'aaaaaaabbbb', true)]), fixture);
+
+    button(element).click();
+    fixture.detectChanges();
+
+    const [newest, previous] = entries(element);
+    expect(previous.classList).toContain('current');
+    expect(previous.textContent).toContain('en producción · simulación');
+    expect(newest.classList).not.toContain('current');
+    expect(element.textContent).toContain('Simulación');
+    expect(element.textContent).toContain('Producción no ha cambiado');
+    // Ninguna petición: un visitante no puede revertir nada.
+    backend.expectNone(() => true);
+
+    tick(1000);
+    fixture.detectChanges();
+    button(element).click();
+    fixture.detectChanges();
+    expect(entries(element)[0].classList).toContain('current');
+    expect(element.textContent).not.toContain('Producción no ha cambiado');
+    tick(1000);
+  }));
+
+  it('cannot simulate a rollback when there is nothing to go back to', () => {
+    const { fixture, backend, element } = setup(DeployTimelineComponent);
+    serveSnapshot(backend, withHistory([deployment(1, 'aaaaaaabbbb', true)]), fixture);
+
+    expect(button(element).disabled).toBeTrue();
+  });
+
+  it('marks a real rollback in the timeline', () => {
+    const { fixture, backend, element } = setup(DeployTimelineComponent);
+    serveSnapshot(backend, withHistory([deployment(3, 'aaaaaaabbbb', true, 'rollback'), deployment(2, 'bbbbbbbcccc', false), deployment(1, 'aaaaaaabbbb', true)]), fixture);
+
+    expect(entries(element)[0].textContent).toContain('rollback');
+    expect(entries(element)[0].textContent).toContain('en producción');
   });
 });

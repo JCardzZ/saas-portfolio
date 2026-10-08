@@ -85,6 +85,23 @@ export interface PipelineStatus {
   public: boolean;
   updatedAt: string;
   workflows: Partial<Record<WorkflowKey, WorkflowRun>>;
+  /** Línea de tiempo de despliegues, del más reciente al más antiguo. */
+  deployments: Record<DeployTarget, Deployment[]>;
+}
+
+export type DeployTarget = 'frontend' | 'backend';
+
+export interface Deployment {
+  /** `rollback`: se volvió a una versión anterior con rollback.yml. */
+  kind: 'deploy' | 'rollback';
+  sha: string;
+  at: string;
+  /** Usuario de GitHub que lo lanzó; vacío si no consta. */
+  by: string;
+  runNumber: number;
+  runId: number;
+  /** Resultado de la comprobación de salud tras desplegar; `null` si no se comprobó. */
+  healthy: boolean | null;
 }
 
 const JOB_STATUSES: JobStatus[] = ['success', 'skipped', 'failure', 'cancelled'];
@@ -110,7 +127,45 @@ export function parsePipelineStatus(value: unknown): PipelineStatus | null {
       workflows[key] = run;
     }
   }
-  return { repository, public: value['public'] === true, updatedAt: date(value['updatedAt']), workflows };
+  const history = isRecord(value['deployments']) ? value['deployments'] : {};
+  return {
+    repository,
+    public: value['public'] === true,
+    updatedAt: date(value['updatedAt']),
+    workflows,
+    deployments: { frontend: parseDeployments(history['frontend']), backend: parseDeployments(history['backend']) },
+  };
+}
+
+const MAX_DEPLOYMENTS = 20;
+
+function parseDeployments(value: unknown): Deployment[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const deployments: Deployment[] = [];
+  for (const item of value.slice(0, MAX_DEPLOYMENTS)) {
+    if (!isRecord(item)) {
+      continue;
+    }
+    const sha = text(item['sha'], 40);
+    const at = date(item['at']);
+    if (!/^[0-9a-f]{7,40}$/.test(sha) || !at) {
+      continue;
+    }
+    const by = text(item['by'], 39);
+    deployments.push({
+      kind: item['kind'] === 'rollback' ? 'rollback' : 'deploy',
+      sha,
+      at,
+      // Un nombre de usuario de GitHub: letras, cifras y guiones.
+      by: /^[A-Za-z0-9-]+$/.test(by) ? by : '',
+      runNumber: integer(item['runNumber']) ?? 0,
+      runId: integer(item['runId']) ?? 0,
+      healthy: typeof item['healthy'] === 'boolean' ? item['healthy'] : null,
+    });
+  }
+  return deployments;
 }
 
 function parseRun(value: unknown): WorkflowRun | null {
