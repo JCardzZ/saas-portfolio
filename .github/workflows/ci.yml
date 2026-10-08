@@ -24,6 +24,10 @@ on:
         description: Ejecutar todos los jobs aunque no haya cambios
         type: boolean
         default: true
+      webkit:
+        description: Probar también los móviles con WebKit (lento en el runner, hasta 90 min)
+        type: boolean
+        default: false
 
 # Un push nuevo a la misma rama o PR cancela la ejecución anterior.
 concurrency:
@@ -479,20 +483,18 @@ jobs:
   # El build que se va a desplegar, abierto en móviles y tabletas con los dos motores: Chromium
   # (Chrome en Android) y WebKit (Safari en iOS). Perfiles y anchos en playwright.config.ts.
   responsive:
-    name: 🧪 Móvil (${{ matrix.engine }} ${{ matrix.shard }}/${{ matrix.shards }})
+    name: 🧪 Móvil (${{ matrix.engine }})
     needs: frontend-build
     if: ${{ !cancelled() && needs.frontend-build.result == 'success' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: ${{ matrix.engine == 'webkit' && 90 || 30 }}
     strategy:
       fail-fast: false
       matrix:
-        # WebKit en Linux tarda casi el triple que Chromium: se reparte en tres grupos.
-        include:
-          - { engine: chromium, shard: 1, shards: 1 }
-          - { engine: webkit, shard: 1, shards: 3 }
-          - { engine: webkit, shard: 2, shards: 3 }
-          - { engine: webkit, shard: 3, shards: 3 }
+        # Chromium siempre. WebKit en el runner de Linux no termina en un tiempo razonable (en un
+        # Mac la misma batería tarda minutos): solo se lanza a mano, marcando `webkit`, y en local
+        # con `npx playwright test --project='*-webkit'`.
+        engine: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.webkit && '["chromium","webkit"]' || '["chromium"]') }}
     defaults:
       run:
         working-directory: portfolio-frontend
@@ -511,7 +513,7 @@ jobs:
       - name: Instalar ${{ matrix.engine }}
         run: npx playwright install --with-deps ${{ matrix.engine }}
       - name: Pruebas en todos los perfiles
-        run: npx playwright test --project='*-${{ matrix.engine }}' --shard=${{ matrix.shard }}/${{ matrix.shards }}
+        run: npx playwright test --project='*-${{ matrix.engine }}'
       - name: Resumen
         if: always()
         run: node tools/e2e-summary.mjs >> "$GITHUB_STEP_SUMMARY" || echo "### Móviles y tabletas — sin resultados" >> "$GITHUB_STEP_SUMMARY"
@@ -520,7 +522,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: capturas-movil-${{ matrix.engine }}-${{ matrix.shard }}
+          name: capturas-movil-${{ matrix.engine }}
           path: portfolio-frontend/e2e-screens
           retention-days: 14
           if-no-files-found: ignore
@@ -528,7 +530,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: informe-movil-${{ matrix.engine }}-${{ matrix.shard }}
+          name: informe-movil-${{ matrix.engine }}
           path: |
             portfolio-frontend/e2e-report
             portfolio-frontend/e2e-results
