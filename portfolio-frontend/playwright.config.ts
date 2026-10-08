@@ -76,5 +76,16 @@ export default defineConfig({
     url: 'http://localhost:4310',
     reuseExistingServer: !process.env['CI'],
   },
-  projects: PROFILES.flatMap((profile) => (['chromium', 'webkit'] as Engine[]).map((engine) => project(profile, engine))),
+  projects: [
+    // Móviles y tabletas: toda la batería de mobile.e2e.ts.
+    ...PROFILES.flatMap((profile) => (['chromium', 'webkit'] as Engine[]).map((engine) => ({
+      ...project(profile, engine), testMatch: '**/mobile.e2e.ts',
+    }))),
+    // Escritorio, con ratón: los diagramas en su disposición de columnas (desktop.e2e.ts).
+    ...(['chromium', 'webkit'] as Engine[]).map((engine) => ({
+      name: `desktop-1440-${engine}`,
+      testMatch: '**/desktop.e2e.ts',
+      use: { browserName: engine, viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 },
+    })),
+  ],
 });
