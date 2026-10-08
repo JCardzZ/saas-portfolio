@@ -2,7 +2,7 @@
 // módulos precargados que nombra index.html) y falla si supera el presupuesto.
 // Uso: node tools/bundle-report.mjs [carpeta del build] [presupuesto en kB sin comprimir]
 // Imprime una tabla Markdown (el CI la añade al resumen del job).
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
@@ -40,6 +40,11 @@ for (const row of rows.sort((a, b) => b.raw - a.raw)) {
 console.log(`| **Total inicial** | **${kb(raw)} kB** | **${kb(gzip)} kB** |`);
 console.log('');
 console.log(`${ok ? '✅' : '❌'} Presupuesto: ${budgetKb} kB sin comprimir. Código bajo demanda (no cuenta): ${kb(lazy)} kB.`);
+
+// Para pipeline-status.json: las mismas cifras, como datos.
+if (process.env.BUNDLE_METRICS) {
+  writeFileSync(process.env.BUNDLE_METRICS, JSON.stringify({ bundleKb: Number(kb(raw)), bundleGzipKb: Number(kb(gzip)) }));
+}
 
 if (!ok) {
   console.error(`El bundle inicial (${kb(raw)} kB) supera el presupuesto de ${budgetKb} kB.`);
