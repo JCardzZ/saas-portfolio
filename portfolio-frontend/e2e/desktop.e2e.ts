@@ -4,6 +4,7 @@ import { join } from 'node:path';
 /** Tamaño máximo de un logo dentro de un nodo: 16 px, 20 px en el activo. */
 const MAX_ICON = 24;
 const VIEWS = ['app-production-architecture', 'app-pipeline-view'];
+const CAPTURED = [...VIEWS, 'app-deploy-timeline'];
 
 async function openDelivery(page: Page): Promise<void> {
   await page.route(/^https:\/\/api\.example\.com\//, (route) => route.abort());
@@ -166,7 +167,7 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
 
   test('capturas de las dos vistas, con la ficha abierta debajo del diagrama', async ({ page }, testInfo) => {
     await openDelivery(page);
-    for (const view of VIEWS) {
+    for (const view of CAPTURED) {
       await capture(page, testInfo, view, `${view.replace('app-', '')}`);
     }
 

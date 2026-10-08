@@ -1,0 +1,260 @@
+name: Rollback
+
+# Vuelve producción a una versión anterior, sin construir nada. Solo se lanza a mano y pide la
+# aprobación del environment "production". Desde el sitio público no se puede revertir nada.
+#
+#   frontend: pone en producción un despliegue anterior de Cloudflare Pages con el endpoint oficial
+#             POST /accounts/{account_id}/pages/projects/{project}/deployments/{deployment_id}/rollback
+#             (solo valen despliegues de producción que se construyeron bien).
+#   backend:  vuelve a desplegar por digest una imagen anterior de GHCR, tras verificar su firma.
+#             Hasta que exista el servidor, este destino falla al no encontrar los secrets del VPS.
+#
+# Secrets:   CLOUDFLARE_API_TOKEN (permiso Pages: Edit), CLOUDFLARE_ACCOUNT_ID
+#            VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_KNOWN_HOSTS (backend)
+# Variables: CLOUDFLARE_PAGES_PROJECT, API_BASE_URL (pruebas de humo del backend)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Qué se revierte
+        type: choice
+        options: [frontend, backend]
+        default: frontend
+      version:
+        description: >-
+          Versión a la que volver. Frontend: commit (7 a 40 caracteres) o id corto del despliegue.
+          Backend: commit cuya imagen se quiere, o digest sha256:…
+        type: string
+        required: true
+
+# Nunca a la vez que un despliegue ni que otro rollback.
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: 🚀 Rollback del frontend
+    if: inputs.target == 'frontend'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: production
+    outputs:
+      sha: ${{ steps.pick.outputs.sha }}
+      healthy: ${{ steps.health.outputs.healthy }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - name: Localizar el despliegue al que volver
+        id: pick
+        run: |
+          set -euo pipefail
+          if ! [[ "$VERSION" =~ ^[0-9a-f]{7,40}$ ]]; then
+            echo "::error::La versión debe ser un commit o un id corto de despliegue (7 a 40 caracteres hexadecimales)."
+            exit 1
+          fi
+          API="https://api.cloudflare.com/client/v4/accounts/$ACCOUNT/pages/projects/$PROJECT"
+          cf() { curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$@"; }
+          cf "$API/deployments?env=production" > deployments.json
+          cf "$API" > project.json
+          # Solo despliegues de producción que terminaron bien son destinos válidos.
+          jq --arg version "$VERSION" '[.result[]
+            | select(.environment == "production" and .latest_stage.name == "deploy" and .latest_stage.status == "success")
+            | select(.short_id == $version or ((.deployment_trigger.metadata.commit_hash // "") | startswith($version)))][0] // empty' deployments.json > target.json
+          if [ ! -s target.json ]; then
+            echo "::error::No hay ningún despliegue de producción correcto para «$VERSION»."
+            exit 1
+          fi
+          CURRENT="$(jq -r '.result.canonical_deployment.id // empty' project.json)"
+          TARGET="$(jq -r .id target.json)"
+          if [ "$CURRENT" = "$TARGET" ]; then
+            echo "::error::Ese despliegue ya es el que está en producción."
+            exit 1
+          fi
+          {
+            echo "id=$TARGET"
+            echo "sha=$(jq -r '.deployment_trigger.metadata.commit_hash // empty' target.json)"
+            echo "created=$(jq -r .created_on target.json)"
+            echo "current=$CURRENT"
+            echo "current_sha=$(jq -r '.result.canonical_deployment.deployment_trigger.metadata.commit_hash // empty' project.json)"
+            echo "domain=$(jq -r '.result.subdomain // empty' project.json)"
+          } >> "$GITHUB_OUTPUT"
+      - name: Volver a ese despliegue
+        env:
+          TARGET: ${{ steps.pick.outputs.id }}
+        run: |
+          curl -fsS -X POST -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT/pages/projects/$PROJECT/deployments/$TARGET/rollback" \
+            | jq -e '.success == true' > /dev/null
+      - name: Comprobar la salud de producción
+        id: health
+        env:
+          DOMAIN: ${{ steps.pick.outputs.domain }}
+        run: |
+          HEALTHY=false
+          for attempt in 1 2 3 4 5 6 7 8; do
+            if [ -n "$DOMAIN" ] && curl -fsS --max-time 15 "https://$DOMAIN/" | grep -q '<app-root'; then HEALTHY=true; break; fi
+            sleep 5
+          done
+          echo "healthy=$HEALTHY" >> "$GITHUB_OUTPUT"
+          [ "$HEALTHY" = true ]
+      - name: Registro
+        if: always()
+        env:
+          TARGET: ${{ steps.pick.outputs.id }}
+          TARGET_SHA: ${{ steps.pick.outputs.sha }}
+          CREATED: ${{ steps.pick.outputs.created }}
+          CURRENT: ${{ steps.pick.outputs.current }}
+          CURRENT_SHA: ${{ steps.pick.outputs.current_sha }}
+          DOMAIN: ${{ steps.pick.outputs.domain }}
+          HEALTHY: ${{ steps.health.outputs.healthy }}
+        run: |
+          {
+            echo "### Rollback del frontend"
+            echo ""
+            echo "| | Despliegue | Commit |"
+            echo "| --- | --- | --- |"
+            echo "| Antes | \`${CURRENT:-—}\` | \`${CURRENT_SHA:0:7}\` |"
+            echo "| Ahora | \`${TARGET:-—}\` (del $CREATED) | \`${TARGET_SHA:0:7}\` |"
+            echo ""
+            echo "- **Resultado:** ${{ job.status }}."
+            echo "- **Salud de https://$DOMAIN:** $([ "$HEALTHY" = true ] && echo '✅ sirve la aplicación' || echo '❌ sin comprobar o sin respuesta')."
+            echo "- **Lanzado por:** $GITHUB_ACTOR."
+            echo "- **Para deshacerlo:** vuelve a lanzar este workflow con el commit \`${CURRENT_SHA:0:7}\`, o despliega de nuevo desde main."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  backend:
+    name: 🚀 Rollback del backend
+    if: inputs.target == 'backend'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: production
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      sha: ${{ steps.image.outputs.sha }}
+      healthy: ${{ steps.smoke.outcome == 'success' }}
+    env:
+      DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH || 'saas-portfolio' }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Imagen a la que volver, por digest
+        id: image
+        run: |
+          set -euo pipefail
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/saas-portfolio-backend"
+          if [[ "$VERSION" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            DIGEST="$VERSION"; SHA=""
+          elif [[ "$VERSION" =~ ^[0-9a-f]{40}$ ]]; then
+            DIGEST="$(docker buildx imagetools inspect "$IMAGE:sha-$VERSION" --format '{{json .Manifest}}' | jq -r .digest)"; SHA="$VERSION"
+          else
+            echo "::error::Para el backend, la versión es un commit completo (40 caracteres) o un digest sha256:…"
+            exit 1
+          fi
+          echo "ref=$IMAGE@$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - name: Verificar la firma de la imagen
+        env:
+          REF: ${{ steps.image.outputs.ref }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "$GH_TOKEN" | cosign login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          cosign verify "$REF" \
+            --certificate-identity-regexp "^$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com > /dev/null
+      - uses: ./.github/actions/ssh-setup
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          user: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          known-hosts: ${{ secrets.VPS_KNOWN_HOSTS }}
+          port: ${{ vars.VPS_SSH_PORT || '22' }}
+      - name: Desplegar esa imagen
+        env:
+          IMAGE: ${{ steps.image.outputs.ref }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            printf 'export IMAGE=%q GHCR_USER=%q GHCR_TOKEN=%q DEPLOY_PATH=%q\n' \
+              "$IMAGE" "$GHCR_USER" "$GHCR_TOKEN" "$DEPLOY_PATH"
+            echo 'set -- deploy'
+            cat deploy/remote-deploy.sh
+          } | ssh vps 'bash -s' | tee deploy.log
+      - name: Pruebas de humo
+        id: smoke
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: |
+          set -o pipefail
+          bash deploy/smoke-test.sh "$API_BASE_URL" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Registro
+        if: always()
+        env:
+          IMAGE: ${{ steps.image.outputs.ref }}
+        run: |
+          PREVIOUS="$(sed -n 's/^Desplegando .* (anterior: \(.*\))$/\1/p' deploy.log 2>/dev/null | tail -n 1)"
+          {
+            echo "### Rollback del backend"
+            echo ""
+            echo "- **Antes:** \`${PREVIOUS:-—}\`."
+            echo "- **Ahora:** \`${IMAGE:-—}\` (firma verificada antes de desplegar)."
+            echo "- **Resultado:** ${{ job.status }} · pruebas de humo: ${{ steps.smoke.outcome }}."
+            echo "- **Lanzado por:** $GITHUB_ACTOR."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Borrar la clave
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
+
+  # Deja el rollback en la línea de tiempo pública (rama badges).
+  record:
+    name: 📦 Registrar en la línea de tiempo
+    needs: [frontend, backend]
+    if: ${{ always() && (needs.frontend.result == 'success' || needs.backend.result == 'success') }}
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            portfolio-frontend/tools
+            portfolio-frontend/public/pipeline-status.json
+            portfolio-frontend/src/app/features/public/delivery/generated
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+      - name: Publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+          WORKFLOW_KEY: rollback
+          DEPLOYED_BY: ${{ github.actor }}
+          TARGET: ${{ inputs.target }}
+          SHA: ${{ inputs.target == 'frontend' && needs.frontend.outputs.sha || needs.backend.outputs.sha }}
+          HEALTHY: ${{ inputs.target == 'frontend' && needs.frontend.outputs.healthy || needs.backend.outputs.healthy }}
+        run: |
+          DEPLOYMENT_ENTRY="$(jq -cn --arg target "$TARGET" --arg sha "$SHA" --arg healthy "$HEALTHY" \
+            '{target: $target, sha: $sha, healthy: ($healthy == "true")}')"
+          export DEPLOYMENT_ENTRY
+          bash portfolio-frontend/tools/publish-pipeline-status.sh metrics

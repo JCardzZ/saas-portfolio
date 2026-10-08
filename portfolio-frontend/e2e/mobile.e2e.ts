@@ -349,6 +349,20 @@ test.describe('página pública en móviles y tabletas', () => {
     await expect(page.locator('app-pipeline-view')).toContainText('Datos de la ejecución del', { timeout: 15_000 });
     await page.getByRole('button', { name: 'Cerrar el inspector de traza' }).first().tap();
 
+    // Línea de tiempo de despliegues: el rollback simulado se anuncia y no cambia nada de verdad.
+    const timeline = page.locator('app-deploy-timeline');
+    await timeline.scrollIntoViewIfNeeded();
+    await expect(timeline.locator('.entry').first()).toContainText('en producción');
+    await expect(timeline.getByLabel('Despliegues de Backend')).toContainText('planificado');
+    const requests: string[] = [];
+    page.on('request', (request) => requests.push(`${request.method()} ${request.url()}`));
+    await timeline.getByRole('button', { name: 'Simular rollback' }).tap();
+    await expect(timeline).toContainText('Producción no ha cambiado');
+    await expect(timeline.locator('.entry').nth(1)).toContainText('simulación');
+    await capture(page, testInfo, 'despliegues-rollback-simulado');
+    expect(requests.filter((request) => !request.startsWith('GET ')), 'la simulación no envía nada').toEqual([]);
+    await timeline.getByRole('button', { name: 'Deshacer la simulación' }).tap();
+
     // Una pieza planificada lo dice y no enseña datos de despliegue.
     const planned = page.locator('app-production-architecture button.node.tone-planned').first();
     await planned.scrollIntoViewIfNeeded();

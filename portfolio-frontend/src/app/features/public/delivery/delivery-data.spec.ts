@@ -65,6 +65,37 @@ describe('parsePipelineStatus', () => {
   });
 });
 
+describe('deployment timeline in the status file', () => {
+  const entry = (overrides: Record<string, unknown> = {}) => ({
+    kind: 'deploy', sha: 'abcdef1234567', at: '2026-10-08T03:01:00Z', by: 'JCardzZ', runNumber: 9, runId: 50, healthy: true, ...overrides,
+  });
+
+  it('reads deployments for frontend and backend, newest first as published', () => {
+    const status = parsePipelineStatus(file({ deployments: { frontend: [entry(), entry({ kind: 'rollback', runId: 51, healthy: null })], backend: [] } }))!;
+
+    expect(status.deployments.frontend.map((item) => item.kind)).toEqual(['deploy', 'rollback']);
+    expect(status.deployments.frontend[0]).toEqual({
+      kind: 'deploy', sha: 'abcdef1234567', at: '2026-10-08T03:01:00Z', by: 'JCardzZ', runNumber: 9, runId: 50, healthy: true,
+    });
+    expect(status.deployments.frontend[1].healthy).toBeNull();
+    expect(status.deployments.backend).toEqual([]);
+  });
+
+  it('has an empty timeline when the file has none', () => {
+    expect(parsePipelineStatus(file())!.deployments).toEqual({ frontend: [], backend: [] });
+  });
+
+  it('drops entries without a valid commit or date and never shows a name that is not a GitHub login', () => {
+    const status = parsePipelineStatus(file({
+      deployments: { frontend: [entry({ sha: 'zzz' }), entry({ at: 'ayer' }), entry({ by: '<script>alert(1)</script>' }), 'x'], backend: 'nope' },
+    }))!;
+
+    expect(status.deployments.frontend.length).toBe(1);
+    expect(status.deployments.frontend[0].by).toBe('');
+    expect(status.deployments.backend).toEqual([]);
+  });
+});
+
 describe('graph layout', () => {
   it('puts each stage in a column, in stage order, and centres shorter columns', () => {
     const layout = layoutStages([{ id: 'a', stage: 0 }, { id: 'd', stage: 3 }, { id: 'b', stage: 1 }, { id: 'c', stage: 1 }], PILL);
