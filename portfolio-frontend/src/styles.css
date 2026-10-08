@@ -5,6 +5,15 @@
 @layer base {
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
+    /* Una palabra más ancha que la pantalla (texto ampliado en un móvil estrecho) se parte en vez
+       de ensanchar la página. */
+    overflow-wrap: break-word;
+  }
+
+  html {
+    /* Administración y login son claros; la página pública declara `dark` en su raíz. Así los
+       controles nativos y las barras de scroll siguen al diseño y no al modo del sistema. */
+    color-scheme: light;
   }
 
   /* Lo que se ve antes de que Angular arranque; Angular lo sustituye al pintar la aplicación. */
@@ -325,3 +334,51 @@ svg .pulse.pulse-boost { stroke: #34d399; filter: drop-shadow(0 0 5px #10b981); 
 @media (prefers-reduced-motion: reduce) {
   .pulse, .vitals-clock { animation: none; }
 }
+
+/* ───────────── Pantallas táctiles ───────────── */
+
+/* Con el dedo (pointer: coarse), todo control mide al menos 44 × 44 px (WCAG 2.5.5, guías de iOS y
+   Android). Con ratón se queda como está. `:where` no suma especificidad: una clase puede afinarlo. */
+@media (pointer: coarse) {
+  :where(button, summary, select, textarea, [role='button'], [role='tab'], [role='switch'],
+    input:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='hidden'])) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Una etiqueta que envuelve un selector de archivo oculto es el botón que se toca. */
+  :where(label:has(> input[type='file'])) {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  /* Enlaces que hacen de botón o de entrada de menú (no los que van dentro de una frase). */
+  .tap {
+    min-height: 44px;
+    min-width: 44px;
+    align-content: center;
+  }
+  /* Controles diminutos por diseño (el semáforo de la consola): el dibujo no crece, crece la zona que
+     responde al dedo. */
+  .tap-area {
+    position: relative;
+    min-height: 0;
+    min-width: 0;
+  }
+  .tap-area::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Márgenes de seguridad (muesca, esquinas redondeadas, barra de gestos) para lo que va fijo. */
+.safe-top { padding-top: env(safe-area-inset-top, 0px); }
+.safe-x {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }

@@ -34,7 +34,7 @@
 
 @if (reading(); as article) {
   <div
-    class="fixed inset-0 z-50 flex animate-fade-in items-start justify-center overflow-y-auto bg-black/70 px-4 py-[6vh] backdrop-blur-sm"
+    class="fixed inset-0 z-50 flex animate-fade-in items-start justify-center overflow-y-auto bg-black/70 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(6dvh,env(safe-area-inset-bottom))] pt-[max(6dvh,env(safe-area-inset-top))] backdrop-blur-sm"
     (click)="reading.set(null)"
     (keydown.escape)="reading.set(null)"
   >

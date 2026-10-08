@@ -64,7 +64,7 @@ const POINTS_PER_CLUSTER = 14;
       }
     </div>
 
-    <div class="mt-4 grid gap-5 md:grid-cols-3">
+    <div class="mt-4 grid gap-5 md:grid-cols-3 [&>*]:min-w-0">
       <svg
         [attr.viewBox]="viewBox"
         class="w-full cursor-crosshair touch-none rounded-2xl border border-white/10 bg-black/40 md:col-span-2"

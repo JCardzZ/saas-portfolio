@@ -1,7 +1,7 @@
-<div class="dock-aware dark min-h-screen bg-black text-zinc-100 selection:bg-accent/40">
+<div class="dock-aware dark safe-x min-h-dvh bg-black [color-scheme:dark] text-zinc-100 selection:bg-accent/40">
   <app-public-navbar (openChat)="chatOpen.set(true)" />
 
-  <main class="mx-auto max-w-6xl px-5 pb-24 pt-32">
+  <main class="mx-auto max-w-6xl px-5 pb-24 pt-[calc(8rem+env(safe-area-inset-top,0px))]">
     <section class="animate-slide-up pb-20 text-center">
       <p class="text-sm font-medium text-accent">Plataforma de portafolio</p>
       <h1 class="mx-auto mt-3 max-w-3xl text-balance text-5xl font-semibold tracking-tight text-white sm:text-7xl">
@@ -20,7 +20,7 @@
         </button>
         <a
           href="#proyectos"
-          class="focus-ring glass rounded-full px-6 py-2.5 text-[15px] font-medium text-white transition duration-300 ease-spring hover:bg-white/10"
+          class="focus-ring glass tap rounded-full px-6 py-2.5 text-[15px] font-medium text-white transition duration-300 ease-spring hover:bg-white/10"
         >
           Ver proyectos
         </a>
@@ -100,10 +100,10 @@
 
               <div class="mt-auto flex gap-4 pt-6 text-sm font-medium">
                 @if (project.githubRepoUrl) {
-                  <a class="focus-ring rounded text-accent hover:text-accent-hover" [href]="project.githubRepoUrl" target="_blank" rel="noopener noreferrer">Código ↗</a>
+                  <a class="focus-ring tap inline-flex items-center rounded text-accent hover:text-accent-hover" [href]="project.githubRepoUrl" target="_blank" rel="noopener noreferrer">Código ↗</a>
                 }
                 @if (project.demoVideoUrl) {
-                  <a class="focus-ring rounded text-accent hover:text-accent-hover" [href]="project.demoVideoUrl" target="_blank" rel="noopener noreferrer">Demo ↗</a>
+                  <a class="focus-ring tap inline-flex items-center rounded text-accent hover:text-accent-hover" [href]="project.demoVideoUrl" target="_blank" rel="noopener noreferrer">Demo ↗</a>
                 }
               </div>
             </article>
@@ -193,7 +193,8 @@
     </section>
   </main>
 
-  <footer class="border-t border-white/10">
+  <!-- El pie deja sitio a lo que va fijo abajo (la insignia de demo) y a la barra de gestos. -->
+  <footer class="border-t border-white/10 pb-[calc(var(--badge-space,0px)+env(safe-area-inset-bottom,0px))]">
     <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8">
       <p class="text-sm text-zinc-400">
         <span class="font-medium text-zinc-200">Manuel Cardoza</span> · Desarrollador Backend. El CV sale del mismo

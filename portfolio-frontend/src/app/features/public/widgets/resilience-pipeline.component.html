@@ -8,7 +8,7 @@
 </div>
 
 <div class="theater-stage mt-3 overflow-x-auto">
-  <svg viewBox="0 0 620 200" class="w-full min-w-[420px]" role="img" [attr.aria-label]="'Recorrido de una petición. Redis ' + (redisDown() ? 'caído: se sirve desde PostgreSQL' : 'operativo') + '. Circuito de Gemini ' + (geminiDown() ? 'abierto: responde 503' : 'cerrado') + '.'">
+  <svg viewBox="0 0 620 200" class="w-full min-w-[420px] [@media(pointer:coarse)]:min-w-[570px]" role="img" [attr.aria-label]="'Recorrido de una petición. Redis ' + (redisDown() ? 'caído: se sirve desde PostgreSQL' : 'operativo') + '. Circuito de Gemini ' + (geminiDown() ? 'abierto: responde 503' : 'cerrado') + '.'">
     <!-- Desvío fail-open: solo se enciende cuando Redis no responde. -->
     <path class="pipe pipe-bypass" [class.pipe-bypass-on]="redisDown()" d="M64 106 C64 34 392 34 392 106" />
     <path class="pulse pulse-bypass" [class.pulse-hidden]="!redisDown()" d="M64 106 C64 34 392 34 392 106" pathLength="100" />

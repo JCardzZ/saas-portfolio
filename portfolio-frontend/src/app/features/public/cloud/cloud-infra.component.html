@@ -3,7 +3,7 @@
 <div class="flex flex-wrap items-center justify-between gap-3 pr-10">
   <h3 class="text-xl font-semibold tracking-tight text-white">Estudio de arquitectura</h3>
 
-  <div class="flex flex-wrap items-center gap-2">
+  <div class="flex min-w-0 max-w-full flex-wrap items-center gap-2">
     <div class="glass flex max-w-full overflow-x-auto rounded-full p-1 [scrollbar-width:none]" role="radiogroup" aria-label="Proveedor de nube">
       @for (provider of providers; track provider.id) {
         <button
@@ -277,7 +277,7 @@
   </section>
 }
 
-<div class="mt-3 gap-4" [class]="editing() && catalogDocked() ? 'grid lg:grid-cols-[16rem_minmax(0,1fr)]' : ''">
+<div class="mt-3 gap-4" [class]="editing() && catalogDocked() ? 'grid [&>*]:min-w-0 lg:grid-cols-[16rem_minmax(0,1fr)]' : ''">
   @if (editing() && catalogDocked()) {
     <app-service-catalog class="block h-72 animate-slide-up lg:h-auto lg:max-h-[34rem]" [provider]="selectedId()" [catalog]="catalog()" [fromServer]="catalogFromServer()" (picked)="add($event)" />
   }
@@ -324,7 +324,7 @@
               role="button"
               [attr.aria-label]="'Zona ' + zoneLabelOf(zone) + '. Arrastra o usa las flechas para moverla, Mayúsculas y flechas para redimensionarla, Suprimir para quitarla'"
               [attr.aria-pressed]="zone.id === activeZoneId()"
-              [attr.x]="zone.x" [attr.y]="zone.y" [attr.width]="zone.w" height="26" rx="8"
+              [attr.x]="zone.x" [attr.y]="zone.y" [attr.width]="zone.w" [attr.height]="touch ? touchTarget : 26" rx="8"
               (pointerdown)="onZonePointerDown($event, zone, 'move')"
               (pointermove)="onZonePointerMove($event)"
               (pointerup)="onZonePointerUp()"
@@ -442,6 +442,10 @@
             (keydown.enter)="remove(node)"
             (keydown.space)="remove(node); $event.preventDefault()"
           >
+            @if (touch) {
+              <!-- Zona que responde al dedo: el botón dibujado es demasiado pequeño. -->
+              <circle [attr.cx]="node.x + width / 2 - 4" [attr.cy]="node.y - height / 2 + 4" [attr.r]="touchTarget / 2" fill="transparent" stroke="none" />
+            }
             <circle [attr.cx]="node.x + width / 2 - 4" [attr.cy]="node.y - height / 2 + 4" r="10" />
             <path [attr.d]="'M' + (node.x + width / 2 - 8) + ' ' + (node.y - height / 2) + ' l8 8 m0 -8 l-8 8'" stroke="#fff" stroke-width="1.8" stroke-linecap="round" fill="none" />
           </g>
@@ -459,6 +463,9 @@
             (keydown.enter)="startConnection(node)"
             (keydown.space)="startConnection(node); $event.preventDefault()"
           >
+            @if (touch) {
+              <circle [attr.cx]="node.x + width / 2" [attr.cy]="node.y" [attr.r]="touchTarget / 2" fill="transparent" stroke="none" />
+            }
             <circle [attr.cx]="node.x + width / 2" [attr.cy]="node.y" r="9" />
             <path [attr.d]="'M' + (node.x + width / 2 - 4) + ' ' + node.y + ' h8 m-3 -3 l3 3 l-3 3'" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
           </g>
@@ -526,7 +533,7 @@
 
 <!-- Tráfico simulado y fallos sobre el nodo seleccionado. -->
 <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
-  <div class="glass flex rounded-full p-1" role="radiogroup" aria-label="Tráfico simulado">
+  <div class="glass flex max-w-full overflow-x-auto rounded-full p-1 [scrollbar-width:none]" role="radiogroup" aria-label="Tráfico simulado">
     @for (profile of trafficProfiles; track profile.id) {
       <button
         type="button"
