@@ -35,5 +35,11 @@ export function readTopology(value) {
     }
     return { from: link.from, to: link.to, label: typeof link.label === 'string' ? link.label : '' };
   });
-  return { nodes, links };
+  // Nombre de cada columna del diagrama; tiene que haber uno por etapa usada.
+  const stages = Array.isArray(value.stages) ? value.stages.map(String) : [];
+  const last = Math.max(...nodes.map((node) => node.stage));
+  if (stages.length <= last) {
+    throw new Error(`Faltan nombres de etapa: hay nodos en la etapa ${last} y solo ${stages.length} nombres en "stages".`);
+  }
+  return { stages, nodes, links };
 }

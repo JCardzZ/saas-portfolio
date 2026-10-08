@@ -12,6 +12,7 @@ const node = (overrides = {}) => ({
 test('acepta nodos live y planned y descarta lo que no conoce', () => {
   const topology = readTopology({
     $comment: 'x',
+    stages: ['Uno', 'Dos'],
     nodes: [node(), node({ id: 'b', status: 'planned', stage: 1, extra: 'se ignora' })],
     links: [{ from: 'a', to: 'b', label: 'usa' }],
   });
@@ -19,14 +20,16 @@ test('acepta nodos live y planned y descarta lo que no conoce', () => {
   assert.deepEqual(topology.nodes.map((item) => item.status), ['live', 'planned']);
   assert.equal('extra' in topology.nodes[1], false);
   assert.deepEqual(topology.links, [{ from: 'a', to: 'b', label: 'usa' }]);
+  assert.deepEqual(topology.stages, ['Uno', 'Dos']);
 });
 
 test('rechaza estados inventados, nodos repetidos, campos vacíos y conexiones colgadas', () => {
   assert.throws(() => readTopology({ nodes: [node({ status: 'beta' })], links: [] }), /live o planned/);
-  assert.throws(() => readTopology({ nodes: [node(), node()], links: [] }), /repetido/);
-  assert.throws(() => readTopology({ nodes: [node({ why: ' ' })], links: [] }), /le falta "why"/);
-  assert.throws(() => readTopology({ nodes: [node()], links: [{ from: 'a', to: 'zz' }] }), /no existe/);
-  assert.throws(() => readTopology({ nodes: [node({ stage: -1 })], links: [] }), /etapa/);
+  assert.throws(() => readTopology({ stages: ['Uno'], nodes: [node({ stage: 1 })], links: [] }), /nombres de etapa/);
+  assert.throws(() => readTopology({ stages: ['Uno'], nodes: [node(), node()], links: [] }), /repetido/);
+  assert.throws(() => readTopology({ stages: ['Uno'], nodes: [node({ why: ' ' })], links: [] }), /le falta "why"/);
+  assert.throws(() => readTopology({ stages: ['Uno'], nodes: [node()], links: [{ from: 'a', to: 'zz' }] }), /no existe/);
+  assert.throws(() => readTopology({ stages: ['Uno'], nodes: [node({ stage: -1 })], links: [] }), /etapa/);
   assert.throws(() => readTopology({}), /nodes/);
 });
 

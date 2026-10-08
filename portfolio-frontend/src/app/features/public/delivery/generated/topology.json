@@ -1,4 +1,11 @@
 {
+  "stages": [
+    "Código",
+    "CI/CD",
+    "Artefactos",
+    "Ejecución",
+    "Datos"
+  ],
   "nodes": [
     {
       "id": "github",
@@ -62,10 +69,10 @@
     },
     {
       "id": "backend",
-      "label": "VPS · Docker + Caddy",
-      "role": "API Spring Boot",
+      "label": "VPS",
+      "role": "Docker + Caddy",
       "icon": "caddy",
-      "stage": 4,
+      "stage": 3,
       "status": "planned",
       "what": "La API en un contenedor detrás de Caddy, que pone HTTPS automático.",
       "why": "Un VPS con Compose cuesta poco y se entiende entero; a cambio, no hay autoescalado ni alta disponibilidad.",
@@ -75,9 +82,9 @@
     {
       "id": "neon",
       "label": "Neon",
-      "role": "PostgreSQL + pgvector",
+      "role": "PostgreSQL",
       "icon": "neon",
-      "stage": 5,
+      "stage": 4,
       "status": "planned",
       "what": "Base de datos del CMS y de los vectores del asistente.",
       "why": "PostgreSQL gestionado con pgvector y escala a cero; a cambio, la primera consulta tras un rato parado tarda más.",
@@ -89,7 +96,7 @@
       "label": "Upstash",
       "role": "Redis",
       "icon": "upstash",
-      "stage": 5,
+      "stage": 4,
       "status": "planned",
       "what": "Caché de lectura y contadores del límite de peticiones.",
       "why": "Redis gestionado de pago por uso; si falla, la API sigue sirviendo desde PostgreSQL.",
@@ -99,9 +106,9 @@
     {
       "id": "gemini",
       "label": "Gemini",
-      "role": "Embeddings y respuestas",
+      "role": "IA generativa",
       "icon": "gemini",
-      "stage": 5,
+      "stage": 4,
       "status": "planned",
       "what": "Modelo que genera los embeddings y redacta las respuestas del asistente.",
       "why": "API gestionada con cuota gratuita; un circuit breaker corta las llamadas cuando el proveedor falla.",
