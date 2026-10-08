@@ -26,20 +26,22 @@ export const BOTTOM_MIN_PX = 120;
 export const BOTTOM_MAX_RATIO = 0.8;
 const HEIGHT_STORAGE_KEY = 'trace-inspector-height';
 const RESIZE_KEY_STEP = 24;
-const BOTTOM_HEIGHT_TALL = '50vh';
+const BOTTOM_HEIGHT_TALL = '50dvh';
 const RIGHT_WIDTH = '22rem';
-const SHEET_HEIGHT = '38vh';
-const SHEET_HEIGHT_TALL = '70vh';
+// dvh y no vh: la altura visible de verdad, con la barra del navegador móvil desplegada o no.
+const SHEET_HEIGHT = '38dvh';
+const SHEET_HEIGHT_TALL = '70dvh';
 const FLOATING_WIDTH = 384;
 const FLOATING_HEIGHT = 300;
 const EDGE = 8;
 const KEYBOARD_STEP = 24;
 
 const LAYOUT_CLASSES: Record<Exclude<InspectorLayout, 'pill'>, string> = {
-  bottom: 'inset-x-0 bottom-0 border-t',
-  right: 'inset-y-0 right-0 overflow-hidden border-l',
+  // Acoplado a un borde llega hasta él: el contenido se aparta de la muesca y de la barra de gestos.
+  bottom: 'inset-x-0 bottom-0 border-t pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]',
+  right: 'inset-y-0 right-0 overflow-hidden border-l pb-[env(safe-area-inset-bottom)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]',
   floating: 'overflow-hidden rounded-2xl border shadow-2xl shadow-black/70',
-  sheet: 'inset-x-0 bottom-0 overflow-hidden rounded-t-2xl border-t shadow-2xl shadow-black/70',
+  sheet: 'inset-x-0 bottom-0 overflow-hidden rounded-t-2xl border-t shadow-2xl shadow-black/70 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]',
 };
 
 const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
@@ -63,7 +65,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
   template: `
     @if (icon(); as icon) {
       @if (layout() === 'pill') {
-        <div data-pill class="fixed bottom-4 right-4 z-[46] flex animate-scale-up items-center rounded-full border bg-zinc-950/90 shadow-xl shadow-black/60 backdrop-blur-2xl" [style.border-color]="tint(55)">
+        <div data-pill style="bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); right: calc(1rem + env(safe-area-inset-right, 0px))" class="fixed z-[46] flex max-w-[calc(100vw-2rem)] animate-scale-up items-center rounded-full border bg-zinc-950/90 shadow-xl shadow-black/60 backdrop-blur-2xl" [style.border-color]="tint(55)">
           <button
             type="button"
             class="focus-ring flex items-center gap-2 rounded-full py-1.5 pl-3 pr-2 font-mono text-[11px] text-zinc-100 transition hover:bg-white/10"
@@ -209,6 +211,10 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
       cursor: ns-resize;
       touch-action: none;
       outline: none;
+    }
+    /* Con el dedo no hay franja de 8 px que valga: el tamaño se cambia con el botón verde (maximizar). */
+    @media (pointer: coarse) {
+      .resize-handle { display: none; }
     }
     .resize-handle::after {
       content: '';
@@ -442,6 +448,7 @@ export class TraceInspectorComponent {
   @HostListener('window:resize')
   onResize(): void {
     this.inspector.viewportWidth.set(window.innerWidth);
+    this.inspector.viewportHeight.set(window.innerHeight);
     this.maxHeight.set(maxBottomHeight());
     this.bottomHeight.update(clampHeight);
     this.position.update(clampToViewport);

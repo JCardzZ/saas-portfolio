@@ -103,7 +103,7 @@ export class CvDownloadComponent {
   imports: [FocusTrapDirective, AutofocusDirective],
   template: `
     @if (picker.open()) {
-      <div class="fixed inset-0 z-50 flex animate-fade-in items-start justify-center overflow-y-auto bg-black/70 px-4 py-[6vh] backdrop-blur-sm" (click)="close()" (keydown.escape)="close()">
+      <div class="fixed inset-0 z-50 flex animate-fade-in items-start justify-center overflow-y-auto bg-black/70 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(6dvh,env(safe-area-inset-bottom))] pt-[max(6dvh,env(safe-area-inset-top))] backdrop-blur-sm" (click)="close()" (keydown.escape)="close()">
         <section
           appFocusTrap
           role="dialog"
@@ -122,7 +122,7 @@ export class CvDownloadComponent {
             </button>
           </header>
 
-          <label class="mt-4 inline-flex cursor-pointer items-center gap-3 text-sm text-zinc-200">
+          <label class="mt-4 inline-flex min-h-[44px] cursor-pointer items-center gap-3 text-sm text-zinc-200">
             <input type="checkbox" role="switch" class="peer sr-only" [checked]="picker.withPhoto()" (change)="picker.withPhoto.set($any($event.target).checked)" />
             <span class="relative h-6 w-10 rounded-full bg-white/15 transition peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-white after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-4" aria-hidden="true"></span>
             Incluir foto de perfil
@@ -156,12 +156,12 @@ export class CvDownloadComponent {
           <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
             <p class="mr-1 text-xs text-zinc-400">Para sistemas de selección (ATS), texto plano:</p>
             @for (option of ats; track option.lang) {
-              <a class="focus-ring rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-100 transition hover:bg-white/10" [href]="urlOf(option)" [attr.download]="'cv-' + option.lang + '-ats.pdf'" [attr.hreflang]="option.lang">
+              <a class="focus-ring tap inline-flex items-center rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-100 transition hover:bg-white/10" [href]="urlOf(option)" [attr.download]="'cv-' + option.lang + '-ats.pdf'" [attr.hreflang]="option.lang">
                 {{ option.label }} <span class="text-zinc-500">· {{ option.hint }}</span>
               </a>
             }
             @if (jsonUrl) {
-              <a class="focus-ring rounded-full border border-white/15 px-3 py-1 font-mono text-xs text-zinc-100 transition hover:bg-white/10" [href]="jsonUrl" target="_blank" rel="noopener">JSON API</a>
+              <a class="focus-ring tap inline-flex items-center rounded-full border border-white/15 px-3 py-1 font-mono text-xs text-zinc-100 transition hover:bg-white/10" [href]="jsonUrl" target="_blank" rel="noopener">JSON API</a>
             }
           </div>
           <p class="mt-3 text-[11px] leading-snug text-zinc-500">

@@ -81,6 +81,13 @@ export class CloudInfraComponent {
   readonly providers = CLOUD_PROVIDERS;
   readonly scenarios = CHAOS_SCENARIOS;
   readonly icons = TECH_ICONS;
+  /** Pantalla táctil: las asas del lienzo reciben una zona de toque mayor que su dibujo. */
+  readonly touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  /**
+   * Lado de esa zona en unidades del lienzo: 44 px de pantalla al tamaño mínimo al que se dibuja
+   * (min-w de 720 px sobre un viewBox de 1110).
+   */
+  readonly touchTarget = Math.ceil(44 * (1110 / 720));
   readonly width = NODE_WIDTH;
   readonly height = NODE_HEIGHT;
   readonly viewBox = `0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`;

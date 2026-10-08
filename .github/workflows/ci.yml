@@ -476,6 +476,65 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  # El build que se va a desplegar, abierto en móviles y tabletas con los dos motores: Chromium
+  # (Chrome en Android) y WebKit (Safari en iOS). Perfiles y anchos en playwright.config.ts.
+  responsive:
+    name: 🧪 Móvil (${{ matrix.engine }} ${{ matrix.shard }}/${{ matrix.shards }})
+    needs: frontend-build
+    if: ${{ !cancelled() && needs.frontend-build.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # WebKit en Linux tarda casi el triple que Chromium: se reparte en tres grupos.
+        include:
+          - { engine: chromium, shard: 1, shards: 1 }
+          - { engine: webkit, shard: 1, shards: 3 }
+          - { engine: webkit, shard: 2, shards: 3 }
+          - { engine: webkit, shard: 3, shards: 3 }
+    defaults:
+      run:
+        working-directory: portfolio-frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: portfolio-frontend/package-lock.json
+      - run: npm ci
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: frontend-dist
+          path: portfolio-frontend/dist/portfolio-frontend/browser
+      - name: Instalar ${{ matrix.engine }}
+        run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Pruebas en todos los perfiles
+        run: npx playwright test --project='*-${{ matrix.engine }}' --shard=${{ matrix.shard }}/${{ matrix.shards }}
+      - name: Resumen
+        if: always()
+        run: node tools/e2e-summary.mjs >> "$GITHUB_STEP_SUMMARY" || echo "### Móviles y tabletas — sin resultados" >> "$GITHUB_STEP_SUMMARY"
+      # Capturas de cada sección en cada perfil, para revisarlas a mano.
+      - name: Capturas
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: capturas-movil-${{ matrix.engine }}-${{ matrix.shard }}
+          path: portfolio-frontend/e2e-screens
+          retention-days: 14
+          if-no-files-found: ignore
+      - name: Informe y trazas de los fallos
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: informe-movil-${{ matrix.engine }}-${{ matrix.shard }}
+          path: |
+            portfolio-frontend/e2e-report
+            portfolio-frontend/e2e-results
+          retention-days: 7
+          if-no-files-found: ignore
+
   preview:
     name: 📦 Preview URL
     needs: frontend-build
@@ -731,6 +790,7 @@ jobs:
       - frontend-test
       - frontend-build
       - lighthouse
+      - responsive
       - preview
       - docker
     if: always()

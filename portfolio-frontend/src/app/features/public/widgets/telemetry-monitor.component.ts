@@ -15,7 +15,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
   standalone: true,
   host: { class: 'bento-card flex flex-col' },
   template: `
-    <div class="flex items-center justify-between gap-3">
+    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
       <h3 class="text-xl font-semibold tracking-tight text-white">Telemetría</h3>
       <span class="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2 py-0.5 text-[11px] text-zinc-400">
         <span class="relative flex h-1.5 w-1.5">

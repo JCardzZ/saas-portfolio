@@ -17,6 +17,8 @@ describe('TraceInspectorComponent', () => {
       const fixture = TestBed.createComponent(TraceInspectorComponent);
       const inspector = TestBed.inject(TraceInspectorService);
       inspector.viewportWidth.set(viewportWidth);
+      // Alto de sobra: la ventana del runner es baja y, con poco alto, el panel pasa a ser una hoja.
+      inspector.viewportHeight.set(900);
       inspector.select('redis');
       fixture.detectChanges();
       const element = fixture.nativeElement as HTMLElement;
@@ -36,7 +38,7 @@ describe('TraceInspectorComponent', () => {
       expect(root.getPropertyValue('--dock-right')).toBe('0px');
 
       press('Maximizar el inspector');
-      expect(root.getPropertyValue('--dock-bottom')).toBe('50vh');
+      expect(root.getPropertyValue('--dock-bottom')).toBe('50dvh');
       press('Restaurar la altura');
       expect(root.getPropertyValue('--dock-bottom')).toBe('280px');
 
@@ -107,17 +109,28 @@ describe('TraceInspectorComponent', () => {
       expect(panel()!.dataset['layout']).toBe('right');
     });
 
+    it('is also a bottom sheet on a phone held sideways: wide enough to dock, too short for it', () => {
+      const { panel, inspector, fixture } = open(915);
+      expect(panel()!.dataset['layout']).toBe('bottom');
+
+      inspector.viewportHeight.set(412);
+      fixture.detectChanges();
+
+      expect(panel()!.dataset['layout']).toBe('sheet');
+      expect(panel()!.style.height).toBe('38dvh');
+    });
+
     it('becomes a bottom sheet on small screens, without a backdrop that would block the canvas', () => {
       const { panel, element, inspector, fixture, press } = open(390);
 
       expect(panel()!.dataset['layout']).toBe('sheet');
-      expect(panel()!.style.height).toBe('38vh');
+      expect(panel()!.style.height).toBe('38dvh');
       // La página gana ese espacio al final para poder desplazar el lienzo por encima de la hoja.
-      expect(root.getPropertyValue('--dock-bottom')).toBe('38vh');
+      expect(root.getPropertyValue('--dock-bottom')).toBe('38dvh');
       expect(element.querySelector('[aria-modal], .backdrop')).toBeNull();
       expect(element.querySelector('[aria-label="Posición del inspector"] button')).toBeNull();
       press('Maximizar el inspector');
-      expect(root.getPropertyValue('--dock-bottom')).toBe('70vh');
+      expect(root.getPropertyValue('--dock-bottom')).toBe('70dvh');
       press('Restaurar la altura');
 
       // Aunque el visitante hubiera elegido otra posición en escritorio.
@@ -145,7 +158,7 @@ describe('TraceInspectorComponent', () => {
       press('Flotante');
       press('Maximizar el inspector');
       expect(panel()!.dataset['layout']).toBe('bottom');
-      expect(root.getPropertyValue('--dock-bottom')).toBe('50vh');
+      expect(root.getPropertyValue('--dock-bottom')).toBe('50dvh');
 
       press('Minimizar a píldora');
       expect(inspector.mode()).toBe('pill');
@@ -265,7 +278,7 @@ describe('TraceInspectorComponent', () => {
       it('works together with the green button and only exists while docked at the bottom', () => {
         const { fixture, element, panel, press } = open();
         press('Maximizar el inspector');
-        expect(root.getPropertyValue('--dock-bottom')).toBe('50vh');
+        expect(root.getPropertyValue('--dock-bottom')).toBe('50dvh');
 
         // Arrastrar desde el estado ampliado parte de la altura que se ve y lo deja en píxeles.
         const shown = Math.round(window.innerHeight / 2);
@@ -288,6 +301,7 @@ describe('TraceInspectorComponent', () => {
       expect(panel()!.dataset['layout']).toBe('bottom');
 
       inspector.viewportWidth.set(1280);
+      inspector.viewportHeight.set(900);
       fixture.detectChanges();
       expect(panel()!.dataset['layout']).toBe('right');
     });

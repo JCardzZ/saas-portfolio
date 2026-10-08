@@ -26,6 +26,8 @@ const MODES: InspectorMode[] = ['bottom', 'right', 'floating', 'pill'];
 const MODE_STORAGE_KEY = 'trace-inspector-mode';
 /** Por debajo de este ancho el panel es una hoja inferior; acoplarlo a la derecha exige más sitio. */
 export const SHEET_BELOW_PX = 640;
+/** Con menos alto que este (un móvil en horizontal) el panel acoplado no deja ver la página: va como hoja. */
+export const SHEET_BELOW_HEIGHT_PX = 500;
 export const RIGHT_DOCK_FROM_PX = 1024;
 
 /**
@@ -52,6 +54,7 @@ export class TraceInspectorService {
   private expandedMode: Exclude<InspectorMode, 'pill'> = this._mode() === 'pill' ? 'bottom' : (this._mode() as Exclude<InspectorMode, 'pill'>);
   /** Ancho de la ventana; lo mantiene al día el componente del panel. */
   readonly viewportWidth = signal(typeof window === 'undefined' ? RIGHT_DOCK_FROM_PX : window.innerWidth);
+  readonly viewportHeight = signal(typeof window === 'undefined' ? SHEET_BELOW_HEIGHT_PX : window.innerHeight);
 
   /** Disposición efectiva según el modo elegido y el espacio disponible. */
   readonly layout = computed<InspectorLayout>(() => {
@@ -59,7 +62,7 @@ export class TraceInspectorService {
     if (mode === 'pill') {
       return 'pill';
     }
-    if (this.viewportWidth() < SHEET_BELOW_PX) {
+    if (this.viewportWidth() < SHEET_BELOW_PX || this.viewportHeight() < SHEET_BELOW_HEIGHT_PX) {
       return 'sheet';
     }
     return mode === 'right' && this.viewportWidth() < RIGHT_DOCK_FROM_PX ? 'bottom' : mode;
