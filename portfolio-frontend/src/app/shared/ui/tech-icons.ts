@@ -3,8 +3,6 @@ import {
   siApachecassandra,
   siApachekafka,
   siCaddy,
-  siCloudflare,
-  siCloudflarepages,
   siDatadog,
   siDocker,
   siElasticsearch,
@@ -14,7 +12,6 @@ import {
   siGooglebigquery,
   siGooglecloud,
   siGooglecloudstorage,
-  siGooglegemini,
   siGooglepubsub,
   siGrafana,
   siJsonwebtokens,
@@ -73,6 +70,9 @@ export type TechIconKey =
 
 const WHITE = '#FFFFFF';
 
+/** Símbolo genérico (un aro) para las marcas cuyo logo no se puede mostrar. No es el logo de nadie. */
+const NEUTRAL_PATH = 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 2.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13Z';
+
 const AZURE_BLUE = '#0089D6';
 const GOOGLE_BLUE = '#4285F4';
 
@@ -89,13 +89,14 @@ export const TECH_ICONS: Record<TechIconKey, TechIcon> = {
   angular: icon(siAngular),
   postgresql: icon(siPostgresql),
   redis: icon(siRedis),
-  gemini: icon(siGooglegemini),
+  // Sin permiso escrito de la marca no se usa su logo (docs/brand-usage.md): símbolo neutro y el nombre al lado.
+  gemini: neutral('Google Gemini'),
   docker: icon(siDocker),
-  cloudflare: icon(siCloudflare),
+  cloudflare: neutral('Cloudflare'),
   jwt: icon(siJsonwebtokens),
   github: icon(siGithub),
   githubActions: icon(siGithubactions, 'GitHub Actions'),
-  cloudflarePages: icon(siCloudflarepages, 'Cloudflare Pages'),
+  cloudflarePages: neutral('Cloudflare Pages'),
   caddy: icon(siCaddy),
   neon: icon(siNeon),
   upstash: icon(siUpstash),
@@ -195,6 +196,10 @@ export const TECH_ICONS: Record<TechIconKey, TechIcon> = {
 
 function image(title: string, file: string, color: string, family: CloudFamily): TechIcon {
   return { title, official: true, path: '', image: `cloud-icons/${file}`, color, family };
+}
+
+function neutral(title: string): TechIcon {
+  return { title, official: false, path: NEUTRAL_PATH, color: '#A1A1AA' };
 }
 
 function icon(source: { title: string; hex: string; path: string }, title = source.title): TechIcon {
