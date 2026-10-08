@@ -19,6 +19,7 @@ for attempt in 1 2 3 4; do
     git -C "$WORK/badges" checkout --quiet --orphan badges
   fi
   node "$TOOLS/pipeline-status.mjs" --existing "$WORK/badges/pipeline-status.json" --metrics "$METRICS" \
+    --seed "$TOOLS/../public/pipeline-status.json" \
     --out "$WORK/badges/pipeline-status.json"
   git -C "$WORK/badges" add pipeline-status.json
   git -C "$WORK/badges" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \

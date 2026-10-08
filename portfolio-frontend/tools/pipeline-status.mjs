@@ -7,7 +7,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { mergeMetrics, mergeStatus, workflowStatus } from './lib/pipeline-status.mjs';
+import { deploymentsOf, mergeMetrics, mergeStatus, withDeployments, workflowStatus } from './lib/pipeline-status.mjs';
 
 const arg = (name) => { const index = process.argv.indexOf(`--${name}`); return index < 0 ? null : process.argv[index + 1]; };
 const { GH_TOKEN: token, GITHUB_REPOSITORY: repository, RUN_ID: runId, WORKFLOW_KEY: key } = process.env;
@@ -26,9 +26,12 @@ async function api(path) {
   return response.json();
 }
 
+// Un rollback no es un workflow del grafo: solo añade su entrada a la línea de tiempo.
+const isRollback = key === 'rollback';
+
 const graphs = JSON.parse(readFileSync(join(import.meta.dirname, '../src/app/features/public/delivery/generated/workflows.json'), 'utf8'));
 const graph = graphs[key];
-if (!graph) {
+if (!graph && !isRollback) {
   console.error(`No hay grafo para el workflow "${key}".`);
   process.exit(1);
 }
@@ -60,9 +63,26 @@ if (metricsDir && existsSync(metricsDir)) {
 
 const now = new Date().toISOString();
 const existingFile = arg('existing');
-const existing = existingFile && existsSync(existingFile) ? JSON.parse(readFileSync(existingFile, 'utf8')) : null;
-const status = mergeStatus(existing, key, workflowStatus(run, jobs, graph, metrics, now), {
-  repository, isPublic: repo.private === false, now,
-});
+let existing = existingFile && existsSync(existingFile) ? JSON.parse(readFileSync(existingFile, 'utf8')) : null;
+// La primera vez la rama badges aún no trae línea de tiempo: se parte de la copia del repositorio.
+const seedFile = arg('seed');
+if (seedFile && existsSync(seedFile) && !(existing?.deployments?.frontend?.length || existing?.deployments?.backend?.length)) {
+  const seed = JSON.parse(readFileSync(seedFile, 'utf8'));
+  if (seed?.deployments) {
+    existing = { ...(existing ?? { schema: 1, workflows: {} }), deployments: seed.deployments };
+  }
+}
+
+const by = process.env.DEPLOYED_BY ?? '';
+const workflow = isRollback ? null : workflowStatus(run, jobs, graph, metrics, now);
+let status = mergeStatus(existing, key, workflow, { repository, isPublic: repo.private === false, now });
+if (key === 'cd') {
+  status = withDeployments(status, deploymentsOf(workflow, { by }));
+}
+if (isRollback) {
+  // DEPLOYMENT_ENTRY: lo que hizo rollback.yml (destino, commit, despliegue al que se volvió).
+  const entry = JSON.parse(process.env.DEPLOYMENT_ENTRY ?? '{}');
+  status = withDeployments(status, [{ ...entry, kind: 'rollback', at: now, by, runId: run.id, runNumber: run.run_number }]);
+}
 writeFileSync(arg('out') ?? 'pipeline-status.json', `${JSON.stringify(status, null, 2)}\n`);
-console.log(`pipeline-status.json: ${key} · ejecución ${run.run_number} · ${status.workflows[key].jobs.length} jobs`);
+console.log(`pipeline-status.json: ${key} · ejecución ${run.run_number}`);
