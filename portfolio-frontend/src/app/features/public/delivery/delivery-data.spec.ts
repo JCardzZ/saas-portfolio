@@ -1,5 +1,5 @@
 import {
-  CARD, PILL, TOPOLOGY, WORKFLOWS, WORKFLOW_KEYS, edgePath, essentialEdges, formatDuration, formatDurationShort, layoutStages,
+  CARD, PILL, TOPOLOGY, WORKFLOWS, WORKFLOW_KEYS, columnsThatFit, edgePath, essentialEdges, formatDuration, formatDurationShort, layoutStages,
   parsePipelineStatus, plainJobName,
 } from './delivery-data';
 import { JOB_NOTES } from './job-notes';
@@ -71,19 +71,25 @@ describe('graph layout', () => {
 
     expect(layout.stages).toEqual([['a'], ['b', 'c'], ['d']]);
     expect(layout.stageNumbers).toEqual([0, 1, 3]);
+    expect(layout.bands).toBe(1);
     expect(layout.positions['a'].x).toBe(0);
     expect(layout.positions['b'].x).toBe(PILL.width + PILL.columnGap);
     expect(layout.positions['b'].x).toBe(layout.positions['c'].x);
     expect(layout.positions['d'].x).toBe(2 * (PILL.width + PILL.columnGap));
     // Una columna de un nodo queda a media altura de la de dos.
-    expect(layout.positions['a'].y).toBe((layout.positions['b'].y + layout.positions['c'].y) / 2);
+    expect(Math.abs(layout.positions['a'].y - (layout.positions['b'].y + layout.positions['c'].y) / 2)).toBeLessThanOrEqual(2);
     expect(layout.height).toBe(2 * PILL.height + PILL.rowGap);
     expect(layout.width).toBe(3 * PILL.width + 2 * PILL.columnGap);
   });
 
-  it('leaves room above the columns for their names and keeps every node on the 4 px grid', () => {
+  it('keeps generous, regular spacing: 48 px or more between columns and 24 px or more between nodes', () => {
+    for (const size of [CARD, PILL]) {
+      expect(size.columnGap).toBeGreaterThanOrEqual(48);
+      expect(size.rowGap).toBeGreaterThanOrEqual(24);
+      expect(size.columnGap % 8).toBe(0);
+      expect(size.rowGap % 8).toBe(0);
+    }
     const layout = layoutStages(TOPOLOGY.nodes, CARD);
-
     for (const position of Object.values(layout.positions)) {
       expect(position.y).toBeGreaterThanOrEqual(CARD.top);
       expect(position.x % 8).toBe(0);
@@ -91,19 +97,54 @@ describe('graph layout', () => {
     }
   });
 
+  it('continues in another band below when the columns do not fit, instead of squeezing', () => {
+    const nodes = [0, 1, 2, 3, 4].map((stage) => ({ id: `n${stage}`, stage }));
+    const layout = layoutStages(nodes, PILL, 2);
+
+    expect(layout.bands).toBe(3);
+    expect([0, 1, 2, 3, 4].map((stage) => layout.positions[`n${stage}`].band)).toEqual([0, 0, 1, 1, 2]);
+    // Dos columnas de ancho, con un pasillo a cada lado para las conexiones entre franjas.
+    expect(layout.width).toBe(2 * PILL.width + PILL.columnGap + PILL.columnGap);
+    expect(layout.positions['n0'].x).toBe(PILL.columnGap / 2);
+    expect(layout.positions['n2'].x).toBe(layout.positions['n0'].x);
+    expect(layout.positions['n2'].y).toBeGreaterThanOrEqual(layout.positions['n0'].y + PILL.height + PILL.bandGap);
+    // La línea libre entre franjas queda entre una y otra.
+    expect(layout.bandLanes[1]).toBeGreaterThan(layout.positions['n0'].y + PILL.height);
+    expect(layout.bandLanes[1]).toBeLessThan(layout.positions['n2'].y);
+  });
+
+  it('tells how many columns fit in a width', () => {
+    expect(columnsThatFit(PILL.width, PILL)).toBe(1);
+    expect(columnsThatFit(2 * PILL.width + PILL.columnGap, PILL)).toBe(2);
+    expect(columnsThatFit(2 * PILL.width + PILL.columnGap - 1, PILL)).toBe(1);
+    expect(columnsThatFit(10, PILL)).toBe(1);
+  });
+
   it('draws a straight line between nodes at the same height', () => {
-    expect(edgePath({ x: 0, y: 32 }, { x: 208, y: 32 }, CARD)).toBe(`M${CARD.width} 58 H208`);
+    expect(edgePath({ x: 0, y: 32, band: 0 }, { x: 216, y: 32, band: 0 }, CARD)).toBe(`M${CARD.width} 58 L216 58`);
   });
 
   it('turns with rounded corners in the gap after the source column', () => {
-    const path = edgePath({ x: 0, y: 0 }, { x: 208, y: 100 }, CARD);
     const bend = CARD.width + CARD.columnGap / 2;
 
-    expect(path).toBe(`M${CARD.width} 26 H${bend - 8} Q${bend} 26 ${bend} 34 V118 Q${bend} 126 ${bend + 8} 126 H208`);
+    expect(edgePath({ x: 0, y: 0, band: 0 }, { x: 216, y: 100, band: 0 }, CARD))
+      .toBe(`M${CARD.width} 26 L${bend - 8} 26 Q${bend} 26 ${bend} 34 L${bend} 118 Q${bend} 126 ${bend + 8} 126 L216 126`);
   });
 
   it('joins two nodes of the same column with a vertical line', () => {
-    expect(edgePath({ x: 0, y: 0 }, { x: 0, y: 68 }, CARD)).toBe(`M${CARD.width / 2} 52 V68`);
+    expect(edgePath({ x: 0, y: 0, band: 0 }, { x: 0, y: 76, band: 0 }, CARD)).toBe(`M${CARD.width / 2} 52 L${CARD.width / 2} 76`);
+  });
+
+  it('reaches another band through the gaps, never across a node', () => {
+    const path = edgePath({ x: 24, y: 0, band: 0 }, { x: 24, y: 200, band: 1 }, PILL, [0, 150]);
+    const out = 24 + PILL.width + PILL.columnGap / 2;
+
+    // Sale por el pasillo de la derecha, recorre la línea libre (y = 150) y entra por el pasillo de la izquierda.
+    expect(path.startsWith(`M${24 + PILL.width} 18`)).toBeTrue();
+    expect(path).toContain(`Q${out} 18 `);
+    expect(path).toContain(' 150');
+    expect(path).toContain('Q0 150 ');
+    expect(path.endsWith('L24 218')).toBeTrue();
   });
 
   it('draws only the dependencies that are not implied by others', () => {

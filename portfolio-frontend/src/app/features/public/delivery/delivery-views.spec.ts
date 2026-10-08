@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { Type } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 
+import { TECH_ICONS } from '../../../shared/ui/tech-icons';
 import { SystemEventsService } from '../data/system-events.service';
 import { TraceInspectorService } from '../data/trace-inspector.service';
 import { TOPOLOGY, WORKFLOWS } from './delivery-data';
@@ -173,35 +174,34 @@ describe('PipelineViewComponent', () => {
   }));
 });
 
-describe('node icons', () => {
+describe('brand marks in the graphs', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('are 16 px (20 px in the active node) and never larger than 24 px', () => {
+  it('shows names as text: no logo without the brand\'s permission, and nothing larger than 24 px', () => {
     const { fixture, backend, element } = setup(ProductionArchitectureComponent);
     serveSnapshot(backend, statusFile(), fixture);
     document.body.appendChild(element);
-    const sizes = () => Array.from(element.querySelectorAll<SVGElement>('.node .icon')).map((icon) => icon.getBoundingClientRect());
 
-    expect(sizes().length).toBeGreaterThan(4);
-    for (const rect of sizes()) {
-      expect(rect.width).toBe(16);
-      expect(rect.height).toBe(16);
-    }
-
-    node(element, 'GitHub Actions').click();
-    fixture.detectChanges();
-    const active = node(element, 'GitHub Actions').querySelector<SVGElement>('.icon')!;
-    active.style.transition = 'none';
-
-    expect(active.getBoundingClientRect().width).toBe(20);
-    for (const rect of sizes()) {
+    for (const icon of Array.from(element.querySelectorAll('.node svg, .node img'))) {
+      const rect = icon.getBoundingClientRect();
       expect(Math.max(rect.width, rect.height)).toBeLessThanOrEqual(24);
     }
-    // El logo va en línea, con su caja fija: no es el componente que lo hace despegar y flotar.
+    for (const label of ['Cloudflare Pages', 'Gemini', 'Neon', 'GHCR']) {
+      expect(node(element, label).querySelector('svg, img')).withContext(label).toBeNull();
+      expect(node(element, label).textContent).toContain(label);
+    }
+    // No es el componente que hace despegar y flotar el logo.
     expect(element.querySelector('app-tech-icon')).toBeNull();
-    expect(active.getAttribute('viewBox')).toBe('0 0 24 24');
-    expect(getComputedStyle(active).overflow).toBe('hidden');
     element.remove();
+  });
+});
+
+describe('brand marks elsewhere on the site', () => {
+  it('uses a neutral symbol, not the logo, for Cloudflare and AI providers', () => {
+    for (const key of ['cloudflare', 'cloudflarePages', 'gemini'] as const) {
+      expect(TECH_ICONS[key].official).withContext(key).toBeFalse();
+    }
+    expect(TECH_ICONS.cloudflare.path).toBe(TECH_ICONS.gemini.path);
   });
 });
 
@@ -225,7 +225,7 @@ describe('ProductionArchitectureComponent', () => {
   it('shows the real data of a live piece and none for a planned one', () => {
     const { fixture, backend, element } = setup(ProductionArchitectureComponent);
     serveSnapshot(backend, statusFile(), fixture);
-    const detail = () => element.querySelector('[aria-live="polite"]')!.textContent!;
+    const detail = () => element.querySelector('div[aria-live="polite"]')!.textContent!;
 
     node(element, 'GHCR').click();
     fixture.detectChanges();

@@ -23,45 +23,100 @@ async function capture(page: Page, testInfo: TestInfo, selector: string, name: s
 }
 
 test.describe('arquitectura real y pipeline en escritorio', () => {
-  test('los logos de los nodos miden 16 px (20 el activo) y nunca tapan el diagrama', async ({ page }) => {
+  test('ningún nodo lleva un logo sin permiso de marca: los nombres van en texto y nada mide más de 24 px', async ({ page }) => {
     await openDelivery(page);
 
-    const sizes = () => page.locator('app-stage-graph .node .icon').evaluateAll((icons) =>
-      icons.map((icon) => { const rect = icon.getBoundingClientRect(); return [Math.round(rect.width), Math.round(rect.height)]; }));
-
-    const resting = await sizes();
-    expect(resting.length).toBeGreaterThan(4);
-    for (const [width, height] of resting) {
-      expect(width, 'ancho de un logo').toBe(16);
-      expect(height, 'alto de un logo').toBe(16);
+    // Cualquier imagen o icono dentro de un nodo, si lo hubiera, cabe en 24 px.
+    const sizes = await page.locator('app-stage-graph .node :is(svg, img)').evaluateAll((icons) =>
+      icons.map((icon) => { const rect = icon.getBoundingClientRect(); return Math.max(rect.width, rect.height); }));
+    for (const size of sizes) {
+      expect(size, 'tamaño de un icono de nodo').toBeLessThanOrEqual(MAX_ICON);
     }
-
-    // El logo del nodo elegido crece a 20 px; ninguno pasa de 24. El cursor se aparta para medir
-    // la tarjeta en reposo (al pasar por encima, toda la tarjeta hace un zoom del 2 %).
-    await page.locator('app-production-architecture button.node').first().click();
-    await page.mouse.move(0, 0);
-    await page.waitForTimeout(900);
-    const active = await sizes();
-    expect(Math.max(...active.flat())).toBe(20);
-    expect(Math.max(...active.flat())).toBeLessThanOrEqual(MAX_ICON);
-    // Nada que flote sobre el diagrama: el logo no sale de su nodo.
-    await expect(page.locator('app-icon-pop-layer [data-pop], app-icon-pop-layer .pop')).toHaveCount(0);
+    // Cloudflare y los proveedores de IA no dan permiso de uso del logo: solo su nombre.
+    for (const label of ['Cloudflare Pages', 'Gemini', 'GHCR']) {
+      const node = page.locator('app-production-architecture button.node', { hasText: label });
+      await expect(node).toBeVisible();
+      await expect(node.locator('svg, img')).toHaveCount(0);
+    }
+    // Nada que flote sobre el diagrama.
+    await expect(page.locator('app-stage-graph app-tech-icon')).toHaveCount(0);
   });
 
-  test('los nodos son tarjetas de 52 px en columnas por etapa y las píldoras del pipeline miden 36', async ({ page }) => {
+  test('el diagrama respira: columnas a 48 px o más, nodos a 24 px o más, y nada se solapa', async ({ page }) => {
     await openDelivery(page);
 
-    const boxes = (view: string) => page.locator(`${view} button.node`).evaluateAll((nodes) =>
-      nodes.map((node) => { const rect = node.getBoundingClientRect(); return { left: Math.round(rect.left), height: Math.round(rect.height) }; }));
+    for (const view of VIEWS) {
+      const boxes = await page.locator(`${view} button.node`).evaluateAll((nodes) =>
+        nodes.map((node) => { const r = node.getBoundingClientRect(); return { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) }; }));
+      expect(new Set(boxes.map((box) => box.h)), `${view}: alto de los nodos`).toEqual(new Set([view === 'app-pipeline-view' ? 36 : 52]));
 
-    const architecture = await boxes('app-production-architecture');
-    expect(new Set(architecture.map((box) => box.height))).toEqual(new Set([52]));
-    expect(new Set(architecture.map((box) => box.left)).size).toBe(5);
+      for (const a of boxes) {
+        for (const b of boxes) {
+          if (a === b) {
+            continue;
+          }
+          const overlapX = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+          const overlapY = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+          expect(overlapX > 0 && overlapY > 0, `${view}: dos nodos se solapan`).toBe(false);
+          // Misma columna: al menos 24 px entre uno y el siguiente.
+          if (a.x === b.x && b.y > a.y) {
+            expect(b.y - (a.y + a.h), `${view}: separación vertical`).toBeGreaterThanOrEqual(24);
+          }
+          // Columnas vecinas de la misma franja: al menos 48 px.
+          if (b.x > a.x && overlapY > 0) {
+            expect(b.x - (a.x + a.w), `${view}: separación entre columnas`).toBeGreaterThanOrEqual(48);
+          }
+        }
+      }
+      // Cabe en su tarjeta: el diagrama se reorganiza, no obliga a desplazarse de lado.
+      const overflow = await page.locator(`${view} .scroller`).evaluate((scroller) => scroller.scrollWidth - scroller.clientWidth);
+      expect(overflow, `${view}: desborde horizontal`).toBeLessThanOrEqual(0);
+    }
     await expect(page.locator('app-production-architecture .stage-name')).toHaveText(['Código', 'CI/CD', 'Artefactos', 'Ejecución', 'Datos']);
+  });
 
-    const pipeline = await boxes('app-pipeline-view');
-    expect(new Set(pipeline.map((box) => box.height))).toEqual(new Set([36]));
-    expect(new Set(pipeline.map((box) => box.left)).size).toBeGreaterThan(4);
+  test('zoom y «ajustar a pantalla»: el pipeline pasa de varias franjas a una sola, a escala', async ({ page }, testInfo) => {
+    await openDelivery(page);
+    const view = page.locator('app-pipeline-view');
+    const rows = () => view.locator('button.node', { hasText: /^Cambios|gate/ }).evaluateAll((nodes) =>
+      nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
+
+    // A tamaño real no cabe en una franja: la última etapa queda más abajo que la primera.
+    const [first, last] = await rows();
+    expect(last - first).toBeGreaterThan(100);
+    await expect(view.locator('.level')).toHaveText('100 %');
+
+    await view.getByRole('button', { name: 'Ajustar a pantalla' }).click();
+    await page.waitForTimeout(300);
+    const overflow = await view.locator('.scroller').evaluate((scroller) => scroller.scrollWidth - scroller.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+    expect(Number((await view.locator('.level').textContent())!.replace(/\D/g, ''))).toBeLessThan(100);
+    await capture(page, testInfo, 'app-pipeline-view', 'pipeline-ajustado-a-pantalla');
+
+    await view.getByRole('button', { name: 'Tamaño real' }).click();
+    await view.getByRole('button', { name: 'Alejar' }).click();
+    await expect(view.locator('.level')).toHaveText('80 %');
+    await view.getByRole('button', { name: 'Acercar' }).click();
+    await expect(view.locator('.level')).toHaveText('100 %');
+  });
+
+  test('se recorre con el teclado, con el foco visible', async ({ page }) => {
+    await openDelivery(page);
+    const graph = page.locator('app-production-architecture');
+
+    await graph.locator('button.node', { hasText: 'GitHub Actions' }).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(graph.locator('button.node', { hasText: 'GHCR' })).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(graph.locator('button.node', { hasText: 'Cloudflare Pages' })).toBeFocused();
+    await page.keyboard.press('Home');
+    const first = graph.locator('button.node').first();
+    await expect(first).toBeFocused();
+    // El foco se ve (anillo) e ilumina el camino igual que el cursor.
+    expect(await first.evaluate((node) => getComputedStyle(node).outlineStyle !== 'none' || getComputedStyle(node).boxShadow !== 'none')).toBe(true);
+    await expect(graph.locator('.graph.focused')).toHaveCount(1);
+    await page.keyboard.press('Enter');
+    await expect(graph.locator('div[aria-live="polite"]')).toContainText('Por qué');
   });
 
   test('al señalar un nodo se ilumina su camino y el resto baja al 40 %', async ({ page }, testInfo) => {

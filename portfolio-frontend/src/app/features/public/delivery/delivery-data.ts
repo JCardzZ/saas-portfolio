@@ -228,93 +228,166 @@ export interface GraphNode {
   stage: number;
 }
 
-/** Medidas de un grafo, en píxeles. Todo va a una rejilla de 8. */
+/** Medidas de un grafo, en píxeles, sobre una rejilla de 8. */
 export interface GraphSize {
   width: number;
   height: number;
+  /** Entre columnas: al menos 48, para que quepan los quiebres de las conexiones. */
   columnGap: number;
+  /** Entre nodos de una columna: al menos 24. */
   rowGap: number;
   /** Hueco sobre las columnas para su rótulo. */
   top: number;
+  /** Entre dos franjas de columnas, cuando el grafo no cabe en una sola. */
+  bandGap: number;
 }
 
 /** Tarjeta de una pieza de la arquitectura. */
-export const CARD: GraphSize = { width: 192, height: 52, columnGap: 24, rowGap: 16, top: 32 };
+export const CARD: GraphSize = { width: 168, height: 52, columnGap: 48, rowGap: 24, top: 32, bandGap: 56 };
 /** Píldora de un job del pipeline: más pequeña, hay muchas más. */
-export const PILL: GraphSize = { width: 200, height: 36, columnGap: 40, rowGap: 12, top: 0 };
+export const PILL: GraphSize = { width: 200, height: 36, columnGap: 48, rowGap: 24, top: 0, bandGap: 56 };
+
+export interface NodePosition {
+  x: number;
+  y: number;
+  /** Franja (fila de columnas) en la que está. */
+  band: number;
+}
 
 export interface GraphLayout {
   width: number;
   height: number;
-  positions: Record<string, { x: number; y: number }>;
+  positions: Record<string, NodePosition>;
   /** Nodos de cada etapa, en orden; es también el orden de la vista vertical del móvil. */
   stages: string[][];
   /** Número de etapa (el del dato) de cada columna, para rotularla. */
   stageNumbers: number[];
+  /** Dónde va el rótulo de cada columna. */
+  headers: { x: number; y: number }[];
+  /** Línea horizontal libre sobre cada franja: por ahí pasan las conexiones que cambian de franja. */
+  bandLanes: number[];
+  bands: number;
 }
 
 /**
- * Columnas por etapa, de izquierda a derecha, con cada columna centrada en vertical. Las
- * posiciones salen de la cuenta, no de medir el DOM: las conexiones y las tarjetas usan las
- * mismas cifras.
+ * Una columna por etapa, de izquierda a derecha y centrada en vertical. Si no caben todas en
+ * `maxColumns`, las columnas siguen en otra franja debajo: el grafo se reorganiza, nunca se
+ * comprime ni se solapa. Las posiciones salen de la cuenta, no de medir el DOM.
  */
-export function layoutStages(nodes: GraphNode[], size: GraphSize = CARD): GraphLayout {
+export function layoutStages(nodes: GraphNode[], size: GraphSize = CARD, maxColumns = Infinity): GraphLayout {
   const byStage = new Map<number, string[]>();
   for (const node of nodes) {
     byStage.set(node.stage, [...(byStage.get(node.stage) ?? []), node.id]);
   }
   const stageNumbers = [...byStage.keys()].sort((a, b) => a - b);
   const stages = stageNumbers.map((stage) => byStage.get(stage)!);
-  const rows = Math.max(1, ...stages.map((stage) => stage.length));
-  const columnsHeight = rows * size.height + (rows - 1) * size.rowGap;
+  const perBand = Math.max(1, Math.min(stages.length, Math.floor(maxColumns)) || 1);
+  const bands = Math.max(1, Math.ceil(stages.length / perBand));
+  // Con varias franjas, un margen a cada lado deja pasillo para las conexiones que cambian de franja.
+  const margin = bands > 1 ? size.columnGap / 2 : 0;
+
   const positions: GraphLayout['positions'] = {};
-  stages.forEach((stage, column) => {
-    const height = stage.length * size.height + (stage.length - 1) * size.rowGap;
-    // A la rejilla de 4: una columna impar centrada frente a una par cae en medio píxel.
-    const offset = Math.round((columnsHeight - height) / 2 / 4) * 4;
-    stage.forEach((id, row) => {
-      positions[id] = {
-        x: column * (size.width + size.columnGap),
-        y: size.top + offset + row * (size.height + size.rowGap),
-      };
+  const headers: GraphLayout['headers'] = [];
+  const bandLanes: number[] = [];
+  let y = 0;
+  for (let band = 0; band < bands; band++) {
+    const columns = stages.slice(band * perBand, (band + 1) * perBand);
+    const rows = Math.max(1, ...columns.map((column) => column.length));
+    const bodyHeight = rows * size.height + (rows - 1) * size.rowGap;
+    if (band > 0) {
+      bandLanes[band] = y + size.bandGap / 2;
+      y += size.bandGap;
+    } else {
+      bandLanes[band] = 0;
+    }
+    columns.forEach((column, index) => {
+      const x = margin + index * (size.width + size.columnGap);
+      const height = column.length * size.height + (column.length - 1) * size.rowGap;
+      // A la rejilla de 4: una columna impar centrada frente a una par cae en medio píxel.
+      const offset = Math.round((bodyHeight - height) / 2 / 4) * 4;
+      headers.push({ x, y });
+      column.forEach((id, row) => {
+        positions[id] = { x, y: y + size.top + offset + row * (size.height + size.rowGap), band };
+      });
     });
-  });
+    y += size.top + bodyHeight;
+  }
+  const columnsWide = Math.min(stages.length, perBand) || 1;
   return {
-    width: Math.max(1, stages.length) * size.width + Math.max(0, stages.length - 1) * size.columnGap,
-    height: size.top + columnsHeight,
+    width: 2 * margin + columnsWide * size.width + (columnsWide - 1) * size.columnGap,
+    height: y,
     positions,
     stages,
     stageNumbers,
+    headers,
+    bandLanes,
+    bands,
   };
 }
 
 const CORNER = 8;
 
+/** Línea quebrada con las esquinas redondeadas, por una lista de puntos en ángulo recto. */
+function roundedPath(points: [number, number][]): string {
+  let path = `M${points[0][0]} ${points[0][1]}`;
+  for (let index = 1; index < points.length; index++) {
+    const [x, y] = points[index];
+    const next = points[index + 1];
+    if (!next) {
+      path += ` L${x} ${y}`;
+      break;
+    }
+    const [px, py] = points[index - 1];
+    const before = Math.hypot(x - px, y - py);
+    const after = Math.hypot(next[0] - x, next[1] - y);
+    const radius = Math.min(CORNER, before / 2, after / 2);
+    if (radius === 0) {
+      continue;
+    }
+    const ax = x - Math.sign(x - px) * radius;
+    const ay = y - Math.sign(y - py) * radius;
+    const bx = x + Math.sign(next[0] - x) * radius;
+    const by = y + Math.sign(next[1] - y) * radius;
+    path += ` L${ax} ${ay} Q${x} ${y} ${bx} ${by}`;
+  }
+  return path;
+}
+
 /**
- * Conexión en ángulos rectos con las esquinas redondeadas. Entre columnas sale por la derecha de
- * un nodo, quiebra en el pasillo que hay tras su columna y entra por la izquierda del otro; dentro
- * de una misma columna baja (o sube) en línea recta.
+ * Conexión en ángulos rectos con las esquinas redondeadas.
+ * - Entre columnas de la misma franja: sale por la derecha, quiebra en el pasillo y entra por la izquierda.
+ * - Dentro de una columna: baja (o sube) en línea recta.
+ * - A otra franja: baja por el pasillo de su derecha hasta la línea libre sobre la franja de
+ *   destino, la recorre y entra por la izquierda del nodo. Nunca pasa por encima de un nodo.
  */
-export function edgePath(from: { x: number; y: number }, to: { x: number; y: number }, size: GraphSize = CARD): string {
+export function edgePath(from: NodePosition, to: NodePosition, size: GraphSize = CARD, bandLanes: number[] = []): string {
+  const y1 = from.y + size.height / 2;
+  const y2 = to.y + size.height / 2;
+  const half = size.columnGap / 2;
+  if (from.band !== to.band) {
+    const lane = bandLanes[Math.max(from.band, to.band)] ?? (from.y + to.y) / 2;
+    const out = from.x + size.width + half;
+    const into = to.x - half;
+    return roundedPath([[from.x + size.width, y1], [out, y1], [out, lane], [into, lane], [into, y2], [to.x, y2]]);
+  }
   if (from.x === to.x) {
     const x = from.x + size.width / 2;
     const down = to.y > from.y;
-    return `M${x} ${down ? from.y + size.height : from.y} V${down ? to.y : to.y + size.height}`;
+    return `M${x} ${down ? from.y + size.height : from.y} L${x} ${down ? to.y : to.y + size.height}`;
   }
   const forward = to.x > from.x;
   const x1 = forward ? from.x + size.width : from.x;
   const x2 = forward ? to.x : to.x + size.width;
-  const y1 = from.y + size.height / 2;
-  const y2 = to.y + size.height / 2;
   if (y1 === y2) {
-    return `M${x1} ${y1} H${x2}`;
+    return `M${x1} ${y1} L${x2} ${y2}`;
   }
-  const side = forward ? 1 : -1;
-  const bend = x1 + side * (size.columnGap / 2);
-  const radius = Math.min(CORNER, Math.abs(y2 - y1) / 2);
-  const turn = y2 > y1 ? radius : -radius;
-  return `M${x1} ${y1} H${bend - side * radius} Q${bend} ${y1} ${bend} ${y1 + turn} `
-    + `V${y2 - turn} Q${bend} ${y2} ${bend + side * radius} ${y2} H${x2}`;
+  const bend = x1 + (forward ? half : -half);
+  return roundedPath([[x1, y1], [bend, y1], [bend, y2], [x2, y2]]);
+}
+
+/** Columnas que caben en un ancho dado; al menos una. */
+export function columnsThatFit(available: number, size: GraphSize): number {
+  return Math.max(1, Math.floor((available + size.columnGap) / (size.width + size.columnGap)));
 }
 
 /**
