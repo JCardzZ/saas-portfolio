@@ -2,18 +2,24 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": false,
-  "updatedAt": "2026-10-08T15:22:02.415Z",
+  "updatedAt": "2026-10-08T15:47:42.187Z",
   "workflows": {
     "ci": {
-      "runId": 37797892028,
-      "runNumber": 27,
-      "sha": "2eb428012e13d72330c50b2f47a4d7ad695ce247",
+      "runId": 37802117987,
+      "runNumber": 29,
+      "sha": "f3b0e3363f4a174e299ebfcf507e57b8bfd1a3c8",
       "event": "push",
-      "startedAt": "2026-10-08T15:05:43Z",
-      "finishedAt": "2026-10-08T15:20:43.173Z",
-      "durationSeconds": 900,
+      "startedAt": "2026-10-08T15:36:13Z",
+      "finishedAt": "2026-10-08T15:47:42.187Z",
+      "durationSeconds": 689,
       "conclusion": "success",
       "jobs": [
+        {
+          "id": "changes",
+          "status": "success",
+          "durationSeconds": 7,
+          "runs": 1
+        },
         {
           "id": "gitleaks",
           "status": "success",
@@ -28,26 +34,26 @@
         },
         {
           "id": "spec-lint",
-          "status": "success",
-          "durationSeconds": 23,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
           "id": "spec-breaking",
-          "status": "success",
-          "durationSeconds": 8,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 56,
+          "durationSeconds": 38,
           "runs": 1
         },
         {
           "id": "backend-unit",
           "status": "success",
-          "durationSeconds": 60,
+          "durationSeconds": 95,
           "runs": 1,
           "metrics": {
             "tests": 186,
@@ -59,7 +65,7 @@
         {
           "id": "backend-integration",
           "status": "success",
-          "durationSeconds": 97,
+          "durationSeconds": 101,
           "runs": 1,
           "metrics": {
             "tests": 6,
@@ -70,7 +76,7 @@
         {
           "id": "backend-arch",
           "status": "success",
-          "durationSeconds": 41,
+          "durationSeconds": 58,
           "runs": 1,
           "metrics": {
             "tests": 12,
@@ -84,13 +90,13 @@
           "durationSeconds": 68,
           "runs": 3,
           "metrics": {
-            "tests": 315
+            "tests": 319
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 117,
+          "durationSeconds": 34,
           "runs": 1,
           "metrics": {
             "bundleKb": 416,
@@ -100,10 +106,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 150,
+          "durationSeconds": 72,
           "runs": 1,
           "metrics": {
-            "performance": 88,
+            "performance": 83,
             "accessibility": 97,
             "bestPractices": 93,
             "seo": 83
@@ -112,10 +118,10 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 586,
+          "durationSeconds": 473,
           "runs": 1,
           "metrics": {
-            "tests": 114,
+            "tests": 116,
             "failed": 0,
             "profiles": 13
           }
@@ -129,7 +135,7 @@
         {
           "id": "docker",
           "status": "success",
-          "durationSeconds": 125,
+          "durationSeconds": 86,
           "runs": 1,
           "metrics": {
             "vulnerabilities": 0
@@ -138,17 +144,17 @@
         {
           "id": "publish-image",
           "status": "success",
-          "durationSeconds": 134,
+          "durationSeconds": 91,
           "runs": 1,
           "metrics": {
-            "digest": "sha256:9a18bc21bdac131c470cbeb7f0d3b49247a979fe94c5f37d14ef99c92c27fc69",
+            "digest": "sha256:096ef16c9ca726a07486ac8dccb44a89899ebf81180f8e0afdbdedcf22a2db1b",
             "sbomPackages": 196
           }
         },
         {
           "id": "coverage-badge",
           "status": "success",
-          "durationSeconds": 5,
+          "durationSeconds": 8,
           "runs": 1
         },
         {
