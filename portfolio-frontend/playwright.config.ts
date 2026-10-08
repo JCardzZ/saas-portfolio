@@ -60,6 +60,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
+  // Los runners tienen pocos núcleos y Playwright usaría uno solo.
+  workers: process.env['CI'] ? 2 : undefined,
   timeout: 90_000,
   reporter: process.env['CI']
     ? [['list'], ['html', { open: 'never', outputFolder: 'e2e-report' }], ['json', { outputFile: 'e2e-results/results.json' }]]
