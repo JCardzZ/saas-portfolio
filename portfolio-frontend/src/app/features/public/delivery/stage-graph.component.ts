@@ -1,8 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
-import { TechIconComponent } from '../../../shared/ui/tech-icon.component';
 import { TECH_ICONS, TechIconKey } from '../../../shared/ui/tech-icons';
-import { CARD_HEIGHT, CARD_WIDTH, edgePath, layoutStages } from './delivery-data';
+import { CARD, PILL, edgePath, layoutStages } from './delivery-data';
 
 export type NodeTone = 'ok' | 'skipped' | 'failed' | 'planned' | 'running' | 'pending' | 'idle';
 
@@ -10,7 +9,7 @@ export interface StageNode {
   id: string;
   stage: number;
   label: string;
-  /** Segunda línea: duración, papel de la pieza… */
+  /** Línea de detalle: papel de la pieza, duración del job… */
   detail: string;
   tone: NodeTone;
   /** Lo que el lector de pantalla oye además del nombre: «correcto», «planificado»… */
@@ -21,50 +20,75 @@ export interface StageNode {
 export interface StageEdge {
   from: string;
   to: string;
+  /** Conexión decidida pero aún sin desplegar: punteada y quieta. */
   planned?: boolean;
 }
 
+/** Lo que tarda el punto de luz en recorrer una conexión. */
+const SPARK_SECONDS = 3.5;
+
 /**
- * Grafo por etapas. En pantallas anchas, columnas de izquierda a derecha con sus conexiones
- * (fan-out y fan-in); en el móvil, las mismas etapas apiladas en vertical, sin líneas. Es una sola
+ * Grafo por etapas. En pantallas anchas, una columna por etapa con sus conexiones (fan-out y
+ * fan-in); por debajo de 640 px, las mismas etapas apiladas en vertical y sin líneas. Es una sola
  * lista de botones: el cambio de disposición es solo CSS.
+ *
+ * Al posar el cursor o el foco sobre un nodo (o elegirlo) se ilumina su camino, es decir, sus
+ * conexiones de entrada y de salida con los nodos del otro extremo, y el resto se atenúa.
  */
 @Component({
   selector: 'app-stage-graph',
   standalone: true,
-  imports: [TechIconComponent],
   template: `
-    <div class="scroller" tabindex="-1">
+    <div class="scroller">
       <div
         class="graph"
+        [class.pill]="variant() === 'pill'"
+        [class.focused]="focusId() !== null"
         role="group"
         [attr.aria-label]="label()"
         [style.--graph-width.px]="layout().width"
         [style.--graph-height.px]="layout().height"
-        [style.--card-width.px]="cardWidth"
-        [style.--card-height.px]="cardHeight"
+        [style.--node-width.px]="size().width"
+        [style.--node-height.px]="size().height"
       >
         <svg class="edges" [attr.viewBox]="'0 0 ' + layout().width + ' ' + layout().height" aria-hidden="true">
           @for (edge of paths(); track edge.key) {
-            <path [attr.d]="edge.d" [class.edge-planned]="edge.planned" [class.edge-active]="edge.active" />
+            <path [attr.d]="edge.d" [class.planned]="edge.planned" [class.lit]="edge.lit" />
           }
         </svg>
-        @for (stage of stages(); track $index; let last = $last) {
+        @if (animated()) {
+          @for (edge of paths(); track edge.key; let index = $index) {
+            @if (!edge.planned) {
+              <!-- Un único punto de luz por conexión en vivo; las planificadas no se mueven. -->
+              <span class="spark" [class.lit]="edge.lit" [style.offset-path]="'path(&quot;' + edge.d + '&quot;)'" [style.animation-delay.s]="-index * 0.9" aria-hidden="true"></span>
+            }
+          }
+        }
+        @for (stage of stages(); track stage.number; let column = $index) {
           <div class="stage">
-            @for (node of stage; track node.id) {
+            @if (stage.name) {
+              <p class="stage-name" [style.--x.px]="column * (size().width + size().columnGap)">{{ stage.name }}</p>
+            }
+            @for (node of stage.nodes; track node.id) {
               <button
                 type="button"
-                class="node focus-ring"
-                [class]="'node tone-' + node.tone"
-                [class.node-active]="node.id === activeId()"
+                [class]="'node focus-ring tone-' + node.tone"
+                [class.active]="node.id === activeId()"
+                [class.related]="related().has(node.id)"
                 [style.--x.px]="layout().positions[node.id].x"
                 [style.--y.px]="layout().positions[node.id].y"
                 [attr.aria-pressed]="node.id === activeId()"
                 [attr.aria-label]="node.label + ', ' + node.toneLabel + (node.detail ? ', ' + node.detail : '')"
+                (mouseenter)="hoverId.set(node.id)"
+                (mouseleave)="hoverId.set(null)"
+                (focus)="hoverId.set(node.id)"
+                (blur)="hoverId.set(null)"
                 (click)="picked.emit(node.id)"
               >
-                @if (node.icon) {
-                  <app-tech-icon [icon]="icons[node.icon]" [size]="18" />
+                @if (node.icon; as key) {
+                  <svg class="icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+                    <path [attr.d]="icons[key].path" [attr.fill]="icons[key].color" />
+                  </svg>
                 }
                 <span class="text">
                   <span class="name">{{ node.label }}</span>
@@ -74,62 +98,101 @@ export interface StageEdge {
               </button>
             }
           </div>
-          @if (!last) {
-            <span class="between" aria-hidden="true">↓</span>
-          }
         }
       </div>
     </div>
   `,
   styles: `
     :host { display: block; min-width: 0; }
-    .graph { display: flex; flex-direction: column; gap: 0.5rem; }
-    .stage { display: flex; flex-direction: column; gap: 0.5rem; }
-    .between { align-self: center; color: rgb(255 255 255 / 0.3); font-size: 0.75rem; line-height: 1; }
-    .edges { display: none; }
+    .scroller { min-width: 0; }
 
+    /* ── Móvil: etapas apiladas en vertical, sin líneas ── */
+    .graph { display: flex; flex-direction: column; gap: 1rem; }
+    .stage { display: flex; flex-direction: column; gap: 0.5rem; }
+    .edges, .spark { display: none; }
+    .stage-name {
+      margin: 0; color: #71717a; font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+    }
+
+    /* ── Nodo ── */
     .node {
       display: flex; align-items: center; gap: 0.625rem;
-      min-height: 3.75rem; width: 100%;
-      padding: 0.5rem 0.75rem;
-      border-radius: 1rem; border: 1px solid rgb(255 255 255 / 0.12);
-      /* Opaco: las conexiones pasan por detrás de las tarjetas, no por encima del texto. */
-      background: #141416;
+      width: 100%; min-height: 52px; padding: 0 0.75rem;
+      border: 1px solid rgb(255 255 255 / 0.1); border-radius: 8px;
+      background: #18181b; /* un punto más claro que la tarjeta, y opaco: las líneas pasan por detrás */
       text-align: left;
-      transition: border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s;
+      transition: opacity 0.25s ease-out, border-color 0.25s ease-out;
     }
-    .node-active { border-color: #0a84ff; background: #0d2238; }
+    .node:hover, .node.active { border-color: rgb(255 255 255 / 0.32); }
+    .icon { flex: none; width: 16px; height: 16px; overflow: hidden; transition: width 0.25s ease-out, height 0.25s ease-out; }
+    .node.active .icon { width: 20px; height: 20px; }
     .text { display: flex; min-width: 0; flex: 1; flex-direction: column; }
-    .name { color: #fff; font-size: 0.8125rem; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
-    .detail { color: #a1a1aa; font-size: 0.6875rem; line-height: 1.3; }
-    .dot { height: 0.5rem; width: 0.5rem; flex: none; border-radius: 9999px; background: #52525b; }
+    .name { color: #fafafa; font-size: 0.875rem; font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
+    .detail { color: #a1a1aa; font-size: 0.75rem; line-height: 1.3; overflow-wrap: anywhere; }
+    .dot { flex: none; width: 8px; height: 8px; border-radius: 9999px; background: #52525b; }
 
+    /* El estado va en el punto (y en el borde punteado de lo planificado); el fondo no cambia. */
     .tone-ok .dot { background: #34d399; }
-    .tone-failed { border-color: rgb(248 113 113 / 0.6); }
     .tone-failed .dot { background: #f87171; }
-    .tone-skipped { opacity: 0.55; }
+    .tone-skipped .dot { background: #52525b; }
+    .tone-skipped .name { color: #a1a1aa; }
+    .tone-idle .dot, .tone-pending .dot { background: transparent; box-shadow: inset 0 0 0 1px #71717a; }
     .tone-pending { opacity: 0.4; }
-    /* Planificado: decidido pero sin desplegar. El borde punteado lo distingue sin depender del color. */
-    .tone-planned { border-style: dashed; border-color: rgb(255 255 255 / 0.28); background: #0c0c0d; }
-    .tone-planned .dot { background: transparent; border: 1px dashed #a1a1aa; }
-    .tone-running { border-color: #0a84ff; }
-    .tone-running .dot { background: #0a84ff; animation: pulse-dot 0.9s ease-in-out infinite; }
-    @keyframes pulse-dot { 50% { opacity: 0.25; } }
+    .tone-planned { border-style: dashed; border-color: rgb(255 255 255 / 0.22); }
+    .tone-planned .dot { background: transparent; box-shadow: inset 0 0 0 1px #a1a1aa; }
+    .tone-running .dot { background: #0a84ff; animation: pulse 0.9s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: 0.25; } }
 
-    /* Pantallas anchas: columnas por etapa con las conexiones dibujadas. */
+    /* Con un nodo señalado, lo que no está en su camino baja al 40 %. */
+    .graph.focused .node:not(.related) { opacity: 0.4; }
+
+    /* ── Píldoras (jobs del pipeline) ── */
+    .pill .node { min-height: 44px; border-radius: 9999px; padding: 0 0.875rem; gap: 0.5rem; }
+    .pill .text { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+    .pill .name { font-size: 0.8125rem; }
+    .pill .detail { flex: none; font-size: 0.6875rem; font-variant-numeric: tabular-nums; }
+    .pill .dot { order: -1; }
+
+    /* ── Pantallas anchas: columnas por etapa con las conexiones dibujadas ── */
     @media (min-width: 640px) {
       .scroller { overflow-x: auto; padding-bottom: 0.25rem; }
-      .graph { position: relative; display: block; width: var(--graph-width); height: var(--graph-height); }
+      .graph { position: relative; display: block; width: var(--graph-width); height: var(--graph-height); margin-inline: auto; }
       .stage { display: contents; }
-      .between { display: none; }
+      .stage-name { position: absolute; left: var(--x); top: 0; }
+      .node { position: absolute; left: var(--x); top: var(--y); width: var(--node-width); height: var(--node-height); min-height: 0; }
+      .pill .node { min-height: 0; }
+      /* En columnas cada texto va en una línea; el nombre completo está en la ficha y en la etiqueta accesible. */
+      .name, .detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
       .edges { display: block; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-      .edges path { fill: none; stroke: rgb(255 255 255 / 0.2); stroke-width: 1.5; transition: stroke 0.4s; }
-      .edges .edge-planned { stroke-dasharray: 4 5; }
-      .edges .edge-active { stroke: #0a84ff; stroke-width: 2; }
-      .node { position: absolute; left: var(--x); top: var(--y); width: var(--card-width); height: var(--card-height); min-height: 0; }
+      .edges path {
+        fill: none; stroke: rgb(255 255 255 / 0.18); stroke-width: 1;
+        transition: stroke 0.25s ease-out, opacity 0.25s ease-out;
+      }
+      .edges path.planned { stroke-dasharray: 3 4; }
+      .graph.focused .edges path:not(.lit) { opacity: 0.4; }
+      .edges path.lit { stroke: rgb(255 255 255 / 0.7); }
+
+      .spark {
+        display: block; position: absolute; left: 0; top: 0; width: 4px; height: 4px; margin: -2px 0 0 -2px;
+        border-radius: 9999px; background: #fff; box-shadow: 0 0 6px 1px rgb(255 255 255 / 0.7);
+        offset-rotate: 0deg;
+        animation: travel 3.5s linear infinite;
+        transition: opacity 0.25s ease-out;
+      }
+      .graph.focused .spark:not(.lit) { opacity: 0; }
+      @keyframes travel {
+        0% { offset-distance: 0%; opacity: 0; }
+        8% { opacity: 1; }
+        92% { opacity: 1; }
+        100% { offset-distance: 100%; opacity: 0; }
+      }
     }
+    /* Con el dedo, en la vista de columnas los nodos conservan su alto de diseño; en vertical miden 52 o 44. */
     @media (prefers-reduced-motion: reduce) {
+      .spark { display: none !important; }
       .tone-running .dot { animation: none; }
+      .node, .icon, .edges path { transition: none; }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -139,27 +202,67 @@ export class StageGraphComponent {
   readonly edges = input<StageEdge[]>([]);
   readonly activeId = input<string | null>(null);
   readonly label = input('Grafo');
+  /** `card` para piezas de arquitectura; `pill` para jobs, que son muchos más y más pequeños. */
+  readonly variant = input<'card' | 'pill'>('card');
+  /** Nombre de cada etapa, por su número. Sin nombres no se rotulan las columnas. */
+  readonly stageNames = input<string[]>([]);
+  /** Punto de luz recorriendo las conexiones en vivo. */
+  readonly animated = input(false);
   readonly picked = output<string>();
 
   readonly icons = TECH_ICONS;
-  readonly cardWidth = CARD_WIDTH;
-  readonly cardHeight = CARD_HEIGHT;
+  readonly sparkSeconds = SPARK_SECONDS;
+  /** Nodo bajo el cursor o con el foco. */
+  readonly hoverId = signal<string | null>(null);
+  /** Nodo cuyo camino se ilumina: el señalado y, si no hay, el elegido. */
+  readonly focusId = computed(() => this.hoverId() ?? this.activeId());
 
-  readonly layout = computed(() => layoutStages(this.nodes()));
+  /** Con el dedo, las píldoras miden 44 px de alto también en la vista de columnas. */
+  private readonly touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
+  readonly size = computed(() => {
+    const pill = this.touch ? { ...PILL, height: 44, rowGap: 8 } : PILL;
+    const base = this.variant() === 'pill' ? pill : CARD;
+    return this.stageNames().length > 0 ? base : { ...base, top: 0 };
+  });
+  readonly layout = computed(() => layoutStages(this.nodes(), this.size()));
   readonly stages = computed(() => {
     const byId = new Map(this.nodes().map((node) => [node.id, node]));
-    return this.layout().stages.map((stage) => stage.map((id) => byId.get(id)!));
+    const { stages, stageNumbers } = this.layout();
+    return stages.map((ids, index) => ({
+      number: stageNumbers[index],
+      name: this.stageNames()[stageNumbers[index]] ?? '',
+      nodes: ids.map((id) => byId.get(id)!),
+    }));
   });
+
+  /** El nodo señalado y los que están al otro extremo de sus conexiones. */
+  readonly related = computed(() => {
+    const focus = this.focusId();
+    const related = new Set<string>();
+    if (focus !== null) {
+      related.add(focus);
+      for (const edge of this.edges()) {
+        if (edge.from === focus) {
+          related.add(edge.to);
+        } else if (edge.to === focus) {
+          related.add(edge.from);
+        }
+      }
+    }
+    return related;
+  });
+
   readonly paths = computed(() => {
     const { positions } = this.layout();
-    const active = this.activeId();
+    const focus = this.focusId();
     return this.edges()
       .filter((edge) => positions[edge.from] && positions[edge.to])
       .map((edge) => ({
         key: `${edge.from}>${edge.to}`,
-        d: edgePath(positions[edge.from], positions[edge.to]),
+        d: edgePath(positions[edge.from], positions[edge.to], this.size()),
         planned: edge.planned === true,
-        active: active !== null && (edge.from === active || edge.to === active),
+        lit: focus !== null && (edge.from === focus || edge.to === focus),
       }));
   });
 }

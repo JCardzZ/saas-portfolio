@@ -4,7 +4,9 @@ import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.compon
 import { TheaterDirective } from '../../../shared/ui/theater.directive';
 import { SystemEventsService } from '../data/system-events.service';
 import { TraceInspectorService } from '../data/trace-inspector.service';
-import { JobRun, JobStatus, Metric, WORKFLOW_KEYS, WorkflowKey, essentialEdges, formatDate, formatDuration } from './delivery-data';
+import {
+  JobRun, JobStatus, Metric, WORKFLOW_KEYS, WorkflowKey, essentialEdges, formatDate, formatDuration, formatDurationShort, plainJobName,
+} from './delivery-data';
 import { DeliveryStatusService } from './delivery-status.service';
 import { JOB_NOTES } from './job-notes';
 import { NodeTone, StageEdge, StageGraphComponent, StageNode, revealDetail } from './stage-graph.component';
@@ -74,13 +76,20 @@ const REPLAY_STAGE_MS = 850;
     </p>
 
     <app-stage-graph
-      class="theater-stage mt-4"
+      class="theater-stage mt-6"
       [nodes]="nodes()"
       [edges]="edges()"
       [activeId]="activeId()"
       [label]="'Jobs del workflow ' + tabLabel()"
+      variant="pill"
       (picked)="pick($event)"
     />
+
+    <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-zinc-400" aria-label="Leyenda">
+      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true"></span>Correcto</li>
+      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-zinc-600" aria-hidden="true"></span>Omitido</li>
+      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-red-400" aria-hidden="true"></span>Fallido</li>
+    </ul>
 
     <div class="mt-4 flex flex-wrap items-center gap-3">
       <button
@@ -166,11 +175,12 @@ export class PipelineViewComponent implements OnInit {
       return {
         id: job.id,
         stage: job.stage,
-        label: job.name,
+        // En la píldora, el nombre sin emoji y la duración en corto; la ficha los da completos.
+        label: plainJobName(job.name),
         tone,
         toneLabel: tone === 'running' ? 'en marcha' : tone === 'pending' ? 'pendiente' : result ? STATUS_LABEL[result.status] : 'sin datos',
         detail: tone === 'running' ? 'en marcha…'
-          : result ? (result.status === 'success' ? formatDuration(result.durationSeconds) || 'correcto' : STATUS_LABEL[result.status]) : '',
+          : result ? (result.status === 'success' ? formatDurationShort(result.durationSeconds) || 'correcto' : STATUS_LABEL[result.status]) : '',
       };
     });
   });

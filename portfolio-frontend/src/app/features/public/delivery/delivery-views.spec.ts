@@ -173,6 +173,38 @@ describe('PipelineViewComponent', () => {
   }));
 });
 
+describe('node icons', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('are 16 px (20 px in the active node) and never larger than 24 px', () => {
+    const { fixture, backend, element } = setup(ProductionArchitectureComponent);
+    serveSnapshot(backend, statusFile(), fixture);
+    document.body.appendChild(element);
+    const sizes = () => Array.from(element.querySelectorAll<SVGElement>('.node .icon')).map((icon) => icon.getBoundingClientRect());
+
+    expect(sizes().length).toBeGreaterThan(4);
+    for (const rect of sizes()) {
+      expect(rect.width).toBe(16);
+      expect(rect.height).toBe(16);
+    }
+
+    node(element, 'GitHub Actions').click();
+    fixture.detectChanges();
+    const active = node(element, 'GitHub Actions').querySelector<SVGElement>('.icon')!;
+    active.style.transition = 'none';
+
+    expect(active.getBoundingClientRect().width).toBe(20);
+    for (const rect of sizes()) {
+      expect(Math.max(rect.width, rect.height)).toBeLessThanOrEqual(24);
+    }
+    // El logo va en línea, con su caja fija: no es el componente que lo hace despegar y flotar.
+    expect(element.querySelector('app-tech-icon')).toBeNull();
+    expect(active.getAttribute('viewBox')).toBe('0 0 24 24');
+    expect(getComputedStyle(active).overflow).toBe('hidden');
+    element.remove();
+  });
+});
+
 describe('ProductionArchitectureComponent', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
@@ -186,7 +218,8 @@ describe('ProductionArchitectureComponent', () => {
       expect(button.classList).withContext(item.id).toContain(item.status === 'live' ? 'tone-ok' : 'tone-planned');
       expect(button.getAttribute('aria-label')).withContext(item.id).toContain(item.status === 'live' ? 'en producción' : 'planificado');
     }
-    expect(element.textContent).toContain('Planificado, sin desplegar');
+    expect(element.querySelector('[aria-label="Leyenda"]')!.textContent).toContain('En producción');
+    expect(element.querySelector('[aria-label="Leyenda"]')!.textContent).toContain('Planificado');
   });
 
   it('shows the real data of a live piece and none for a planned one', () => {

@@ -45,6 +45,8 @@ export interface TopologyNode {
 }
 
 export interface Topology {
+  /** Nombre de cada columna del diagrama, por número de etapa. */
+  stages: string[];
   nodes: TopologyNode[];
   links: { from: string; to: string; label: string }[];
 }
@@ -195,6 +197,21 @@ export function formatDuration(seconds: number | null | undefined): string {
   return minutes === 0 ? `${rest} s` : rest === 0 ? `${minutes} min` : `${minutes} min ${rest} s`;
 }
 
+/** Duración en corto, para donde no hay sitio: «1m 34s», «45s». */
+export function formatDurationShort(seconds: number | null | undefined): string {
+  if (seconds === null || seconds === undefined) {
+    return '';
+  }
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  return minutes === 0 ? `${rest}s` : rest === 0 ? `${minutes}m` : `${minutes}m ${rest}s`;
+}
+
+/** Nombre de un job sin el emoji de etapa que lleva delante («🧪 Backend unit» → «Backend unit»). */
+export function plainJobName(name: string): string {
+  return name.replace(/^[^\p{L}\p{N}]+/u, '').trim() || name;
+}
+
 /** Fecha y hora en la zona del visitante: «8 oct 2026, 03:01». Vacío si no hay dato. */
 export function formatDate(iso: string | undefined): string {
   if (!iso) {
@@ -211,58 +228,93 @@ export interface GraphNode {
   stage: number;
 }
 
+/** Medidas de un grafo, en píxeles. Todo va a una rejilla de 8. */
+export interface GraphSize {
+  width: number;
+  height: number;
+  columnGap: number;
+  rowGap: number;
+  /** Hueco sobre las columnas para su rótulo. */
+  top: number;
+}
+
+/** Tarjeta de una pieza de la arquitectura. */
+export const CARD: GraphSize = { width: 192, height: 52, columnGap: 24, rowGap: 16, top: 32 };
+/** Píldora de un job del pipeline: más pequeña, hay muchas más. */
+export const PILL: GraphSize = { width: 200, height: 36, columnGap: 40, rowGap: 12, top: 0 };
+
 export interface GraphLayout {
   width: number;
   height: number;
   positions: Record<string, { x: number; y: number }>;
   /** Nodos de cada etapa, en orden; es también el orden de la vista vertical del móvil. */
   stages: string[][];
+  /** Número de etapa (el del dato) de cada columna, para rotularla. */
+  stageNumbers: number[];
 }
-
-export const CARD_WIDTH = 176;
-export const CARD_HEIGHT = 60;
-const COLUMN_GAP = 44;
-const ROW_GAP = 12;
 
 /**
  * Columnas por etapa, de izquierda a derecha, con cada columna centrada en vertical. Las
- * posiciones salen de la cuenta, no de medir el DOM: el SVG de las conexiones y las tarjetas usan
- * las mismas cifras.
+ * posiciones salen de la cuenta, no de medir el DOM: las conexiones y las tarjetas usan las
+ * mismas cifras.
  */
-export function layoutStages(nodes: GraphNode[]): GraphLayout {
-  const stages: string[][] = [];
+export function layoutStages(nodes: GraphNode[], size: GraphSize = CARD): GraphLayout {
+  const byStage = new Map<number, string[]>();
   for (const node of nodes) {
-    (stages[node.stage] ??= []).push(node.id);
+    byStage.set(node.stage, [...(byStage.get(node.stage) ?? []), node.id]);
   }
-  const filled = Array.from(stages, (stage) => stage ?? []).filter((stage) => stage.length > 0);
-  const rows = Math.max(1, ...filled.map((stage) => stage.length));
-  const height = rows * CARD_HEIGHT + (rows - 1) * ROW_GAP;
+  const stageNumbers = [...byStage.keys()].sort((a, b) => a - b);
+  const stages = stageNumbers.map((stage) => byStage.get(stage)!);
+  const rows = Math.max(1, ...stages.map((stage) => stage.length));
+  const columnsHeight = rows * size.height + (rows - 1) * size.rowGap;
   const positions: GraphLayout['positions'] = {};
-  filled.forEach((stage, column) => {
-    const columnHeight = stage.length * CARD_HEIGHT + (stage.length - 1) * ROW_GAP;
+  stages.forEach((stage, column) => {
+    const height = stage.length * size.height + (stage.length - 1) * size.rowGap;
+    // A la rejilla de 4: una columna impar centrada frente a una par cae en medio píxel.
+    const offset = Math.round((columnsHeight - height) / 2 / 4) * 4;
     stage.forEach((id, row) => {
       positions[id] = {
-        x: column * (CARD_WIDTH + COLUMN_GAP),
-        y: (height - columnHeight) / 2 + row * (CARD_HEIGHT + ROW_GAP),
+        x: column * (size.width + size.columnGap),
+        y: size.top + offset + row * (size.height + size.rowGap),
       };
     });
   });
   return {
-    width: Math.max(1, filled.length) * CARD_WIDTH + Math.max(0, filled.length - 1) * COLUMN_GAP,
-    height,
+    width: Math.max(1, stages.length) * size.width + Math.max(0, stages.length - 1) * size.columnGap,
+    height: size.top + columnsHeight,
     positions,
-    stages: filled,
+    stages,
+    stageNumbers,
   };
 }
 
-/** Curva de la salida (borde derecho) de un nodo a la entrada (borde izquierdo) de otro. */
-export function edgePath(from: { x: number; y: number }, to: { x: number; y: number }): string {
-  const x1 = from.x + CARD_WIDTH;
-  const y1 = from.y + CARD_HEIGHT / 2;
-  const x2 = to.x;
-  const y2 = to.y + CARD_HEIGHT / 2;
-  const bend = Math.max(18, (x2 - x1) / 2);
-  return `M${x1} ${y1} C${x1 + bend} ${y1} ${x2 - bend} ${y2} ${x2} ${y2}`;
+const CORNER = 8;
+
+/**
+ * Conexión en ángulos rectos con las esquinas redondeadas. Entre columnas sale por la derecha de
+ * un nodo, quiebra en el pasillo que hay tras su columna y entra por la izquierda del otro; dentro
+ * de una misma columna baja (o sube) en línea recta.
+ */
+export function edgePath(from: { x: number; y: number }, to: { x: number; y: number }, size: GraphSize = CARD): string {
+  if (from.x === to.x) {
+    const x = from.x + size.width / 2;
+    const down = to.y > from.y;
+    return `M${x} ${down ? from.y + size.height : from.y} V${down ? to.y : to.y + size.height}`;
+  }
+  const forward = to.x > from.x;
+  const x1 = forward ? from.x + size.width : from.x;
+  const x2 = forward ? to.x : to.x + size.width;
+  const y1 = from.y + size.height / 2;
+  const y2 = to.y + size.height / 2;
+  if (y1 === y2) {
+    return `M${x1} ${y1} H${x2}`;
+  }
+  const side = forward ? 1 : -1;
+  const bend = x1 + side * (size.columnGap / 2);
+  const radius = Math.min(CORNER, Math.abs(y2 - y1) / 2);
+  const turn = y2 > y1 ? radius : -radius;
+  return `M${x1} ${y1} H${bend - side * radius} Q${bend} ${y1} ${bend} ${y1 + turn} `
+    + `V${y2 - turn} Q${bend} ${y2} ${bend + side * radius} ${y2} H${x2}`;
 }
 
 /**

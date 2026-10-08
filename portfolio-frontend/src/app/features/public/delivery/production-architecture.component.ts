@@ -29,19 +29,21 @@ interface Fact {
       <p class="text-xs text-zinc-500">La de hoy, generada de <code class="break-all font-mono">deploy/topology.json</code></p>
     </div>
 
-    <ul class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400" aria-label="Leyenda">
-      <li class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true"></span>En producción ({{ liveCount }})</li>
-      <li class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full border border-dashed border-zinc-400" aria-hidden="true"></span>Planificado, sin desplegar ({{ plannedCount }})</li>
-    </ul>
-
     <app-stage-graph
-      class="theater-stage mt-4"
+      class="theater-stage mt-6"
       [nodes]="nodes"
       [edges]="edges"
       [activeId]="activeId()"
       label="Piezas de la arquitectura en producción"
+      [stageNames]="stageNames"
+      [animated]="true"
       (picked)="pick($event)"
     />
+
+    <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-zinc-400" aria-label="Leyenda">
+      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true"></span>En producción</li>
+      <li class="inline-flex items-center gap-2"><span class="w-4 border-t border-dashed border-zinc-400" aria-hidden="true"></span>Planificado</li>
+    </ul>
 
     <div #detail class="mt-4 min-h-[7rem] scroll-mb-24 scroll-mt-24 rounded-2xl border border-white/10 bg-black/30 p-4" aria-live="polite">
       @if (active(); as node) {
@@ -76,8 +78,7 @@ export class ProductionArchitectureComponent implements OnInit {
   private readonly detail = viewChild<ElementRef<HTMLElement>>('detail');
 
   readonly activeId = signal<string | null>(null);
-  readonly liveCount = TOPOLOGY.nodes.filter((node) => node.status === 'live').length;
-  readonly plannedCount = TOPOLOGY.nodes.length - this.liveCount;
+  readonly stageNames = TOPOLOGY.stages;
 
   readonly nodes: StageNode[] = TOPOLOGY.nodes.map((node) => ({
     id: node.id,

@@ -1,6 +1,6 @@
 import {
-  CARD_HEIGHT, CARD_WIDTH, TOPOLOGY, WORKFLOWS, WORKFLOW_KEYS, edgePath, essentialEdges, formatDuration, layoutStages,
-  parsePipelineStatus,
+  CARD, PILL, TOPOLOGY, WORKFLOWS, WORKFLOW_KEYS, edgePath, essentialEdges, formatDuration, formatDurationShort, layoutStages,
+  parsePipelineStatus, plainJobName,
 } from './delivery-data';
 import { JOB_NOTES } from './job-notes';
 
@@ -66,21 +66,44 @@ describe('parsePipelineStatus', () => {
 });
 
 describe('graph layout', () => {
-  it('puts each stage in a column and centres shorter columns', () => {
-    const layout = layoutStages([{ id: 'a', stage: 0 }, { id: 'b', stage: 1 }, { id: 'c', stage: 1 }, { id: 'd', stage: 3 }]);
+  it('puts each stage in a column, in stage order, and centres shorter columns', () => {
+    const layout = layoutStages([{ id: 'a', stage: 0 }, { id: 'd', stage: 3 }, { id: 'b', stage: 1 }, { id: 'c', stage: 1 }], PILL);
 
     expect(layout.stages).toEqual([['a'], ['b', 'c'], ['d']]);
+    expect(layout.stageNumbers).toEqual([0, 1, 3]);
     expect(layout.positions['a'].x).toBe(0);
+    expect(layout.positions['b'].x).toBe(PILL.width + PILL.columnGap);
     expect(layout.positions['b'].x).toBe(layout.positions['c'].x);
-    expect(layout.positions['d'].x).toBeGreaterThan(layout.positions['b'].x);
+    expect(layout.positions['d'].x).toBe(2 * (PILL.width + PILL.columnGap));
     // Una columna de un nodo queda a media altura de la de dos.
     expect(layout.positions['a'].y).toBe((layout.positions['b'].y + layout.positions['c'].y) / 2);
-    expect(layout.height).toBeGreaterThan(CARD_HEIGHT);
-    expect(layout.width).toBeGreaterThan(CARD_WIDTH * 3);
+    expect(layout.height).toBe(2 * PILL.height + PILL.rowGap);
+    expect(layout.width).toBe(3 * PILL.width + 2 * PILL.columnGap);
   });
 
-  it('draws an edge from the right side of a node to the left side of the next', () => {
-    expect(edgePath({ x: 0, y: 0 }, { x: 300, y: 100 })).toMatch(new RegExp(`^M${CARD_WIDTH} ${CARD_HEIGHT / 2} C.* 300 ${100 + CARD_HEIGHT / 2}$`));
+  it('leaves room above the columns for their names and keeps every node on the 4 px grid', () => {
+    const layout = layoutStages(TOPOLOGY.nodes, CARD);
+
+    for (const position of Object.values(layout.positions)) {
+      expect(position.y).toBeGreaterThanOrEqual(CARD.top);
+      expect(position.x % 8).toBe(0);
+      expect(position.y % 4).toBe(0);
+    }
+  });
+
+  it('draws a straight line between nodes at the same height', () => {
+    expect(edgePath({ x: 0, y: 32 }, { x: 208, y: 32 }, CARD)).toBe(`M${CARD.width} 58 H208`);
+  });
+
+  it('turns with rounded corners in the gap after the source column', () => {
+    const path = edgePath({ x: 0, y: 0 }, { x: 208, y: 100 }, CARD);
+    const bend = CARD.width + CARD.columnGap / 2;
+
+    expect(path).toBe(`M${CARD.width} 26 H${bend - 8} Q${bend} 26 ${bend} 34 V118 Q${bend} 126 ${bend + 8} 126 H208`);
+  });
+
+  it('joins two nodes of the same column with a vertical line', () => {
+    expect(edgePath({ x: 0, y: 0 }, { x: 0, y: 68 }, CARD)).toBe(`M${CARD.width / 2} 52 V68`);
   });
 
   it('draws only the dependencies that are not implied by others', () => {
@@ -98,6 +121,15 @@ describe('formatDuration', () => {
     expect(formatDuration(120)).toBe('2 min');
     expect(formatDuration(94)).toBe('1 min 34 s');
     expect(formatDuration(null)).toBe('');
+  });
+
+  it('has a short form for the pills and strips the stage emoji from a job name', () => {
+    expect(formatDurationShort(94)).toBe('1m 34s');
+    expect(formatDurationShort(45)).toBe('45s');
+    expect(formatDurationShort(120)).toBe('2m');
+    expect(plainJobName('🧪 Backend unit')).toBe('Backend unit');
+    expect(plainJobName('🛡️ CodeQL')).toBe('CodeQL');
+    expect(plainJobName('sin emoji')).toBe('sin emoji');
   });
 });
 
