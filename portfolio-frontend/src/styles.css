@@ -10,6 +10,12 @@
     overflow-wrap: break-word;
   }
 
+  /* En un titular la palabra larga también cuenta para el ancho mínimo: `anywhere` deja que la fila
+     que lo contiene encoja en vez de empujar a sus vecinos fuera de la pantalla. */
+  h1, h2, h3 {
+    overflow-wrap: anywhere;
+  }
+
   html {
     /* Administración y login son claros; la página pública declara `dark` en su raíz. Así los
        controles nativos y las barras de scroll siguen al diseño y no al modo del sistema. */

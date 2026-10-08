@@ -22,7 +22,7 @@ import { CvDownloadComponent } from '../../../shared/ui/cv-download.component';
           SaaS Portfolio
         </a>
 
-        <div class="flex items-center gap-1 sm:gap-2">
+        <div class="flex min-w-0 flex-wrap items-center justify-end gap-1 sm:gap-2">
           <a routerLink="/" fragment="plataforma" class="focus-ring tap hidden rounded-full px-3 py-1.5 text-sm text-zinc-300 transition hover:text-white sm:block">Arquitectura</a>
           <a routerLink="/" fragment="proyectos" class="focus-ring tap hidden rounded-full px-3 py-1.5 text-sm text-zinc-300 transition hover:text-white sm:block">Proyectos</a>
           <a routerLink="/" fragment="tecnologias" class="focus-ring tap hidden rounded-full px-3 py-1.5 text-sm text-zinc-300 transition hover:text-white md:block">Tecnologías</a>
