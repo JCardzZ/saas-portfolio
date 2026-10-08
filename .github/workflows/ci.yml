@@ -91,7 +91,8 @@ jobs:
             frontend:
               - 'portfolio-frontend/**'
               - 'portfolio-api-spec/**'
-              - '.github/workflows/ci.yml'
+              - '.github/workflows/**'
+              - 'deploy/topology.json'
       - name: Resumen
         run: |
           {
@@ -277,6 +278,11 @@ jobs:
         run: |
           git add -N src/app/core/api
           git diff --exit-code --stat -- src/app/core/api
+      # Los grafos de «Arquitectura real y entrega» se generan de los workflows y de deploy/topology.json.
+      - name: Los datos generados de las vistas están al día
+        run: node tools/generate-delivery-data.mjs --check
+      - name: Tests de las herramientas de build
+        run: npm run test:tools
       - name: Resumen
         if: always()
         run: |
@@ -315,6 +321,15 @@ jobs:
           if [ -f "$CSV" ]; then
             python3 .github/scripts/jacoco-summary.py "$CSV" coverage.json >> "$GITHUB_STEP_SUMMARY"
           fi
+          python3 .github/scripts/metrics.py backend-unit --junit portfolio-backend/build/test-results/test --jacoco "$CSV"
+      - name: Métricas para el estado del pipeline
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: metrics-backend-unit
+          path: metrics
+          retention-days: 1
+          if-no-files-found: ignore
       - name: Informes
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -346,7 +361,17 @@ jobs:
         run: ./gradlew integrationTest --no-daemon
       - name: Resumen
         if: always()
-        run: python3 .github/scripts/junit-summary.py portfolio-backend/build/test-results/integrationTest "Backend · integración (PostgreSQL + pgvector + Redis)" >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          python3 .github/scripts/junit-summary.py portfolio-backend/build/test-results/integrationTest "Backend · integración (PostgreSQL + pgvector + Redis)" >> "$GITHUB_STEP_SUMMARY"
+          python3 .github/scripts/metrics.py backend-integration --junit portfolio-backend/build/test-results/integrationTest
+      - name: Métricas para el estado del pipeline
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: metrics-backend-integration
+          path: metrics
+          retention-days: 1
+          if-no-files-found: ignore
       - name: Informes
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -374,7 +399,17 @@ jobs:
         run: ./gradlew architectureTest --no-daemon
       - name: Resumen
         if: always()
-        run: python3 .github/scripts/junit-summary.py portfolio-backend/build/test-results/architectureTest "Backend · reglas de arquitectura (ArchUnit)" >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          python3 .github/scripts/junit-summary.py portfolio-backend/build/test-results/architectureTest "Backend · reglas de arquitectura (ArchUnit)" >> "$GITHUB_STEP_SUMMARY"
+          python3 .github/scripts/metrics.py backend-arch --junit portfolio-backend/build/test-results/architectureTest
+      - name: Métricas para el estado del pipeline
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: metrics-backend-arch
+          path: metrics
+          retention-days: 1
+          if-no-files-found: ignore
 
   frontend-test:
     name: 🧪 Frontend (${{ matrix.shard }}/3)
@@ -413,6 +448,16 @@ jobs:
             sed 's/\x1b\[[0-9;]*[A-Za-z]//g' test.log 2>/dev/null | grep -E "TOTAL|FAILED" | tail -n 20 || echo "sin resultado"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          TESTS="$(sed 's/\x1b\[[0-9;]*[A-Za-z]//g' test.log 2>/dev/null | grep -oE 'TOTAL: [0-9]+ SUCCESS' | grep -oE '[0-9]+' | tail -n 1 || true)"
+          python3 ../.github/scripts/metrics.py frontend-test "tests=$TESTS"
+      - name: Métricas para el estado del pipeline
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: metrics-frontend-test-${{ matrix.shard }}
+          path: portfolio-frontend/metrics
+          retention-days: 1
+          if-no-files-found: ignore
 
   # ───────────────────────────── 📦 Build ─────────────────────────────
   frontend-build:
@@ -437,7 +482,16 @@ jobs:
       - name: Presupuesto de bundle
         run: |
           set -o pipefail
-          node tools/bundle-report.mjs dist/portfolio-frontend/browser "$BUNDLE_BUDGET_KB" | tee -a "$GITHUB_STEP_SUMMARY"
+          mkdir -p metrics
+          BUNDLE_METRICS=metrics/frontend-build.json node tools/bundle-report.mjs dist/portfolio-frontend/browser "$BUNDLE_BUDGET_KB" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Métricas para el estado del pipeline
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: metrics-frontend-build
+          path: portfolio-frontend/metrics
+          retention-days: 1
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: frontend-dist
@@ -469,7 +523,17 @@ jobs:
         run: npx --yes "@lhci/cli@$LHCI_VERSION" autorun
       - name: Resumen
         if: always()
-        run: node tools/lighthouse-summary.mjs >> "$GITHUB_STEP_SUMMARY" || echo "### Lighthouse — sin resultados" >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          mkdir -p metrics
+          LIGHTHOUSE_METRICS=metrics/lighthouse.json node tools/lighthouse-summary.mjs >> "$GITHUB_STEP_SUMMARY" || echo "### Lighthouse — sin resultados" >> "$GITHUB_STEP_SUMMARY"
+      - name: Métricas para el estado del pipeline
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: metrics-lighthouse
+          path: portfolio-frontend/metrics
+          retention-days: 1
+          if-no-files-found: ignore
       - name: Informes
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -516,7 +580,17 @@ jobs:
         run: npx playwright test --project='*-${{ matrix.engine }}'
       - name: Resumen
         if: always()
-        run: node tools/e2e-summary.mjs >> "$GITHUB_STEP_SUMMARY" || echo "### Móviles y tabletas — sin resultados" >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          mkdir -p metrics
+          E2E_METRICS=metrics/responsive.json node tools/e2e-summary.mjs >> "$GITHUB_STEP_SUMMARY" || echo "### Móviles y tabletas — sin resultados" >> "$GITHUB_STEP_SUMMARY"
+      - name: Métricas para el estado del pipeline
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: metrics-responsive-${{ matrix.engine }}
+          path: portfolio-frontend/metrics
+          retention-days: 1
+          if-no-files-found: ignore
       # Capturas de cada sección en cada perfil, para revisarlas a mano.
       - name: Capturas
         if: always()
@@ -642,6 +716,16 @@ jobs:
             head -c 60000 trivy.txt 2>/dev/null || echo "sin informe"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          # El escaneo pasó: no queda ninguna vulnerabilidad alta o crítica con corrección sin exceptuar.
+          if [ "${{ steps.trivy.outcome }}" = "success" ]; then python3 .github/scripts/metrics.py docker vulnerabilities=0; fi
+      - name: Métricas para el estado del pipeline
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: metrics-docker
+          path: metrics
+          retention-days: 1
+          if-no-files-found: ignore
       # En main, la imagen que acaba de pasar Trivy viaja tal cual al job que la publica: así ese
       # job es el único con permiso de escritura en el registro y este no lo necesita.
       - name: Guardar la imagen escaneada
@@ -715,8 +799,11 @@ jobs:
           DIGEST: ${{ steps.push.outputs.digest }}
           REF: ${{ steps.push.outputs.ref }}
         run: |
-          jq -n --arg image "$IMAGE" --arg digest "$DIGEST" --arg ref "$REF" --arg sha "$GITHUB_SHA" \
-            '{image: $image, digest: $digest, ref: $ref, sha: $sha}' > backend-image.json
+          SBOM_PACKAGES="$(jq '.packages | length' sbom.spdx.json)"
+          jq -n --arg image "$IMAGE" --arg digest "$DIGEST" --arg ref "$REF" --arg sha "$GITHUB_SHA" --argjson sbom "$SBOM_PACKAGES" \
+            '{image: $image, digest: $digest, ref: $ref, sha: $sha, sbomPackages: $sbom, vulnerabilities: 0}' > backend-image.json
+          mkdir -p metrics
+          jq -n --arg digest "$DIGEST" --argjson sbom "$SBOM_PACKAGES" '{digest: $digest, sbomPackages: $sbom}' > metrics/publish-image.json
           {
             echo "### Imagen publicada en GHCR"
             echo ""
@@ -738,6 +825,14 @@ jobs:
             backend-image.json
             sbom.spdx.json
           retention-days: 90
+      - name: Métricas para el estado del pipeline
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: metrics-publish-image
+          path: metrics
+          retention-days: 1
+          if-no-files-found: ignore
 
   # La insignia de cobertura del README lee un JSON de la rama `badges` (solo ese archivo).
   # Se actualiza al integrar en main; no forma parte del gate porque publica, no verifica.
@@ -817,3 +912,36 @@ jobs:
             exit 1
           fi
           echo "Todo correcto."
+
+  # Resultado de esta ejecución (estados, duraciones y métricas de cada job) en la rama `badges`,
+  # como pipeline-status.json: de ahí lo lee la vista «Pipeline CI/CD» del sitio. No verifica nada,
+  # así que no forma parte del gate ni puede hacer fallar la CI.
+  pipeline-status:
+    name: 📦 Estado del pipeline
+    needs: [gate, publish-image, coverage-badge]
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            portfolio-frontend/tools
+            portfolio-frontend/src/app/features/public/delivery/generated
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: metrics-*
+          path: metrics
+      - name: Publicar pipeline-status.json en la rama badges
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+          WORKFLOW_KEY: ci
+        run: bash portfolio-frontend/tools/publish-pipeline-status.sh metrics
