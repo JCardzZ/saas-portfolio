@@ -96,6 +96,7 @@ const TECH_RULES: [tech: TechIconKey, pattern: RegExp][] = [
   ['terraform', /terraform|deploying node|destroying node|route table|^(check|warning):/i],
   ['kubernetes', /kubernetes|\b(EKS|GKE|AKS)\b/i],
   ['cloudflare', /cloudflare/i],
+  ['githubActions', /github actions/i],
   ['docker', /docker|contenedor/i],
   ['aws', /\bAWS\b/],
   ['gcp', /\bGCP\b/],

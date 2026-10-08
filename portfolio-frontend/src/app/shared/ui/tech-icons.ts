@@ -2,11 +2,15 @@ import {
   siAngular,
   siApachecassandra,
   siApachekafka,
+  siCaddy,
   siCloudflare,
+  siCloudflarepages,
   siDatadog,
   siDocker,
   siElasticsearch,
   siFirebase,
+  siGithub,
+  siGithubactions,
   siGooglebigquery,
   siGooglecloud,
   siGooglecloudstorage,
@@ -51,6 +55,7 @@ export type CloudFamily = 'aws' | 'gcp' | 'azure';
 
 export type TechIconKey =
   | 'java' | 'spring' | 'angular' | 'postgresql' | 'redis' | 'gemini' | 'docker' | 'cloudflare' | 'jwt'
+  | 'github' | 'githubActions' | 'cloudflarePages' | 'caddy'
   | 'neon' | 'upstash' | 'tailwind' | 'terraform' | 'aws' | 'gcp' | 'azure' | 'kubernetes'
   | 'kafka' | 'rabbitmq' | 'vault' | 'elasticsearch'
   | 'mongodb' | 'cassandra' | 'prometheus' | 'grafana' | 'datadog' | 'opentelemetry'
@@ -88,6 +93,10 @@ export const TECH_ICONS: Record<TechIconKey, TechIcon> = {
   docker: icon(siDocker),
   cloudflare: icon(siCloudflare),
   jwt: icon(siJsonwebtokens),
+  github: icon(siGithub),
+  githubActions: icon(siGithubactions, 'GitHub Actions'),
+  cloudflarePages: icon(siCloudflarepages, 'Cloudflare Pages'),
+  caddy: icon(siCaddy),
   neon: icon(siNeon),
   upstash: icon(siUpstash),
   tailwind: icon(siTailwindcss),

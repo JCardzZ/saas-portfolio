@@ -7,7 +7,9 @@
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.example.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.example.com https://raw.githubusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+# raw.githubusercontent.com: de ahí se lee pipeline-status.json (rama badges), un archivo estático.
 
 # El documento y la configuración cambian en cada despliegue sin cambiar de nombre.
 /
@@ -16,6 +18,8 @@
   Cache-Control: no-cache
 /config.json
   Cache-Control: no-store
+/pipeline-status.json
+  Cache-Control: no-cache
 
 # JavaScript y CSS llevan un hash en el nombre: si cambia el contenido, cambia la URL.
 /*.js
