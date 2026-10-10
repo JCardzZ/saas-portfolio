@@ -27,6 +27,10 @@ import { ArchitectureTopology } from '../model/architectureTopology';
 // @ts-ignore
 import { CloudCatalogItem } from '../model/cloudCatalogItem';
 // @ts-ignore
+import { PricingRequest } from '../model/pricingRequest';
+// @ts-ignore
+import { PricingResponse } from '../model/pricingResponse';
+// @ts-ignore
 import { ProblemDetails } from '../model/problemDetails';
 // @ts-ignore
 import { TerraformBundle } from '../model/terraformBundle';
@@ -314,6 +318,73 @@ export class ArchitectureStudioService extends BaseService {
             {
                 context: localVarHttpContext,
                 body: architectureTopology,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Quote the list price of the services of a canvas
+     * Returns, for each service code, the public list price of the SKU the platform maps it to in that cloud. The SKU is chosen by the server from a closed table: the caller only names services of the catalog. Prices come from the provider\&#39;s public price API and are cached for 24 hours; if the provider does not answer, the last known price is returned as &#x60;STALE&#x60;. A service without a mapped SKU or a public price API is not guessed: it comes back as &#x60;UNKNOWN_PRICING&#x60; or &#x60;UNESTIMATED_ENTERPRISE_LICENSE&#x60;. Each lookup is announced on &#x60;/telemetry/live-stream&#x60;. Rate limited per client address. 
+     * @endpoint post /public/architecture/pricing
+     * @param pricingRequest 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public publicArchitecturePricingPost(pricingRequest: PricingRequest, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<PricingResponse>;
+    public publicArchitecturePricingPost(pricingRequest: PricingRequest, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<PricingResponse>>;
+    public publicArchitecturePricingPost(pricingRequest: PricingRequest, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<PricingResponse>>;
+    public publicArchitecturePricingPost(pricingRequest: PricingRequest, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        if (pricingRequest === null || pricingRequest === undefined) {
+            throw new Error('Required parameter pricingRequest was null or undefined when calling publicArchitecturePricingPost.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/public/architecture/pricing`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<PricingResponse>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: pricingRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
