@@ -73,6 +73,19 @@ export DB_USERNAME=postgres DB_PASSWORD=postgres
 Para que el frontend use este backend, pon `mockMode: false` en
 `portfolio-frontend/src/environments/environment.development.ts`.
 
+### Todo en local con Docker
+
+PostgreSQL 16 con pgvector, Redis y el backend, con un solo comando:
+
+```bash
+./scripts/dev-up.sh        # la primera vez crea .env con secretos generados; después basta `docker compose up -d`
+```
+
+La API queda en `http://localhost:8080/v1`. Para que el frontend la use, pon `mockMode: false` en
+`portfolio-frontend/src/environments/environment.development.ts` y arranca con `npm start`.
+Con el backend en marcha, el Estudio de arquitectura muestra precios de lista reales de Azure
+(leídos de su API pública, sin clave) y cada consulta aparece en el inspector de traza.
+
 ### Tests
 
 ```bash
