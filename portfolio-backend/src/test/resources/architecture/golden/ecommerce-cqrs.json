@@ -160,18 +160,18 @@
       "service": {
         "aws": "Aurora PostgreSQL",
         "gcp": "AlloyDB",
-        "azure": "Cosmos DB for PostgreSQL"
+        "azure": "Azure Database for PostgreSQL (Elastic Clusters)"
       },
       "icon": {
         "default": "postgresql",
         "aws": "awsAurora",
         "gcp": "gcpAlloyDb",
-        "azure": "azCosmosDb"
+        "azure": "azPostgresql"
       },
       "terraform": {
         "aws": "aws_rds_cluster",
         "gcp": "google_alloydb_cluster",
-        "azure": "azurerm_cosmosdb_postgresql_cluster"
+        "azure": "azurerm_postgresql_flexible_server"
       },
       "why": "Compatible con PostgreSQL, con almacenamiento distribuido y réplicas de lectura rápidas.",
       "custom": true
@@ -223,18 +223,18 @@
       "service": {
         "aws": "Aurora PostgreSQL",
         "gcp": "AlloyDB",
-        "azure": "Cosmos DB for PostgreSQL"
+        "azure": "Azure Database for PostgreSQL (Elastic Clusters)"
       },
       "icon": {
         "default": "postgresql",
         "aws": "awsAurora",
         "gcp": "gcpAlloyDb",
-        "azure": "azCosmosDb"
+        "azure": "azPostgresql"
       },
       "terraform": {
         "aws": "aws_rds_cluster",
         "gcp": "google_alloydb_cluster",
-        "azure": "azurerm_cosmosdb_postgresql_cluster"
+        "azure": "azurerm_postgresql_flexible_server"
       },
       "why": "Compatible con PostgreSQL, con almacenamiento distribuido y réplicas de lectura rápidas.",
       "custom": true

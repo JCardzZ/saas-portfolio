@@ -90,9 +90,11 @@ export const SERVICE_CATALOG: CatalogCategory[] = [
       },
       {
         enterprise: true,
-        type: 'newsql-pg', capability: 'PostgreSQL de alto rendimiento', icon: { default: 'postgresql', aws: 'awsAurora', gcp: 'gcpAlloyDb', azure: 'azCosmosDb' }, zone: 'data', connectFrom: 'api',
-        service: { aws: 'Aurora PostgreSQL', gcp: 'AlloyDB', azure: 'Cosmos DB for PostgreSQL' },
-        terraform: { aws: 'aws_rds_cluster', gcp: 'google_alloydb_cluster', azure: 'azurerm_cosmosdb_postgresql_cluster' },
+        type: 'newsql-pg', capability: 'PostgreSQL de alto rendimiento', icon: { default: 'postgresql', aws: 'awsAurora', gcp: 'gcpAlloyDb', azure: 'azPostgresql' }, zone: 'data', connectFrom: 'api',
+        // Azure: Cosmos DB for PostgreSQL está en retirada y no admite despliegues nuevos; su sucesor
+        // son los Elastic Clusters de Azure Database for PostgreSQL (docs/architecture/cloud-equivalences.md).
+        service: { aws: 'Aurora PostgreSQL', gcp: 'AlloyDB', azure: 'Azure Database for PostgreSQL (Elastic Clusters)' },
+        terraform: { aws: 'aws_rds_cluster', gcp: 'google_alloydb_cluster', azure: 'azurerm_postgresql_flexible_server' },
         why: 'Compatible con PostgreSQL, con almacenamiento distribuido y réplicas de lectura rápidas.',
       },
       {

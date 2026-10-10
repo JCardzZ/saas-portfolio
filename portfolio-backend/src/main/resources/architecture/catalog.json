@@ -210,7 +210,7 @@
     "id": "azure:newsql-pg",
     "provider": "azure",
     "code": "newsql-pg",
-    "name": "Cosmos DB for PostgreSQL",
+    "name": "Azure Database for PostgreSQL (Elastic Clusters)",
     "category": "data",
     "defaultMonthlyCost": 110,
     "isEnterprise": true
