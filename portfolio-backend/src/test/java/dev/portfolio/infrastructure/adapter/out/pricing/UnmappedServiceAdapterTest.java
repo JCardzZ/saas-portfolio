@@ -36,8 +36,8 @@ class UnmappedServiceAdapterTest {
         PriceQuote azure = adapter.quote(CloudProviderDomain.AZURE, "functions");
 
         assertThat(aws.status()).isEqualTo(PricingStatus.UNKNOWN_PRICING);
-        assertThat(aws.note()).isEqualTo("Todavía no hay un adaptador de precios para AWS.");
-        assertThat(azure.note()).isEqualTo("Este servicio no tiene todavía un SKU de Azure asignado.");
+        assertThat(aws.note()).isEqualTo("Este servicio no tiene todavía una tarifa de AWS asignada.");
+        assertThat(azure.note()).isEqualTo("Este servicio no tiene todavía una tarifa de Azure asignada.");
         assertThat(telemetry).isEmpty();
     }
 }
