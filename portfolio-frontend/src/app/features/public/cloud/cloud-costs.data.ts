@@ -74,6 +74,15 @@ export const NODE_COSTS: Record<string, { category: CostCategoryId; usd: Usd }> 
   opentelemetry: { category: 'ops', usd: 5 },
 };
 
+/**
+ * Servicios del catálogo sin cifra orientativa. No se inventa una: salen como «sin estimación»
+ * y no suman al total, hasta que alguien la contraste con la calculadora oficial y la pase a
+ * `NODE_COSTS`. La lista es explícita para que un servicio nuevo no quede sin precio por olvido.
+ */
+export const COST_UNKNOWN_TYPES: ReadonlySet<string> = new Set([
+  'global-database', 'event-stream', 'cdc', 'debezium', 'goldengate', 'kafka', 'snowflake', 'databricks', 'bi', 'tableau', 'powerbi', 'looker-studio',
+]);
+
 export interface CostItem {
   nodeId: string;
   type: string;
@@ -82,6 +91,8 @@ export interface CostItem {
 }
 
 export interface CostEstimate {
+  /** Servicios del catálogo que están en el lienzo y para los que no hay cifra: no suman al total. */
+  unestimated: { nodeId: string; name: string }[];
   total: number;
   categories: { id: CostCategoryId; name: string; usd: number; items: CostItem[] }[];
   /** La partida más cara, si hay alguna con coste. */
@@ -104,6 +115,8 @@ export function estimateCost(nodes: CloudNode[], provider: CloudProviderId, over
       ? [{ category: cost.category, nodeId: node.id, type: node.type, name: forProvider(node.service, provider), usd }]
       : [];
   });
+  const unestimated = nodes.filter((node) => COST_UNKNOWN_TYPES.has(node.type) && !((overrides[node.type]?.[provider] ?? 0) > 0))
+    .map((node) => ({ nodeId: node.id, name: node.name?.trim() || forProvider(node.service, provider) }));
   const categories = COST_CATEGORIES.map((category) => {
     const own = items.filter((item) => item.category === category.id).sort((a, b) => b.usd - a.usd);
     return {
@@ -117,6 +130,7 @@ export function estimateCost(nodes: CloudNode[], provider: CloudProviderId, over
   return {
     total: categories.reduce((sum, category) => sum + category.usd, 0),
     categories,
+    unestimated,
     top: all.reduce<CostItem | null>((best, item) => (!best || item.usd > best.usd ? item : best), null),
   };
 }

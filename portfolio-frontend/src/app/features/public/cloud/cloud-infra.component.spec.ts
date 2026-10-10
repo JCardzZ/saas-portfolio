@@ -1,5 +1,5 @@
 import { HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick, flush } from '@angular/core/testing';
 
 import { environment } from '../../../../environments/environment';
 import { of, throwError } from 'rxjs';
@@ -9,7 +9,9 @@ import { mockApiInterceptor, resetMockApi } from '../../../core/mock/mock-api.in
 
 import { SystemEventsService } from '../data/system-events.service';
 import { TraceInspectorService } from '../data/trace-inspector.service';
-import { CloudInfraComponent } from './cloud-infra.component';
+import { ArchitectureStudioService as ArchitectureStudio } from './architecture-studio.service';
+import { CloudInfraComponent, GRAPH_DIFF_DEBOUNCE_MS } from './cloud-infra.component';
+import { DATA_BLUEPRINTS } from './data-blueprints';
 import { CLOUD_NODES } from './cloud-topology.data';
 
 describe('CloudInfraComponent', () => {
@@ -289,9 +291,9 @@ describe('CloudInfraComponent', () => {
       fixture.detectChanges();
       const catalog = element.querySelector('app-service-catalog')!;
       expect(Array.from(catalog.querySelectorAll('h4')).map((heading) => heading.textContent)).toEqual([
-        'Cómputo', 'Serverless', 'Bases de datos', 'Mensajería', 'Observabilidad', 'API Management e integración', 'Redes y seguridad',
+        'Cómputo', 'Serverless', 'Bases de datos', 'Mensajería', 'Datos y analítica', 'Observabilidad', 'API Management e integración', 'Redes y seguridad',
       ]);
-      expect(catalog.querySelectorAll('button[aria-label^="Añadir"]').length).toBe(32);
+      expect(catalog.querySelectorAll('button[aria-label^="Añadir"]').length).toBe(44);
       expect(catalog.textContent).toContain('DynamoDB');
 
       button(element, 'Ocultar catálogo').click();
@@ -312,7 +314,7 @@ describe('CloudInfraComponent', () => {
 
       const search = catalog.querySelector<HTMLInputElement>('#catalog-search')!;
       const count = () => catalog.querySelectorAll('button[aria-label^="Añadir"]').length;
-      for (const [term, expected] of [['kafka', 1], ['azurerm_key_vault', 1], ['secretos', 2], ['no-existe', 0]] as const) {
+      for (const [term, expected] of [['kafka', 3], ['rabbitmq', 1], ['azurerm_key_vault', 1], ['secretos', 2], ['no-existe', 0]] as const) {
         search.value = term;
         search.dispatchEvent(new Event('input'));
         fixture.detectChanges();
@@ -1306,6 +1308,7 @@ describe('CloudInfraComponent', () => {
       expect(provider(element, 'Azure').getAttribute('aria-checked')).toBe('true');
       expect(services(element)).toEqual(jasmine.arrayContaining(['API Management', 'AKS', 'Entra External ID']));
       expect(tags()).toContain('Terraform');
+      flush();
     }));
 
     it('keeps working with its own presets when the backend does not answer', fakeAsync(() => {
@@ -1319,6 +1322,7 @@ describe('CloudInfraComponent', () => {
       menuItem(element, 'Core bancario AS400').click();
       fixture.detectChanges();
       expect(services(element)).toContain('IBM AS400');
+      flush();
     }));
 
     it('reports a backend project that cannot be opened and leaves the canvas untouched', fakeAsync(() => {
@@ -1415,6 +1419,7 @@ describe('CloudInfraComponent', () => {
       expect(services(second.element)).toContain('RabbitMQ');
       expect(second.component.cloudProject()).toEqual({ id: 'demo-1', title: 'Con RabbitMQ' });
       expect(second.component.cloudTitle()).toBe('Con RabbitMQ');
+      flush();
     }));
 
     it('refuses to overwrite a preset and falls back to its own Terraform if the backend fails', async () => {
@@ -1641,7 +1646,12 @@ describe('CloudInfraComponent', () => {
         node(element, 'ECS Fargate').dispatchEvent(new MouseEvent('dblclick'));
         fixture.detectChanges();
         const panel = element.querySelector('app-node-properties')!;
-        const listed = () => Array.from(panel.querySelectorAll('ul li')).map((item) => item.textContent!.replace(/\s+/g, ' ').trim());
+        // Sin el desplegable del tipo de conexión, que tiene su propio test.
+        const listed = () => Array.from(panel.querySelectorAll('ul li')).map((item) => {
+          const copy = item.cloneNode(true) as HTMLElement;
+          copy.querySelectorAll('select').forEach((select) => select.remove());
+          return copy.textContent!.replace(/\s+/g, ' ').trim();
+        });
 
         expect(listed()).toEqual(['←Desde Application LB ×', '→Hacia RDS PostgreSQL ×', '→Hacia ElastiCache ×', '→Hacia Gemini API ×']);
         const options = () => Array.from(panel.querySelectorAll<HTMLOptionElement>('#connect-with option')).map((option) => option.textContent);
@@ -1677,5 +1687,205 @@ describe('CloudInfraComponent', () => {
         expect(element.querySelectorAll('path.wire').length).toBe(9);
       });
     });
+  });
+  describe('data patterns', () => {
+    const data = (element: HTMLElement) => Array.from(element.querySelectorAll('path.wire[data-kind]')).map((wire) => wire.getAttribute('data-kind'));
+    const warnings = (element: HTMLElement) =>
+      Array.from(element.querySelectorAll('[data-testid="graph-warnings"] li')).map((item) => item.textContent!.trim());
+
+    it('hooks a new CDC to the database, not to the API, with a typed link', () => {
+      const { fixture, element, component } = edit();
+      catalogEntry(element, 'Database Migration Service').click();
+      fixture.detectChanges();
+
+      expect(component.project().links.at(-1)).toEqual({ from: 'postgres', to: 'cdc-1', kind: 'CDC_STREAM' });
+      expect(data(element)).toEqual(['CDC_STREAM']);
+      expect(Array.from(element.querySelectorAll('text.wire-label')).at(-1)?.textContent).toBe('CDC');
+      expect(warnings(element)).toEqual([]);
+    });
+
+    it('leaves a data piece unconnected when nothing on the canvas may feed it', () => {
+      const { fixture, element, component } = edit();
+      const before = component.project().links.length;
+      catalogEntry(element, 'Managed Flink').click();
+      fixture.detectChanges();
+      expect(component.project().links.length).toBe(before);
+      expect(warnings(element)).toEqual([]);
+    });
+
+    it('warns beside the node and in the inspector when a connection is not allowed, without blocking it', () => {
+      const { fixture, element, component } = edit();
+      catalogEntry(element, 'Database Migration Service').click();
+      component.connect('api', 'cdc-1');
+      fixture.detectChanges();
+
+      // La conexión se hace: es un aviso, no un bloqueo.
+      expect(component.project().links.some((link) => link.from === 'api' && link.to === 'cdc-1')).toBeTrue();
+      const message = 'Conexión no permitida: ECS Fargate → Database Migration Service. Un CDC solo recibe de: una base de datos, una base de datos global.';
+      expect(warnings(element)).toEqual([message]);
+      expect(element.querySelectorAll('[data-testid="rule-badge"]').length).toBe(1);
+      expect(element.querySelector('[data-testid="rule-badge"] title')?.textContent).toBe(message);
+      const events = TestBed.inject(SystemEventsService).events().filter((event) => event.tag === 'Graph Rule');
+      expect(events.map((event) => [event.kind, event.detail, event.component])).toEqual([['warn', message, 'cdc-1']]);
+
+      // Al deshacer la conexión, el aviso desaparece; no se repite en el inspector.
+      component.disconnect('api', 'cdc-1');
+      fixture.detectChanges();
+      expect(warnings(element)).toEqual([]);
+      expect(element.querySelector('[data-testid="rule-badge"]')).toBeNull();
+      expect(TestBed.inject(SystemEventsService).events().filter((event) => event.tag === 'Graph Rule').length).toBe(1);
+    });
+
+    it('warns about a duplicated instance of a service that admits only one', () => {
+      const { fixture, element } = edit();
+      catalogEntry(element, 'Tableau').click();
+      catalogEntry(element, 'Tableau').click();
+      fixture.detectChanges();
+      expect(warnings(element)).toEqual(['Instancia duplicada: Tableau #2. Este lienzo admite una sola.']);
+      expect(element.querySelectorAll('[data-testid="rule-badge"]').length).toBe(1);
+    });
+
+    it('says in main.tf, in the panel and in the trace that a service has no Terraform support yet', () => {
+      const { fixture, element, component } = edit();
+      catalogEntry(element, 'Debezium').click();
+      button(element, 'main.tf').click();
+      fixture.detectChanges();
+
+      expect(component.mainTf()).toContain('# Debezium: sin soporte de Terraform todavía');
+      expect(component.mainTf()).not.toContain('Fuera de Terraform: Debezium');
+      expect(Array.from(element.querySelectorAll('[data-testid="terraform-gap"]')).map((item) => item.textContent!.trim()))
+        .toEqual(['Debezium: sin soporte de Terraform todavía']);
+      const event = TestBed.inject(SystemEventsService).events().find((candidate) => candidate.detail.includes('sin soporte'))!;
+      expect([event.kind, event.tag, event.detail]).toEqual(['warn', 'Terraform', 'Debezium: sin soporte de Terraform todavía']);
+      expect(tags().some((tag) => tag.includes('resource "null"'))).toBeFalse();
+    });
+
+    it('shows the services without a cost estimate instead of counting them as free', () => {
+      const { fixture, element, component } = edit();
+      const total = component.cost().total;
+      catalogEntry(element, 'Snowflake').click();
+      fixture.detectChanges();
+      expect(component.cost().total).toBe(total);
+      const badge = element.querySelector('app-cost-badge')!;
+      expect(badge.textContent).toContain('+1 sin estimación');
+      badge.querySelector('button')!.click();
+      fixture.detectChanges();
+      expect(badge.querySelector('[data-testid="cost-unestimated"]')!.textContent!.trim()).toBe('Sin estimación: Snowflake. No suman al total.');
+    });
+
+    it('marks in the catalog the services with no direct equivalent in the chosen cloud', () => {
+      const { fixture, element } = edit();
+      expect(element.querySelector('[data-testid="no-equivalent"]')).toBeNull();
+      provider(element, 'Azure').click();
+      fixture.detectChanges();
+      const marked = Array.from(element.querySelectorAll('[data-testid="no-equivalent"]')).map((mark) => mark.closest('button')!.getAttribute('aria-label'));
+      expect(marked).toEqual([
+        'Añadir Azure SQL Database (failover groups): Base de datos global con réplica entre regiones',
+        'Añadir Data Factory (CDC): Captura de cambios (CDC) gestionada',
+      ]);
+      expect(catalogEntry(element, 'Data Factory (CDC)').title).toContain('Debezium publicando en Event Hubs');
+    });
+
+    it('lets the kind of a connection be changed from the properties of a node, as one undo step', () => {
+      const { fixture, element, component } = edit();
+      node(element, 'ECS Fargate').dispatchEvent(new MouseEvent('dblclick'));
+      fixture.detectChanges();
+      const select = element.querySelector<HTMLSelectElement>('app-node-properties select[aria-label="Tipo de la conexión con RDS PostgreSQL"]')!;
+      expect(Array.from(select.options).map((option) => option.textContent!.trim())).toEqual(['Peticiones', 'Flujo CDC', 'Bus de eventos', 'Carga analítica', 'Replicación']);
+
+      select.value = 'REPLICATION';
+      select.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      expect(component.project().links.find((link) => link.from === 'api' && link.to === 'postgres')).toEqual({ from: 'api', to: 'postgres', kind: 'REPLICATION' });
+      // Una réplica desde un servicio no tiene sentido: se avisa.
+      expect(warnings(element)).toEqual(['Tipo de conexión REPLICATION no válido entre ECS Fargate y RDS PostgreSQL.']);
+
+      component.setLinkKind('api', 'postgres', null);
+      fixture.detectChanges();
+      expect(component.project().links.find((link) => link.from === 'api' && link.to === 'postgres')).toEqual({ from: 'api', to: 'postgres' });
+      expect(warnings(element)).toEqual([]);
+      component.undo();
+      component.undo();
+      expect(component.project().links.some((link) => link.kind)).toBeFalse();
+      expect(component.canUndo()).toBeFalse();
+    });
+
+    it('loads a blueprint replacing the canvas, in the chosen cloud, as one undo step', () => {
+      const { fixture, element, component } = create();
+      provider(element, 'GCP').click();
+      const blueprint = DATA_BLUEPRINTS.find((candidate) => candidate.id === 'cdc-realtime')!;
+      component.loadBlueprint({ blueprint, mode: 'replace' });
+      fixture.detectChanges();
+
+      expect(component.selectedId()).toBe('gcp');
+      expect(services(element)).toEqual(['Visitantes', 'Cloudflare', 'Cloud Load Balancing', 'Cloud Run', 'Cloud SQL', 'Datastream', 'BigQuery', 'Secret Manager']);
+      expect(data(element)).toEqual(['CDC_STREAM', 'CDC_STREAM']);
+      expect(warnings(element)).toEqual([]);
+      expect(component.warnings()).toEqual([]);
+      expect(tags()).toContain('Blueprint');
+
+      component.undo();
+      fixture.detectChanges();
+      expect(services(element).length).toBe(CLOUD_NODES.length);
+    });
+
+    it('adds a blueprint to what is on the canvas without duplicating the shared pieces', () => {
+      const { fixture, element, component } = create();
+      component.loadBlueprint({ blueprint: DATA_BLUEPRINTS.find((candidate) => candidate.id === 'event-analytics')!, mode: 'add' });
+      fixture.detectChanges();
+
+      expect(component.nodes().length).toBe(CLOUD_NODES.length + 5);
+      expect(services(element).filter((name) => name === 'Application LB').length).toBe(1);
+      expect(services(element)).toContain('Kinesis Data Streams');
+      expect(warnings(element)).toEqual([]);
+      expect(TestBed.inject(SystemEventsService).events().find((event) => event.tag === 'Blueprint')!.detail)
+        .toBe('«Analítica por eventos» v1 agregado al lienzo (5 piezas nuevas)');
+      component.undo();
+      expect(component.nodes().length).toBe(CLOUD_NODES.length);
+    });
+
+    it('tells the gallery the cloud and whether the canvas has content, and loads what it asks for', () => {
+      const { fixture, element, component } = create();
+      const studio = TestBed.inject(ArchitectureStudio);
+      provider(element, 'Azure').click();
+      fixture.detectChanges();
+      expect(studio.activeProvider()).toBe('azure');
+      expect(studio.canvasHasContent()).toBeTrue();
+
+      studio.requestBlueprint({ blueprint: DATA_BLUEPRINTS.find((candidate) => candidate.id === 'multi-region-recovery')!, mode: 'replace' });
+      fixture.detectChanges();
+      expect(services(element)).toContain('Azure SQL Database (failover groups) #2');
+      expect(data(element)).toEqual(['REPLICATION']);
+    });
+
+    it('publishes the diff of the graph to the inspector after a short wait, grouping quick changes', fakeAsync(() => {
+      const { fixture, element, component } = edit();
+      const inspector = TestBed.inject(TraceInspectorService);
+      tick(GRAPH_DIFF_DEBOUNCE_MS);
+      expect(inspector.graphEntries()).toEqual([]);
+      expect(JSON.parse(inspector.graphJson()).nodes.length).toBe(CLOUD_NODES.length);
+
+      catalogEntry(element, 'Database Migration Service').click();
+      fixture.detectChanges();
+      catalogEntry(element, 'Redshift').click();
+      fixture.detectChanges();
+      tick(GRAPH_DIFF_DEBOUNCE_MS - 1);
+      expect(inspector.graphEntries()).toEqual([]);
+      tick(1);
+
+      // Dos cambios seguidos, una sola entrada.
+      expect(inspector.graphEntries().map((entry) => entry.summary)).toEqual(['2 nodos agregados, 2 aristas agregadas']);
+      expect(inspector.graphEntries()[0].lines.map((line) => `${line.sign} ${line.label}`)).toEqual(['+ nodo', '+ nodo', '+ arista', '+ arista']);
+      expect(JSON.parse(inspector.graphJson()).links.at(-1)).toEqual({ from: 'api', to: 'warehouse-2', kind: 'ANALYTICS_SINK' });
+
+      component.remove(component.nodes().at(-1)!);
+      fixture.detectChanges();
+      tick(GRAPH_DIFF_DEBOUNCE_MS);
+      expect(inspector.graphEntries().map((entry) => entry.summary).at(-1)).toBe('1 nodo quitado, 1 arista quitada');
+
+      button(element, 'Grafo').click();
+      expect(inspector.graphView()).toBeTrue();
+      flush();
+    }));
   });
 });

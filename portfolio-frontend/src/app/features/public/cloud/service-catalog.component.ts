@@ -46,7 +46,12 @@ export class ServiceCatalogComponent {
   }
 
   terraformOf(item: CatalogItem): string {
-    return forProvider(item.terraform, this.provider());
+    return item.terraform ? forProvider(item.terraform, this.provider()) : 'sin soporte de Terraform todavía';
+  }
+
+  /** Trade-off de la alternativa en la nube elegida, si allí no hay un servicio equivalente. */
+  gapOf(item: CatalogItem): string | null {
+    return item.noDirectEquivalent?.[this.provider()] ?? null;
   }
 
   iconOf(item: CatalogItem): TechIcon {

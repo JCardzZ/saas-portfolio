@@ -1,9 +1,11 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, map, of, tap } from 'rxjs';
+import { Observable, Subject, map, of, tap } from 'rxjs';
 
 import { ArchitectureProject, ArchitectureProjectSummary, ArchitectureStudioService as ArchitectureStudioApi } from '../../../core/api';
 import { CatalogCategory, SERVICE_CATALOG } from './cloud-catalog.data';
 import { CatalogRow, CostOverrides, mergeCatalog } from './cloud-costs.data';
+import { CloudProviderId } from './cloud-topology.data';
+import { BLUEPRINT_IDS, BlueprintLoad } from './data-blueprints';
 import {
   PROJECT_FORMAT, PROJECT_VERSION, STUDIO_PRESETS, SERVER_PRESET_IDS, StudioProject, parseProject,
 } from './studio-project';
@@ -47,6 +49,17 @@ export class ArchitectureStudioService {
   readonly costs = signal<CostOverrides>({});
   readonly catalogSource = signal<'local' | 'server'>('local');
 
+  /** Nube elegida en el lienzo y si tiene algo dibujado: lo publica el estudio para la galería de patrones. */
+  readonly activeProvider = signal<CloudProviderId>('aws');
+  readonly canvasHasContent = signal(true);
+  private readonly _blueprintRequests = new Subject<BlueprintLoad>();
+  /** Blueprints que la galería pide cargar; los atiende el lienzo. */
+  readonly blueprintRequests = this._blueprintRequests.asObservable();
+
+  requestBlueprint(load: BlueprintLoad): void {
+    this._blueprintRequests.next(load);
+  }
+
   /** Pide al backend sus plantillas, sus proyectos guardados y su catálogo de servicios. */
   load(): void {
     this.loadProjects();
@@ -67,7 +80,8 @@ export class ArchitectureStudioService {
   private loadProjects(): void {
     this.api.publicArchitectureProjectsGet().subscribe({
       next: (projects) => {
-        const remote = projects.map((project): StudioEntry => ({
+        // Los patrones de datos también se siembran en el backend, pero tienen su propia galería.
+        const remote = projects.filter((project) => !BLUEPRINT_IDS.includes(project.id)).map((project): StudioEntry => ({
           id: project.id, name: project.title, summary: project.description ?? '', kind: project.isPreset ? 'preset' : 'saved',
         }));
         const local = LOCAL_ENTRIES.filter((entry) => !SERVER_PRESET_IDS.includes(entry.id));

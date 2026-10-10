@@ -69,7 +69,10 @@
       <h2 id="cloud-titulo" class="mb-6 text-3xl font-semibold tracking-tight text-white">Cloud &amp; DevOps</h2>
       <!-- El estudio pesa: su código se descarga cuando la sección está a punto de verse. -->
       @defer (on viewport; prefetch on idle) {
-        <app-cloud-infra class="animate-slide-up" />
+        <div class="grid gap-4 [&>*]:min-w-0">
+          <app-cloud-infra class="animate-slide-up" />
+          <app-data-blueprints class="animate-slide-up" />
+        </div>
       } @placeholder {
         <div class="bento-card flex min-h-[36rem] items-center justify-center text-sm text-zinc-500">Cargando el estudio de arquitectura…</div>
       }

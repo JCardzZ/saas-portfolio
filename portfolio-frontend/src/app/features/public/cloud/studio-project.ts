@@ -160,10 +160,11 @@ export interface StudioPreset {
 }
 
 const CATALOG: CatalogItem[] = SERVICE_CATALOG.flatMap((category) => category.items);
-const BASE = (id: string) => structuredClone(CLOUD_NODES.find((node) => node.id === id)!);
+/** Una pieza de la arquitectura de referencia, por su id. */
+export const BASE = (id: string) => structuredClone(CLOUD_NODES.find((node) => node.id === id)!);
 
 /** Un servicio del catálogo colocado en el lienzo. */
-function placed(type: string, id: string, x: number, y: number, extra: Partial<CloudNode> = {}): CloudNode {
+export function placed(type: string, id: string, x: number, y: number, extra: Partial<CloudNode> = {}): CloudNode {
   const item = CATALOG.find((candidate) => candidate.type === type)!;
   return {
     id, type, x, y, zone: item.zone, role: item.capability, service: item.service, icon: item.icon, terraform: item.terraform,
@@ -176,7 +177,7 @@ function onPremise(type: string, id: string, x: number, y: number, service: stri
   return { id, type, x, y, zone: 'external', role, service, icon: null, terraform: null, why, custom: true };
 }
 
-const at = (node: CloudNode, x: number, y: number, extra: Partial<CloudNode> = {}): CloudNode => ({ ...node, x, y, ...extra });
+export const at = (node: CloudNode, x: number, y: number, extra: Partial<CloudNode> = {}): CloudNode => ({ ...node, x, y, ...extra });
 
 const ILLUSTRATIVE = 'Escenario ilustrativo de este tipo de sistema: no describe la infraestructura real de ninguna entidad.';
 
@@ -408,7 +409,7 @@ export const PROJECT_VERSION = 2;
 export const PROJECT_EXTENSION = '.architecture.json';
 export const PROJECT_STORAGE_KEY = 'architecture-studio-project';
 
-const MAX_NODES = 60;
+export const MAX_NODES = 60;
 const MAX_ZONES = 24;
 const MAX_LINKS = 200;
 const PROVIDERS: CloudProviderId[] = ['aws', 'gcp', 'azure'];

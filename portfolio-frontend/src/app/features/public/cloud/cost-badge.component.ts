@@ -30,6 +30,11 @@ import { CostEstimate, formatUsd } from './cloud-costs.data';
             <li class="text-xs text-zinc-400">Ningún nodo del lienzo tiene coste fijo.</li>
           }
         </ul>
+        @if (estimate().unestimated.length) {
+          <p class="mt-2 border-t border-white/10 pt-2 text-[11px] leading-snug text-amber-200" data-testid="cost-unestimated">
+            Sin estimación: {{ unestimatedNames() }}. No suman al total.
+          </p>
+        }
         <p class="mt-2 border-t border-white/10 pt-2 text-[10px] leading-snug text-zinc-500">
           Estimación orientativa en USD para el tamaño mínimo de cada servicio. No incluye tráfico de salida, el uso de
           Gemini, soporte ni descuentos. Contrasta con la calculadora oficial antes de decidir.
@@ -50,6 +55,9 @@ import { CostEstimate, formatUsd } from './cloud-costs.data';
         <span class="animate-slide-up font-mono text-sm font-semibold tabular-nums text-white">≈ {{ total }}</span>
       }
       <span class="text-[11px] text-zinc-400">/mes</span>
+      @if (estimate().unestimated.length) {
+        <span class="rounded-full border border-amber-300/40 px-1.5 text-[10px] text-amber-200" [title]="'Sin estimación: ' + unestimatedNames()">+{{ estimate().unestimated.length }} sin estimación</span>
+      }
     </button>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -62,6 +70,8 @@ export class CostBadgeComponent {
   readonly pinned = signal(false);
   readonly open = computed(() => this.hovered() || this.pinned());
   readonly usd = formatUsd;
+
+  readonly unestimatedNames = computed(() => [...new Set(this.estimate().unestimated.map((item) => item.name))].join(', '));
 
   share(usd: number): number {
     return this.estimate().total ? (usd / this.estimate().total) * 100 : 0;

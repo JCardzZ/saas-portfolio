@@ -1,4 +1,4 @@
-import { IconRef, PerProvider, ZoneId } from './cloud-topology.data';
+import { CloudProviderId, IconRef, PerProvider, ZoneId } from './cloud-topology.data';
 
 /**
  * Servicio que el visitante puede añadir al lienzo. Se describe por lo que hace
@@ -10,8 +10,8 @@ export interface CatalogItem {
   capability: string;
   service: string | PerProvider;
   icon: IconRef;
-  /** Tipo de recurso de Terraform con el que se aprovisiona. */
-  terraform: string | PerProvider;
+  /** Tipo de recurso de Terraform con el que se aprovisiona; `null` si el generador aún no lo cubre. */
+  terraform: string | PerProvider | null;
   /** Zona del lienzo en la que cae al añadirlo. */
   zone: ZoneId;
   /** Nodo desde el que le llega el tráfico; a él se conecta sola. */
@@ -19,7 +19,20 @@ export interface CatalogItem {
   why: string;
   /** Servicio que suele adoptarse a escala de empresa. */
   enterprise?: boolean;
+  /** Papel que juega en un flujo de datos; de él salen las reglas de conexión (`graph-rules.ts`). */
+  logical?: LogicalType;
+  /** Cuántas instancias de este servicio tiene sentido poner en un mismo lienzo. */
+  maxInstances?: number;
+  /**
+   * Nubes en las que no hay un servicio equivalente: el nombre mostrado es la alternativa más
+   * cercana y este texto, su trade-off. Fuentes en docs/architecture/cloud-equivalences.md.
+   */
+  noDirectEquivalent?: Partial<Record<CloudProviderId, string>>;
 }
+
+/** Papel de un servicio en un flujo de datos. Varios servicios distintos comparten papel. */
+export type LogicalType =
+  | 'database' | 'global-database' | 'cdc' | 'event-stream' | 'queue' | 'stream-processing' | 'data-warehouse' | 'bi';
 
 export interface CatalogCategory {
   id: string;
@@ -83,14 +96,14 @@ export const SERVICE_CATALOG: CatalogCategory[] = [
     name: 'Bases de datos',
     items: [
       {
-        type: 'nosql', capability: 'NoSQL clave-valor', icon: { default: 'provider', gcp: 'firebase', aws: 'awsDynamoDb', azure: 'azCosmosDb' }, zone: 'data', connectFrom: 'api',
+        type: 'nosql', logical: 'database', capability: 'NoSQL clave-valor', icon: { default: 'provider', gcp: 'firebase', aws: 'awsDynamoDb', azure: 'azCosmosDb' }, zone: 'data', connectFrom: 'api',
         service: { aws: 'DynamoDB', gcp: 'Firestore (Datastore)', azure: 'Cosmos DB' },
         terraform: { aws: 'aws_dynamodb_table', gcp: 'google_firestore_database', azure: 'azurerm_cosmosdb_account' },
         why: 'Almacén clave-valor para datos de acceso muy frecuente.',
       },
       {
         enterprise: true,
-        type: 'newsql-pg', capability: 'PostgreSQL de alto rendimiento', icon: { default: 'postgresql', aws: 'awsAurora', gcp: 'gcpAlloyDb', azure: 'azPostgresql' }, zone: 'data', connectFrom: 'api',
+        type: 'newsql-pg', logical: 'database', capability: 'PostgreSQL de alto rendimiento', icon: { default: 'postgresql', aws: 'awsAurora', gcp: 'gcpAlloyDb', azure: 'azPostgresql' }, zone: 'data', connectFrom: 'api',
         // Azure: Cosmos DB for PostgreSQL está en retirada y no admite despliegues nuevos; su sucesor
         // son los Elastic Clusters de Azure Database for PostgreSQL (docs/architecture/cloud-equivalences.md).
         service: { aws: 'Aurora PostgreSQL', gcp: 'AlloyDB', azure: 'Azure Database for PostgreSQL (Elastic Clusters)' },
@@ -99,25 +112,36 @@ export const SERVICE_CATALOG: CatalogCategory[] = [
       },
       {
         enterprise: true,
-        type: 'global-sql', capability: 'SQL distribuido multirregión', icon: { default: 'provider', aws: 'awsAurora', gcp: 'gcpSpanner', azure: 'azCosmosDb' }, zone: 'data', connectFrom: 'api',
+        type: 'global-sql', logical: 'global-database', capability: 'SQL distribuido multirregión', icon: { default: 'provider', aws: 'awsAurora', gcp: 'gcpSpanner', azure: 'azCosmosDb' }, zone: 'data', connectFrom: 'api',
         service: { aws: 'Aurora DSQL', gcp: 'Cloud Spanner', azure: 'Cosmos DB (multirregión)' },
         terraform: { aws: 'aws_dsql_cluster', gcp: 'google_spanner_instance', azure: 'azurerm_cosmosdb_account' },
         why: 'Escrituras consistentes en varias regiones. En Azure el equivalente más cercano no es SQL relacional.',
       },
       {
         enterprise: true,
-        type: 'graph', capability: 'Base de datos de grafos', icon: { default: 'provider', aws: 'awsNeptune', gcp: 'gcpSpanner', azure: 'azCosmosDb' }, zone: 'data', connectFrom: 'api',
+        type: 'global-database', logical: 'global-database', maxInstances: 3, capability: 'Base de datos global con réplica entre regiones',
+        icon: { default: 'provider', aws: 'awsAurora', gcp: 'gcpSpanner' }, zone: 'data', connectFrom: 'api',
+        service: { aws: 'Aurora Global Database', gcp: 'Cloud Spanner', azure: 'Azure SQL Database (failover groups)' },
+        terraform: { aws: 'aws_rds_global_cluster', gcp: 'google_spanner_instance', azure: 'azurerm_mssql_failover_group' },
+        why: 'Una región atiende las escrituras y otra guarda una réplica lista para tomar el relevo si la primera cae.',
+        noDirectEquivalent: {
+          azure: 'Sin equivalente directo: los failover groups de Azure SQL Database escriben en una sola región y replican de forma asíncrona, así que un failover puede perder los últimos cambios. Cosmos DB sí escribe en varias regiones, pero no es relacional.',
+        },
+      },
+      {
+        enterprise: true,
+        type: 'graph', logical: 'database', capability: 'Base de datos de grafos', icon: { default: 'provider', aws: 'awsNeptune', gcp: 'gcpSpanner', azure: 'azCosmosDb' }, zone: 'data', connectFrom: 'api',
         service: { aws: 'Neptune', gcp: 'Spanner Graph', azure: 'Cosmos DB (Gremlin)' },
         terraform: { aws: 'aws_neptune_cluster', gcp: 'google_spanner_instance', azure: 'azurerm_cosmosdb_gremlin_graph' },
         why: 'Relaciones muy conectadas: recomendaciones, fraude, grafos de conocimiento.',
       },
       {
-        type: 'mongodb', capability: 'Base de datos documental', icon: 'mongodb', zone: 'external', connectFrom: 'api',
+        type: 'mongodb', logical: 'database', capability: 'Base de datos documental', icon: 'mongodb', zone: 'external', connectFrom: 'api',
         service: 'MongoDB Atlas', terraform: 'mongodbatlas_advanced_cluster',
         why: 'Documentos JSON con esquema flexible; servicio externo, el mismo en cualquier nube.',
       },
       {
-        type: 'wide-column', capability: 'Columnar ancha (Cassandra)', icon: { default: 'cassandra', aws: 'awsKeyspaces', azure: 'azCassandra' }, zone: 'data', connectFrom: 'api',
+        type: 'wide-column', logical: 'database', capability: 'Columnar ancha (Cassandra)', icon: { default: 'cassandra', aws: 'awsKeyspaces', azure: 'azCassandra' }, zone: 'data', connectFrom: 'api',
         service: { aws: 'Keyspaces', gcp: 'Bigtable', azure: 'Managed Cassandra' },
         terraform: { aws: 'aws_keyspaces_table', gcp: 'google_bigtable_instance', azure: 'azurerm_cosmosdb_cassandra_cluster' },
         why: 'Escrituras masivas y series temporales a gran escala.',
@@ -129,13 +153,13 @@ export const SERVICE_CATALOG: CatalogCategory[] = [
       },
       {
         enterprise: true,
-        type: 'warehouse', capability: 'Almacén de datos analítico', icon: { default: 'provider', gcp: 'bigquery', aws: 'awsRedshift', azure: 'azSynapse' }, zone: 'managed', connectFrom: 'api',
+        type: 'warehouse', logical: 'data-warehouse', capability: 'Almacén de datos analítico', icon: { default: 'provider', gcp: 'bigquery', aws: 'awsRedshift', azure: 'azSynapse' }, zone: 'managed', connectFrom: 'api',
         service: { aws: 'Redshift', gcp: 'BigQuery', azure: 'Synapse Analytics' },
         terraform: { aws: 'aws_redshift_cluster', gcp: 'google_bigquery_dataset', azure: 'azurerm_synapse_workspace' },
         why: 'Consultas analíticas sobre grandes volúmenes de datos.',
       },
       {
-        type: 'sql-query', capability: 'Consultas SQL serverless sobre ficheros', icon: { default: 'provider', aws: 'awsAthena', gcp: 'bigquery', azure: 'azSynapse' }, zone: 'managed', connectFrom: 'api',
+        type: 'sql-query', logical: 'data-warehouse', capability: 'Consultas SQL serverless sobre ficheros', icon: { default: 'provider', aws: 'awsAthena', gcp: 'bigquery', azure: 'azSynapse' }, zone: 'managed', connectFrom: 'api',
         service: { aws: 'Athena', gcp: 'BigQuery (tablas externas)', azure: 'Synapse serverless SQL' },
         terraform: { aws: 'aws_athena_workgroup', gcp: 'google_bigquery_table', azure: 'azurerm_synapse_workspace' },
         why: 'SQL directamente sobre el almacenamiento de objetos, pagando por consulta.',
@@ -148,34 +172,116 @@ export const SERVICE_CATALOG: CatalogCategory[] = [
     items: [
       {
         enterprise: true,
-        type: 'streaming', capability: 'Streaming de eventos (Kafka)', icon: { default: 'kafka', aws: 'awsMsk', azure: 'azEventHubs' }, zone: 'compute', connectFrom: 'api',
+        type: 'streaming', logical: 'event-stream', capability: 'Streaming de eventos (Kafka)', icon: { default: 'kafka', aws: 'awsMsk', azure: 'azEventHubs' }, zone: 'compute', connectFrom: 'api',
         service: { aws: 'MSK (Kafka)', gcp: 'Managed Kafka', azure: 'Event Hubs' },
         terraform: { aws: 'aws_msk_cluster', gcp: 'google_managed_kafka_cluster', azure: 'azurerm_eventhub_namespace' },
         why: 'Bus de eventos para desacoplar productores y consumidores.',
       },
       {
-        type: 'queue', capability: 'Cola de mensajes', icon: { default: 'provider', gcp: 'gcpPubSub', aws: 'awsSqs', azure: 'azServiceBus' }, zone: 'managed', connectFrom: 'api',
+        type: 'event-stream', logical: 'event-stream', maxInstances: 4, capability: 'Stream de eventos nativo de la nube',
+        icon: { default: 'provider', gcp: 'gcpPubSub', azure: 'azEventHubs' }, zone: 'managed', connectFrom: 'api',
+        service: { aws: 'Kinesis Data Streams', gcp: 'Pub/Sub', azure: 'Event Hubs' },
+        terraform: { aws: 'aws_kinesis_stream', gcp: 'google_pubsub_topic', azure: 'azurerm_eventhub' },
+        why: 'Ingesta de eventos del propio proveedor: sin clúster que dimensionar, a cambio de su API en lugar de la de Kafka.',
+      },
+      {
+        type: 'queue', logical: 'queue', capability: 'Cola de mensajes', icon: { default: 'provider', gcp: 'gcpPubSub', aws: 'awsSqs', azure: 'azServiceBus' }, zone: 'managed', connectFrom: 'api',
         service: { aws: 'SQS', gcp: 'Pub/Sub', azure: 'Service Bus' },
         terraform: { aws: 'aws_sqs_queue', gcp: 'google_pubsub_subscription', azure: 'azurerm_servicebus_queue' },
         why: 'Cola de trabajo para tareas en segundo plano, como la reindexación.',
       },
       {
-        type: 'pubsub', capability: 'Notificaciones publicar-suscribir', icon: { default: 'provider', gcp: 'gcpPubSub', aws: 'awsSns', azure: 'azEventGrid' }, zone: 'managed', connectFrom: 'api',
+        type: 'pubsub', logical: 'queue', capability: 'Notificaciones publicar-suscribir', icon: { default: 'provider', gcp: 'gcpPubSub', aws: 'awsSns', azure: 'azEventGrid' }, zone: 'managed', connectFrom: 'api',
         service: { aws: 'SNS', gcp: 'Pub/Sub', azure: 'Event Grid' },
         terraform: { aws: 'aws_sns_topic', gcp: 'google_pubsub_topic', azure: 'azurerm_eventgrid_topic' },
         why: 'Un evento, muchos suscriptores.',
       },
       {
-        type: 'rabbitmq', capability: 'Broker AMQP', icon: 'rabbitmq', zone: 'compute', connectFrom: 'api',
+        type: 'rabbitmq', logical: 'queue', capability: 'Broker AMQP', icon: 'rabbitmq', zone: 'compute', connectFrom: 'api',
         service: 'RabbitMQ', terraform: { aws: 'aws_mq_broker', gcp: 'helm_release', azure: 'helm_release' },
         why: 'Mensajería con enrutado flexible; gestionado en AWS, sobre Kubernetes en las demás.',
       },
       {
         enterprise: true,
-        type: 'stream-processing', capability: 'Procesamiento de streams', icon: { default: 'provider', aws: 'awsFlink', gcp: 'gcpDataflow', azure: 'azStreamAnalytics' }, zone: 'managed', connectFrom: 'api',
+        type: 'stream-processing', logical: 'stream-processing', capability: 'Procesamiento de streams', icon: { default: 'provider', aws: 'awsFlink', gcp: 'gcpDataflow', azure: 'azStreamAnalytics' }, zone: 'managed', connectFrom: 'api',
         service: { aws: 'Managed Flink', gcp: 'Dataflow', azure: 'Stream Analytics' },
         terraform: { aws: 'aws_kinesisanalyticsv2_application', gcp: 'google_dataflow_job', azure: 'azurerm_stream_analytics_job' },
         why: 'Transforma y agrega eventos en vuelo, sin gestionar el clúster.',
+      },
+    ],
+  },
+  {
+    id: 'data-analytics',
+    name: 'Datos y analítica',
+    items: [
+      {
+        enterprise: true,
+        type: 'cdc', logical: 'cdc', maxInstances: 3, capability: 'Captura de cambios (CDC) gestionada',
+        icon: 'provider', zone: 'managed', connectFrom: 'api',
+        service: { aws: 'Database Migration Service', gcp: 'Datastream', azure: 'Data Factory (CDC)' },
+        terraform: { aws: 'aws_dms_replication_task', gcp: 'google_datastream_stream', azure: 'azurerm_data_factory' },
+        why: 'Lee el registro de transacciones de la base de datos y publica cada cambio, sin tocar la aplicación.',
+        noDirectEquivalent: {
+          azure: 'Sin equivalente directo: el recurso CDC de Data Factory está en vista previa y solo lee de SQL Server, Azure SQL, Cosmos DB y Snowflake. Para PostgreSQL, MySQL u Oracle lo habitual es Debezium publicando en Event Hubs.',
+        },
+      },
+      {
+        type: 'debezium', logical: 'cdc', maxInstances: 2, capability: 'CDC de código abierto sobre Kafka Connect',
+        icon: 'dataService', zone: 'compute', connectFrom: 'api',
+        service: 'Debezium', terraform: null,
+        why: 'Conectores que leen el registro de PostgreSQL, MySQL u Oracle y publican cada cambio en Kafka; lo operas tú.',
+      },
+      {
+        enterprise: true,
+        type: 'goldengate', logical: 'cdc', maxInstances: 1, capability: 'Replicación de datos en tiempo real',
+        icon: 'dataService', zone: 'managed', connectFrom: 'api',
+        service: 'Oracle GoldenGate', terraform: null,
+        why: 'Replicación basada en el registro entre bases de datos distintas; habitual donde el origen es Oracle. De pago.',
+      },
+      {
+        type: 'kafka', logical: 'event-stream', maxInstances: 1, capability: 'Kafka operado por ti',
+        icon: 'dataService', zone: 'compute', connectFrom: 'api',
+        service: 'Apache Kafka', terraform: 'helm_release',
+        why: 'El mismo Kafka en cualquier nube o en tu centro de datos, a cambio de operar el clúster.',
+      },
+      {
+        enterprise: true,
+        type: 'snowflake', logical: 'data-warehouse', maxInstances: 1, capability: 'Almacén de datos independiente de la nube',
+        icon: 'dataService', zone: 'managed', connectFrom: 'api',
+        service: 'Snowflake', terraform: 'snowflake_database',
+        why: 'Almacén analítico que separa cómputo y almacenamiento y funciona igual sobre AWS, Google Cloud o Azure.',
+      },
+      {
+        enterprise: true,
+        type: 'databricks', logical: 'stream-processing', maxInstances: 1, capability: 'Lakehouse y procesamiento con Spark',
+        icon: 'dataService', zone: 'managed', connectFrom: 'api',
+        service: 'Databricks', terraform: 'databricks_cluster',
+        why: 'Procesa lotes y streams con Spark sobre un lago de datos; el mismo producto en las tres nubes.',
+      },
+      {
+        type: 'bi', logical: 'bi', maxInstances: 1, capability: 'Paneles e informes del proveedor',
+        icon: 'provider', zone: 'managed', connectFrom: 'api',
+        service: { aws: 'Amazon Quick Sight', gcp: 'Looker', azure: 'Power BI Embedded' },
+        terraform: { aws: 'aws_quicksight_data_source', gcp: 'google_looker_instance', azure: 'azurerm_powerbi_embedded' },
+        why: 'Paneles sobre el almacén de datos, con el servicio de inteligencia de negocio de cada nube.',
+      },
+      {
+        type: 'tableau', logical: 'bi', maxInstances: 1, capability: 'Inteligencia de negocio',
+        icon: 'dataService', zone: 'external', connectFrom: 'api',
+        service: 'Tableau', terraform: null,
+        why: 'Paneles e informes para negocio; se conecta al almacén de datos, no a la aplicación.',
+      },
+      {
+        type: 'powerbi', logical: 'bi', maxInstances: 1, capability: 'Inteligencia de negocio',
+        icon: 'dataService', zone: 'external', connectFrom: 'api',
+        service: 'Power BI', terraform: null,
+        why: 'Paneles e informes para negocio; habitual donde ya se usa Microsoft 365.',
+      },
+      {
+        type: 'looker-studio', logical: 'bi', maxInstances: 1, capability: 'Paneles gratuitos',
+        icon: 'dataService', zone: 'external', connectFrom: 'api',
+        service: 'Looker Studio', terraform: null,
+        why: 'Paneles sencillos y gratuitos sobre el almacén de datos; sin modelo semántico ni gobierno.',
       },
     ],
   },
