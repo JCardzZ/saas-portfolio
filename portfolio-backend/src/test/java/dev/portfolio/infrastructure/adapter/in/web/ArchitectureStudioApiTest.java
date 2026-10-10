@@ -1,5 +1,11 @@
 package dev.portfolio.infrastructure.adapter.in.web;
 
+import dev.portfolio.domain.model.pricing.SkuPricing;
+import dev.portfolio.domain.model.pricing.PricingUnit;
+import dev.portfolio.domain.model.pricing.PricingStatus;
+import dev.portfolio.domain.model.pricing.PriceQuote;
+import dev.portfolio.domain.model.pricing.Money;
+import dev.portfolio.application.port.in.PricingUseCase;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase.Draft;
 import dev.portfolio.application.port.in.CloudCatalogUseCase;
@@ -82,6 +88,9 @@ class ArchitectureStudioApiTest {
 
     @MockBean
     private CloudCatalogUseCase catalog;
+
+    @MockBean
+    private PricingUseCase pricing;
 
     @MockBean
     private TelemetryPort telemetryPort;
@@ -215,5 +224,57 @@ class ArchitectureStudioApiTest {
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().string(HttpHeaders.RETRY_AFTER, "20"))
                 .andExpect(jsonPath("$.code").value("RATE_LIMIT_EXCEEDED"));
+    }
+
+    @Test
+    void anyoneCanQuoteTheServicesOfACanvasAndAMissingPriceIsNeverAZero() throws Exception {
+        SkuPricing d2s = new SkuPricing("D2s_v5", "Virtual Machines Dsv5 Series · D2s v5", Money.usd("0.096"), PricingUnit.HOURLY,
+                "eastus", "Azure Retail Prices API", Instant.parse("2026-10-10T12:00:00Z"));
+        given(pricing.quote(eq(CloudProviderDomain.AZURE), eq(List.of("vm", "snowflake", "functions")), any())).willReturn(List.of(
+                PriceQuote.priced("vm", CloudProviderDomain.AZURE, PricingStatus.CACHED, d2s, "Solo el cómputo."),
+                PriceQuote.enterpriseLicense("snowflake", CloudProviderDomain.AZURE, "Se contrata con oferta comercial."),
+                PriceQuote.unknown("functions", CloudProviderDomain.AZURE, "")));
+
+        mockMvc.perform(post("/public/architecture/pricing").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cloudProvider\":\"azure\",\"services\":[\"vm\",\"snowflake\",\"functions\"]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cloudProvider").value("azure"))
+                .andExpect(jsonPath("$.currency").value("USD"))
+                .andExpect(jsonPath("$.quotes.length()").value(3))
+                .andExpect(jsonPath("$.quotes[0].code").value("vm"))
+                .andExpect(jsonPath("$.quotes[0].status").value("CACHED"))
+                .andExpect(jsonPath("$.quotes[0].sku").value("D2s_v5"))
+                .andExpect(jsonPath("$.quotes[0].unit").value("HOURLY"))
+                .andExpect(jsonPath("$.quotes[0].unitPrice").value(0.096))
+                .andExpect(jsonPath("$.quotes[0].monthlyCost").value(70.08))
+                .andExpect(jsonPath("$.quotes[0].source").value("Azure Retail Prices API"))
+                .andExpect(jsonPath("$.quotes[0].fetchedAt").value("2026-10-10T12:00:00Z"))
+                .andExpect(jsonPath("$.quotes[1].status").value("UNESTIMATED_ENTERPRISE_LICENSE"))
+                .andExpect(jsonPath("$.quotes[1].unitPrice").doesNotExist())
+                .andExpect(jsonPath("$.quotes[1].monthlyCost").doesNotExist())
+                .andExpect(jsonPath("$.quotes[1].note").value("Se contrata con oferta comercial."))
+                .andExpect(jsonPath("$.quotes[2].status").value("UNKNOWN_PRICING"))
+                .andExpect(jsonPath("$.quotes[2].monthlyCost").doesNotExist())
+                .andExpect(jsonPath("$.quotes[2].note").doesNotExist());
+    }
+
+    @Test
+    void aQuoteIsValidatedAndRateLimitedLikeTheRestOfThePublicStudio() throws Exception {
+        mockMvc.perform(post("/public/architecture/pricing").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cloudProvider\":\"oracle\",\"services\":[\"vm\"]}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/public/architecture/pricing").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cloudProvider\":\"azure\",\"services\":[\"Standard_D2s_v5' or 1 eq 1\"]}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/public/architecture/pricing").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cloudProvider\":\"azure\",\"services\":[]}"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(pricing);
+
+        given(pricing.quote(any(), any(), any())).willThrow(new RateLimitExceededException(30, Duration.ofSeconds(20)));
+        mockMvc.perform(post("/public/architecture/pricing").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cloudProvider\":\"azure\",\"services\":[\"vm\"]}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, "20"));
     }
 }
