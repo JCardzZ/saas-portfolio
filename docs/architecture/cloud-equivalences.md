@@ -55,3 +55,19 @@ AWS tiene Aurora Global Database y Google Cloud, Cloud Spanner. En Azure hay que
   - <https://learn.microsoft.com/en-us/azure/azure-sql/database/failover-group-configure-sql-db?view=azuresql>
   - <https://learn.microsoft.com/en-us/azure/reliability/reliability-sql-database>
   - <https://learn.microsoft.com/en-us/azure/well-architected/mission-critical/mission-critical-data-platform>
+
+## Inteligencia de negocio del proveedor (`bi`)
+
+- AWS: **Amazon Quick Sight**. Amazon QuickSight pasó a ser una función de Amazon Quick y se
+  escribe así en la documentación actual; las API y los recursos conservan el nombre `quicksight`.
+  Fuente: <https://docs.aws.amazon.com/quick/latest/userguide/what-is.html>
+- Google Cloud: Looker. Azure: Power BI Embedded.
+- Tableau, Power BI y Looker Studio están además como productos independientes de la nube.
+
+## Stream de eventos: dos servicios distintos
+
+- `streaming`: Kafka gestionado (MSK / Managed Service for Apache Kafka / Event Hubs).
+- `event-stream`: el stream nativo de cada nube (Kinesis Data Streams / Pub/Sub / Event Hubs).
+- En Azure los dos caen en Event Hubs, que ofrece su API propia y un punto de conexión
+  compatible con Kafka.
+
