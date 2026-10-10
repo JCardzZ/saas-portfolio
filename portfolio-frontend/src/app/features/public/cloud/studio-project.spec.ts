@@ -2,7 +2,7 @@ import { NODE_COSTS } from './cloud-costs.data';
 import { CLOUD_NODES, CloudNode, forProvider } from './cloud-topology.data';
 import { History } from './studio-history';
 import {
-  BASE_ZONES, STUDIO_PRESETS, StudioProject, nodeLabel, parseProject, referenceProject, roleAt, serializeProject, slotsIn, zoneAt, zoneLabel,
+  BASE_ZONES, PROJECT_VERSION, STUDIO_PRESETS, StudioProject, migrateProject, nodeLabel, parseProject, referenceProject, roleAt, serializeProject, slotsIn, zoneAt, zoneLabel,
   zonesInside,
 } from './studio-project';
 import { generateMainTf, generateVariablesTf, parseEnv, secretEnvKeys } from './terraform-generator';
@@ -159,6 +159,52 @@ describe('pattern presets', () => {
     // RAG: la ingesta y la API comparten el índice vectorial y el modelo.
     expect(into('rag-enterprise', 'postgres')).toEqual(['api', 'ingest']);
     expect(into('rag-enterprise', 'llm')).toEqual(['api', 'ingest']);
+  });
+});
+
+describe('project schema versions', () => {
+  // Un proyecto tal como lo guardaba el estudio antes de las conexiones con tipo.
+  const savedInVersion1 = (): Record<string, any> => ({ ...JSON.parse(serializeProject(referenceProject())), version: 1 });
+
+  it('writes the current version', () => {
+    expect(JSON.parse(serializeProject(referenceProject()))['version']).toBe(PROJECT_VERSION);
+    expect(PROJECT_VERSION).toBe(2);
+  });
+
+  it('still opens a project saved with version 1, unchanged', () => {
+    const parsed = parseProject(JSON.stringify(savedInVersion1()));
+    expect(parsed).toEqual({ ok: true, project: referenceProject() });
+  });
+
+  it('opens every preset as version 1 would have stored it', () => {
+    for (const preset of STUDIO_PRESETS) {
+      const project = preset.build();
+      const stored = JSON.stringify({ ...JSON.parse(serializeProject(project)), version: 1 });
+      expect(parseProject(stored)).withContext(preset.id).toEqual({ ok: true, project });
+    }
+  });
+
+  it('drops a link kind from a version 1 file, where it did not exist', () => {
+    const old = savedInVersion1();
+    old['links'][0]['kind'] = 'CDC_STREAM';
+    const parsed = parseProject(JSON.stringify(old));
+    expect(parsed.ok && parsed.project.links[0].kind).toBeUndefined();
+  });
+
+  it('keeps a known link kind in version 2 and discards an unknown one', () => {
+    const current = JSON.parse(serializeProject(referenceProject()));
+    current['links'][0]['kind'] = 'REPLICATION';
+    current['links'][1]['kind'] = 'TELEPATHY';
+    const parsed = parseProject(JSON.stringify(current));
+    expect(parsed.ok && parsed.project.links[0].kind).toBe('REPLICATION');
+    expect(parsed.ok && parsed.project.links[1].kind).toBeUndefined();
+  });
+
+  it('refuses versions it does not know, older or newer', () => {
+    expect(migrateProject({ version: 0 })).toBeNull();
+    expect(migrateProject({ version: 3 })).toBeNull();
+    expect(migrateProject({})).toBeNull();
+    expect(migrateProject({ version: 1, links: 'no' })).toEqual({ version: 2, links: 'no' });
   });
 });
 

@@ -75,10 +75,21 @@ export interface NodeProps {
   env?: string;
 }
 
+/** Qué lleva una conexión de datos. Una conexión sin tipo es tráfico de peticiones, como siempre. */
+export type LinkKind = 'CDC_STREAM' | 'EVENT_BUS' | 'ANALYTICS_SINK' | 'REPLICATION';
+
+export const LINK_KINDS: { kind: LinkKind; name: string; hint: string }[] = [
+  { kind: 'CDC_STREAM', name: 'Flujo CDC', hint: 'cambios de una base de datos, leídos de su registro de transacciones' },
+  { kind: 'EVENT_BUS', name: 'Bus de eventos', hint: 'eventos publicados para quien quiera consumirlos' },
+  { kind: 'ANALYTICS_SINK', name: 'Carga analítica', hint: 'datos que terminan en un almacén o en un panel' },
+  { kind: 'REPLICATION', name: 'Replicación', hint: 'copia de los datos entre réplicas o regiones' },
+];
+
 export interface CloudLink {
   from: string;
   to: string;
   label?: string;
+  kind?: LinkKind;
 }
 
 export const CANVAS_WIDTH = 1110;

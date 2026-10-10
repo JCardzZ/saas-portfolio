@@ -1,8 +1,8 @@
 import { TECH_ICONS } from '../../../shared/ui/tech-icons';
 import { CatalogItem, SERVICE_CATALOG } from './cloud-catalog.data';
 import {
-  CANVAS_HEIGHT, CANVAS_WIDTH, CLOUD_LINKS, CLOUD_NODES, CLOUD_PROVIDERS, CloudLink, CloudNode, CloudProviderId, IconRef, NODE_HEIGHT,
-  PerProvider, ZoneId,
+  CANVAS_HEIGHT, CANVAS_WIDTH, CLOUD_LINKS, CLOUD_NODES, CLOUD_PROVIDERS, CloudLink, CloudNode, CloudProviderId, IconRef, LINK_KINDS, LinkKind,
+  NODE_HEIGHT, PerProvider, ZoneId,
 } from './cloud-topology.data';
 
 // ---------- Zonas ----------
@@ -400,7 +400,11 @@ export const SERVER_PRESET_IDS = [
 // ---------- Guardar, exportar e importar ----------
 
 export const PROJECT_FORMAT = 'architecture-studio';
-export const PROJECT_VERSION = 1;
+/**
+ * Versión del esquema del proyecto. 1: nodos, conexiones sin tipo y zonas. 2: las conexiones
+ * pueden llevar `kind`. Un proyecto anterior se abre igual y se guarda ya en la versión actual.
+ */
+export const PROJECT_VERSION = 2;
 export const PROJECT_EXTENSION = '.architecture.json';
 export const PROJECT_STORAGE_KEY = 'architecture-studio-project';
 
@@ -412,6 +416,7 @@ const ZONE_IDS: ZoneId[] = ['outside', 'global', 'public', 'compute', 'data', 'm
 const KINDS: ZoneKind[] = ['cloud', 'region', 'vpc', 'public', 'private'];
 const ID = /^[A-Za-z0-9_-]{1,48}$/;
 const RESOURCE = /^[a-z0-9_]{1,80}$/;
+const LINK_KIND_IDS = LINK_KINDS.map((entry) => entry.kind);
 
 export function serializeProject(project: StudioProject): string {
   return JSON.stringify({ format: PROJECT_FORMAT, version: PROJECT_VERSION, ...project }, null, 2);
@@ -434,7 +439,8 @@ export function parseProject(text: string): ParsedProject {
   if (!isRecord(raw) || raw['format'] !== PROJECT_FORMAT) {
     return { ok: false, error: 'El archivo no es un proyecto del Estudio de arquitectura.' };
   }
-  if (raw['version'] !== PROJECT_VERSION) {
+  raw = migrateProject(raw);
+  if (!isRecord(raw)) {
     return { ok: false, error: 'El proyecto es de una versión que este estudio no sabe abrir.' };
   }
   const nodes = Array.isArray(raw['nodes']) ? raw['nodes'] : null;
@@ -466,11 +472,54 @@ export function parseProject(text: string): ParsedProject {
   const ids = new Set(parsedNodes.map((node) => node.id));
   const parsedLinks = links.flatMap((link): CloudLink[] =>
     isRecord(link) && ids.has(link['from'] as string) && ids.has(link['to'] as string) && link['from'] !== link['to']
-      ? [{ from: link['from'] as string, to: link['to'] as string, ...(text_(link['label'], 40) ? { label: text_(link['label'], 40)! } : {}) }]
+      ? [{
+          from: link['from'] as string, to: link['to'] as string,
+          ...(text_(link['label'], 40) ? { label: text_(link['label'], 40)! } : {}),
+          ...(LINK_KIND_IDS.includes(link['kind'] as LinkKind) ? { kind: link['kind'] as LinkKind } : {}),
+        }]
       : []);
 
   return { ok: true, project: { provider: raw['provider'] as CloudProviderId, nodes: parsedNodes, links: parsedLinks, zones: parsedZones } };
 }
+
+/**
+ * Lleva un proyecto guardado con un esquema anterior al actual, paso a paso. Devuelve `null`
+ * si la versión no se conoce (por ejemplo, un archivo de un estudio más nuevo).
+ */
+export function migrateProject(raw: Record<string, unknown>): Record<string, unknown> | null {
+  let project = raw;
+  for (let guard = 0; guard < MIGRATIONS.length + 1; guard++) {
+    if (project['version'] === PROJECT_VERSION) {
+      return project;
+    }
+    const step = MIGRATIONS.find((migration) => migration.from === project['version']);
+    if (!step) {
+      return null;
+    }
+    project = { ...step.apply(project), version: step.from + 1 };
+  }
+  return null;
+}
+
+const MIGRATIONS: { from: number; apply: (project: Record<string, unknown>) => Record<string, unknown> }[] = [
+  // 1 → 2: las conexiones ganan `kind`, que es opcional; en la versión 1 no existía, así que
+  // cualquier `kind` que traiga un archivo de esa versión no es del estudio y se quita.
+  {
+    from: 1,
+    apply: (project) => ({
+      ...project,
+      links: Array.isArray(project['links'])
+        ? project['links'].map((link) => {
+            if (!isRecord(link)) {
+              return link;
+            }
+            const { kind: _dropped, ...rest } = link;
+            return rest;
+          })
+        : project['links'],
+    }),
+  },
+];
 
 function parseNode(raw: unknown): CloudNode | null {
   if (!isRecord(raw)) {
