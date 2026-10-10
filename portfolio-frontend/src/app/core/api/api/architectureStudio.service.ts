@@ -49,7 +49,7 @@ export class ArchitectureStudioService extends BaseService {
 
     /**
      * Update a saved architecture project
-     * Presets are read-only; updating one answers 400.
+     * Presets are read-only; updating one answers 400, and so does a graph that breaks the rules of the studio.
      * @endpoint put /admin/architecture/projects/{id}
      * @param id 
      * @param architectureProjectRequest 
@@ -123,7 +123,7 @@ export class ArchitectureStudioService extends BaseService {
 
     /**
      * Save a new architecture project
-     * Saved projects are listed publicly, so only an administrator can create them.
+     * Saved projects are listed publicly, so only an administrator can create them. The graph must follow the rules of the studio (which piece may feed which, valid ends for each link kind, instances per service); a graph that breaks one answers 400.
      * @endpoint post /admin/architecture/projects
      * @param architectureProjectRequest 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.

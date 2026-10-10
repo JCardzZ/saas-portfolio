@@ -755,7 +755,10 @@ paths:
     post:
       tags: [Architecture Studio]
       summary: Save a new architecture project
-      description: Saved projects are listed publicly, so only an administrator can create them.
+      description: >-
+        Saved projects are listed publicly, so only an administrator can create them. The graph must follow the
+        rules of the studio (which piece may feed which, valid ends for each link kind, instances per service);
+        a graph that breaks one answers 400.
       security: [{ BearerAuth: [] }]
       requestBody:
         required: true
@@ -779,7 +782,7 @@ paths:
     put:
       tags: [Architecture Studio]
       summary: Update a saved architecture project
-      description: Presets are read-only; updating one answers 400.
+      description: Presets are read-only; updating one answers 400, and so does a graph that breaks the rules of the studio.
       security: [{ BearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ArchitectureProjectId'
@@ -1034,7 +1037,9 @@ components:
         isEnterprise: { type: boolean, description: "Typically adopted at enterprise scale." }
 
     ArchitectureGraphElement:
-      description: A node, connection or zone of the canvas. Its shape belongs to the Architecture Studio editor, which validates it on load.
+      description: >-
+        A node, connection or zone of the canvas. Its shape belongs to the Architecture Studio editor, which validates it
+        on load. A connection may carry `kind` (CDC_STREAM, EVENT_BUS, ANALYTICS_SINK or REPLICATION) to say what it moves.
       type: object
       additionalProperties: true
 

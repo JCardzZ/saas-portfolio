@@ -1,0 +1,265 @@
+{
+  "cloudProvider": "azure",
+  "nodes": [
+    {
+      "id": "users",
+      "type": "users",
+      "x": 64,
+      "y": 250,
+      "zone": "outside",
+      "role": "Navegador",
+      "service": "Visitantes",
+      "icon": null,
+      "terraform": null,
+      "why": "Entran por HTTPS; nunca hablan directamente con la nube."
+    },
+    {
+      "id": "edge",
+      "type": "edge",
+      "x": 196,
+      "y": 250,
+      "zone": "outside",
+      "role": "CDN · WAF · DNS",
+      "service": "Cloudflare",
+      "icon": "cloudflare",
+      "terraform": "cloudflare_record",
+      "why": "Borde común a las tres nubes: caché, protección y la IP real del visitante."
+    },
+    {
+      "id": "lb",
+      "type": "lb",
+      "x": 402,
+      "y": 250,
+      "zone": "public",
+      "role": "Balanceador",
+      "icon": {
+        "default": "provider",
+        "aws": "awsElb",
+        "azure": "azAppGateway"
+      },
+      "service": {
+        "aws": "Application LB",
+        "gcp": "Cloud Load Balancing",
+        "azure": "Application Gateway"
+      },
+      "terraform": {
+        "aws": "aws_lb",
+        "gcp": "google_compute_global_forwarding_rule",
+        "azure": "azurerm_application_gateway"
+      },
+      "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
+    },
+    {
+      "id": "api",
+      "type": "containers",
+      "x": 556,
+      "y": 250,
+      "zone": "compute",
+      "role": "API Spring Boot",
+      "icon": {
+        "default": "docker",
+        "aws": "awsFargate",
+        "gcp": "gcpCloudRun",
+        "azure": "azContainerApps"
+      },
+      "service": {
+        "aws": "ECS Fargate",
+        "gcp": "Cloud Run",
+        "azure": "Container Apps"
+      },
+      "terraform": {
+        "aws": "aws_ecs_service",
+        "gcp": "google_cloud_run_v2_service",
+        "azure": "azurerm_container_app"
+      },
+      "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
+    },
+    {
+      "id": "postgres",
+      "type": "postgres",
+      "x": 710,
+      "y": 250,
+      "zone": "data",
+      "role": "OLTP · transaccional",
+      "icon": {
+        "default": "postgresql",
+        "aws": "awsRds",
+        "gcp": "gcpCloudSql",
+        "azure": "azPostgresql"
+      },
+      "service": {
+        "aws": "RDS PostgreSQL",
+        "gcp": "Cloud SQL",
+        "azure": "PostgreSQL Flexible"
+      },
+      "terraform": {
+        "aws": "aws_db_instance",
+        "gcp": "google_sql_database_instance",
+        "azure": "azurerm_postgresql_flexible_server"
+      },
+      "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
+    },
+    {
+      "id": "cdc",
+      "type": "cdc",
+      "x": 865,
+      "y": 300,
+      "zone": "managed",
+      "role": "Captura de cambios",
+      "service": {
+        "aws": "Database Migration Service",
+        "gcp": "Datastream",
+        "azure": "Data Factory (CDC)"
+      },
+      "icon": "provider",
+      "terraform": {
+        "aws": "aws_dms_replication_task",
+        "gcp": "google_datastream_stream",
+        "azure": "azurerm_data_factory"
+      },
+      "why": "Lee el registro de transacciones de la base de datos y publica cada cambio, sin tocar la aplicación.",
+      "custom": true
+    },
+    {
+      "id": "warehouse",
+      "type": "warehouse",
+      "x": 1005,
+      "y": 215,
+      "zone": "managed",
+      "role": "Almacén de datos",
+      "service": {
+        "aws": "Redshift",
+        "gcp": "BigQuery",
+        "azure": "Synapse Analytics"
+      },
+      "icon": {
+        "default": "provider",
+        "gcp": "bigquery",
+        "aws": "awsRedshift",
+        "azure": "azSynapse"
+      },
+      "terraform": {
+        "aws": "aws_redshift_cluster",
+        "gcp": "google_bigquery_dataset",
+        "azure": "azurerm_synapse_workspace"
+      },
+      "why": "Consultas analíticas sobre grandes volúmenes de datos.",
+      "custom": true
+    },
+    {
+      "id": "secrets",
+      "type": "secrets",
+      "x": 865,
+      "y": 215,
+      "zone": "managed",
+      "role": "Secretos",
+      "icon": {
+        "default": "provider",
+        "aws": "awsSecretsManager",
+        "azure": "azKeyVault"
+      },
+      "service": {
+        "aws": "Secrets Manager",
+        "gcp": "Secret Manager",
+        "azure": "Key Vault"
+      },
+      "terraform": {
+        "aws": "aws_secretsmanager_secret",
+        "gcp": "google_secret_manager_secret",
+        "azure": "azurerm_key_vault"
+      },
+      "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
+    },
+    {
+      "id": "debezium-1",
+      "type": "debezium",
+      "x": 865,
+      "y": 470,
+      "zone": "managed",
+      "role": "Pieza de datos",
+      "service": "Debezium",
+      "icon": "dataService",
+      "terraform": null,
+      "why": "",
+      "custom": true
+    },
+    {
+      "id": "bi-1",
+      "type": "powerbi",
+      "x": 865,
+      "y": 470,
+      "zone": "managed",
+      "role": "Pieza de datos",
+      "service": "Power BI",
+      "icon": "dataService",
+      "terraform": null,
+      "why": "",
+      "custom": true,
+      "name": "  Panel  de \"ventas\"  "
+    },
+    {
+      "id": "snowflake-1",
+      "type": "snowflake",
+      "x": 865,
+      "y": 470,
+      "zone": "managed",
+      "role": "Pieza de datos",
+      "service": "Snowflake",
+      "icon": "dataService",
+      "terraform": "snowflake_database",
+      "why": "",
+      "custom": true
+    },
+    {
+      "id": "legacy",
+      "type": "mainframe",
+      "x": 865,
+      "y": 470,
+      "zone": "external",
+      "role": "Pieza de datos",
+      "service": "AS400",
+      "icon": "dataService",
+      "terraform": null,
+      "why": "",
+      "custom": true
+    }
+  ],
+  "connections": [
+    {
+      "from": "users",
+      "to": "edge"
+    },
+    {
+      "from": "edge",
+      "to": "lb"
+    },
+    {
+      "from": "lb",
+      "to": "api"
+    },
+    {
+      "from": "api",
+      "to": "postgres"
+    },
+    {
+      "from": "postgres",
+      "to": "cdc",
+      "kind": "CDC_STREAM"
+    },
+    {
+      "from": "cdc",
+      "to": "warehouse",
+      "kind": "CDC_STREAM"
+    },
+    {
+      "from": "postgres",
+      "to": "debezium-1",
+      "kind": "CDC_STREAM"
+    },
+    {
+      "from": "cdc",
+      "to": "snowflake-1",
+      "kind": "CDC_STREAM"
+    }
+  ]
+}
