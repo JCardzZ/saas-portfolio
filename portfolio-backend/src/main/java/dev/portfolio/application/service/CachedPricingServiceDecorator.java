@@ -70,6 +70,8 @@ public class CachedPricingServiceDecorator implements PricingProviderPort {
         String key = CacheKeys.pricing(provider, serviceCode);
         Optional<PriceQuote> fresh = read(key, serviceCode, provider, PricingStatus.CACHED);
         if (fresh.isPresent()) {
+            telemetry.publish(TelemetryEventType.PRICING_CACHED,
+                    "SKU '%s' served from cache -> %s".formatted(fresh.get().pricing().sku(), fresh.get().pricing().display()));
             return fresh.get();
         }
         try {

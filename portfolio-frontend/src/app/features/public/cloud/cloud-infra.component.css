@@ -51,6 +51,12 @@
 .wire[data-kind='ANALYTICS_SINK'] { stroke-dasharray: 10 3 2 3; }
 .wire[data-kind='REPLICATION'] { stroke-dasharray: 3 3; }
 
+/* Coste mensual de cada nodo, a caballo de su borde inferior. */
+.node-cost rect { fill: #0a0a0a; stroke: rgb(255 255 255 / 0.14); stroke-width: 1; }
+.node-cost text { fill: #a1a1aa; font-size: 8.5px; font-variant-numeric: tabular-nums; }
+.node-cost-live rect { stroke: rgb(52 211 153 / 0.55); }
+.node-cost-live text { fill: #6ee7b7; }
+
 /* Aviso de una regla del grafo incumplida, en la esquina del nodo. */
 .rule-badge circle { fill: #f59e0b; stroke: #0a0a0a; stroke-width: 1.5; }
 .rule-badge text { fill: #0a0a0a; font-size: 11px; font-weight: 700; }

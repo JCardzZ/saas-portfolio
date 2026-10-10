@@ -83,14 +83,21 @@ export const COST_UNKNOWN_TYPES: ReadonlySet<string> = new Set([
   'global-database', 'event-stream', 'cdc', 'debezium', 'goldengate', 'kafka', 'snowflake', 'databricks', 'bi', 'tableau', 'powerbi', 'looker-studio',
 ]);
 
+/** Categoría de los servicios que no tienen cifra orientativa pero sí pueden tener precio real. */
+const LIVE_CATEGORIES: Record<string, CostCategoryId> = { 'event-stream': 'messaging', kafka: 'messaging' };
+
 export interface CostItem {
   nodeId: string;
   type: string;
   name: string;
   usd: number;
+  /** El importe es un precio de lista leído de la API del proveedor, no la cifra orientativa. */
+  live?: boolean;
 }
 
 export interface CostEstimate {
+  /** Parte del total que sale de precios de lista reales; el resto son cifras orientativas. */
+  liveUsd: number;
   /** Servicios del catálogo que están en el lienzo y para los que no hay cifra: no suman al total. */
   unestimated: { nodeId: string; name: string }[];
   total: number;
@@ -106,23 +113,32 @@ export type CostOverrides = Record<string, Partial<Record<CloudProviderId, numbe
  * Suma el coste orientativo de los nodos del lienzo en la nube elegida, por categoría.
  * Si el backend ha servido el coste de un servicio, manda sobre el que lleva el estudio.
  */
-export function estimateCost(nodes: CloudNode[], provider: CloudProviderId, overrides: CostOverrides = {}): CostEstimate {
+/**
+ * `live` son precios de lista reales por tipo de servicio (USD al mes de una unidad): mandan
+ * sobre cualquier otra cifra y quedan marcados, para que nunca se confundan con una estimación.
+ */
+export function estimateCost(
+  nodes: CloudNode[], provider: CloudProviderId, overrides: CostOverrides = {}, live: Readonly<Record<string, number>> = {},
+): CostEstimate {
   const items = nodes.flatMap((node) => {
     const cost = NODE_COSTS[node.type];
     const local = !cost ? 0 : typeof cost.usd === 'number' ? cost.usd : cost.usd[provider];
-    const usd = overrides[node.type]?.[provider] ?? local;
-    return cost && usd > 0
-      ? [{ category: cost.category, nodeId: node.id, type: node.type, name: forProvider(node.service, provider), usd }]
+    const real = live[node.type];
+    const usd = real ?? overrides[node.type]?.[provider] ?? local;
+    // Un servicio sin cifra orientativa también cuenta si llega su precio real.
+    const category = cost?.category ?? LIVE_CATEGORIES[node.type] ?? 'data';
+    return usd > 0 && (cost || real !== undefined)
+      ? [{ category, nodeId: node.id, type: node.type, name: forProvider(node.service, provider), usd, ...(real !== undefined ? { live: true } : {}) }]
       : [];
   });
-  const unestimated = nodes.filter((node) => COST_UNKNOWN_TYPES.has(node.type) && !((overrides[node.type]?.[provider] ?? 0) > 0))
+  const unestimated = nodes.filter((node) => COST_UNKNOWN_TYPES.has(node.type) && live[node.type] === undefined && !((overrides[node.type]?.[provider] ?? 0) > 0))
     .map((node) => ({ nodeId: node.id, name: node.name?.trim() || forProvider(node.service, provider) }));
   const categories = COST_CATEGORIES.map((category) => {
     const own = items.filter((item) => item.category === category.id).sort((a, b) => b.usd - a.usd);
     return {
       ...category,
       usd: own.reduce((sum, item) => sum + item.usd, 0),
-      items: own.map(({ nodeId, type, name, usd }) => ({ nodeId, type, name, usd })),
+      items: own.map(({ nodeId, type, name, usd, live: real }) => ({ nodeId, type, name, usd, ...(real ? { live: true } : {}) })),
     };
   }).filter((category) => category.usd > 0);
 
@@ -130,6 +146,7 @@ export function estimateCost(nodes: CloudNode[], provider: CloudProviderId, over
   return {
     total: categories.reduce((sum, category) => sum + category.usd, 0),
     categories,
+    liveUsd: all.filter((item) => item.live).reduce((sum, item) => sum + item.usd, 0),
     unestimated,
     top: all.reduce<CostItem | null>((best, item) => (!best || item.usd > best.usd ? item : best), null),
   };

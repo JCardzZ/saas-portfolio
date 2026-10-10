@@ -54,7 +54,7 @@ describe('estimateCost', () => {
       { nodeId: 'streaming-1', type: 'streaming', name: 'MSK (Kafka)', usd: 70 },
     ]);
     expect(estimateCost(CLOUD_NODES.filter((node) => node.id !== 'api'), 'aws').categories.some((category) => category.id === 'compute')).toBeFalse();
-    expect(estimateCost([], 'aws')).toEqual({ total: 0, categories: [], unestimated: [], top: null });
+    expect(estimateCost([], 'aws')).toEqual({ total: 0, categories: [], liveUsd: 0, unestimated: [], top: null });
     expect(formatUsd(1234.4)).toBe('$1,234');
 
     // Apigee no tiene escalón pequeño: en GCP domina el coste y la auditoría lo señala.

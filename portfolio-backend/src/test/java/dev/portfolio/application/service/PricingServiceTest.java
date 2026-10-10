@@ -128,7 +128,9 @@ class PricingServiceTest {
         assertThat(second.note()).isEqualTo("Solo cómputo");
         assertThat(azure.calls).isEqualTo(1);
         assertThat(cache.ttls).containsEntry("portfolio:pricing:azure:vm", TTL).containsEntry("portfolio:pricing:azure:vm:last", LAST_KNOWN_TTL);
-        assertThat(telemetry.events).containsExactly("PRICING_CACHED SKU 'D2s_v5' cached -> $0.0960 USD/hr");
+        assertThat(telemetry.events).containsExactly(
+                "PRICING_CACHED SKU 'D2s_v5' cached -> $0.0960 USD/hr",
+                "PRICING_CACHED SKU 'D2s_v5' served from cache -> $0.0960 USD/hr");
     }
 
     @Test

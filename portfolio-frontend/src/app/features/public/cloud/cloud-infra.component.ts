@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 
 import { IconPopService } from '../../../shared/ui/icon-pop.service';
 import { TechIconComponent } from '../../../shared/ui/tech-icon.component';
@@ -19,7 +19,7 @@ import { AuditCardComponent } from './audit-card.component';
 import { autoLayout } from './auto-layout';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
 import { CatalogItem } from './cloud-catalog.data';
-import { estimateCost } from './cloud-costs.data';
+import { estimateCost, formatUsd } from './cloud-costs.data';
 import { telemetryFor } from './component-telemetry';
 import { CopilotAddition, catalogItem } from './copilot';
 import { CostBadgeComponent } from './cost-badge.component';
@@ -29,6 +29,7 @@ import { downloadBlob, rasterize, serializeDiagram } from './diagram-export';
 import {
   FAULT_RECOVERY_MS, FaultKind, Faults, TRAFFIC_PROFILES, TrafficMode, backupOf, computeVitals, particlesPerWire, profileOf,
 } from './live-traffic';
+import { LivePricingService } from './live-pricing.service';
 import { LiveVitalsComponent } from './live-vitals.component';
 import { NodePatch, NodePropertiesComponent } from './node-properties.component';
 import { History } from './studio-history';
@@ -88,6 +89,7 @@ export class CloudInfraComponent {
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly events = inject(SystemEventsService);
   readonly inspector = inject(TraceInspectorService);
+  private readonly pricing = inject(LivePricingService);
   private readonly iconPop = inject(IconPopService);
 
   readonly providers = CLOUD_PROVIDERS;
@@ -170,7 +172,28 @@ export class CloudInfraComponent {
   readonly warnings = computed(() => this.findings().filter((finding) => finding.level === 'warn' && finding.check.startsWith('Warning')));
 
   /** Coste mensual orientativo de los nodos del lienzo en la nube activa. */
-  readonly cost = computed(() => estimateCost(this.nodes(), this.selectedId(), this.studio.costs()));
+  /** Precios de lista reales de la nube elegida, si el backend los ha dado; mandan sobre las cifras orientativas. */
+  readonly livePrices = computed(() => this.pricing.monthlyFor(this.selectedId()));
+  readonly cost = computed(() => estimateCost(this.nodes(), this.selectedId(), this.studio.costs(), this.livePrices()));
+  /** Coste de cada nodo, para su etiqueta: importe y si es un precio real, o «sin estimación». */
+  readonly nodeCosts = computed(() => {
+    const estimate = this.cost();
+    const byNode = new Map<string, { label: string; live: boolean; title: string }>();
+    for (const item of estimate.categories.flatMap((category) => category.items)) {
+      const quote = item.live ? this.pricing.quotesFor(this.selectedId())[item.type] : undefined;
+      byNode.set(item.nodeId, {
+        label: `${formatUsd(item.usd)}/mes`, live: item.live === true,
+        title: quote
+          ? `Precio de lista real · ${quote.sku} · ${quote.source ?? ''} (${quote.region ?? ''}). ${quote.note ?? ''}`
+          : 'Estimación orientativa, no un precio consultado',
+      });
+    }
+    for (const item of estimate.unestimated) {
+      byNode.set(item.nodeId, { label: 'sin estimación', live: false, title: 'Sin precio público ni cifra orientativa: no suma al total' });
+    }
+    return byNode;
+  });
+  readonly pricingState = this.pricing.state;
 
   // ---------- Caos ----------
   readonly chaosOpen = signal(false);
@@ -310,6 +333,18 @@ export class CloudInfraComponent {
       this.studio.canvasHasContent.set(this.nodes().length > 0);
     }, { allowSignalWrites: true });
     this.studio.blueprintRequests.pipe(takeUntilDestroyed()).subscribe((load) => this.loadBlueprint(load));
+    // Precios reales: al añadir o quitar un tipo de servicio, o al cambiar de nube, se piden al backend
+    // (que consulta las API públicas y lo cuenta por SSE). En modo demo no se pide nada.
+    let priced = '';
+    effect(() => {
+      const provider = this.selectedId();
+      const types = [...new Set(this.nodes().map((node) => node.type))].sort();
+      const key = `${provider}:${types.join(',')}`;
+      if (key !== priced) {
+        priced = key;
+        untracked(() => this.pricing.refresh(provider, types));
+      }
+    }, { allowSignalWrites: true });
     // Filtro «Grafo» del inspector: tras cada cambio, y agrupando los seguidos, el diff del JSON del grafo.
     let snapshot: GraphSnapshot = graphOf(this.project());
     let pending: ReturnType<typeof setTimeout> | undefined;
