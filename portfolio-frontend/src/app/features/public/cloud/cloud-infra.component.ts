@@ -12,11 +12,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { FlagService } from '../../../core/flags/flag.service';
 import { describeHttpError } from '../../../core/errors/http-error';
 import { ArchitectureStudioService, StudioEntry } from './architecture-studio.service';
 import { ArchitectureCopilotComponent } from './architecture-copilot.component';
 import { AuditCardComponent } from './audit-card.component';
 import { autoLayout } from './auto-layout';
+import { contentBounds, directNodes, reflow, resizeToContent } from './zone-layout';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
 import { CatalogItem } from './cloud-catalog.data';
 import { estimateCost, formatUsd } from './cloud-costs.data';
@@ -104,7 +106,18 @@ export class CloudInfraComponent {
   readonly touchTarget = Math.ceil(44 * (1110 / 720));
   readonly width = NODE_WIDTH;
   readonly height = NODE_HEIGHT;
-  readonly viewBox = `0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`;
+  private readonly flags = inject(FlagService);
+  /** Lienzo responsivo y conexiones inteligentes (flag `studio.smart-rules`). */
+  readonly smartRules = computed(() => this.flags.isEnabled('studio.smart-rules'));
+  /** «Ajustar a pantalla»: la vista se ciñe al diagrama y se ve entero, sin desplazar el marco. */
+  readonly fitted = signal(false);
+  readonly viewBox = computed(() => {
+    if (!this.fitted()) {
+      return `0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`;
+    }
+    const { x, y, w, h } = contentBounds(this.nodes(), this.zones());
+    return `${x} ${y} ${w} ${h}`;
+  });
 
   readonly selectedId = signal<CloudProviderId>('aws');
   readonly selected = computed(() => CLOUD_PROVIDERS.find((provider) => provider.id === this.selectedId())!);
@@ -1196,8 +1209,8 @@ export class CloudInfraComponent {
     const inside = (node: CloudNode) => node.x >= zone.x && node.x <= zone.x + zone.w && node.y >= zone.y && node.y <= zone.y + zone.h;
     this.zoneDrag = {
       id: zone.id, mode, x: point.x, y: point.y, origin: { ...zone }, recorded: false,
-      nodes: mode === 'move' ? this.nodes().filter(inside).map((node) => ({ ...node })) : [],
-      zones: mode === 'move' ? zonesInside(this.zones(), zone).map((inner) => ({ ...inner })) : [],
+      nodes: mode === 'move' ? this.nodes().filter(inside).map((node) => ({ ...node })) : this.resizeContent(zone).nodes,
+      zones: mode === 'move' ? zonesInside(this.zones(), zone).map((inner) => ({ ...inner })) : this.resizeContent(zone).zones,
     };
     (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
     this.activeZoneId.set(zone.id);
@@ -1238,8 +1251,8 @@ export class CloudInfraComponent {
       const mode = event.shiftKey ? 'se' : 'move';
       this.transformZone({
         id: zone.id, mode, origin: { ...zone },
-        nodes: mode === 'move' ? this.nodes().filter(inside).map((node) => ({ ...node })) : [],
-        zones: mode === 'move' ? zonesInside(this.zones(), zone).map((inner) => ({ ...inner })) : [],
+        nodes: mode === 'move' ? this.nodes().filter(inside).map((node) => ({ ...node })) : this.resizeContent(zone).nodes,
+        zones: mode === 'move' ? zonesInside(this.zones(), zone).map((inner) => ({ ...inner })) : this.resizeContent(zone).zones,
       }, step[event.key][0], step[event.key][1]);
       this.reassignZones();
     } else if (event.key === 'Delete' || event.key === 'Backspace') {
@@ -1250,7 +1263,17 @@ export class CloudInfraComponent {
 
   private transformZone(drag: { id: string; mode: 'move' | ZoneCorner; origin: StudioZone; nodes: CloudNode[]; zones: StudioZone[] }, dx: number, dy: number): void {
     const { origin } = drag;
-    if (drag.mode !== 'move') {
+    if (drag.mode !== 'move' && this.smartRules()) {
+      // El recuadro no baja del tamaño de su contenido y sus nodos se reacomodan dentro. Se
+      // parte siempre de como estaban al empezar a tirar: al volver atrás, vuelven a su sitio.
+      const { x, y, w, h } = resizeToContent(origin, drag.mode, dx, dy, drag.nodes.length, drag.zones);
+      this.zones.update((zones) => zones.map((zone) => (zone.id === drag.id ? { ...zone, x, y, w, h } : zone)));
+      const placed = new Map(reflow(drag.nodes, { x, y, w, h }).map((node) => [node.id, node]));
+      this.nodes.update((nodes) => nodes.map((node) => {
+        const next = placed.get(node.id);
+        return next ? { ...node, x: next.x, y: next.y } : node;
+      }));
+    } else if (drag.mode !== 'move') {
       const { x, y, w, h } = resizeZone(origin, drag.mode, dx, dy);
       this.zones.update((zones) => zones.map((zone) => (zone.id === drag.id ? { ...zone, x, y, w, h } : zone)));
     } else {
@@ -1269,6 +1292,17 @@ export class CloudInfraComponent {
       }));
     }
     this.modified.set(true);
+  }
+
+  /** Lo que un recuadro no puede dejar fuera al redimensionarlo: sus nodos directos y los recuadros que contiene. */
+  private resizeContent(zone: StudioZone): { nodes: CloudNode[]; zones: StudioZone[] } {
+    if (!this.smartRules()) {
+      return { nodes: [], zones: [] };
+    }
+    return {
+      nodes: directNodes(zone, this.nodes(), this.zones()).map((node) => ({ ...node })),
+      zones: zonesInside(this.zones(), zone).map((inner) => ({ ...inner })),
+    };
   }
 
   /** Tras mover, redimensionar o quitar un recuadro, cada nodo toma la zona de red del sitio donde ha quedado. */

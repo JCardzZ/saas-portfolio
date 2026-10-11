@@ -84,3 +84,6 @@
   .wire-warn,
   .wire-down { animation: none; }
 }
+
+/* «Ajustar a pantalla»: el diagrama se ve entero en su marco, sin el ancho mínimo de trabajo ni más alto que la ventana. */
+.canvas-fitted { min-width: 0; max-height: 70dvh; }
