@@ -99,6 +99,108 @@
     filter: drop-shadow(0 0 8px var(--brand, #0a84ff));
   }
 
+  /* ───── Sistema de diseño del sitio público (docs/DESIGN.md §9). Prefijo `ui-`: las clases sin
+     prefijo de arriba (.btn, .card…) son las de la administración, que es clara. ───── */
+
+  /* Foco visible: anillo de 2 px en el acento, separado 2 px del control. */
+  .ui-focus {
+    @apply focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+      focus-visible:outline-accent-text;
+  }
+
+  /* Botón: rectángulo de radio 8 (la píldora se reserva para estado y etiquetas). 32 px de alto;
+     `.ui-btn-lg` son 40 px (hero y diálogos). Con el dedo, la regla táctil global lo lleva a 44. */
+  .ui-btn {
+    @apply ui-focus inline-flex h-8 shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-control
+      border border-transparent px-3 text-body-sm font-medium transition-colors duration-fast ease-standard
+      active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-disabled disabled:active:scale-100
+      aria-disabled:cursor-not-allowed aria-disabled:text-ink-disabled;
+  }
+  .ui-btn-lg {
+    @apply h-10 px-4;
+  }
+  /* Solo icono: cuadrado. Necesita aria-label. */
+  .ui-btn-icon {
+    @apply w-8 px-0;
+  }
+  .ui-btn-icon.ui-btn-lg {
+    @apply w-10;
+  }
+  /* Una sola acción primaria por vista o por barra. */
+  .ui-btn-primary {
+    @apply ui-btn bg-accent-solid text-white hover:bg-accent-solid-hover disabled:bg-surface-3 disabled:text-ink-disabled;
+  }
+  .ui-btn-secondary {
+    @apply ui-btn border-line-strong bg-surface-2 text-ink-1 hover:bg-surface-3 disabled:hover:bg-surface-2;
+  }
+  .ui-btn-ghost {
+    @apply ui-btn text-ink-2 hover:bg-surface-3 hover:text-ink-1 disabled:hover:bg-transparent;
+  }
+  .ui-btn-danger {
+    @apply ui-btn border-line-strong bg-surface-2 text-status-danger hover:bg-surface-3 disabled:hover:bg-surface-2;
+  }
+
+  /* Tarjeta opaca: la profundidad sale de la superficie y el borde. El vidrio queda para la barra,
+     los diálogos y los paneles flotantes. */
+  .ui-card {
+    @apply rounded-card border border-line-subtle bg-surface-1 p-6;
+  }
+  /* Tarjeta de ancho completo. */
+  .ui-card-lg {
+    @apply p-8;
+  }
+  /* Toda la tarjeta es un enlace o un botón. */
+  .ui-card-interactive {
+    @apply ui-focus transition-colors duration-fast ease-standard hover:border-line-strong;
+  }
+  /* Tarjeta dentro de tarjeta. */
+  .ui-card-inset {
+    @apply rounded-panel border border-line-subtle bg-surface-2 p-4;
+  }
+
+  /* Insignia: píldora de 24 px. El tono neutro es el de por defecto; el estado va siempre con texto. */
+  .ui-badge {
+    @apply inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-line-subtle bg-surface-2 px-2
+      text-caption text-ink-2;
+  }
+  .ui-badge-accent {
+    @apply border-transparent bg-accent-text/[0.14] text-accent-text;
+  }
+  .ui-badge-ok {
+    @apply border-transparent bg-status-ok/[0.14] text-status-ok;
+  }
+  .ui-badge-warn {
+    @apply border-transparent bg-status-warn/[0.14] text-status-warn;
+  }
+  .ui-badge-danger {
+    @apply border-transparent bg-status-danger/[0.14] text-status-danger;
+  }
+  /* Punto de 6 px delante del texto de una insignia. */
+  .ui-badge-dot {
+    @apply h-1.5 w-1.5 shrink-0 rounded-full bg-current;
+  }
+
+  /* Pestañas segmentadas (cambian la vista de una misma tarjeta). Van sobre role="tablist" y
+     role="tab"; la activa es la que lleva aria-selected="true". */
+  .ui-segmented {
+    @apply inline-flex max-w-full gap-0.5 overflow-x-auto rounded-control bg-surface-2 p-0.5 [scrollbar-width:none];
+  }
+  .ui-segment {
+    @apply ui-focus inline-flex h-7 shrink-0 items-center justify-center whitespace-nowrap rounded-[6px] px-3 text-body-sm
+      font-medium text-ink-2 transition-colors duration-fast ease-standard hover:text-ink-1
+      aria-selected:bg-surface-3 aria-selected:text-ink-1;
+  }
+
+  /* Pestañas subrayadas (cambian de contenido). */
+  .ui-tabs {
+    @apply flex max-w-full gap-4 overflow-x-auto border-b border-line-subtle [scrollbar-width:none];
+  }
+  .ui-tab {
+    @apply ui-focus -mb-px inline-flex h-9 shrink-0 items-center whitespace-nowrap border-b-2 border-transparent text-body-sm
+      font-medium text-ink-2 transition-colors duration-fast ease-standard hover:text-ink-1
+      aria-selected:border-accent-text aria-selected:text-ink-1;
+  }
+
   .focus-ring {
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
       focus-visible:ring-offset-black;
