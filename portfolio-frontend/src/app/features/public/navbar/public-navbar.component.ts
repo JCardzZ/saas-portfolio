@@ -4,17 +4,9 @@ import {
 import { RouterLink } from '@angular/router';
 
 import { CvDownloadComponent } from '../../../shared/ui/cv-download.component';
+import { PAGE_SECTIONS } from './page-sections';
 
-/** Secciones de la página, en el orden en que aparecen. `id` es el ancla de su `<section>`. */
-export const PAGE_SECTIONS: readonly { id: string; label: string }[] = [
-  { id: 'plataforma', label: 'Arquitectura' },
-  { id: 'entrega', label: 'Entrega' },
-  { id: 'cloud', label: 'Cloud' },
-  { id: 'proyectos', label: 'Proyectos' },
-  { id: 'tecnologias', label: 'Tecnologías' },
-  { id: 'articulos', label: 'Artículos' },
-  { id: 'trayectoria', label: 'Trayectoria' },
-];
+export { PAGE_SECTIONS } from './page-sections';
 
 /**
  * Barra fija: transparente sobre el hero y de vidrio en cuanto se hace scroll. Enlaza a todas las
