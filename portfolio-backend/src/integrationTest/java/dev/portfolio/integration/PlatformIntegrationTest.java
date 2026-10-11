@@ -97,7 +97,7 @@ class PlatformIntegrationTest {
         Integer vectorExtension = jdbc.queryForObject(
                 "SELECT count(*) FROM pg_extension WHERE extname = 'vector'", Integer.class);
 
-        assertThat(applied).isGreaterThanOrEqualTo(6);
+        assertThat(applied).isGreaterThanOrEqualTo(7);
         assertThat(vectorExtension).isEqualTo(1);
     }
 
@@ -150,6 +150,43 @@ class PlatformIntegrationTest {
         assertThat(deleted.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(redis.hasKey("portfolio:technologies:all")).isFalse();
         assertThat(names(http.getForObject("/public/technologies", JsonNode.class))).doesNotContain("Testcontainers");
+    }
+
+    @Test
+    @Order(4)
+    void feature_flags_start_off_and_a_change_is_stored_cached_and_audited() {
+        JsonNode initial = http.getForObject("/public/features", JsonNode.class);
+        assertThat(initial).isNotEmpty();
+        assertThat(initial).allSatisfy(flag -> assertThat(flag.path("enabled").asBoolean()).isFalse());
+        // La lectura pública deja en Redis la lista de flags encendidas (vacía).
+        assertThat(redis.hasKey("portfolio:feature-flags:enabled")).isTrue();
+
+        assertThat(http.exchange("/admin/features/cloud.oracle", HttpMethod.PUT,
+                new HttpEntity<>(Map.of("enabled", true)), JsonNode.class).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+        HttpHeaders auth = bearer(token());
+        ResponseEntity<JsonNode> changed = http.exchange("/admin/features/cloud.oracle", HttpMethod.PUT,
+                new HttpEntity<>(Map.of("enabled", true), auth), JsonNode.class);
+        assertThat(changed.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(changed.getBody().path("enabled").asBoolean()).isTrue();
+        assertThat(changed.getBody().path("updatedBy").asText()).isNotBlank();
+        // El cambio purga la caché: la siguiente lectura ya lo ve.
+        assertThat(redis.hasKey("portfolio:feature-flags:enabled")).isFalse();
+
+        JsonNode afterwards = http.getForObject("/public/features", JsonNode.class);
+        assertThat(afterwards).filteredOn(flag -> flag.path("enabled").asBoolean())
+                .extracting(flag -> flag.path("key").asText()).containsExactly("cloud.oracle");
+
+        JsonNode audit = http.exchange("/admin/features/audit", HttpMethod.GET, new HttpEntity<>(auth), JsonNode.class).getBody();
+        assertThat(audit).hasSize(1);
+        assertThat(audit.get(0).path("key").asText()).isEqualTo("cloud.oracle");
+        assertThat(audit.get(0).path("previous").asBoolean()).isFalse();
+
+        assertThat(http.exchange("/admin/features/does.not-exist", HttpMethod.PUT,
+                new HttpEntity<>(Map.of("enabled", true), auth), JsonNode.class).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        // Se deja como estaba: el resto de los tests no depende de esta flag.
+        http.exchange("/admin/features/cloud.oracle", HttpMethod.PUT, new HttpEntity<>(Map.of("enabled", false), auth), JsonNode.class);
     }
 
     @Test

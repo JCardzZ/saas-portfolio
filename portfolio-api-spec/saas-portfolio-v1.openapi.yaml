@@ -27,6 +27,7 @@ tags:
   - name: Public Catalog & Showcases
   - name: Profile
   - name: Architecture Studio
+  - name: Feature Flags
 
 paths:
   /auth/token:
@@ -835,6 +836,90 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
 
+  /public/features:
+    get:
+      tags: [Feature Flags]
+      summary: Fetch the state of every feature flag
+      description: >
+        The flags the platform knows, each one on or off. A flag nobody has changed is off. The
+        frontend reads this once at start-up; an endpoint that belongs to a flag that is off
+        answers 404.
+      responses:
+        '200':
+          description: Flags fetched successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeatureFlag'
+
+  /admin/features:
+    get:
+      tags: [Feature Flags]
+      summary: Fetch every feature flag with who changed it last
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Flags fetched successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeatureFlagDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /admin/features/audit:
+    get:
+      tags: [Feature Flags]
+      summary: Fetch the latest changes made to the feature flags
+      description: The 100 most recent changes, newest first.
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Audit trail fetched successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeatureFlagAuditEntry'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /admin/features/{key}:
+    put:
+      tags: [Feature Flags]
+      summary: Turn a feature flag on or off
+      description: The change is recorded in the audit trail with the client that made it. An unknown flag answers 404.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[a-z][a-z0-9.-]{1,62}$', example: "mcp.section" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureFlagUpdate'
+      responses:
+        '200':
+          description: Flag updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlagDetail'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
   /public/architecture/c4/{level}:
     get:
       tags: [Public Catalog & Showcases]
@@ -1064,6 +1149,40 @@ components:
         category: { type: string, example: "data" }
         defaultMonthlyCost: { type: number, description: "Indicative monthly cost in USD.", example: 5 }
         isEnterprise: { type: boolean, description: "Typically adopted at enterprise scale." }
+
+    FeatureFlag:
+      type: object
+      required: [key, enabled, description]
+      properties:
+        key: { type: string, example: "mcp.section" }
+        enabled: { type: boolean }
+        description: { type: string, description: "What the flag turns on." }
+
+    FeatureFlagDetail:
+      type: object
+      required: [key, enabled, description]
+      properties:
+        key: { type: string, example: "mcp.section" }
+        enabled: { type: boolean }
+        description: { type: string }
+        updatedAt: { type: string, format: date-time, description: "Absent while nobody has changed the flag." }
+        updatedBy: { type: string, description: "Client that changed it last." }
+
+    FeatureFlagUpdate:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+
+    FeatureFlagAuditEntry:
+      type: object
+      required: [key, enabled, previous, actor, changedAt]
+      properties:
+        key: { type: string, example: "mcp.section" }
+        enabled: { type: boolean, description: "State after the change." }
+        previous: { type: boolean, description: "State before the change." }
+        actor: { type: string, description: "Client that made the change." }
+        changedAt: { type: string, format: date-time }
 
     ArchitectureGraphElement:
       description: >-
