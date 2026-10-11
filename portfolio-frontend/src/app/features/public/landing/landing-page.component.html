@@ -78,7 +78,8 @@
         } @else {
           @for (project of catalog.projects(); track project.id; let index = $index) {
             <article
-              class="bento-card flex animate-slide-up flex-col"
+              [id]="'proyecto-' + project.id"
+              class="bento-card flex animate-slide-up scroll-mt-24 flex-col"
               [class]="index === 0 ? 'md:col-span-4' : 'md:col-span-2'"
               [style.animation-delay.ms]="index * 60"
             >
@@ -212,6 +213,6 @@
 
   <app-trace-inspector />
   <app-icon-pop-layer />
-  <app-rag-chat [(open)]="chatOpen" />
+  <app-rag-chat [(open)]="chatOpen" [projects]="catalog.projects()" [technologies]="catalog.technologies()" />
   <app-cv-picker />
 </div>
