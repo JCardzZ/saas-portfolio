@@ -25,6 +25,10 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () =>
           import('./assistant/assistant-admin-page.component').then((m) => m.AssistantAdminPageComponent),
       },
+      {
+        path: 'features',
+        loadComponent: () => import('./features/features-page.component').then((m) => m.FeaturesPageComponent),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'technologies' },
     ],
   },

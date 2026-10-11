@@ -2,8 +2,9 @@ import { HttpErrorResponse, HttpHeaders, HttpInterceptorFn, HttpResponse } from 
 import { of, switchMap, throwError, timer } from 'rxjs';
 
 import { runtimeConfig } from '../config/runtime-config';
-import { Article, ArticleRequest, Project, ProjectRequest, Technology, TechnologyRequest } from '../api';
-import { MOCK_ARTICLES, MOCK_CAREER, MOCK_PROJECTS, MOCK_TECHNOLOGIES, mockRagAnswer } from './mock-data';
+import { BUILD_DEFAULTS, FEATURE_FLAGS, FeatureFlagKey, demoOverrides, isFeatureFlagKey, saveDemoOverride } from '../flags/feature-flags';
+import { Article, ArticleRequest, FeatureFlagAuditEntry, FeatureFlagDetail, Project, ProjectRequest, Technology, TechnologyRequest } from '../api';
+import { MOCK_ARTICLES, MOCK_CAREER, MOCK_FLAG_DESCRIPTIONS, MOCK_PROJECTS, MOCK_TECHNOLOGIES, mockRagAnswer } from './mock-data';
 // El modo demo sirve las mismas plantillas y el mismo Terraform que el backend, con el código del estudio.
 import { catalogRows } from '../../features/public/cloud/cloud-costs.data';
 import { mockCopilotAdvice } from '../../features/public/cloud/copilot';
@@ -26,6 +27,7 @@ let projects: Project[] = structuredClone(MOCK_PROJECTS);
 let articles: Article[] = structuredClone(MOCK_ARTICLES);
 let nextId = 1;
 let savedArchitectures: Record<string, unknown>[] = [];
+let flagAudit: FeatureFlagAuditEntry[] = [];
 
 /**
  * Modo demo: responde a todas las llamadas a la API con datos simulados, sin tocar la red.
@@ -66,7 +68,18 @@ function route(method: string, path: string, body: unknown): MockResponse {
     return architectureProjects(method, scope, projectId, body as Record<string, unknown>);
   }
 
+  const [, flagKey] = /^\/admin\/features\/([^/]+)$/.exec(path) ?? [];
+  if (method === 'PUT' && flagKey) {
+    return setFlag(flagKey, body as { enabled?: unknown } | null);
+  }
+
   switch (`${method} ${path}`) {
+    case 'GET /public/features':
+      return ok(flagDetails().map(({ key, enabled, description }) => ({ key, enabled, description })));
+    case 'GET /admin/features':
+      return ok(flagDetails());
+    case 'GET /admin/features/audit':
+      return ok(flagAudit);
     case 'GET /public/architecture/catalog':
       return ok(catalogRows());
     case 'POST /public/architecture/generate-terraform': {
@@ -230,6 +243,37 @@ function publishArticle(request: ArticleRequest): MockResponse {
   return { status: 201, body: created };
 }
 
+/**
+ * Flags en modo demo: los valores del build más lo que se haya encendido en este navegador
+ * (no hay backend que lo guarde). La auditoría dura lo que la página.
+ */
+function flagDetails(): FeatureFlagDetail[] {
+  const values = { ...BUILD_DEFAULTS, ...demoOverrides() };
+  const lastChange = (key: FeatureFlagKey) => flagAudit.find((entry) => entry.key === key);
+  return FEATURE_FLAGS.map((key) => ({
+    key,
+    enabled: values[key],
+    description: MOCK_FLAG_DESCRIPTIONS[key],
+    updatedAt: lastChange(key)?.changedAt,
+    updatedBy: lastChange(key)?.actor,
+  }));
+}
+
+function setFlag(key: string, body: { enabled?: unknown } | null): MockResponse {
+  if (!isFeatureFlagKey(key)) {
+    return problem(404, 'RESOURCE_NOT_FOUND', `Feature flag con id '${key}' no encontrado`);
+  }
+  if (typeof body?.enabled !== 'boolean') {
+    return problem(400, 'VALIDATION_ERROR', 'Falta el campo enabled');
+  }
+  const previous = { ...BUILD_DEFAULTS, ...demoOverrides() }[key];
+  if (previous !== body.enabled) {
+    saveDemoOverride(key, body.enabled);
+    flagAudit = [{ key, enabled: body.enabled, previous, actor: 'demo-admin', changedAt: new Date().toISOString() }, ...flagAudit];
+  }
+  return ok(flagDetails().find((flag) => flag.key === key));
+}
+
 function ok(body: unknown): MockResponse {
   return { status: 200, body };
 }
@@ -245,4 +289,5 @@ export function resetMockApi(): void {
   articles = structuredClone(MOCK_ARTICLES);
   nextId = 1;
   savedArchitectures = [];
+  flagAudit = [];
 }
