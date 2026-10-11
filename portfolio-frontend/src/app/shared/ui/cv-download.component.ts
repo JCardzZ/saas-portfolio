@@ -73,13 +73,7 @@ export class CvPickerService {
   standalone: true,
   host: { class: 'inline-block' },
   template: `
-    <button
-      type="button"
-      class="focus-ring inline-flex items-center gap-2 rounded-full font-medium transition duration-300 ease-spring"
-      [class]="variant() === 'nav' ? 'px-3 py-1.5 text-sm text-zinc-300 hover:text-white' : 'glass px-6 py-2.5 text-[15px] text-white hover:bg-white/10'"
-      aria-haspopup="dialog"
-      (click)="picker.open.set(true)"
-    >
+    <button type="button" [class]="classes[variant()]" aria-haspopup="dialog" (click)="picker.open.set(true)">
       <svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M4.5 7 8 10.5 11.5 7M3 13.5h10" /></svg>
       {{ variant() === 'nav' ? 'CV' : 'Descargar CV' }}
     </button>
@@ -88,8 +82,9 @@ export class CvPickerService {
 })
 export class CvDownloadComponent {
   readonly picker = inject(CvPickerService);
-  /** `nav`: enlace compacto para la barra. `button`: botón de vidrio para el hero y el pie. */
-  readonly variant = input<'nav' | 'button'>('button');
+  /** `nav`: compacto, para la barra. `primary`: la acción principal del hero. `button`: secundario (pie). */
+  readonly variant = input<'nav' | 'primary' | 'button'>('button');
+  readonly classes = { nav: 'ui-btn-ghost', primary: 'ui-btn-primary ui-btn-lg', button: 'ui-btn-secondary ui-btn-lg' };
 }
 
 /**

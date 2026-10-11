@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, HostListener, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ChangeDetectionStrategy, Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { IconPopLayerComponent } from '../../../shared/ui/icon-pop-layer.component';
+import { SectionHeaderComponent } from '../../../shared/ui/section-header.component';
 import { TechIconComponent } from '../../../shared/ui/tech-icon.component';
 import { TechIconKey, techIconFor, techKeyFor } from '../../../shared/ui/tech-icons';
 import { ArticlesHubComponent } from '../articles/articles-hub.component';
@@ -24,11 +25,14 @@ import { TraceInspectorComponent } from '../widgets/trace-inspector.component';
 import { CvDownloadComponent, CvPickerComponent } from '../../../shared/ui/cv-download.component';
 import { TelemetryMonitorComponent } from '../widgets/telemetry-monitor.component';
 import { VectorMatrixComponent } from '../widgets/vector-matrix.component';
+import { HERO_ROLE_PLACEHOLDER } from './hero-content';
 
 @Component({
   selector: 'app-landing-page',
   standalone: true,
   imports: [
+    RouterLink,
+    SectionHeaderComponent,
     PublicNavbarComponent,
     CvDownloadComponent,
     CvPickerComponent,
@@ -63,6 +67,11 @@ export class LandingPageComponent implements OnInit {
   readonly skeletons = [0, 1, 2];
   readonly iconFor = techIconFor;
   readonly inspector = inject(TraceInspectorService);
+  /** Marcador temporal: ver hero-content.ts. */
+  readonly heroRole = HERO_ROLE_PLACEHOLDER;
+
+  /** Clase de la tarjeta «¿Cómo está construido?», que cierra la rejilla de proyectos. */
+  readonly askSpan = computed(() => ASK_SPAN[askCardColumns(this.catalog.projects().length)]);
 
   /** Tecnología cuya traza se puede inspeccionar desde su logo del catálogo, o `null`. */
   inspectable(name: string | undefined): TechIconKey | null {
@@ -84,4 +93,22 @@ export class LandingPageComponent implements OnInit {
   hideBrokenIcon(event: Event): void {
     (event.target as HTMLImageElement).hidden = true;
   }
+}
+
+const ASK_SPAN = { 2: 'md:col-span-2', 4: 'md:col-span-4', 6: 'md:col-span-6' } as const;
+
+/**
+ * Columnas (de 6) de la tarjeta que cierra la rejilla de proyectos: las que queden libres en su
+ * fila, para que ninguna tarjeta se quede sola con un hueco al lado. El primer proyecto ocupa 4 y
+ * los demás 2.
+ */
+export function askCardColumns(projects: number): 2 | 4 | 6 {
+  if (projects === 0) {
+    return 6;
+  }
+  if (projects === 1) {
+    return 2;
+  }
+  // Tarjetas pequeñas que ya ocupan la fila de la última: en la primera fila solo cabe una.
+  return ([6, 4, 2] as const)[(projects - 2) % 3];
 }
