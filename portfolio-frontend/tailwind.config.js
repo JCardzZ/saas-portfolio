@@ -13,12 +13,6 @@ module.exports = {
   theme: {
     extend: {
       ...theme,
-      colors: {
-        ...theme.colors,
-        // `accent` y `accent-hover` son el azul anterior al sistema de diseño: siguen hasta que cada
-        // vista pase a `accent-text` / `accent-solid` (fases 2 a 5 de docs/DESIGN.md).
-        accent: { ...theme.colors.accent, DEFAULT: '#0a84ff', hover: '#409cff' },
-      },
       // `ease-spring` es el nombre anterior de `ease-emphasized`.
       transitionTimingFunction: { ...theme.transitionTimingFunction, spring },
       keyframes: {

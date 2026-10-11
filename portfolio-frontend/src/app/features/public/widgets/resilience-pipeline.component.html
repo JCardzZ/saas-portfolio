@@ -1,9 +1,9 @@
 <app-theater-toggle name="Resiliencia ante fallos" />
 <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pr-10">
-  <h3 class="text-xl font-semibold tracking-tight text-white">Resiliencia ante fallos</h3>
-  <p class="font-mono text-[11px] text-zinc-500">
+  <h3 class="text-xl font-semibold tracking-tight text-ink-1">Resiliencia ante fallos</h3>
+  <p class="font-mono text-xs text-ink-3">
     /telemetry/health:
-    <span class="transition-colors duration-500" [class]="health() === 'UP' ? 'text-emerald-400' : 'text-amber-300'">{{ health() }}</span>
+    <span class="transition-colors duration-500" [class]="health() === 'UP' ? 'text-status-ok' : 'text-status-warn'">{{ health() }}</span>
   </p>
 </div>
 
@@ -12,7 +12,7 @@
     <!-- Desvío fail-open: solo se enciende cuando Redis no responde. -->
     <path class="pipe pipe-bypass" [class.pipe-bypass-on]="redisDown()" d="M64 106 C64 34 392 34 392 106" />
     <path class="pulse pulse-bypass" [class.pulse-hidden]="!redisDown()" d="M64 106 C64 34 392 34 392 106" pathLength="100" />
-    <text class="pipe-label badge" [class.badge-on]="redisDown()" x="228" y="40" text-anchor="middle" fill="#34d399">fail-open · log WARN</text>
+    <text class="pipe-label badge" [class.badge-on]="redisDown()" x="228" y="40" text-anchor="middle" fill="var(--status-ok)">fail-open · log WARN</text>
 
     <path class="pipe" [class.pipe-cut]="redisDown()" d="M118 130 H170" />
     <path class="pulse" [class.pulse-hidden]="redisDown()" d="M118 130 H170" pathLength="100" />
@@ -26,10 +26,10 @@
     <path class="pipe" [class.pipe-cut]="geminiDown()" d="M446 130 H462" />
     <path class="pipe" [class.pipe-cut]="geminiDown()" d="M486 130 H502" />
     <line class="lever" [class.lever-open]="geminiDown()" x1="462" y1="130" x2="486" y2="130" />
-    <circle cx="462" cy="130" r="3" fill="#e4e4e7" />
-    <circle cx="486" cy="130" r="3" fill="#e4e4e7" />
+    <circle cx="462" cy="130" r="3" fill="var(--text-1)" />
+    <circle cx="486" cy="130" r="3" fill="var(--text-1)" />
     <path class="pulse" [class.pulse-hidden]="geminiDown()" d="M446 130 H502" pathLength="100" />
-    <text class="pipe-label" x="474" y="160" text-anchor="middle" [attr.fill]="geminiDown() ? '#f87171' : null">{{ geminiDown() ? 'OPEN' : 'CLOSED' }}</text>
+    <text class="pipe-label" x="474" y="160" text-anchor="middle" [attr.fill]="geminiDown() ? 'var(--status-danger)' : null">{{ geminiDown() ? 'OPEN' : 'CLOSED' }}</text>
 
     <g class="stage">
       <rect x="10" y="106" width="108" height="48" rx="14" />
@@ -42,8 +42,8 @@
       <text class="stage-label" x="233" y="127" text-anchor="middle">Redis</text>
       <text class="stage-role" x="233" y="143" text-anchor="middle">timeout 2 s</text>
       <g class="badge" [class.badge-on]="redisDown()">
-        <circle cx="274" cy="108" r="9" fill="#ef4444" />
-        <text x="274" y="112" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">!</text>
+        <circle cx="274" cy="108" r="9" fill="var(--status-danger)" />
+        <text x="274" y="112" text-anchor="middle" fill="var(--bg-surface-1)" font-size="12" font-weight="700">!</text>
       </g>
     </g>
     <g class="stage stage-tech" [class.stage-hot]="redisDown()" tabindex="0" role="button" aria-label="Inspeccionar la traza de PostgreSQL" (mouseenter)="inspect('postgresql', $event)" (mouseleave)="leave($event)" (focus)="inspect('postgresql')" (click)="inspect('postgresql', $event)">
@@ -58,22 +58,22 @@
       <text class="stage-label" x="565" y="127" text-anchor="middle">Gemini API</text>
       <text class="stage-role" x="565" y="143" text-anchor="middle">circuit breaker</text>
       <g class="badge" [class.badge-on]="geminiDown()">
-        <circle cx="606" cy="108" r="9" fill="#ef4444" />
-        <text x="606" y="112" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">!</text>
+        <circle cx="606" cy="108" r="9" fill="var(--status-danger)" />
+        <text x="606" y="112" text-anchor="middle" fill="var(--bg-surface-1)" font-size="12" font-weight="700">!</text>
       </g>
     </g>
   </svg>
 </div>
 
 <div class="mt-2 flex flex-wrap gap-x-6 gap-y-3">
-  <button type="button" role="switch" class="focus-ring group flex items-center gap-2.5 rounded-full text-sm text-zinc-200" [attr.aria-checked]="redisDown()" (click)="toggleRedis()">
-    <span class="relative h-6 w-10 rounded-full transition-colors duration-500 ease-spring" [class]="redisDown() ? 'bg-red-500' : 'bg-white/15'">
+  <button type="button" role="switch" class="focus-ring group flex items-center gap-2.5 rounded-full text-sm text-ink-1" [attr.aria-checked]="redisDown()" (click)="toggleRedis()">
+    <span class="relative h-6 w-10 rounded-full transition-colors duration-500 ease-spring" [class]="redisDown() ? 'bg-status-danger' : 'bg-surface-3'">
       <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-500 ease-spring" [class.translate-x-4]="redisDown()"></span>
     </span>
     Simular caída de Redis
   </button>
-  <button type="button" role="switch" class="focus-ring group flex items-center gap-2.5 rounded-full text-sm text-zinc-200" [attr.aria-checked]="geminiDown()" (click)="toggleGemini()">
-    <span class="relative h-6 w-10 rounded-full transition-colors duration-500 ease-spring" [class]="geminiDown() ? 'bg-red-500' : 'bg-white/15'">
+  <button type="button" role="switch" class="focus-ring group flex items-center gap-2.5 rounded-full text-sm text-ink-1" [attr.aria-checked]="geminiDown()" (click)="toggleGemini()">
+    <span class="relative h-6 w-10 rounded-full transition-colors duration-500 ease-spring" [class]="geminiDown() ? 'bg-status-danger' : 'bg-surface-3'">
       <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-500 ease-spring" [class.translate-x-4]="geminiDown()"></span>
     </span>
     Simular agotamiento de cuota de Gemini
@@ -81,25 +81,25 @@
 </div>
 
 <div class="mt-4 grid gap-3 sm:grid-cols-2" aria-live="polite">
-  <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
-    <p class="font-mono text-[11px] text-zinc-500">GET /public/projects</p>
+  <div class="rounded-panel border border-line-subtle bg-surface-2 p-3">
+    <p class="font-mono text-xs text-ink-3">GET /public/projects</p>
     @if (redisDown()) {
-      <p class="mt-1 animate-slide-up text-sm font-medium text-emerald-400">200 OK · Fail-open</p>
-      <p class="animate-slide-up text-xs text-zinc-400">Redis no responde en 2 s: se registra un aviso y se sirve desde PostgreSQL.</p>
+      <p class="mt-1 animate-slide-up text-sm font-medium text-status-ok">200 OK · Fail-open</p>
+      <p class="animate-slide-up text-xs text-ink-2">Redis no responde en 2 s: se registra un aviso y se sirve desde PostgreSQL.</p>
     } @else {
-      <p class="mt-1 animate-slide-up text-sm font-medium text-emerald-400">200 OK · caché</p>
-      <p class="animate-slide-up text-xs text-zinc-400">Servido desde Redis; en un fallo de caché se consulta PostgreSQL y se repuebla.</p>
+      <p class="mt-1 animate-slide-up text-sm font-medium text-status-ok">200 OK · caché</p>
+      <p class="animate-slide-up text-xs text-ink-2">Servido desde Redis; en un fallo de caché se consulta PostgreSQL y se repuebla.</p>
     }
   </div>
 
-  <div class="min-w-0 rounded-2xl border border-white/10 bg-white/5 p-3">
-    <p class="font-mono text-[11px] text-zinc-500">POST /ai/rag/query</p>
+  <div class="min-w-0 rounded-panel border border-line-subtle bg-surface-2 p-3">
+    <p class="font-mono text-xs text-ink-3">POST /ai/rag/query</p>
     @if (geminiDown()) {
-      <p class="mt-1 animate-slide-up text-sm font-medium text-red-400">503 Service Unavailable · RFC 7807</p>
-      <pre class="mt-2 max-h-40 animate-slide-up overflow-auto rounded-xl border border-white/10 bg-black/40 p-2.5 font-mono text-[10px] leading-relaxed text-zinc-300">{{ problem }}</pre>
+      <p class="mt-1 animate-slide-up text-sm font-medium text-status-danger">503 Service Unavailable · RFC 7807</p>
+      <pre class="mt-2 max-h-40 animate-slide-up overflow-auto rounded-panel border border-line-subtle bg-surface-2 p-2.5 font-mono text-xs leading-relaxed text-ink-2">{{ problem }}</pre>
     } @else {
-      <p class="mt-1 animate-slide-up text-sm font-medium text-emerald-400">200 OK · respuesta con citas</p>
-      <p class="animate-slide-up text-xs text-zinc-400">Circuito cerrado. Se abre con un 50 % de fallos del proveedor y reintenta a los 30 s.</p>
+      <p class="mt-1 animate-slide-up text-sm font-medium text-status-ok">200 OK · respuesta con citas</p>
+      <p class="animate-slide-up text-xs text-ink-2">Circuito cerrado. Se abre con un 50 % de fallos del proveedor y reintenta a los 30 s.</p>
     }
   </div>
 </div>

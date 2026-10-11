@@ -16,11 +16,11 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
   host: { class: 'bento-card flex flex-col' },
   template: `
     <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-      <h3 class="text-xl font-semibold tracking-tight text-white">Telemetría</h3>
-      <span class="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2 py-0.5 text-[11px] text-zinc-400">
+      <h3 class="text-xl font-semibold tracking-tight text-ink-1">Telemetría</h3>
+      <span class="inline-flex items-center gap-1.5 rounded-full border border-line-subtle px-2 py-0.5 text-xs text-ink-2">
         <span class="relative flex h-1.5 w-1.5">
-          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-          <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-ok opacity-75"></span>
+          <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-status-ok"></span>
         </span>
         Simulación
       </span>
@@ -31,7 +31,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
         <circle cx="40" cy="40" [attr.r]="ringRadius" fill="none" stroke="rgb(255 255 255 / 0.08)" stroke-width="6" />
         <circle
           class="ring"
-          cx="40" cy="40" [attr.r]="ringRadius" fill="none" stroke="#34d399" stroke-width="6" stroke-linecap="round"
+          cx="40" cy="40" [attr.r]="ringRadius" fill="none" stroke="var(--status-ok)" stroke-width="6" stroke-linecap="round"
           transform="rotate(-90 40 40)"
           [attr.stroke-dasharray]="ringCircumference"
           [attr.stroke-dashoffset]="ringOffset()"
@@ -39,15 +39,15 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
         <text x="40" y="44" text-anchor="middle" class="ring-value">{{ hitRatio }}%</text>
       </svg>
       <div class="min-w-0">
-        <p class="text-sm font-medium text-white">Cache hit ratio</p>
-        <p class="text-xs text-zinc-500">Redis · cache-aside</p>
+        <p class="text-sm font-medium text-ink-1">Cache hit ratio</p>
+        <p class="text-xs text-ink-3">Redis · cache-aside</p>
       </div>
     </div>
 
     <div class="mt-5 flex min-h-[5rem] flex-1 flex-col">
       <div class="flex items-baseline justify-between">
-        <p class="text-xs font-medium uppercase tracking-wider text-zinc-500">Latencia</p>
-        <p class="font-mono text-sm tabular-nums text-zinc-200">{{ latestLatency() }} ms</p>
+        <p class="text-xs font-medium uppercase tracking-wider text-ink-3">Latencia</p>
+        <p class="font-mono text-sm tabular-nums text-ink-1">{{ latestLatency() }} ms</p>
       </div>
       <svg viewBox="0 0 180 48" class="mt-2 min-h-12 w-full flex-1" preserveAspectRatio="none" role="img" aria-label="Latencia simulada de las últimas peticiones">
         @for (latency of latencies(); track $index) {
@@ -62,8 +62,8 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
     </div>
 
     <div class="pt-5">
-      <p class="text-xs font-medium uppercase tracking-wider text-zinc-500">Preguntas RAG procesadas</p>
-      <p class="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-white">{{ formattedRequests() }}</p>
+      <p class="text-xs font-medium uppercase tracking-wider text-ink-3">Preguntas RAG procesadas</p>
+      <p class="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-ink-1">{{ formattedRequests() }}</p>
     </div>
   `,
   styles: `
@@ -72,7 +72,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
       filter: drop-shadow(0 0 6px rgb(52 211 153 / 0.6));
     }
     .ring-value {
-      fill: #fff;
+      fill: var(--text-1);
       font-size: 13px;
       font-weight: 600;
     }
@@ -83,7 +83,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
       transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), fill 0.6s;
     }
     .bar-latest {
-      fill: #0a84ff;
+      fill: var(--accent-text);
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

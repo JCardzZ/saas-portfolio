@@ -13,36 +13,36 @@ import { techIconFor } from '../../../shared/ui/tech-icons';
   imports: [TechIconComponent],
   template: `
     @if (error(); as message) {
-      <div class="glass max-w-md rounded-3xl p-6 text-center" role="alert">
-        <p class="text-sm text-zinc-300">{{ message }}</p>
-        <button type="button" class="focus-ring mt-3 rounded-full px-3 py-1 text-sm font-medium text-accent hover:text-accent-hover" (click)="load()">
+      <div class="border border-line-subtle bg-surface-1 max-w-md rounded-card p-6 text-center" role="alert">
+        <p class="text-sm text-ink-2">{{ message }}</p>
+        <button type="button" class="focus-ring mt-3 rounded-control px-3 py-1 text-sm font-medium text-accent-text hover:underline" (click)="load()">
           Reintentar
         </button>
       </div>
     } @else if (loading()) {
       <div class="space-y-4" aria-hidden="true">
-        <div class="glass h-32 animate-pulse rounded-3xl"></div>
-        <div class="glass h-32 animate-pulse rounded-3xl"></div>
+        <div class="border border-line-subtle bg-surface-1 h-32 animate-pulse rounded-card"></div>
+        <div class="border border-line-subtle bg-surface-1 h-32 animate-pulse rounded-card"></div>
       </div>
     } @else {
-      <ol class="relative space-y-4 border-l border-white/10 pl-6 sm:pl-8">
+      <ol class="relative space-y-4 border-l border-line-subtle pl-6 sm:pl-8">
         @for (milestone of milestones(); track $index) {
           <li class="relative animate-slide-up" [style.animation-delay.ms]="$index * 70">
-            <span class="absolute -left-[1.85rem] top-7 h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_12px_#0a84ff] sm:-left-[2.35rem]" aria-hidden="true"></span>
+            <span class="absolute -left-[1.85rem] top-7 h-2.5 w-2.5 rounded-full bg-accent-text sm:-left-[2.35rem]" aria-hidden="true"></span>
             <article class="bento-card">
-              <p class="font-mono text-xs text-accent">{{ milestone.period }}</p>
-              <h3 class="mt-1 text-xl font-semibold tracking-tight text-white">{{ milestone.title }}</h3>
+              <p class="font-mono text-xs text-accent-text">{{ milestone.period }}</p>
+              <h3 class="mt-1 text-xl font-semibold tracking-tight text-ink-1">{{ milestone.title }}</h3>
               @if (milestone.role || milestone.organization) {
-                <p class="mt-0.5 text-sm text-zinc-400">
+                <p class="mt-0.5 text-sm text-ink-2">
                   {{ milestone.role }}@if (milestone.role && milestone.organization) {<span> · </span>}{{ milestone.organization }}
                 </p>
               }
-              <p class="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-300">{{ milestone.summary }}</p>
+              <p class="mt-3 max-w-3xl text-sm leading-relaxed text-ink-2">{{ milestone.summary }}</p>
 
               @if (milestone.technologies?.length) {
                 <ul class="mt-4 flex flex-wrap gap-1.5" aria-label="Tecnologías">
                   @for (technology of milestone.technologies; track technology) {
-                    <li class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-zinc-300">
+                    <li class="inline-flex items-center gap-1.5 rounded-full border border-line-subtle bg-surface-2 px-2.5 py-0.5 text-xs text-ink-2">
                       @if (iconFor(technology); as icon) {
                         <app-tech-icon [icon]="icon" [size]="12" />
                       }
@@ -54,7 +54,7 @@ import { techIconFor } from '../../../shared/ui/tech-icons';
             </article>
           </li>
         } @empty {
-          <li class="glass rounded-3xl p-6 text-sm text-zinc-400">La trayectoria se publicará aquí próximamente.</li>
+          <li class="border border-line-subtle bg-surface-1 rounded-card p-6 text-sm text-ink-2">La trayectoria se publicará aquí próximamente.</li>
         }
       </ol>
     }

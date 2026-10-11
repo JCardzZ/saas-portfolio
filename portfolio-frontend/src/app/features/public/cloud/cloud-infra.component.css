@@ -32,7 +32,7 @@
 
 /* Aviso de una regla del grafo incumplida, en la esquina del nodo. */
 .rule-badge circle { fill: var(--status-warn); stroke: var(--bg-canvas); stroke-width: 1.5; }
-.rule-badge text { fill: #0a0a0a; font-size: 12px; font-weight: 700; }
+.rule-badge text { fill: var(--bg-surface-1); font-size: 12px; font-weight: 700; }
 
 /* Pulso que recorre cada conexión en el sentido de la petición. */
 .pulse { fill: none; stroke: var(--accent-text); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 4 96; animation: flow 2s linear infinite; }
@@ -57,7 +57,7 @@
 
 .remove { cursor: pointer; outline: none; }
 .remove circle { fill: var(--status-danger); }
-.remove:focus-visible circle { stroke: #fff; stroke-width: 1.5; }
+.remove:focus-visible circle { stroke: var(--text-1); stroke-width: 1.5; }
 
 .canvas-editing { background-image: radial-gradient(var(--border-subtle) 1px, transparent 1px); background-size: 24px 24px; border-radius: var(--radius-panel); }
 
@@ -75,7 +75,7 @@
 .node-chaos-ok rect { stroke: var(--status-ok); }
 
 .chaos-badge { pointer-events: none; animation: node-in 0.3s var(--ease-emphasized) backwards; transform-box: fill-box; transform-origin: center; }
-.chaos-badge text { fill: #0a0a0a; font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em; font-family: var(--font-mono); }
+.chaos-badge text { fill: var(--bg-surface-1); font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em; font-family: var(--font-mono); }
 .chaos-badge[data-level='down'] rect { fill: var(--status-danger); }
 .chaos-badge[data-level='warn'] rect { fill: var(--status-warn); }
 .chaos-badge[data-level='ok'] rect { fill: var(--status-ok); }

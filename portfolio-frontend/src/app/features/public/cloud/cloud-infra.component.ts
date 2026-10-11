@@ -975,6 +975,11 @@ export class CloudInfraComponent {
   }
 
   /** Imagen del diagrama tal como está: PNG a triple resolución (fondo oscuro o transparente) o SVG. */
+  /** Fondo oscuro de las imágenes exportadas: la superficie de las tarjetas (un archivo suelto no puede usar la variable CSS). */
+  darkBackground(): string {
+    return getComputedStyle(document.documentElement).getPropertyValue('--bg-surface-1').trim() || 'black';
+  }
+
   async exportImage(format: 'png' | 'svg', background: string | null): Promise<void> {
     const svg = this.canvas()?.nativeElement;
     this.menu.set(null);

@@ -55,14 +55,14 @@ const CIRCUIT_OPEN_PROBLEM = `{
       transition: stroke 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .pipe-cut {
-      stroke: #f87171;
+      stroke: var(--status-danger);
       stroke-dasharray: 3 5;
     }
     .pipe-off {
       opacity: 0.25;
     }
     .pipe-bypass {
-      stroke: #34d399;
+      stroke: var(--status-ok);
       opacity: 0;
     }
     .pipe-bypass-on {
@@ -71,17 +71,17 @@ const CIRCUIT_OPEN_PROBLEM = `{
     }
     .pulse {
       fill: none;
-      stroke: #7dd3fc;
+      stroke: var(--accent-text);
       stroke-width: 3;
       stroke-linecap: round;
       stroke-dasharray: 6 94;
-      filter: drop-shadow(0 0 5px #38bdf8);
+      filter: drop-shadow(0 0 5px var(--accent-text));
       animation: flow 1.7s linear infinite;
       transition: opacity 0.5s;
     }
     .pulse-bypass {
-      stroke: #a7f3d0;
-      filter: drop-shadow(0 0 6px #34d399);
+      stroke: var(--status-ok);
+      filter: drop-shadow(0 0 6px var(--status-ok));
       animation-duration: 2.2s;
     }
     .pulse-hidden {
@@ -96,7 +96,7 @@ const CIRCUIT_OPEN_PROBLEM = `{
       outline: none;
     }
     .stage-tech:focus-visible rect {
-      stroke: #fff;
+      stroke: var(--text-1);
       stroke-width: 2;
     }
     .stage rect {
@@ -107,22 +107,22 @@ const CIRCUIT_OPEN_PROBLEM = `{
     }
     .stage-down rect {
       fill: rgb(248 113 113 / 0.12);
-      stroke: #f87171;
+      stroke: var(--status-danger);
       filter: drop-shadow(0 0 12px rgb(248 113 113 / 0.55));
     }
     .stage-hot rect {
       fill: rgb(52 211 153 / 0.12);
-      stroke: #34d399;
+      stroke: var(--status-ok);
       filter: drop-shadow(0 0 12px rgb(52 211 153 / 0.5));
     }
     .stage-label {
-      fill: #fff;
+      fill: var(--text-1);
       font-size: 12.5px;
       font-weight: 600;
     }
     .stage-role, .pipe-label {
-      fill: #a1a1aa;
-      font-size: 10px;
+      fill: var(--text-2);
+      font-size: 12px;
     }
     .badge {
       opacity: 0;
@@ -133,14 +133,14 @@ const CIRCUIT_OPEN_PROBLEM = `{
     }
     /* La palanca del interruptor gira al abrirse el circuito. */
     .lever {
-      stroke: #e4e4e7;
+      stroke: var(--text-1);
       stroke-width: 2.5;
       stroke-linecap: round;
       transform-origin: 462px 130px;
       transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.5s;
     }
     .lever-open {
-      stroke: #f87171;
+      stroke: var(--status-danger);
       transform: rotate(-38deg);
     }
   `,

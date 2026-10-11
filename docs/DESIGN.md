@@ -324,7 +324,12 @@ Una rama y un PR por fase, cada uno con capturas antes y después (escritorio, t
 2. **Página**: hero y marca con el nombre, cabeceras de sección, barra con todas las secciones y la activa, rejilla de proyectos, aviso de demo en el inspector.
 3. **Diagramas**: nodo único en «Arquitectura en vivo» y en el Estudio, zonas y cables neutros, consola e inspector.
 4. **Estudio**: barra de herramientas con menús agrupados.
-5. **Limpieza**: retirar hex sueltos, `text-[9|10|11px]`, radios fuera de escala y la clase `.glass` de las tarjetas. Un test o regla de lint impide que vuelvan.
+5. **Limpieza**: retirar hex sueltos, `text-[9|10|11px]`, radios fuera de escala y la clase `.glass` de las tarjetas. `tools/lib/design-lint.test.mjs` (`npm run test:tools`, en la CI) impide que vuelvan: en la vista pública no admite clases de la paleta de Tailwind, texto de menos de 12 px con una clase ni radios fuera de escala.
+
+Deuda conocida, acotada por ese mismo test (no puede crecer ni aparecer en otros archivos):
+
+- **Tres rótulos del lienzo del Estudio siguen por debajo de 12 px** (coste del nodo, función del nodo y rótulo de caos, en `cloud-infra.component.css`): subirlos exige rehacer la geometría de los nodos.
+- **Ocho hex a mano**, todos del resplandor de marca y el despegue de los logos (la excepción de la sección 2.4).
 
 Cada fase pasa `ng test`, la matriz de Playwright (móvil y escritorio) y Lighthouse. Las capturas de `e2e-screens/` sirven de antes y después.
 
@@ -341,7 +346,7 @@ Cada fase pasa `ng test`, la matriz de Playwright (móvil y escritorio) y Lighth
 
 Nombres en Tailwind: fondos `bg-canvas`, `bg-surface-1|2|3`; bordes `border-line-subtle|strong|control`; texto `text-ink-1|2|3|disabled`; acento `text-accent-text`, `bg-accent-solid`, `bg-accent-solid-hover`; estado `text-status-ok|warn|danger`; tipografía `text-display`, `text-title-1`… `text-mono-sm`; radios `rounded-mark|control|panel|card`; sombra `shadow-floating`; movimiento `duration-fast|base|slow|layout`, `ease-standard|emphasized`; capas `z-nav`, `z-theater`, `z-dialog`. El espaciado usa la escala de Tailwind (`space-6` = clase `6` = 24 px).
 
-Las clases `.btn`, `.card` e `.input` sin prefijo son las de la administración. `accent` y `accent-hover` (el azul anterior) y `ease-spring` siguen disponibles hasta que la fase 5 retire su último uso.
+Las clases `.btn`, `.card` e `.input` sin prefijo son las de la administración. `.glass` queda solo para lo que flota sobre contenido. `ease-spring` es el nombre anterior de `ease-emphasized` y sigue disponible.
 
 ## 12. Referencias revisadas
 

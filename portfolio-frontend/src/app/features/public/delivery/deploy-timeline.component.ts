@@ -33,18 +33,18 @@ const SIMULATION_MS = 900;
   template: `
     <app-theater-toggle name="Despliegues y rollback" />
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pr-10">
-      <h3 class="text-xl font-semibold tracking-tight text-white">Despliegues y rollback</h3>
-      <p class="text-xs text-zinc-500">Solo lectura · datos del CD</p>
+      <h3 class="text-xl font-semibold tracking-tight text-ink-1">Despliegues y rollback</h3>
+      <p class="text-xs text-ink-3">Solo lectura · datos del CD</p>
     </div>
 
     <div class="mt-6 grid gap-8 md:grid-cols-2 [&>*]:min-w-0">
       @for (lane of lanes; track lane.target) {
         <section [attr.aria-label]="'Despliegues de ' + lane.title">
-          <p class="flex flex-wrap items-center gap-2 text-[11px] font-medium uppercase tracking-[0.06em] text-zinc-500">
+          <p class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.06em] text-ink-3">
             {{ lane.title }}
-            <span class="normal-case tracking-normal text-zinc-600">{{ lane.where }}</span>
+            <span class="normal-case tracking-normal text-ink-3">{{ lane.where }}</span>
             @if (lane.planned) {
-              <span class="rounded-full border border-dashed border-zinc-500/70 px-2 py-0.5 normal-case tracking-normal text-zinc-300">planificado</span>
+              <span class="rounded-full border border-dashed border-line-control px-2 py-0.5 normal-case tracking-normal text-ink-2">planificado</span>
             }
           </p>
 
@@ -56,23 +56,23 @@ const SIMULATION_MS = 900;
                     <span class="mark" aria-hidden="true"></span>
                     <div class="min-w-0">
                       <p class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span class="text-sm font-medium text-zinc-50">#{{ deployment.runNumber }}</span>
-                        <code class="font-mono text-xs text-zinc-300">{{ deployment.sha.slice(0, 7) }}</code>
+                        <span class="text-sm font-medium text-ink-1">#{{ deployment.runNumber }}</span>
+                        <code class="font-mono text-xs text-ink-2">{{ deployment.sha.slice(0, 7) }}</code>
                         @if (deployment.kind === 'rollback') {
-                          <span class="rounded-full border border-white/15 px-2 py-0.5 text-[11px] text-zinc-300">rollback</span>
+                          <span class="rounded-full border border-line-strong px-2 py-0.5 text-xs text-ink-2">rollback</span>
                         }
                         @if (index === currentIndex(lane.target)) {
-                          <span class="rounded-full border px-2 py-0.5 text-[11px] font-medium"
-                            [class]="simulating() && lane.target === 'frontend' ? 'border-amber-300/50 text-amber-200' : 'border-emerald-400/40 text-emerald-300'">
+                          <span class="rounded-full border px-2 py-0.5 text-xs font-medium"
+                            [class]="simulating() && lane.target === 'frontend' ? 'border-status-warn/50 text-status-warn' : 'border-status-ok/40 text-status-ok'">
                             {{ simulating() && lane.target === 'frontend' ? 'en producción · simulación' : 'en producción' }}
                           </span>
                         }
                       </p>
-                      <p class="mt-0.5 text-xs text-zinc-400">
+                      <p class="mt-0.5 text-xs text-ink-2">
                         {{ date(deployment.at) }}@if (deployment.by) { · {{ deployment.by }} }
                       </p>
-                      <p class="mt-0.5 flex items-center gap-1.5 text-xs" [class]="deployment.healthy === false ? 'text-red-300' : 'text-zinc-400'">
-                        <span class="h-2 w-2 rounded-full" [class]="deployment.healthy === true ? 'bg-emerald-400' : deployment.healthy === false ? 'bg-red-400' : 'border border-zinc-500'" aria-hidden="true"></span>
+                      <p class="mt-0.5 flex items-center gap-1.5 text-xs" [class]="deployment.healthy === false ? 'text-status-danger' : 'text-ink-2'">
+                        <span class="h-2 w-2 rounded-full" [class]="deployment.healthy === true ? 'bg-status-ok' : deployment.healthy === false ? 'bg-status-danger' : 'border border-line-control'" aria-hidden="true"></span>
                         {{ deployment.healthy === true ? 'Salud comprobada' : deployment.healthy === false ? 'No pasó la comprobación de salud' : 'Salud sin comprobar' }}
                       </p>
                     </div>
@@ -80,7 +80,7 @@ const SIMULATION_MS = 900;
                 }
               </ol>
             } @else {
-              <p class="mt-3 rounded-lg border border-dashed border-white/15 p-4 text-sm text-zinc-400">
+              <p class="mt-3 rounded-control border border-dashed border-line-strong p-4 text-sm text-ink-2">
                 {{ lane.planned ? 'Sin despliegues: todavía no existe en producción. Cuando exista, su historial y su rollback aparecerán aquí.' : (loaded() ? 'Aún no hay despliegues publicados.' : 'Cargando…') }}
               </p>
             }
@@ -92,13 +92,13 @@ const SIMULATION_MS = 900;
     <div class="mt-6 flex flex-wrap items-center gap-3">
       <button
         type="button"
-        class="focus-ring rounded-full border border-white/15 px-4 py-1.5 text-sm font-medium text-zinc-100 transition duration-200 ease-out hover:bg-white/10 disabled:opacity-40"
+        class="focus-ring rounded-control border border-line-strong px-4 py-1.5 text-sm font-medium text-ink-1 transition duration-200 ease-out hover:bg-surface-3 disabled:opacity-40"
         [disabled]="!canSimulate() || animating()"
         (click)="simulating() ? reset() : simulate()"
       >{{ simulating() ? 'Deshacer la simulación' : 'Simular rollback' }}</button>
-      <p class="min-w-0 flex-1 text-xs text-zinc-500" aria-live="polite">
+      <p class="min-w-0 flex-1 text-xs text-ink-3" aria-live="polite">
         @if (simulating()) {
-          <span class="mr-1 rounded-full border border-amber-300/50 px-2 py-0.5 font-medium text-amber-200">Simulación</span>
+          <span class="mr-1 rounded-full border border-status-warn/50 px-2 py-0.5 font-medium text-status-warn">Simulación</span>
           Producción no ha cambiado: el marcador se movió solo en esta pantalla.
         } @else {
           Desde aquí no se puede revertir producción. El rollback real es un workflow manual, con aprobación.
@@ -116,11 +116,11 @@ const SIMULATION_MS = 900;
     }
     .mark {
       flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 9999px;
-      background: #18181b; box-shadow: inset 0 0 0 1px #71717a;
+      background: var(--bg-surface-2); box-shadow: inset 0 0 0 1px var(--text-3);
       transition: background-color 0.3s ease-out, box-shadow 0.3s ease-out, transform 0.3s ease-out;
     }
-    .entry.current .mark { background: #34d399; box-shadow: 0 0 0 3px rgb(52 211 153 / 0.18); }
-    .entry.simulated .mark { background: #fcd34d; box-shadow: 0 0 0 3px rgb(252 211 77 / 0.2); transform: scale(1.15); }
+    .entry.current .mark { background: var(--status-ok); box-shadow: 0 0 0 3px rgb(52 211 153 / 0.18); }
+    .entry.simulated .mark { background: var(--status-warn); box-shadow: 0 0 0 3px rgb(245 185 74 / 0.2); transform: scale(1.15); }
     .entry:not(.current) { opacity: 0.72; }
     @media (prefers-reduced-motion: reduce) {
       .entry, .mark { transition: none; }

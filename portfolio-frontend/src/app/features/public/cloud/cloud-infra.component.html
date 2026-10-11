@@ -38,17 +38,17 @@
         @for (preset of presets(); track preset.id) {
           <li>
             <button type="button" class="project-item" (click)="loadPreset(preset)">
-              <span class="block font-medium text-white">
+              <span class="block font-medium text-ink-1">
                 {{ preset.name }}
                 @if (preset.kind === 'saved') {
-                  <span class="ml-1 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-normal text-zinc-300">guardado</span>
+                  <span class="ml-1 rounded-full bg-surface-3 px-1.5 py-0.5 text-xs font-normal text-ink-2">guardado</span>
                 }
               </span>
-              <span class="block text-[11px] text-zinc-400">{{ preset.summary }}</span>
+              <span class="block text-xs text-ink-2">{{ preset.summary }}</span>
             </button>
           </li>
         }
-        <li class="px-2 pb-1 pt-2 text-[10px] leading-snug text-zinc-500">
+        <li class="px-2 pb-1 pt-2 text-xs leading-snug text-ink-3">
           {{ presetsFromServer() ? 'Plantillas y proyectos servidos por el backend.' : 'Plantillas incluidas en el estudio.' }}
           Los escenarios son ilustrativos de un tipo de sistema: no describen la infraestructura real de ninguna entidad.
         </li>
@@ -56,18 +56,18 @@
     }
     @if (menu() === 'export') {
       <ul id="menu-export" class="project-menu w-72">
-        <li><button type="button" class="project-item" (click)="exportImage('png', '#0a0a0b')"><span class="font-medium text-white">PNG · fondo oscuro</span><span class="block text-[11px] text-zinc-400">Alta resolución (3×)</span></button></li>
-        <li><button type="button" class="project-item" (click)="exportImage('png', null)"><span class="font-medium text-white">PNG · fondo transparente</span><span class="block text-[11px] text-zinc-400">Alta resolución (3×)</span></button></li>
-        <li><button type="button" class="project-item" (click)="exportImage('svg', '#0a0a0b')"><span class="font-medium text-white">SVG</span><span class="block text-[11px] text-zinc-400">Vectorial, con los iconos incrustados</span></button></li>
-        <li><button type="button" class="project-item" (click)="exportTerraform()"><span class="font-medium text-white">Terraform (.zip)</span><span class="block text-[11px] text-zinc-400">main.tf y variables.tf · esqueleto</span></button></li>
-        <li><button type="button" class="project-item" (click)="exportProject()"><span class="font-medium text-white">Proyecto (.architecture.json)</span><span class="block text-[11px] text-zinc-400">Para volver a abrirlo o compartirlo</span></button></li>
+        <li><button type="button" class="project-item" (click)="exportImage('png', darkBackground())"><span class="font-medium text-ink-1">PNG · fondo oscuro</span><span class="block text-xs text-ink-2">Alta resolución (3×)</span></button></li>
+        <li><button type="button" class="project-item" (click)="exportImage('png', null)"><span class="font-medium text-ink-1">PNG · fondo transparente</span><span class="block text-xs text-ink-2">Alta resolución (3×)</span></button></li>
+        <li><button type="button" class="project-item" (click)="exportImage('svg', darkBackground())"><span class="font-medium text-ink-1">SVG</span><span class="block text-xs text-ink-2">Vectorial, con los iconos incrustados</span></button></li>
+        <li><button type="button" class="project-item" (click)="exportTerraform()"><span class="font-medium text-ink-1">Terraform (.zip)</span><span class="block text-xs text-ink-2">main.tf y variables.tf · esqueleto</span></button></li>
+        <li><button type="button" class="project-item" (click)="exportProject()"><span class="font-medium text-ink-1">Proyecto (.architecture.json)</span><span class="block text-xs text-ink-2">Para volver a abrirlo o compartirlo</span></button></li>
       </ul>
     }
     @if (menu() === 'cloud') {
       <div id="menu-cloud" class="project-menu w-80 !p-3 text-xs">
         @if (canSaveToCloud()) {
-          <label class="block text-zinc-400" for="cloud-title">Título del proyecto</label>
-          <input id="cloud-title" type="text" maxlength="120" class="focus-ring mt-1 w-full rounded-lg border border-white/15 bg-black/50 px-2.5 py-1.5 text-sm text-white" [value]="cloudTitle()" (input)="cloudTitle.set($any($event.target).value)" (keydown.enter)="saveToCloud(!cloudProject())" />
+          <label class="block text-ink-2" for="cloud-title">Título del proyecto</label>
+          <input id="cloud-title" type="text" maxlength="120" class="focus-ring mt-1 w-full rounded-control border border-line-strong bg-surface-2 px-2.5 py-1.5 text-sm text-ink-1" [value]="cloudTitle()" (input)="cloudTitle.set($any($event.target).value)" (keydown.enter)="saveToCloud(!cloudProject())" />
           <div class="mt-2 flex flex-wrap gap-2">
             @if (cloudProject(); as current) {
               <button type="button" class="project-button" [disabled]="saving() || !cloudTitle().trim()" (click)="saveToCloud(false)">Actualizar «{{ current.title }}»</button>
@@ -76,9 +76,9 @@
               {{ saving() ? 'Guardando…' : cloudProject() ? 'Guardar como nuevo' : 'Guardar' }}
             </button>
           </div>
-          <p class="mt-2 text-[10px] leading-snug text-zinc-500">Lo guardado aparece en «Plantillas» para todos los visitantes.</p>
+          <p class="mt-2 text-xs leading-snug text-ink-3">Lo guardado aparece en «Plantillas» para todos los visitantes.</p>
         } @else {
-          <p class="leading-snug text-zinc-300">
+          <p class="leading-snug text-ink-2">
             Guardar en el servidor es cosa del administrador, porque lo guardado se muestra a todos los visitantes.
             Tus cambios ya se guardan en este navegador y puedes exportarlos como archivo.
           </p>
@@ -158,30 +158,30 @@
 </div>
 
 @if (projectError(); as message) {
-  <p class="mt-2 rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-1.5 text-xs text-red-100" role="alert">
+  <p class="mt-2 rounded-panel border border-status-danger/40 bg-status-danger/10 px-3 py-1.5 text-xs text-status-danger" role="alert">
     {{ message }}
     <button type="button" class="focus-ring ml-2 underline" (click)="projectError.set(null)">Cerrar</button>
   </p>
 }
 
 @if (editing()) {
-  <div class="mt-3 flex animate-slide-up flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-accent/40 bg-accent/10 px-3 py-2" role="toolbar" aria-label="Edición de la arquitectura">
+  <div class="mt-3 flex animate-slide-up flex-wrap items-center gap-x-4 gap-y-2 rounded-panel border border-accent-text/40 bg-accent-text/10 px-3 py-2" role="toolbar" aria-label="Edición de la arquitectura">
     <button
       type="button"
-      class="focus-ring rounded-full border border-white/20 px-3 py-1 text-xs font-medium text-zinc-100 transition hover:bg-white/10"
+      class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs font-medium text-ink-1 transition hover:bg-surface-3"
       [attr.aria-pressed]="catalogDocked()"
       (click)="catalogDocked.set(!catalogDocked())"
     >
       {{ catalogDocked() ? 'Ocultar catálogo' : 'Mostrar catálogo' }}
     </button>
     <div class="relative" data-menu>
-      <button type="button" class="focus-ring rounded-full border border-white/20 px-3 py-1 text-xs font-medium text-zinc-100 transition hover:bg-white/10" [attr.aria-expanded]="menu() === 'zones'" aria-controls="menu-zones" (click)="menu.set(menu() === 'zones' ? null : 'zones')">
+      <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs font-medium text-ink-1 transition hover:bg-surface-3" [attr.aria-expanded]="menu() === 'zones'" aria-controls="menu-zones" (click)="menu.set(menu() === 'zones' ? null : 'zones')">
         Añadir zona <span aria-hidden="true">▾</span>
       </button>
       @if (menu() === 'zones') {
         <ul id="menu-zones" class="project-menu w-64">
           @for (kind of zoneKinds; track kind.kind) {
-            <li><button type="button" class="project-item font-medium text-white" (click)="addZone(kind.kind)">{{ kind.name }}</button></li>
+            <li><button type="button" class="project-item font-medium text-ink-1" (click)="addZone(kind.kind)">{{ kind.name }}</button></li>
           }
         </ul>
       }
@@ -189,44 +189,44 @@
     @if (activeZone(); as zone) {
       <div class="flex items-center gap-2" role="group" aria-label="Zona seleccionada">
         <label class="sr-only" for="zone-label">Nombre de la zona</label>
-        <input id="zone-label" type="text" maxlength="60" class="focus-ring w-44 rounded-full border border-white/20 bg-black/40 px-3 py-1 text-xs text-white placeholder:text-zinc-500" [placeholder]="zoneLabelOf(zone)" [value]="zone.label ?? ''" (input)="renameZone(zone, $any($event.target).value)" />
-        <button type="button" class="focus-ring rounded-full border border-white/20 px-3 py-1 text-xs text-zinc-100 hover:bg-white/10" (click)="removeZone(zone)">Quitar zona</button>
+        <input id="zone-label" type="text" maxlength="60" class="focus-ring w-44 rounded-control border border-line-strong bg-surface-2 px-3 py-1 text-xs text-ink-1 placeholder:text-ink-3" [placeholder]="zoneLabelOf(zone)" [value]="zone.label ?? ''" (input)="renameZone(zone, $any($event.target).value)" />
+        <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs text-ink-1 hover:bg-surface-3" (click)="removeZone(zone)">Quitar zona</button>
       </div>
     }
     @if (connectingNode(); as source) {
-      <p class="flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-medium text-white" role="status">
+      <p class="flex items-center gap-2 rounded-full bg-accent-solid px-3 py-1 text-xs font-medium text-white" role="status">
         Pulsa el nodo de destino para conectar «{{ serviceOf(source) }}»
-        <button type="button" class="focus-ring rounded-full border border-white/40 px-2 text-[11px]" (click)="cancelConnection()">Cancelar</button>
+        <button type="button" class="focus-ring rounded-control border border-line-control px-2 text-xs" (click)="cancelConnection()">Cancelar</button>
       </p>
     }
-    <p class="order-last w-full text-[11px] leading-snug text-zinc-300">
+    <p class="order-last w-full text-xs leading-snug text-ink-2">
       Pulsa un servicio o arrástralo al lienzo. Mueve los nodos arrastrándolos (o con las flechas), abre sus propiedades
       con doble clic o Intro, conéctalos arrastrando la flecha de su borde y quítalos con la ✕ o Supr. Las zonas se
       mueven por su franja superior y se redimensionan desde las esquinas. Editas una copia: no cambia la plataforma real.
     </p>
   </div>
 } @else {
-  <p class="mt-3 text-sm text-zinc-400">
-    Cómo se desplegaría esta plataforma en <span class="font-medium text-zinc-200">{{ selected().name }}</span>. La forma es
+  <p class="mt-3 text-sm text-ink-2">
+    Cómo se desplegaría esta plataforma en <span class="font-medium text-ink-1">{{ selected().name }}</span>. La forma es
     la misma en las tres nubes; cambia el servicio que cubre cada pieza.
   </p>
 }
 
 @if (chaosOpen()) {
-  <section id="chaos-panel" class="mt-3 animate-slide-up rounded-2xl border border-red-400/30 bg-red-500/[0.06] p-3" aria-label="Simulador de caos">
+  <section id="chaos-panel" class="mt-3 animate-slide-up rounded-panel border border-status-danger/30 bg-status-danger/[0.06] p-3" aria-label="Simulador de caos">
     <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
       @for (scenario of scenarios; track scenario.id) {
         <button
           type="button"
-          class="focus-ring rounded-xl border px-3 py-2 text-left transition duration-300 ease-spring disabled:cursor-not-allowed disabled:opacity-40"
-          [class]="chaos()?.scenario === scenario ? 'border-red-400/70 bg-red-500/15' : 'border-white/10 bg-black/30 hover:border-white/25 hover:bg-white/[0.06]'"
+          class="focus-ring rounded-panel border px-3 py-2 text-left transition duration-300 ease-spring disabled:cursor-not-allowed disabled:opacity-40"
+          [class]="chaos()?.scenario === scenario ? 'border-status-danger/70 bg-status-danger/15' : 'border-line-subtle bg-surface-2 hover:border-line-strong hover:bg-surface-2'"
           [disabled]="!canRun(scenario)"
           [attr.aria-pressed]="chaos()?.scenario === scenario"
           [title]="canRun(scenario) ? scenario.basis : 'Falta en el lienzo algún nodo que este escenario necesita'"
           (click)="runChaos(scenario)"
         >
-          <span class="block text-[13px] font-medium text-white">{{ scenario.name }}</span>
-          <span class="block text-[11px] text-zinc-400">{{ scenario.summary }}</span>
+          <span class="block text-[13px] font-medium text-ink-1">{{ scenario.name }}</span>
+          <span class="block text-xs text-ink-2">{{ scenario.summary }}</span>
         </button>
       }
     </div>
@@ -236,19 +236,19 @@
         <ol class="flex gap-1" aria-label="Fases del escenario">
           @for (phase of running.scenario.phases; track phase.step) {
             <li
-              class="rounded-full border px-2 py-0.5 font-mono text-[10px] transition duration-500"
-              [class]="$index === running.phase ? 'border-white/50 bg-white/15 text-white' : $index < running.phase ? 'border-white/10 text-zinc-400' : 'border-white/10 text-zinc-600'"
+              class="rounded-full border px-2 py-0.5 font-mono text-xs transition duration-500"
+              [class]="$index === running.phase ? 'border-line-control bg-surface-3 text-ink-1' : $index < running.phase ? 'border-line-subtle text-ink-2' : 'border-line-subtle text-ink-3'"
               [attr.aria-current]="$index === running.phase ? 'step' : null"
             >
               {{ phase.step }}
             </li>
           }
         </ol>
-        <p class="min-w-0 flex-1 text-xs text-zinc-200">{{ chaosCaption() }}</p>
-        <button type="button" class="focus-ring rounded-full border border-white/20 px-3 py-1 text-xs text-zinc-100 hover:bg-white/10" (click)="stopChaos()">Detener</button>
-        <p class="w-full text-[10.5px] leading-snug text-zinc-500">{{ running.scenario.basis }}</p>
+        <p class="min-w-0 flex-1 text-xs text-ink-1">{{ chaosCaption() }}</p>
+        <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs text-ink-1 hover:bg-surface-3" (click)="stopChaos()">Detener</button>
+        <p class="w-full text-xs leading-snug text-ink-3">{{ running.scenario.basis }}</p>
       } @else {
-        <p class="text-[11px] leading-snug text-zinc-400">
+        <p class="text-xs leading-snug text-ink-2">
           Elige un fallo para ver cómo responde la plataforma: el fallo, el fallback, la prueba de recuperación y la
           vuelta a la normalidad. Es una simulación sobre el diagrama; no se toca ninguna infraestructura.
         </p>
@@ -445,7 +445,7 @@
               <circle [attr.cx]="node.x + width / 2 - 4" [attr.cy]="node.y - height / 2 + 4" [attr.r]="touchTarget / 2" fill="transparent" stroke="none" />
             }
             <circle [attr.cx]="node.x + width / 2 - 4" [attr.cy]="node.y - height / 2 + 4" r="10" />
-            <path [attr.d]="'M' + (node.x + width / 2 - 8) + ' ' + (node.y - height / 2) + ' l8 8 m0 -8 l-8 8'" stroke="#fff" stroke-width="1.8" stroke-linecap="round" fill="none" />
+            <path [attr.d]="'M' + (node.x + width / 2 - 8) + ' ' + (node.y - height / 2) + ' l8 8 m0 -8 l-8 8'" stroke="var(--bg-surface-1)" stroke-width="1.8" stroke-linecap="round" fill="none" />
           </g>
           <!-- Asa para conectar: se arrastra hasta otro nodo, o se pulsa y después se pulsa el destino. -->
           <g
@@ -465,7 +465,7 @@
               <circle [attr.cx]="node.x + width / 2" [attr.cy]="node.y" [attr.r]="touchTarget / 2" fill="transparent" stroke="none" />
             }
             <circle [attr.cx]="node.x + width / 2" [attr.cy]="node.y" r="9" />
-            <path [attr.d]="'M' + (node.x + width / 2 - 4) + ' ' + node.y + ' h8 m-3 -3 l3 3 l-3 3'" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <path [attr.d]="'M' + (node.x + width / 2 - 4) + ' ' + node.y + ' h8 m-3 -3 l3 3 l-3 3'" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
           </g>
         }
       }
@@ -477,9 +477,9 @@
     </svg>
   </div>
 
-  <app-live-vitals class="absolute left-2 top-2 z-10" [vitals]="vitals()" (beat)="onBeat()" />
+  <app-live-vitals class="absolute left-2 top-2 z-10 max-w-[calc(100%-1rem)]" [vitals]="vitals()" (beat)="onBeat()" />
 
-  <app-cost-badge class="absolute bottom-2 left-2 z-10" [estimate]="cost()" [providerName]="selected().name" [pricingState]="pricingState()" />
+  <app-cost-badge class="absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)]" [estimate]="cost()" [providerName]="selected().name" [pricingState]="pricingState()" />
 
   @if (editing() && propertiesNode(); as node) {
     <app-node-properties
@@ -523,26 +523,25 @@
 
 <div class="mt-3 flex min-h-[2.75rem] flex-wrap items-baseline gap-x-3 gap-y-1" aria-live="polite">
   @if (active(); as node) {
-    <p class="text-sm font-medium text-white">{{ serviceOf(node) }}</p>
+    <p class="text-sm font-medium text-ink-1">{{ serviceOf(node) }}</p>
     @for (why of [node.why]; track why + selectedId()) {
-      <p class="animate-slide-up text-sm text-zinc-400">{{ why }}</p>
+      <p class="animate-slide-up text-sm text-ink-2">{{ why }}</p>
     }
   }
 </div>
 
 <!-- Tráfico simulado y fallos sobre el nodo seleccionado. -->
 <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
-  <div class="glass flex max-w-full overflow-x-auto rounded-full p-1 [scrollbar-width:none]" role="radiogroup" aria-label="Tráfico simulado">
+  <div class="ui-segmented" role="radiogroup" aria-label="Tráfico simulado">
     @for (profile of trafficProfiles; track profile.id) {
       <button
         type="button"
         role="radio"
-        class="focus-ring rounded-full px-3 py-1 text-xs font-medium transition duration-500 ease-spring"
-        [class]="profile.id === trafficMode() ? 'bg-white/15 text-white' : 'text-zinc-400 hover:text-zinc-200'"
+        class="ui-segment"
         [attr.aria-checked]="profile.id === trafficMode()"
         (click)="setTraffic(profile.id)"
       >
-        {{ profile.name }} <span class="font-normal text-zinc-500">({{ profile.hint }})</span>
+        {{ profile.name }} <span class="font-normal text-ink-3">({{ profile.hint }})</span>
       </button>
     }
   </div>
@@ -562,45 +561,45 @@
 @if (violations().length) {
   <ul class="mt-3 space-y-1" aria-label="Avisos del grafo" data-testid="graph-warnings">
     @for (violation of violations(); track violation.message) {
-      <li class="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs text-amber-100" role="status">{{ violation.message }}</li>
+      <li class="rounded-panel border border-status-warn/30 bg-status-warn/10 px-3 py-1.5 text-xs text-status-warn" role="status">{{ violation.message }}</li>
     }
   </ul>
 }
 
 @if (codeOpen()) {
-  <section id="main-tf-panel" class="mt-3 animate-slide-up overflow-hidden rounded-2xl border border-white/10 bg-black/50" aria-label="Código Terraform generado">
-    <header class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-white/10 px-3 py-2">
-      <p class="font-mono text-xs text-zinc-200">main.tf <span class="text-zinc-500">· {{ selected().name }} · se regenera con cada cambio</span></p>
+  <section id="main-tf-panel" class="mt-3 animate-slide-up overflow-hidden rounded-panel border border-line-subtle bg-surface-2" aria-label="Código Terraform generado">
+    <header class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line-subtle px-3 py-2">
+      <p class="font-mono text-xs text-ink-1">main.tf <span class="text-ink-3">· {{ selected().name }} · se regenera con cada cambio</span></p>
       <ul class="flex flex-1 flex-wrap gap-1.5" aria-label="Validación de seguridad">
         @for (finding of findings(); track finding.check) {
           <li
-            class="rounded-full border px-2 py-0.5 font-mono text-[10px]"
-            [class]="finding.level === 'ok' ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300' : 'border-amber-400/40 bg-amber-400/10 text-amber-200'"
+            class="rounded-full border px-2 py-0.5 font-mono text-xs"
+            [class]="finding.level === 'ok' ? 'border-status-ok/30 bg-status-ok/10 text-status-ok' : 'border-status-warn/40 bg-status-warn/10 text-status-warn'"
             [title]="finding.detail"
           >
             {{ finding.check }}
           </li>
         }
       </ul>
-      <button type="button" class="focus-ring rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-200 transition hover:bg-white/10" (click)="copyMainTf()">
+      <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs text-ink-1 transition hover:bg-surface-3" (click)="copyMainTf()">
         {{ copied() ? 'Copiado' : 'Copiar' }}
       </button>
     </header>
     @for (warning of warnings(); track warning.check) {
-      <p class="border-b border-amber-400/20 bg-amber-400/10 px-3 py-1.5 text-xs text-amber-100" role="status">
+      <p class="border-b border-status-warn/20 bg-status-warn/10 px-3 py-1.5 text-xs text-status-warn" role="status">
         <span class="font-mono font-medium">{{ warning.check }}</span> — {{ warning.detail }}
       </p>
     }
     @for (gap of terraformGaps(); track $index) {
-      <p class="border-b border-amber-400/20 bg-amber-400/10 px-3 py-1.5 text-xs text-amber-100" role="status" data-testid="terraform-gap">
+      <p class="border-b border-status-warn/20 bg-status-warn/10 px-3 py-1.5 text-xs text-status-warn" role="status" data-testid="terraform-gap">
         {{ gap }}: sin soporte de Terraform todavía
       </p>
     }
-    <pre class="max-h-96 overflow-auto p-3 font-mono text-[11px] leading-relaxed text-zinc-200" tabindex="0">{{ mainTf() }}</pre>
+    <pre class="max-h-96 overflow-auto p-3 font-mono text-xs leading-relaxed text-ink-1" tabindex="0">{{ mainTf() }}</pre>
   </section>
 }
 
-<p class="mt-2 text-[11px] leading-snug text-zinc-500">
+<p class="mt-2 text-xs leading-snug text-ink-3">
   Mapa de despliegue, no un entorno en curso: hoy la plataforma está preparada para Neon (PostgreSQL) y Upstash (Redis),
   definidos con Terraform. El código es un esqueleto; los eventos del inspector y los fallos son simulados y el coste es
   una estimación orientativa. Las comprobaciones de seguridad y la auditoría sí se calculan sobre el diagrama.

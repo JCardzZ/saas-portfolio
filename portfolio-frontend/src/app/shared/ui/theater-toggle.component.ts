@@ -13,7 +13,7 @@ import { TheaterDirective } from './theater.directive';
   template: `
     <button
       type="button"
-      class="focus-ring flex items-center justify-center rounded-full border border-white/10 bg-white/10 text-zinc-300 backdrop-blur-md transition duration-300 ease-spring hover:bg-white/20 hover:text-white active:scale-90"
+      class="focus-ring flex items-center justify-center rounded-control border border-line-subtle bg-surface-3 text-ink-2 backdrop-blur-md transition duration-300 ease-spring hover:bg-surface-3 hover:text-ink-1 active:scale-90"
       [class]="theater.expanded() ? 'h-11 w-11' : 'h-8 w-8'"
       [attr.aria-label]="(theater.expanded() ? 'Minimizar ' : 'Ampliar a pantalla completa ') + name()"
       [attr.aria-expanded]="theater.expanded()"

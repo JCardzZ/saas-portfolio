@@ -74,9 +74,9 @@
     @apply px-4 py-3 text-sm text-slate-700;
   }
 
-  /* Vista pública: superficies de vidrio sobre negro puro */
+  /* Vidrio: solo para lo que flota sobre contenido (barra, diálogos, paneles flotantes). */
   .glass {
-    @apply border border-white/10 bg-white/5 backdrop-blur-xl;
+    @apply border border-line-strong bg-surface-2/80 backdrop-blur-xl;
   }
 
   .bento-grid {
@@ -204,7 +204,7 @@
   }
 
   .focus-ring {
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-text focus-visible:ring-offset-2
       focus-visible:ring-offset-black;
   }
 }
@@ -302,11 +302,11 @@
 .markdown h4 {
   font-weight: 600;
   line-height: 1.3;
-  color: #fff;
+  color: var(--text-1);
 }
 .markdown h1 { font-size: 1.2em; }
 .markdown h2 { font-size: 1.1em; }
-.markdown strong { font-weight: 600; color: #fff; }
+.markdown strong { font-weight: 600; color: var(--text-1); }
 .markdown ul,
 .markdown ol {
   padding-left: 1.3em;
@@ -315,7 +315,7 @@
 .markdown ol { list-style: decimal; }
 .markdown li + li { margin-top: 0.3em; }
 .markdown a {
-  color: #0a84ff;
+  color: var(--accent-text);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -342,7 +342,7 @@
 .markdown blockquote {
   border-left: 2px solid rgb(255 255 255 / 0.25);
   padding-left: 0.8em;
-  color: #a1a1aa;
+  color: var(--text-2);
 }
 .markdown table {
   display: block;

@@ -174,9 +174,15 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
     await page.locator('app-pipeline-view button.node', { hasText: 'Backend unit' }).click();
     const detail = page.locator('app-pipeline-view div[aria-live="polite"]');
     await expect(detail).toContainText('Por qué existe');
-    const graphBox = (await page.locator('app-pipeline-view app-stage-graph').boundingBox())!;
-    const detailBox = (await detail.boundingBox())!;
-    expect(detailBox.y, 'la ficha se abre debajo del grafo, no encima').toBeGreaterThanOrEqual(graphBox.y + graphBox.height);
+    // Las dos medidas en el mismo instante: al abrirse, la ficha se lleva a la vista y la página se mueve.
+    const [graphBottom, detailTop] = await page.evaluate(() => {
+      const view = document.querySelector('app-pipeline-view')!;
+      return [
+        view.querySelector('app-stage-graph')!.getBoundingClientRect().bottom,
+        view.querySelector('div[aria-live="polite"]')!.getBoundingClientRect().top,
+      ];
+    });
+    expect(detailTop, 'la ficha se abre debajo del grafo, no encima').toBeGreaterThanOrEqual(graphBottom);
     await page.mouse.move(0, 0);
     await capture(page, testInfo, 'app-pipeline-view', 'pipeline-view-con-ficha');
 

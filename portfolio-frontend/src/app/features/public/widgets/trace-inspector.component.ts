@@ -79,7 +79,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
         <div data-pill style="bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); right: calc(1rem + env(safe-area-inset-right, 0px))" class="fixed z-[46] flex max-w-[calc(100vw-2rem)] animate-scale-up items-center rounded-full border border-line-strong bg-surface-2/95 shadow-floating backdrop-blur-xl">
           <button
             type="button"
-            class="ui-focus flex min-w-0 items-center gap-2 rounded-full py-1.5 pl-3 pr-2 font-mono text-mono-sm text-ink-1 transition-colors duration-fast hover:bg-surface-3"
+            class="ui-focus flex min-w-0 items-center gap-2 rounded-control py-1.5 pl-3 pr-2 font-mono text-mono-sm text-ink-1 transition-colors duration-fast hover:bg-surface-3"
             [attr.aria-label]="'Desplegar el inspector de traza de ' + title() + ', ' + countLabel()"
             (click)="restoreWindow()"
           >
@@ -90,7 +90,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
           @if (demo) {
             <app-demo-notice short class="mx-1" />
           }
-          <button type="button" class="ui-focus mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-2 hover:bg-surface-3 hover:text-ink-1" aria-label="Cerrar el inspector de traza" (click)="inspector.close()">
+          <button type="button" class="ui-focus mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-control text-ink-2 hover:bg-surface-3 hover:text-ink-1" aria-label="Cerrar el inspector de traza" (click)="inspector.close()">
             <svg viewBox="0 0 16 16" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
           </button>
         </div>
