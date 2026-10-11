@@ -150,7 +150,7 @@
 .node-chaos-ok rect { stroke: #34d399; filter: drop-shadow(0 0 10px rgb(52 211 153 / 0.45)); }
 
 .chaos-badge { pointer-events: none; animation: node-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; transform-box: fill-box; transform-origin: center; }
-.chaos-badge text { fill: #0a0a0a; font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em; font-family: ui-monospace, monospace; }
+.chaos-badge text { fill: #0a0a0a; font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em; font-family: var(--font-mono); }
 .chaos-badge[data-level='down'] rect { fill: #f87171; }
 .chaos-badge[data-level='warn'] rect { fill: #fbbf24; }
 .chaos-badge[data-level='ok'] rect { fill: #34d399; }

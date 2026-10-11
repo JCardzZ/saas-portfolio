@@ -109,7 +109,7 @@ const TENANTS: Tenant[] = [
     }
     .gate text {
       font-size: 9.5px;
-      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      font-family: var(--font-mono);
     }
     .tenant, .database {
       cursor: pointer;

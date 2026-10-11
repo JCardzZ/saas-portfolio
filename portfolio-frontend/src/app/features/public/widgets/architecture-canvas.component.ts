@@ -308,7 +308,7 @@ const LEVELS: C4Level[] = [
       filter: drop-shadow(0 0 14px rgb(10 132 255 / 0.65));
     }
     .node-code .node-label {
-      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      font-family: var(--font-mono);
       font-size: 11.5px;
     }
     .node:focus-visible rect {
