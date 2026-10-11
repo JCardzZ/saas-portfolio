@@ -190,7 +190,7 @@
   .ui-segment {
     @apply ui-focus inline-flex min-h-7 shrink-0 items-center justify-center whitespace-nowrap rounded-[6px] px-3 text-body-sm
       font-medium text-ink-2 transition-colors duration-fast ease-standard hover:text-ink-1
-      aria-selected:bg-surface-3 aria-selected:text-ink-1;
+      aria-selected:bg-surface-3 aria-selected:text-ink-1 aria-checked:bg-surface-3 aria-checked:text-ink-1;
   }
 
   /* Pestañas subrayadas (cambian de contenido). */
@@ -382,43 +382,35 @@
 .dock-resizing .dock-aware { transition: none; }
 .dock-resizing { user-select: none; }
 
-/* Estudio de arquitectura · barra del proyecto: botones y menús desplegables (CloudInfraComponent). */
+/* Estudio de arquitectura · menús de la barra (CloudInfraComponent). `.project-button` es el botón
+   secundario del sistema, para los que quedan fuera de la barra. */
 .project-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.15);
-  background: rgb(255 255 255 / 0.05);
-  padding: 0.3rem 0.85rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #e4e4e7;
-  transition: background 0.3s;
+  @apply ui-btn-secondary;
 }
-.project-button:hover:not(:disabled) { background: rgb(255 255 255 / 0.1); }
-.project-button:disabled { opacity: 0.35; cursor: not-allowed; }
-.project-button:focus-visible, .project-button:focus-within { outline: 2px solid #0a84ff; outline-offset: 2px; }
 .project-menu {
   position: absolute;
   left: 0;
-  top: calc(100% + 0.4rem);
+  top: calc(100% + 0.5rem);
   z-index: 30;
-  border-radius: 1rem;
-  border: 1px solid rgb(255 255 255 / 0.15);
-  background: rgb(9 9 11 / 0.96);
-  padding: 0.35rem;
-  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.7);
+  max-width: calc(100vw - 3rem);
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface-2);
+  padding: 0.25rem;
+  box-shadow: var(--shadow-floating);
 }
 .project-item {
   display: block;
   width: 100%;
-  border-radius: 0.7rem;
-  padding: 0.4rem 0.55rem;
+  border-radius: var(--radius-control);
+  padding: 0.5rem 0.75rem;
   text-align: left;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-1);
 }
-.project-item:hover, .project-item:focus-visible { background: rgb(255 255 255 / 0.1); outline: none; }
+.project-item:hover:not(:disabled), .project-item:focus-visible, .project-item:focus-within { background: var(--bg-surface-3); outline: none; }
+.project-item:disabled { color: var(--text-disabled); cursor: not-allowed; }
 
 /* Estudio de arquitectura · zonas editables del lienzo (CloudInfraComponent). */
 svg .zone.zone-region { stroke-dasharray: 2 5; }

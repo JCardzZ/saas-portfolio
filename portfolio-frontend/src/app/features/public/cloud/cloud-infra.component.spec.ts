@@ -733,7 +733,7 @@ describe('CloudInfraComponent', () => {
   describe('editor', () => {
     const project = () => JSON.parse(localStorage.getItem('architecture-studio-project') ?? 'null');
     const menuItem = (element: HTMLElement, text: string) =>
-      Array.from(element.querySelectorAll<HTMLButtonElement>('.project-menu button')).find((item) => item.textContent?.includes(text))!;
+      Array.from(element.querySelectorAll<HTMLButtonElement>('.project-menu:not([hidden]) button')).find((item) => item.textContent?.includes(text))!;
     function openMenu(fixture: { detectChanges(): void }, element: HTMLElement, name: string) {
       button(element, name).click();
       fixture.detectChanges();
@@ -1264,7 +1264,7 @@ describe('CloudInfraComponent', () => {
   });
   describe('backend as the source of projects', () => {
     const menuItem = (element: HTMLElement, text: string) =>
-      Array.from(element.querySelectorAll<HTMLButtonElement>('.project-menu button')).find((item) => item.textContent?.includes(text))!;
+      Array.from(element.querySelectorAll<HTMLButtonElement>('.project-menu:not([hidden]) button')).find((item) => item.textContent?.includes(text))!;
     function openMenu(fixture: { detectChanges(): void }, element: HTMLElement, name: string) {
       button(element, name).click();
       fixture.detectChanges();
@@ -1963,5 +1963,56 @@ describe('CloudInfraComponent', () => {
       expect(costs(element)).toContain(['sin estimación', false]);
       expect(component.cost().unestimated.map((item) => item.name)).toEqual(['Snowflake']);
     });
+  });
+});
+
+describe('CloudInfraComponent · barra con jerarquía', () => {
+  beforeEach(() => {
+    localStorage.removeItem('architecture-studio-project');
+    resetMockApi();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(withInterceptors([mockApiInterceptor])), provideApi(environment.apiBaseUrl)],
+    });
+  });
+  afterEach(() => localStorage.removeItem('architecture-studio-project'));
+
+  function create() {
+    const fixture = TestBed.createComponent(CloudInfraComponent);
+    fixture.detectChanges();
+    return { fixture, element: fixture.nativeElement as HTMLElement };
+  }
+
+  it('deja a la vista una sola acción primaria y agrupa el resto en tres menús', () => {
+    const { element } = create();
+    const toolbar = element.querySelector('[role="toolbar"][aria-label="Estudio de arquitectura"]')!;
+
+    const primary = toolbar.querySelectorAll('.ui-btn-primary');
+    expect(primary.length).toBe(1);
+    expect(primary[0].textContent!.trim()).toBe('Editar arquitectura');
+
+    const menus = Array.from(toolbar.querySelectorAll<HTMLButtonElement>(':scope > [data-menu] > button'));
+    expect(menus.map((menu) => menu.textContent!.replace('▾', '').trim())).toEqual(['Proyecto', 'Ver', 'Analizar']);
+    expect(menus.every((menu) => menu.getAttribute('aria-expanded') === 'false')).toBeTrue();
+    // Cerrados, sus listas no se ven.
+    expect(Array.from(toolbar.querySelectorAll<HTMLElement>('#menu-project, #menu-view, #menu-analyze')).every((list) => list.hidden)).toBeTrue();
+  });
+
+  it('abre un menú cada vez y lo cierra al elegir una acción', () => {
+    const { fixture, element } = create();
+    const open = (name: string) => {
+      Array.from(element.querySelectorAll<HTMLButtonElement>('[data-menu] > button')).find((button) => button.textContent!.includes(name))!.click();
+      fixture.detectChanges();
+    };
+
+    open('Ver');
+    expect(element.querySelector<HTMLElement>('#menu-view')!.hidden).toBeFalse();
+    open('Analizar');
+    expect(element.querySelector<HTMLElement>('#menu-view')!.hidden).toBeTrue();
+    expect(element.querySelector<HTMLElement>('#menu-analyze')!.hidden).toBeFalse();
+
+    Array.from(element.querySelectorAll<HTMLButtonElement>('#menu-analyze button')).find((item) => item.textContent!.includes('Simular caos'))!.click();
+    fixture.detectChanges();
+    expect(element.querySelector<HTMLElement>('#menu-analyze')!.hidden).toBeTrue();
+    expect(element.querySelector('#chaos-panel')).not.toBeNull();
   });
 });

@@ -229,7 +229,8 @@ test.describe('patrones de datos en el Estudio, en escritorio', () => {
     expect(new Set(spots).size, 'nodos en posiciones distintas').toBe(spots.length);
     await capture(page, testInfo, 'app-cloud-infra', 'estudio-analitica-por-eventos');
 
-    await studio.getByRole('button', { name: 'Grafo', exact: true }).click();
+    await studio.locator('button[aria-controls="menu-view"]').click();
+    await studio.getByRole('button', { name: /^Grafo/ }).click();
     const inspector = page.locator('app-trace-inspector');
     await expect(inspector.locator('h3')).toContainText('Grafo');
     await expect(inspector.locator('[data-testid="graph-entry"]').first()).toContainText('[Graph Diff]');
@@ -250,7 +251,8 @@ test.describe('patrones de datos en el Estudio, en escritorio', () => {
     await expect(studio.locator('[data-testid="graph-warnings"] li')).toHaveText(['Instancia duplicada: Tableau #2. Este lienzo admite una sola.']);
     await expect(studio.locator('[data-testid="rule-badge"]')).toHaveCount(1);
     await expect(studio.locator('app-cost-badge')).toContainText('+2 sin estimación');
-    await studio.getByRole('button', { name: 'main.tf', exact: true }).click();
+    await studio.locator('button[aria-controls="menu-view"]').click();
+    await studio.getByRole('button', { name: /^main\.tf/ }).click();
     await expect(studio.locator('[data-testid="terraform-gap"]').first()).toHaveText('Tableau: sin soporte de Terraform todavía');
     await expect(studio.locator('#main-tf-panel pre')).toContainText('# Tableau: sin soporte de Terraform todavía');
     await capture(page, testInfo, 'app-cloud-infra', 'estudio-avisos-de-reglas');

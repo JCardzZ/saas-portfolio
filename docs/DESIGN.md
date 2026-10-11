@@ -253,10 +253,12 @@ Las etiquetas de honestidad («Simulación», «Planificado», «Reproducción»
 Una fila, tres zonas:
 
 1. **Izquierda — contexto**: selector de nube (pestañas segmentadas).
-2. **Centro — menús agrupados** (botones secundarios con cheurón): **Proyecto** (plantillas, importar, guardar en la nube, exportar, restablecer) · **Ver** (`main.tf`, grafo, auto-ordenar) · **Simular** (caos, tráfico, tumbar servicio, cargar CPU).
-3. **Derecha — acciones principales**: **«Editar arquitectura»** (primaria) y **«Co-piloto IA»** (secundaria). Deshacer y rehacer, como iconos fantasma, solo en modo edición.
+2. **Centro — menús agrupados** (botones secundarios con cheurón): **Proyecto** (plantillas, exportar, guardar en la nube, importar, restablecer) · **Ver** (`main.tf`, grafo, auto-ordenar) · **Analizar** (simular caos, auditar la topología). Deshacer y rehacer van a continuación, como iconos fantasma.
+3. **Derecha — acciones principales**: **«Editar arquitectura»** (primaria) y **«Co-piloto IA»** (secundaria).
 
-Máximo tres acciones visibles fuera de menús. En móvil, los tres menús se funden en uno («Más»).
+Una sola acción primaria y, como mucho, tres acciones visibles fuera de menús. El perfil de tráfico y los fallos por nodo («Tumbar servicio», «Cargar 100 % CPU») se quedan junto al lienzo, porque actúan sobre el nodo seleccionado. En pantallas estrechas la barra pasa a varias filas; los menús no se funden.
+
+Los menús están siempre en el DOM y se ocultan con `hidden`; abrir uno cierra el anterior, y elegir una acción lo cierra.
 
 ### 9.6 Nodo de diagrama
 

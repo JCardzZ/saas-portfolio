@@ -253,7 +253,7 @@ export class CloudInfraComponent {
   readonly saving = signal(false);
   readonly zoneKinds = ZONE_KINDS;
   /** Menú desplegado de la barra del proyecto. */
-  readonly menu = signal<'presets' | 'export' | 'zones' | 'cloud' | null>(null);
+  readonly menu = signal<'project' | 'presets' | 'export' | 'cloud' | 'view' | 'analyze' | 'zones' | null>(null);
   readonly projectError = signal<string | null>(null);
   readonly exporting = signal(false);
   private readonly history = new History<StudioProject>();
