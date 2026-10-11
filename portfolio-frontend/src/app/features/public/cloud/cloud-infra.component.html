@@ -322,7 +322,7 @@
         @if (zone.kind === 'public' || zone.kind === 'private') {
           <text class="zone-sub" [attr.x]="zone.x + zone.w / 2" [attr.y]="zone.y + 16" text-anchor="middle">{{ zoneLabelOf(zone) }}</text>
         } @else {
-          <text class="zone-label" [attr.x]="zone.x + 16" [attr.y]="zone.y + 20" [attr.fill]="zone.kind === 'vpc' ? '#34d399' : zone.kind === 'cloud' ? providerColor() : '#a78bfa'">{{ zoneLabelOf(zone) }}</text>
+          <text class="zone-label" [attr.x]="zone.x + 16" [attr.y]="zone.y + 20">{{ zoneLabelOf(zone) }}</text>
         }
         @if (editing()) {
           <!-- Asas de edición: el rótulo mueve la zona (con lo que contiene) y la esquina la redimensiona. -->
@@ -417,7 +417,7 @@
           (pointercancel)="onNodePointerUp()"
           (keydown)="onNodeKeydown($event, node)"
         >
-          <rect [attr.x]="node.x - width / 2" [attr.y]="node.y - height / 2" [attr.width]="width" [attr.height]="height" rx="14" />
+          <rect [attr.x]="node.x - width / 2" [attr.y]="node.y - height / 2" [attr.width]="width" [attr.height]="height" rx="8" />
           @if (iconOf(node); as icon) {
             @if (icon.image) {
               <image class="node-icon" [attr.href]="icon.image" [attr.x]="node.x - 10" [attr.y]="node.y - 31" width="20" height="20" aria-hidden="true" />

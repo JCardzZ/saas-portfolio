@@ -421,23 +421,23 @@
 .project-item:hover, .project-item:focus-visible { background: rgb(255 255 255 / 0.1); outline: none; }
 
 /* Estudio de arquitectura · zonas editables del lienzo (CloudInfraComponent). */
-svg .zone.zone-region { stroke: #a78bfa; stroke-dasharray: 2 5; }
-svg .zone.zone-selected { stroke: #fff !important; stroke-width: 1.8; stroke-dasharray: none; }
+svg .zone.zone-region { stroke-dasharray: 2 5; }
+svg .zone.zone-selected { stroke: var(--accent-text) !important; stroke-width: 1.5; stroke-dasharray: none; }
 .zone-grip { fill: transparent; cursor: move; outline: none; touch-action: none; }
 .zone-grip:hover, .zone-grip:focus-visible { fill: rgb(255 255 255 / 0.08); }
 .zone-grip:focus-visible { stroke: #fff; stroke-width: 1.5; }
 .zone-corner { fill: rgb(255 255 255 / 0.45); cursor: nwse-resize; touch-action: none; }
 .zone-corner:hover { fill: #fff; }
-svg .zone.zone-target { stroke: #fff; stroke-width: 2; stroke-dasharray: none; fill: rgb(255 255 255 / 0.09); }
+svg .zone.zone-target { stroke: var(--accent-text); stroke-width: 1.5; stroke-dasharray: none; fill: rgb(111 168 255 / 0.08); }
 .connect { cursor: crosshair; outline: none; touch-action: none; }
-.connect circle { fill: #0a84ff; transition: fill 0.2s; }
-.connect:hover circle, .connect:focus-visible circle, .connect[aria-pressed='true'] circle { fill: #409cff; }
+.connect circle { fill: var(--accent-solid); transition: fill 0.2s; }
+.connect:hover circle, .connect:focus-visible circle, .connect[aria-pressed='true'] circle { fill: var(--accent-text); }
 .connect:focus-visible circle { stroke: #fff; stroke-width: 1.5; }
-svg .wire.wire-preview { stroke: #0a84ff; stroke-width: 2; stroke-dasharray: 6 5; pointer-events: none; }
+svg .wire.wire-preview { stroke: var(--accent-text); stroke-width: 1.5; stroke-dasharray: 6 5; pointer-events: none; }
 
 /* Estudio de arquitectura · tráfico en vivo (CloudInfraComponent). */
-svg .pulse.pulse-warn { stroke: #f87171; filter: drop-shadow(0 0 5px #ef4444); }
-svg .pulse.pulse-boost { stroke: #34d399; filter: drop-shadow(0 0 5px #10b981); }
+svg .pulse.pulse-warn { stroke: var(--status-danger); }
+svg .pulse.pulse-boost { stroke: var(--status-ok); }
 /* Reloj del widget de métricas: su animación no se ve; cada vuelta es un latido de la simulación. */
 .vitals-clock { animation: vitals-beat 1.4s linear infinite; }
 @keyframes vitals-beat { 50% { opacity: 0.55; } }

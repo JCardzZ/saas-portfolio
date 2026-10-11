@@ -191,7 +191,7 @@ describe('CloudInfraComponent', () => {
         expect(TestBed.inject(SystemEventsService).events().length).toBe(count);
       });
 
-      it('lights the wires through the selected node with its brand colour', () => {
+      it('lights the wires through the selected node with the accent, not with a brand colour', () => {
         const { fixture, element } = create();
         click(element, 'ECS Fargate');
         fixture.detectChanges();
@@ -199,16 +199,16 @@ describe('CloudInfraComponent', () => {
         // La API tiene cuatro conexiones: balanceador, PostgreSQL, Redis y Gemini.
         const active = Array.from(element.querySelectorAll<SVGPathElement>('path.wire-active'));
         expect(active.length).toBe(4);
-        expect(active.every((wire) => wire.style.getPropertyValue('--flow') === '#ED7100')).toBeTrue();
-        expect(getComputedStyle(active[0]).filter).toContain('drop-shadow');
+        expect(active.every((wire) => getComputedStyle(wire).stroke === 'rgb(111, 168, 255)')).toBeTrue();
+        expect(getComputedStyle(active[0]).filter).toBe('none');
         // Dos partículas por conexión con el tráfico normal.
         expect(element.querySelectorAll('path.pulse-active').length).toBe(8);
-        expect(element.querySelector<SVGPathElement>('path.wire:not(.wire-active)')!.style.getPropertyValue('--flow')).toBe('');
+        expect(getComputedStyle(element.querySelector<SVGPathElement>('path.wire:not(.wire-active)')!).stroke).toBe('rgb(58, 63, 74)');
 
         click(element, 'ElastiCache');
         fixture.detectChanges();
         expect(element.querySelectorAll('path.wire-active').length).toBe(1);
-        expect(element.querySelector<SVGPathElement>('path.wire-active')!.style.getPropertyValue('--flow')).toBe('#C925D1');
+        expect(getComputedStyle(element.querySelector<SVGPathElement>('path.wire-active')!).stroke).toBe('rgb(111, 168, 255)');
       });
     });
 

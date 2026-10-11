@@ -12,19 +12,20 @@ import { TelemetryStreamService } from '../data/telemetry-stream.service';
 import { JsonTokenType, tokenizeJson } from '../data/graph-diff';
 import { InspectorLayout, InspectorMode, TraceInspectorService } from '../data/trace-inspector.service';
 
-/** Colores de la sintaxis JSON en el filtro «Grafo». */
+/** Tonos de la sintaxis JSON en el filtro «Grafo»: solo neutros; el color queda para lo añadido y lo quitado. */
 const TOKEN_CLASSES: Record<JsonTokenType, string> = {
-  key: 'text-sky-300', string: 'text-emerald-200', number: 'text-amber-200', literal: 'text-violet-300', punct: 'text-zinc-500',
+  key: 'text-ink-1', string: 'text-ink-2', number: 'text-ink-1', literal: 'text-ink-2', punct: 'text-ink-3',
 };
 
+/** El color solo dice el nivel: correcto en verde, aviso en ámbar; lo demás, neutro. */
 const KIND_CLASSES: Record<SystemEventKind, string> = {
-  ok: 'text-emerald-400',
-  cache: 'text-teal-300',
-  vector: 'text-sky-400',
-  ai: 'text-violet-400',
-  auth: 'text-amber-300',
-  info: 'text-zinc-300',
-  warn: 'text-red-400',
+  ok: 'text-status-ok',
+  cache: 'text-ink-1',
+  vector: 'text-ink-1',
+  ai: 'text-ink-1',
+  auth: 'text-ink-1',
+  info: 'text-ink-1',
+  warn: 'text-status-warn',
 };
 
 /** Tamaño de cada disposición. Las acopladas se publican como variables CSS para que la página se encoja. */
@@ -50,8 +51,8 @@ const LAYOUT_CLASSES: Record<Exclude<InspectorLayout, 'pill'>, string> = {
   // Acoplado a un borde llega hasta él: el contenido se aparta de la muesca y de la barra de gestos.
   bottom: 'inset-x-0 bottom-0 border-t pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]',
   right: 'inset-y-0 right-0 overflow-hidden border-l pb-[env(safe-area-inset-bottom)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]',
-  floating: 'overflow-hidden rounded-2xl border shadow-2xl shadow-black/70',
-  sheet: 'inset-x-0 bottom-0 overflow-hidden rounded-t-2xl border-t shadow-2xl shadow-black/70 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]',
+  floating: 'overflow-hidden rounded-panel border shadow-floating',
+  sheet: 'inset-x-0 bottom-0 overflow-hidden rounded-t-panel border-t shadow-floating pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]',
 };
 
 const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
@@ -75,28 +76,27 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
   template: `
     @if (icon(); as icon) {
       @if (layout() === 'pill') {
-        <div data-pill style="bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); right: calc(1rem + env(safe-area-inset-right, 0px))" class="fixed z-[46] flex max-w-[calc(100vw-2rem)] animate-scale-up items-center rounded-full border bg-zinc-950/90 shadow-xl shadow-black/60 backdrop-blur-2xl" [style.border-color]="tint(55)">
+        <div data-pill style="bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); right: calc(1rem + env(safe-area-inset-right, 0px))" class="fixed z-[46] flex max-w-[calc(100vw-2rem)] animate-scale-up items-center rounded-full border border-line-strong bg-surface-2/95 shadow-floating backdrop-blur-xl">
           <button
             type="button"
-            class="focus-ring flex items-center gap-2 rounded-full py-1.5 pl-3 pr-2 font-mono text-[11px] text-zinc-100 transition hover:bg-white/10"
+            class="ui-focus flex min-w-0 items-center gap-2 rounded-full py-1.5 pl-3 pr-2 font-mono text-mono-sm text-ink-1 transition-colors duration-fast hover:bg-surface-3"
             [attr.aria-label]="'Desplegar el inspector de traza de ' + title() + ', ' + countLabel()"
             (click)="restoreWindow()"
           >
-            <span class="h-2.5 w-2.5 rounded-full bg-[#28c840]" aria-hidden="true"></span>
             <app-tech-icon [icon]="icon" [size]="14" />
             Inspector de traza · {{ title() }}
-            <span class="tabular-nums text-zinc-400">({{ countLabel() }})</span>
+            <span class="tabular-nums text-ink-2">({{ countLabel() }})</span>
           </button>
           @if (demo) {
             <app-demo-notice short class="mx-1" />
           }
-          <button type="button" class="focus-ring mr-1 flex h-6 w-6 items-center justify-center rounded-full text-zinc-400 hover:bg-white/10 hover:text-white" aria-label="Cerrar el inspector de traza" (click)="inspector.close()">
+          <button type="button" class="ui-focus mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-2 hover:bg-surface-3 hover:text-ink-1" aria-label="Cerrar el inspector de traza" (click)="inspector.close()">
             <svg viewBox="0 0 16 16" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
           </button>
         </div>
       } @else {
         <section
-          class="fixed z-[46] flex animate-slide-up flex-col bg-zinc-950/90 backdrop-blur-2xl transition-colors duration-500 ease-spring"
+          class="fixed z-[46] flex animate-slide-up flex-col border-line-strong bg-surface-1/95 backdrop-blur-xl"
           [class]="layoutClasses()"
           [class.inspector-dimmed]="dimmed()"
           [attr.data-layout]="layout()"
@@ -104,7 +104,6 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
           (mouseleave)="overConsole.set(false)"
           (focusin)="overConsole.set(true)"
           (focusout)="overConsole.set(false)"
-          [style.border-color]="tint(55)"
           [style.height]="height()"
           [style.width]="width()"
           [style.left.px]="layout() === 'floating' ? position().x : null"
@@ -133,20 +132,18 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
             ></div>
           }
           <header
-            class="flex shrink-0 items-center gap-2 border-b px-3 py-1.5 transition-colors duration-500 ease-spring"
+            class="flex min-h-10 shrink-0 items-center gap-2 border-b border-line-subtle bg-surface-2 px-3 py-1"
             [class.cursor-grab]="layout() === 'floating'"
             [style.touch-action]="layout() === 'floating' ? 'none' : null"
-            [style.background]="tint(22)"
-            [style.border-color]="tint(45)"
             (pointerdown)="onDragStart($event)"
             (pointermove)="onDragMove($event)"
             (pointerup)="onDragEnd()"
             (pointercancel)="onDragEnd()"
           >
-            <!-- Semáforo de macOS: rojo cierra, amarillo minimiza a la píldora, verde maximiza. -->
+            <!-- Semáforo: cerrar, minimizar a la píldora y maximizar. Neutro; toma su color al pasar el cursor o con foco. -->
             <div class="traffic flex shrink-0 items-center" role="group" aria-label="Ventana del inspector">
-              <button type="button" class="focus-ring" aria-label="Cerrar el inspector de traza" title="Cerrar" (click)="inspector.close()"><span class="bg-[#ff5f57]"></span></button>
-              <button type="button" class="focus-ring" aria-label="Minimizar a píldora" title="Minimizar" (click)="minimize()"><span class="bg-[#febc2e]"></span></button>
+              <button type="button" class="focus-ring" aria-label="Cerrar el inspector de traza" title="Cerrar" (click)="inspector.close()"><span class="traffic-close"></span></button>
+              <button type="button" class="focus-ring" aria-label="Minimizar a píldora" title="Minimizar" (click)="minimize()"><span class="traffic-minimize"></span></button>
               <button
                 type="button"
                 class="focus-ring"
@@ -154,20 +151,20 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
                 [attr.aria-pressed]="maximized()"
                 [title]="maximized() ? 'Restaurar' : 'Maximizar'"
                 (click)="toggleMaximized()"
-              ><span class="bg-[#28c840]"></span></button>
+              ><span class="traffic-maximize"></span></button>
             </div>
             <app-tech-icon class="ml-1" [icon]="icon" [size]="14" />
-            <h3 class="min-w-0 flex-1 truncate font-mono text-[11px] font-normal text-zinc-100">
+            <h3 class="min-w-0 flex-1 truncate font-mono text-mono-sm font-normal text-ink-1">
               {{ layout() === 'right' ? 'Traza' : 'Inspector de traza' }} · {{ title() }}
-              <span class="text-zinc-400">— {{ inspector.graphView() ? 'lienzo' : live() ? 'en vivo' : 'simulación' }}</span>
+              <span class="text-ink-2">— {{ inspector.graphView() ? 'lienzo' : live() ? 'en vivo' : 'simulación' }}</span>
             </h3>
             @if (demo) {
               <app-demo-notice short />
             }
             <button
               type="button"
-              class="focus-ring rounded-md px-2 py-1 font-mono text-[11px] transition hover:bg-white/10 hover:text-white"
-              [class]="inspector.graphView() ? 'bg-white/15 text-white' : 'text-zinc-400'"
+              class="ui-focus rounded-control px-2 py-1 font-mono text-mono-sm transition-colors duration-fast hover:bg-surface-3 hover:text-ink-1"
+              [class]="inspector.graphView() ? 'bg-surface-3 text-ink-1' : 'text-ink-2'"
               [attr.aria-pressed]="inspector.graphView()"
               title="Filtro Grafo: diff del JSON del lienzo"
               (click)="inspector.selectGraph()"
@@ -176,7 +173,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
             @if (layout() === 'floating') {
               <button
                 type="button"
-                class="focus-ring flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-white/10 hover:text-white"
+                class="ui-focus flex h-7 w-7 items-center justify-center rounded-control text-ink-2 hover:bg-surface-3 hover:text-ink-1"
                 aria-label="Mover el inspector: usa las flechas del teclado"
                 (keydown)="onMoveKey($event)"
               >
@@ -187,8 +184,8 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
               @for (button of modeButtons(); track button.mode) {
                 <button
                   type="button"
-                  class="focus-ring flex h-7 w-7 items-center justify-center rounded-md transition hover:bg-white/10 hover:text-white"
-                  [class]="button.mode === inspector.mode() ? 'bg-white/15 text-white' : 'text-zinc-400'"
+                  class="ui-focus flex h-7 w-7 items-center justify-center rounded-control transition-colors duration-fast hover:bg-surface-3 hover:text-ink-1"
+                  [class]="button.mode === inspector.mode() ? 'bg-surface-3 text-ink-1' : 'text-ink-2'"
                   [attr.aria-label]="button.label"
                   [attr.aria-pressed]="button.mode === inspector.mode()"
                   [title]="button.label"
@@ -200,13 +197,13 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
             </div>
           </header>
 
-          <div #log class="min-h-0 flex-1 overflow-y-auto px-3 py-2.5 font-mono text-[11px] leading-relaxed" role="log" aria-live="off" tabindex="0" [attr.aria-label]="'Eventos de ' + title()">
+          <div #log class="min-h-0 flex-1 overflow-y-auto px-3 py-2.5 font-mono text-mono" role="log" aria-live="off" tabindex="0" [attr.aria-label]="'Eventos de ' + title()">
             @if (inspector.graphView()) {
               <div class="mb-2 flex flex-wrap items-center gap-2">
-                <span class="text-zinc-400">Diff del JSON del grafo del lienzo, tras cada cambio.</span>
+                <span class="text-ink-2">Diff del JSON del grafo del lienzo, tras cada cambio.</span>
                 <button
                   type="button"
-                  class="focus-ring rounded-full border border-white/20 px-2.5 py-0.5 text-zinc-100 hover:bg-white/10"
+                  class="ui-btn-secondary font-mono"
                   [attr.aria-expanded]="fullJson()"
                   (click)="fullJson.set(!fullJson())"
                 >{{ fullJson() ? 'Ver el diff' : 'Ver JSON completo' }}</button>
@@ -215,34 +212,28 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
                 <pre class="whitespace-pre-wrap break-words" data-testid="graph-json">@for (token of jsonTokens(); track $index) {<span [class]="tokenClasses[token.type]">{{ token.text }}</span>}</pre>
               } @else {
                 @for (entry of inspector.graphEntries(); track entry.id) {
-                  <div class="animate-slide-up mb-1.5" data-testid="graph-entry">
-                    <p><span class="text-zinc-600">{{ entry.time }}</span> <span class="text-sky-300">[Graph Diff]</span> <span class="text-zinc-400">{{ entry.summary }}</span></p>
+                  <div class="mb-1.5 animate-fade-in" data-testid="graph-entry">
+                    <p><span class="tabular-nums text-ink-3">{{ entry.time }}</span><span class="text-ink-1"> [Graph Diff]</span><span class="text-ink-2"> {{ entry.summary }}</span></p>
                     @for (line of entry.lines; track $index) {
-                      <p class="break-words pl-3" [class]="line.sign === '+' ? 'bg-emerald-400/[0.07]' : 'bg-red-400/[0.07]'">
-                        <span [class]="line.changed ? 'text-amber-300' : line.sign === '+' ? 'text-emerald-300' : 'text-red-300'">{{ line.changed ? '~' : '' }}{{ line.sign }} {{ line.label }}</span>
+                      <p class="break-words pl-3" [class]="line.sign === '+' ? 'bg-status-ok/[0.07]' : 'bg-status-danger/[0.07]'">
+                        <span [class]="line.changed ? 'text-status-warn' : line.sign === '+' ? 'text-status-ok' : 'text-status-danger'">{{ line.changed ? '~' : '' }}{{ line.sign }} {{ line.label }}</span>
                         @for (token of line.tokens; track $index) {<span [class]="tokenClasses[token.type]">{{ token.text }}</span>}
                       </p>
                     }
                   </div>
                 } @empty {
-                  <p class="text-zinc-500">Aún no hay cambios en el grafo. Edita el lienzo del Estudio de arquitectura y aparecerán aquí.</p>
+                  <p class="text-ink-3">Aún no hay cambios en el grafo. Edita el lienzo del Estudio de arquitectura y aparecerán aquí.</p>
                 }
               }
             } @else {
               @for (event of inspector.events(); track event.id) {
-                <p class="animate-slide-up break-words">
-                  @if (event.origin === 'live') {
-                    <span class="text-emerald-400" title="Evento real del backend">●</span>
-                  }
-                  <span class="text-zinc-600">{{ event.time }}</span>
-                  @if (event.level) {
-                    <span [class]="kindClasses[event.kind]"> [{{ event.level }}]</span>
-                  }
-                  <span [class]="kindClasses[event.kind]"> [{{ event.tag }}]</span>
-                  <span class="text-zinc-400"> {{ event.detail }}</span>
+                <!-- Dos columnas: la hora, y el evento, que al partirse sigue bajo su propia columna. -->
+                <p class="log-row animate-fade-in">
+                  <span class="tabular-nums text-ink-3">@if (event.origin === 'live') {<span class="text-status-ok" title="Evento real del backend">● </span>}{{ event.time }}</span>
+                  <span class="min-w-0 break-words">@if (event.level) {<span [class]="kindClasses[event.kind]">[{{ event.level }}] </span>}<span [class]="kindClasses[event.kind]">[{{ event.tag }}]</span><span class="text-ink-2"> {{ event.detail }}</span></span>
                 </p>
               } @empty {
-                <p class="text-zinc-500">Aún no hay eventos de {{ title() }}. Aparecerán aquí en cuanto intervenga en una petición.</p>
+                <p class="text-ink-3">Aún no hay eventos de {{ title() }}. Aparecerán aquí en cuanto intervenga en una petición.</p>
               }
             }
           </div>
@@ -256,7 +247,8 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
     }
   `,
   styles: `
-    section { transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.5s; }
+    section { transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+    .log-row { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 0.75rem; }
     /* Flotante mientras se usa el lienzo: casi transparente y sin desenfoque, para ver los nodos de debajo. */
     .inspector-dimmed {
       opacity: 0.3;
@@ -282,16 +274,18 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
       position: absolute;
       inset: 3px 0 auto 0;
       height: 2px;
-      background: #38bdf8;
-      box-shadow: 0 0 10px 1px rgb(56 189 248 / 0.7);
+      background: var(--accent-text);
       opacity: 0;
       transition: opacity 0.2s;
     }
     .resize-handle:hover::after, .resize-handle:focus-visible::after, .resize-handle.resizing::after { opacity: 1; }
     /* Semáforo: cada botón tiene un área de pulsación mayor que el círculo que se ve. */
     .traffic button { display: flex; height: 1.5rem; width: 1.125rem; align-items: center; justify-content: center; border-radius: 9999px; }
-    .traffic span { height: 0.75rem; width: 0.75rem; border-radius: 9999px; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.25); transition: filter 0.2s; }
-    .traffic button:hover span { filter: brightness(1.25); }
+    .traffic span { height: 0.75rem; width: 0.75rem; border-radius: 9999px; background: var(--border-strong); transition: background var(--duration-fast) var(--ease-standard); }
+    /* Con el cursor en la cabecera, o con el foco en uno de los tres, cada punto toma su color. */
+    header:hover .traffic-close, .traffic:focus-within .traffic-close { background: var(--status-danger); }
+    header:hover .traffic-minimize, .traffic:focus-within .traffic-minimize { background: var(--status-warn); }
+    header:hover .traffic-maximize, .traffic:focus-within .traffic-maximize { background: var(--status-ok); }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -527,11 +521,6 @@ export class TraceInspectorComponent {
     this.maxHeight.set(maxBottomHeight());
     this.bottomHeight.update(clampHeight);
     this.position.update(clampToViewport);
-  }
-
-  /** Color de marca mezclado con transparente, para teñir cabecera y borde sin perder legibilidad. */
-  tint(percent: number): string {
-    return `color-mix(in srgb, ${this.icon()?.color ?? '#fff'} ${percent}%, transparent)`;
   }
 
   // Flotante: se arrastra por la cabecera (no por sus botones) o se mueve con las flechas.
