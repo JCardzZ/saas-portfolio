@@ -751,11 +751,43 @@ paths:
         '429':
           $ref: '#/components/responses/RateLimitError'
 
+  /public/architecture/pricing:
+    post:
+      tags: [Architecture Studio]
+      summary: Quote the list price of the services of a canvas
+      description: >
+        Returns, for each service code, the public list price of the SKU the platform maps it to in that cloud.
+        The SKU is chosen by the server from a closed table: the caller only names services of the catalog.
+        Prices come from the provider's public price API and are cached for 24 hours; if the provider does not
+        answer, the last known price is returned as `STALE`. A service without a mapped SKU or a public price
+        API is not guessed: it comes back as `UNKNOWN_PRICING` or `UNESTIMATED_ENTERPRISE_LICENSE`.
+        Each lookup is announced on `/telemetry/live-stream`. Rate limited per client address.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PricingRequest'
+      responses:
+        '200':
+          description: One quote per distinct service code, in the order received.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PricingResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
   /admin/architecture/projects:
     post:
       tags: [Architecture Studio]
       summary: Save a new architecture project
-      description: Saved projects are listed publicly, so only an administrator can create them.
+      description: >-
+        Saved projects are listed publicly, so only an administrator can create them. The graph must follow the
+        rules of the studio (which piece may feed which, valid ends for each link kind, instances per service);
+        a graph that breaks one answers 400.
       security: [{ BearerAuth: [] }]
       requestBody:
         required: true
@@ -779,7 +811,7 @@ paths:
     put:
       tags: [Architecture Studio]
       summary: Update a saved architecture project
-      description: Presets are read-only; updating one answers 400.
+      description: Presets are read-only; updating one answers 400, and so does a graph that breaks the rules of the studio.
       security: [{ BearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ArchitectureProjectId'
@@ -1034,7 +1066,9 @@ components:
         isEnterprise: { type: boolean, description: "Typically adopted at enterprise scale." }
 
     ArchitectureGraphElement:
-      description: A node, connection or zone of the canvas. Its shape belongs to the Architecture Studio editor, which validates it on load.
+      description: >-
+        A node, connection or zone of the canvas. Its shape belongs to the Architecture Studio editor, which validates it
+        on load. A connection may carry `kind` (CDC_STREAM, EVENT_BUS, ANALYTICS_SINK or REPLICATION) to say what it moves.
       type: object
       additionalProperties: true
 
@@ -1173,9 +1207,59 @@ components:
         timestamp: { type: string, format: date-time }
         eventType:
           type: string
-          enum: [CACHE_HIT, CACHE_MISS, VECTOR_SEARCH, RAG_QUERY, JWT_VERIFIED]
+          enum: [CACHE_HIT, CACHE_MISS, VECTOR_SEARCH, RAG_QUERY, JWT_VERIFIED, PRICING_REQUEST, PRICING_CACHED, PRICING_UNESTIMATED, PRICING_FALLBACK]
         details: { type: string, example: "5 fragmentos · 12 ms" }
         traceId: { type: string, example: "3f1c9a52-8d4e-4b7a-9c61-2e5f0b7d4a18" }
+
+    PricingRequest:
+      type: object
+      required: [cloudProvider, services]
+      properties:
+        cloudProvider: { type: string, enum: [aws, gcp, azure] }
+        services:
+          description: Service codes of the catalog (the `type` of each node of the canvas).
+          type: array
+          minItems: 1
+          maxItems: 60
+          items: { type: string, pattern: '^[A-Za-z0-9_-]{1,48}$', example: "vm" }
+
+    PricingResponse:
+      type: object
+      required: [cloudProvider, currency, quotes]
+      properties:
+        cloudProvider: { type: string, enum: [aws, gcp, azure] }
+        currency: { type: string, example: "USD" }
+        quotes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceQuote'
+
+    PriceQuote:
+      type: object
+      required: [code, status]
+      properties:
+        code: { type: string, example: "vm" }
+        status:
+          type: string
+          description: >
+            LIVE: just read from the provider. CACHED: read from the provider within the last 24 hours.
+            STALE: the provider did not answer and this is the last known price. UNKNOWN_PRICING: no SKU mapped
+            or no price available. UNESTIMATED_ENTERPRISE_LICENSE: licensed product without a public price API.
+          enum: [LIVE, CACHED, STALE, UNKNOWN_PRICING, UNESTIMATED_ENTERPRISE_LICENSE]
+        sku: { type: string, example: "D2s_v5" }
+        description: { type: string, example: "Virtual Machines Dsv5 Series · D2s v5" }
+        region: { type: string, example: "eastus" }
+        unit: { type: string, enum: [HOURLY, MONTHLY, PER_GB] }
+        unitPrice: { type: number, format: double, example: 0.096 }
+        monthlyCost:
+          description: Unit price over a 730 hour month, for one unit. Absent when the unit cannot be turned into a month.
+          type: number
+          format: double
+          example: 70.08
+        currency: { type: string, example: "USD" }
+        source: { type: string, example: "Azure Retail Prices API" }
+        fetchedAt: { type: string, format: date-time }
+        note: { type: string, example: "Solo el cómputo; no incluye disco ni tráfico de salida." }
 
     AIQueryRequest:
       type: object

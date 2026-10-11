@@ -57,12 +57,12 @@ class CloudCatalogSeederTest {
 
     @Test
     void seedsOneEntryPerServiceAndCloud() throws Exception {
-        assertThat(seeder.seed()).isEqualTo(96);
+        assertThat(seeder.seed()).isEqualTo(132);
 
         List<CloudCatalogItemDomain> all = service.find(Optional.empty());
-        assertThat(all).hasSize(96);
+        assertThat(all).hasSize(132);
         assertThat(all).extracting(CloudCatalogItemDomain::provider).containsOnly(CloudProviderDomain.values());
-        assertThat(service.find(Optional.of(CloudProviderDomain.GCP))).hasSize(32).allMatch(item -> item.provider() == CloudProviderDomain.GCP);
+        assertThat(service.find(Optional.of(CloudProviderDomain.GCP))).hasSize(44).allMatch(item -> item.provider() == CloudProviderDomain.GCP);
 
         // La misma clase de servicio, con su nombre en cada nube.
         assertThat(all).filteredOn(item -> item.code().equals("api-gateway")).extracting(CloudCatalogItemDomain::name)
@@ -84,7 +84,7 @@ class CloudCatalogSeederTest {
 
         assertThat(seeder.seed()).isEqualTo(1);
 
-        assertThat(repository.rows).hasSize(96);
+        assertThat(repository.rows).hasSize(132);
         assertThat(repository.rows).filteredOn(item -> item.id().equals("aws:functions")).extracting(CloudCatalogItemDomain::defaultMonthlyCost)
                 .containsExactly(new BigDecimal("9.50"));
     }
@@ -96,7 +96,7 @@ class CloudCatalogSeederTest {
         int readsAfterSeeding = repository.reads;
 
         // Fallo de caché: se lee de la base de datos y se repuebla.
-        assertThat(service.find(Optional.empty())).hasSize(96);
+        assertThat(service.find(Optional.empty())).hasSize(132);
         verify(cache).put(any(), any(), any());
         assertThat(repository.reads).isEqualTo(readsAfterSeeding + 1);
 

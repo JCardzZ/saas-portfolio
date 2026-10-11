@@ -66,7 +66,8 @@ export type TechIconKey =
   | 'awsAppRunner' | 'awsAthena' | 'awsNeptune' | 'awsAurora' | 'awsBedrock' | 'awsFlink' | 'awsStepFunctions'
   | 'azAppService' | 'azStreamAnalytics' | 'azOpenAi' | 'azLogicApps'
   | 'gcpApigee' | 'gcpAlloyDb' | 'gcpSpanner' | 'gcpVertexAi' | 'gcpDataflow' | 'gcpArmor' | 'gcpCloudRun' | 'gcpCloudSql'
-  | 'gcpGke' | 'gcpComputeEngine' | 'gcpAppEngine' | 'gcpWorkflows';
+  | 'gcpGke' | 'gcpComputeEngine' | 'gcpAppEngine' | 'gcpWorkflows'
+  | 'dataService' | 'graph';
 
 const WHITE = '#FFFFFF';
 
@@ -97,6 +98,11 @@ export const TECH_ICONS: Record<TechIconKey, TechIcon> = {
   github: icon(siGithub),
   githubActions: icon(siGithubactions, 'GitHub Actions'),
   cloudflarePages: neutral('Cloudflare Pages'),
+  // Productos de datos de terceros: sin permiso escrito de cada marca van con el símbolo neutro
+  // y su nombre en texto (docs/brand-usage.md).
+  dataService: neutral('Servicio de datos'),
+  // Filtro «Grafo» del inspector de traza: no es una tecnología, es el JSON del lienzo.
+  graph: neutral('Grafo'),
   caddy: icon(siCaddy),
   neon: icon(siNeon),
   upstash: icon(siUpstash),

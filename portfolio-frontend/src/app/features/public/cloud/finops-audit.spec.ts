@@ -1,5 +1,5 @@
 import { SERVICE_CATALOG } from './cloud-catalog.data';
-import { NODE_COSTS, catalogRows, estimateCost, formatUsd, mergeCatalog } from './cloud-costs.data';
+import { NODE_COSTS, catalogRows, estimateCost, formatUsd, mergeCatalog, COST_UNKNOWN_TYPES } from './cloud-costs.data';
 import { CLOUD_LINKS, CLOUD_NODES, CloudNode } from './cloud-topology.data';
 import { auditPrompt, auditTopology } from './topology-auditor';
 
@@ -12,9 +12,24 @@ function custom(type: string, zone: CloudNode['zone'] = 'data'): CloudNode {
 }
 
 describe('estimateCost', () => {
-  it('has a price for every node type of the diagram and the catalog', () => {
+  it('has a price for every node type of the diagram and the catalog, or says there is none', () => {
     const types = [...CLOUD_NODES.map((node) => node.type), ...SERVICE_CATALOG.flatMap((category) => category.items.map((item) => item.type))];
-    expect(types.filter((type) => !NODE_COSTS[type])).toEqual([]);
+    expect(types.filter((type) => !NODE_COSTS[type] && !COST_UNKNOWN_TYPES.has(type))).toEqual([]);
+    // Nunca las dos cosas: un tipo con precio no puede figurar como «sin estimación».
+    expect([...COST_UNKNOWN_TYPES].filter((type) => NODE_COSTS[type])).toEqual([]);
+    expect([...COST_UNKNOWN_TYPES].filter((type) => !types.includes(type))).toEqual([]);
+  });
+
+  it('lists the services without an estimate instead of counting them as free', () => {
+    const debezium = { ...CLOUD_NODES[0], id: 'debezium-1', type: 'debezium', service: 'Debezium' };
+    const named = { ...debezium, id: 'debezium-2', name: 'CDC de pedidos' };
+    const estimate = estimateCost([...CLOUD_NODES, debezium, named], 'aws');
+    expect(estimate.total).toBe(estimateCost(CLOUD_NODES, 'aws').total);
+    expect(estimate.unestimated).toEqual([{ nodeId: 'debezium-1', name: 'Debezium' }, { nodeId: 'debezium-2', name: 'CDC de pedidos' }]);
+    expect(estimateCost(CLOUD_NODES, 'aws').unestimated).toEqual([]);
+    // Un coste servido por el backend sí cuenta; un cero no es una estimación.
+    expect(estimateCost([debezium], 'aws', { debezium: { aws: 0 } }).unestimated.length).toBe(1);
+    expect(estimateCost([debezium], 'aws', { debezium: { aws: 40 } }).unestimated).toEqual([]);
   });
 
   it('adds up the reference architecture by category for each cloud', () => {
@@ -39,7 +54,7 @@ describe('estimateCost', () => {
       { nodeId: 'streaming-1', type: 'streaming', name: 'MSK (Kafka)', usd: 70 },
     ]);
     expect(estimateCost(CLOUD_NODES.filter((node) => node.id !== 'api'), 'aws').categories.some((category) => category.id === 'compute')).toBeFalse();
-    expect(estimateCost([], 'aws')).toEqual({ total: 0, categories: [], top: null });
+    expect(estimateCost([], 'aws')).toEqual({ total: 0, categories: [], liveUsd: 0, unestimated: [], top: null });
     expect(formatUsd(1234.4)).toBe('$1,234');
 
     // Apigee no tiene escalón pequeño: en GCP domina el coste y la auditoría lo señala.
@@ -54,11 +69,12 @@ describe('catalog served by the backend', () => {
   it('describes the studio catalog as one row per service and cloud', () => {
     const rows = catalogRows();
 
-    expect(rows.length).toBe(96);
+    expect(rows.length).toBe(SERVICE_CATALOG.flatMap((category) => category.items).length * 3);
+    expect(rows.length).toBe(132);
     expect(rows.find((row) => row.id === 'gcp:api-gateway')).toEqual({
       id: 'gcp:api-gateway', provider: 'gcp', code: 'api-gateway', name: 'Apigee', category: 'api-management', defaultMonthlyCost: 365, isEnterprise: true,
     });
-    expect(rows.filter((row) => row.isEnterprise).length).toBe(27);
+    expect(rows.filter((row) => row.isEnterprise).length).toBe(42);
     // Sembrar el backend con estas filas y volver a leerlas deja el catálogo como estaba.
     expect(mergeCatalog(SERVICE_CATALOG, rows).catalog).toEqual(SERVICE_CATALOG.map((category) => ({
       ...category, items: category.items.map((item) => ({ ...item, enterprise: item.enterprise === true })),

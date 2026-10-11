@@ -33,6 +33,15 @@
 
     <button
       type="button"
+      class="focus-ring rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 font-mono text-xs font-medium text-zinc-200 transition duration-500 ease-spring hover:bg-white/10"
+      title="Abre el inspector de traza en el filtro Grafo: el diff del JSON del lienzo tras cada cambio"
+      (click)="inspector.selectGraph()"
+    >
+      Grafo
+    </button>
+
+    <button
+      type="button"
       class="focus-ring rounded-full border px-3.5 py-1.5 text-sm font-medium transition duration-500 ease-spring"
       [class]="chaosOpen() ? 'border-red-400/60 bg-red-500/15 text-white' : 'border-white/15 bg-white/5 text-zinc-200 hover:bg-white/10'"
       [attr.aria-expanded]="chaosOpen()"
@@ -354,7 +363,7 @@
       }
 
       @for (wire of wires(); track wire.from + '>' + wire.to) {
-        <path class="wire" [class.wire-active]="isWireActive(wire)" [class.wire-glow]="wire.glow" [class.wire-warn]="wire.chaos === 'warn'" [class.wire-down]="wire.chaos === 'down'" [style.--glow]="wire.glow" [style.--flow]="isWireActive(wire) ? activeColor() : null" [attr.d]="wire.path" />
+        <path class="wire" [class.wire-active]="isWireActive(wire)" [class.wire-glow]="wire.glow" [class.wire-warn]="wire.chaos === 'warn'" [class.wire-down]="wire.chaos === 'down'" [style.--glow]="wire.glow" [style.--flow]="isWireActive(wire) ? activeColor() : null" [attr.data-kind]="wire.kind ?? null" [attr.d]="wire.path" />
         @if (wire.chaos === 'down') {
           <path class="pulse pulse-off" [attr.d]="wire.path" pathLength="100" />
         } @else {
@@ -377,8 +386,8 @@
             }
           }
         }
-        @if (wire.label) {
-          <text class="wire-label" [attr.x]="wire.labelAt[0]" [attr.y]="wire.labelAt[1]" text-anchor="middle">{{ wire.label }}</text>
+        @if (wire.label ?? kindLabel(wire.kind); as label) {
+          <text class="wire-label" [attr.x]="wire.labelAt[0]" [attr.y]="wire.labelAt[1]" text-anchor="middle">{{ label }}</text>
         }
       }
 
@@ -423,6 +432,24 @@
           }
           <text class="node-role" [attr.x]="node.x" [attr.y]="node.y + (iconOf(node) ? 22 : 15)" text-anchor="middle">{{ node.role }}</text>
         </g>
+
+        @if (nodeCosts().get(node.id); as price) {
+          <!-- Coste mensual del nodo: verde si es un precio de lista real, gris si es una cifra orientativa. -->
+          <g class="node-cost" [class.node-cost-live]="price.live" data-testid="node-cost" aria-hidden="true">
+            <title>{{ price.title }}</title>
+            <rect [attr.x]="node.x - (price.label.length * 5.2 + 12) / 2" [attr.y]="node.y + height / 2 - 7" [attr.width]="price.label.length * 5.2 + 12" height="14" rx="7" />
+            <text [attr.x]="node.x" [attr.y]="node.y + height / 2 + 3.5" text-anchor="middle">{{ price.label }}</text>
+          </g>
+        }
+
+        @if (violationsByNode().get(node.id); as problems) {
+          <!-- Regla del grafo incumplida: aviso junto al nodo; el texto completo va bajo el lienzo. -->
+          <g class="rule-badge" data-testid="rule-badge">
+            <title>{{ problems.join(' ') }}</title>
+            <circle [attr.cx]="node.x + width / 2 - 4" [attr.cy]="node.y - height / 2 + 4" r="8" />
+            <text [attr.x]="node.x + width / 2 - 4" [attr.y]="node.y - height / 2 + 7.5" text-anchor="middle">!</text>
+          </g>
+        }
 
         @if (chaosOf(node); as state) {
           <!-- Estado del nodo durante la simulación (circuit breaker, fail-open, failover...). -->
@@ -481,7 +508,7 @@
 
   <app-live-vitals class="absolute left-2 top-2 z-10" [vitals]="vitals()" (beat)="onBeat()" />
 
-  <app-cost-badge class="absolute bottom-2 left-2 z-10" [estimate]="cost()" [providerName]="selected().name" />
+  <app-cost-badge class="absolute bottom-2 left-2 z-10" [estimate]="cost()" [providerName]="selected().name" [pricingState]="pricingState()" />
 
   @if (editing() && propertiesNode(); as node) {
     <app-node-properties
@@ -494,6 +521,7 @@
       [targets]="propertiesLinks().targets"
       (connected)="connect(node.id, $event)"
       (disconnected)="disconnect($event.from, $event.to)"
+      (kindChanged)="setLinkKind($event.from, $event.to, $event.kind)"
       (changed)="updateNode(node.id, $event)"
       (closed)="propertiesId.set(null)"
     />
@@ -560,6 +588,14 @@
   }
 </div>
 
+@if (violations().length) {
+  <ul class="mt-3 space-y-1" aria-label="Avisos del grafo" data-testid="graph-warnings">
+    @for (violation of violations(); track violation.message) {
+      <li class="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs text-amber-100" role="status">{{ violation.message }}</li>
+    }
+  </ul>
+}
+
 @if (codeOpen()) {
   <section id="main-tf-panel" class="mt-3 animate-slide-up overflow-hidden rounded-2xl border border-white/10 bg-black/50" aria-label="Código Terraform generado">
     <header class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-white/10 px-3 py-2">
@@ -582,6 +618,11 @@
     @for (warning of warnings(); track warning.check) {
       <p class="border-b border-amber-400/20 bg-amber-400/10 px-3 py-1.5 text-xs text-amber-100" role="status">
         <span class="font-mono font-medium">{{ warning.check }}</span> — {{ warning.detail }}
+      </p>
+    }
+    @for (gap of terraformGaps(); track $index) {
+      <p class="border-b border-amber-400/20 bg-amber-400/10 px-3 py-1.5 text-xs text-amber-100" role="status" data-testid="terraform-gap">
+        {{ gap }}: sin soporte de Terraform todavía
       </p>
     }
     <pre class="max-h-96 overflow-auto p-3 font-mono text-[11px] leading-relaxed text-zinc-200" tabindex="0">{{ mainTf() }}</pre>

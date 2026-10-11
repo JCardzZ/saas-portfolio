@@ -44,6 +44,9 @@ model/cloudCatalogItem.ts
 model/fieldError.ts
 model/ingressTrackingRequest.ts
 model/models.ts
+model/priceQuote.ts
+model/pricingRequest.ts
+model/pricingResponse.ts
 model/problemDetails.ts
 model/project.ts
 model/projectRequest.ts

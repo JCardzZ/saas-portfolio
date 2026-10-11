@@ -5,6 +5,7 @@ import dev.portfolio.application.port.out.ArchitectureProjectRepositoryPort;
 import dev.portfolio.domain.exception.InvalidRequestException;
 import dev.portfolio.domain.exception.ResourceNotFoundException;
 import dev.portfolio.domain.model.ArchitectureGraph;
+import dev.portfolio.domain.model.ArchitectureGraphRules;
 import dev.portfolio.domain.model.ArchitectureProjectDomain;
 
 import java.time.Instant;
@@ -16,9 +17,11 @@ public class ArchitectureProjectService implements ArchitectureProjectUseCase {
     private static final String RESOURCE = "ArchitectureProject";
 
     private final ArchitectureProjectRepositoryPort repository;
+    private final ArchitectureGraphRules rules;
 
-    public ArchitectureProjectService(ArchitectureProjectRepositoryPort repository) {
+    public ArchitectureProjectService(ArchitectureProjectRepositoryPort repository, ArchitectureGraphRules rules) {
         this.repository = repository;
+        this.rules = rules;
     }
 
     @Override
@@ -51,7 +54,7 @@ public class ArchitectureProjectService implements ArchitectureProjectUseCase {
         return repository.save(build(id, draft, true, createdAt));
     }
 
-    private static ArchitectureProjectDomain build(String id, Draft draft, boolean preset, Instant createdAt) {
+    private ArchitectureProjectDomain build(String id, Draft draft, boolean preset, Instant createdAt) {
         if (draft.title() == null || draft.title().isBlank()) {
             throw new InvalidRequestException("El proyecto necesita un título");
         }
@@ -67,6 +70,8 @@ public class ArchitectureProjectService implements ArchitectureProjectUseCase {
             throw new InvalidRequestException("El proyecto necesita una nube");
         }
         ArchitectureGraph.validate(draft.nodes(), draft.connections(), draft.zones());
+        // El editor solo avisa de estas reglas; lo que se guarda y se sirve a otros debe cumplirlas.
+        rules.validate(draft.nodes(), draft.connections());
         return new ArchitectureProjectDomain(id, title, description, draft.cloudProvider(),
                 draft.nodes(), draft.connections(), draft.zones(), preset, createdAt);
     }

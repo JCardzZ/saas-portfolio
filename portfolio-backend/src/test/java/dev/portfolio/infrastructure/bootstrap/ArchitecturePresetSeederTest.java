@@ -1,5 +1,6 @@
 package dev.portfolio.infrastructure.bootstrap;
 
+import dev.portfolio.testsupport.GraphRulesFixture;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase;
 import dev.portfolio.application.service.ArchitectureProjectService;
@@ -20,17 +21,18 @@ import static org.mockito.Mockito.mock;
 class ArchitecturePresetSeederTest {
 
     private final InMemoryRepository repository = new InMemoryRepository();
-    private final ArchitectureProjectService service = new ArchitectureProjectService(repository);
+    private final ArchitectureProjectService service = new ArchitectureProjectService(repository, GraphRulesFixture.load());
     private final ArchitecturePresetSeeder seeder = new ArchitecturePresetSeeder(service, new ObjectMapper());
 
     @Test
     void seedsTheScenariosAndPatternsAsReadOnlyPresets() throws Exception {
-        assertThat(seeder.seed()).isEqualTo(8);
+        assertThat(seeder.seed()).isEqualTo(11);
 
         List<ArchitectureProjectDomain> presets = service.findAll();
         assertThat(presets).allMatch(ArchitectureProjectDomain::preset);
         assertThat(presets).extracting(ArchitectureProjectDomain::id).containsExactlyInAnyOrder("aks-oauth2", "core-banking", "electoral",
-                "event-driven", "ecommerce-cqrs", "saas-multitenant", "fintech-payments", "rag-enterprise");
+                "event-driven", "ecommerce-cqrs", "saas-multitenant", "fintech-payments", "rag-enterprise",
+                "cdc-realtime", "event-analytics", "multi-region-recovery");
         assertThat(service.findById("aks-oauth2").title()).isEqualTo("Modernización bancaria (AKS + OAuth2 + Redis)");
         assertThat(service.findById("aks-oauth2").cloudProvider()).isEqualTo(CloudProviderDomain.AZURE);
         assertThat(service.findById("core-banking").title()).isEqualTo("Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)");
@@ -64,7 +66,7 @@ class ArchitecturePresetSeederTest {
 
         seeder.seed();
 
-        assertThat(service.findAll()).hasSize(8);
+        assertThat(service.findAll()).hasSize(11);
         assertThat(service.findById("electoral")).isEqualTo(before);
     }
 

@@ -1,5 +1,8 @@
 package dev.portfolio.infrastructure.adapter.in.web.controller;
 
+import dev.portfolio.model.PricingResponse;
+import dev.portfolio.model.PricingRequest;
+import dev.portfolio.application.port.in.PricingUseCase;
 import dev.portfolio.api.ArchitectureStudioApi;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase;
 import dev.portfolio.application.port.in.CloudCatalogUseCase;
@@ -28,6 +31,7 @@ public class ArchitectureStudioController implements ArchitectureStudioApi {
     private final ArchitectureProjectUseCase projects;
     private final TerraformUseCase terraform;
     private final CloudCatalogUseCase catalog;
+    private final PricingUseCase pricing;
     private final ArchitectureWebMapper mapper;
     private final HttpServletRequest request;
 
@@ -61,5 +65,11 @@ public class ArchitectureStudioController implements ArchitectureStudioApi {
         return ResponseEntity.ok(mapper.toDto(terraform.generate(
                 CloudProviderDomain.fromCode(architectureTopology.getCloudProvider().getValue()),
                 architectureTopology.getNodes(), architectureTopology.getConnections(), request.getRemoteAddr())));
+    }
+
+    @Override
+    public ResponseEntity<PricingResponse> publicArchitecturePricingPost(PricingRequest pricingRequest) {
+        CloudProviderDomain provider = CloudProviderDomain.fromCode(pricingRequest.getCloudProvider().getValue());
+        return ResponseEntity.ok(mapper.toDto(provider, pricing.quote(provider, pricingRequest.getServices(), request.getRemoteAddr())));
     }
 }

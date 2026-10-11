@@ -1,12 +1,14 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 
 import { IconPopService } from '../../../shared/ui/icon-pop.service';
 import { TechIconComponent } from '../../../shared/ui/tech-icon.component';
 import { TECH_ICONS, TechIcon, TechIconKey } from '../../../shared/ui/tech-icons';
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
 import { TheaterDirective } from '../../../shared/ui/theater.directive';
+import { GraphSnapshot, diffGraph } from '../data/graph-diff';
 import { SystemEventStep, SystemEventsService } from '../data/system-events.service';
 import { TraceInspectorService } from '../data/trace-inspector.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -17,14 +19,17 @@ import { AuditCardComponent } from './audit-card.component';
 import { autoLayout } from './auto-layout';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
 import { CatalogItem } from './cloud-catalog.data';
-import { estimateCost } from './cloud-costs.data';
+import { estimateCost, formatUsd } from './cloud-costs.data';
 import { telemetryFor } from './component-telemetry';
 import { CopilotAddition, catalogItem } from './copilot';
 import { CostBadgeComponent } from './cost-badge.component';
+import { RuleViolation, anchorFor, checkGraph, endpointOf, inferKind } from './graph-rules';
+import { BlueprintLoad, mergeBlueprint } from './data-blueprints';
 import { downloadBlob, rasterize, serializeDiagram } from './diagram-export';
 import {
   FAULT_RECOVERY_MS, FaultKind, Faults, TRAFFIC_PROFILES, TrafficMode, backupOf, computeVitals, particlesPerWire, profileOf,
 } from './live-traffic';
+import { LivePricingService } from './live-pricing.service';
 import { LiveVitalsComponent } from './live-vitals.component';
 import { NodePatch, NodePropertiesComponent } from './node-properties.component';
 import { History } from './studio-history';
@@ -34,15 +39,23 @@ import {
 } from './studio-project';
 import { createZip } from './zip-writer';
 import {
-  CANVAS_HEIGHT, CANVAS_WIDTH, CLOUD_LINKS, CLOUD_NODES, CLOUD_PROVIDERS, CloudLink, CloudNode, CloudProviderId, IconRef,
-  NODE_HEIGHT, NODE_WIDTH, PROVISIONING_LOG, ZONE_SLOTS, ZoneId, forProvider, resolveIcon,
+  CANVAS_HEIGHT, CANVAS_WIDTH, CLOUD_LINKS, CLOUD_NODES, CLOUD_PROVIDERS, CloudLink, CloudNode, CloudProviderId, IconRef, LINK_KINDS,
+  LinkKind, NODE_HEIGHT, NODE_WIDTH, PROVISIONING_LOG, ZONE_SLOTS, ZoneId, forProvider, resolveIcon,
 } from './cloud-topology.data';
 import { CATALOG_DRAG_TYPE, ServiceCatalogComponent } from './service-catalog.component';
-import { generateMainTf, generateVariablesTf } from './terraform-generator';
+import { generateMainTf, generateVariablesTf, unsupportedTerraform } from './terraform-generator';
 import { auditTopology } from './topology-auditor';
 import { validateTopology } from './topology-validator';
 
 const KEYBOARD_STEP = 12;
+/** Espera tras el último cambio antes de publicar el diff del grafo: arrastrar un nodo es un solo cambio. */
+export const GRAPH_DIFF_DEBOUNCE_MS = 300;
+
+function graphOf(project: StudioProject): GraphSnapshot {
+  return structuredClone({ nodes: project.nodes, links: project.links }) as unknown as GraphSnapshot;
+}
+/** Rótulo corto de cada tipo de conexión sobre el cable. */
+const KIND_LABELS: Record<LinkKind, string> = { CDC_STREAM: 'CDC', EVENT_BUS: 'eventos', ANALYTICS_SINK: 'analítica', REPLICATION: 'réplica' };
 
 interface Wire extends CloudLink {
   path: string;
@@ -75,7 +88,8 @@ interface Wire extends CloudLink {
 export class CloudInfraComponent {
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly events = inject(SystemEventsService);
-  private readonly inspector = inject(TraceInspectorService);
+  readonly inspector = inject(TraceInspectorService);
+  private readonly pricing = inject(LivePricingService);
   private readonly iconPop = inject(IconPopService);
 
   readonly providers = CLOUD_PROVIDERS;
@@ -140,11 +154,46 @@ export class CloudInfraComponent {
   /** `main.tf` de lo que hay ahora mismo en el lienzo, para la nube activa. */
   readonly mainTf = computed(() => generateMainTf(this.nodes(), this.links(), this.selectedId()));
   /** Resultado de las reglas de seguridad sobre la topología actual. */
+  /** Servicios del lienzo que el generador aún no cubre: se avisa, nunca se omiten en silencio. */
+  readonly terraformGaps = computed(() => unsupportedTerraform(this.nodes(), this.selectedId()));
+  /** Reglas del grafo incumplidas (conexión no permitida, instancias de más). Solo avisan. */
+  readonly violations = computed<RuleViolation[]>(() => checkGraph(this.nodes(), this.links(), (node) => this.serviceOf(node)));
+  readonly violationsByNode = computed(() => {
+    const byNode = new Map<string, string[]>();
+    for (const violation of this.violations()) {
+      byNode.set(violation.nodeId, [...(byNode.get(violation.nodeId) ?? []), violation.message]);
+    }
+    return byNode;
+  });
+  readonly linkKinds = LINK_KINDS;
+  private announcedViolations = new Set<string>();
+
   readonly findings = computed(() => validateTopology(this.nodes(), this.links(), this.selectedId()));
   readonly warnings = computed(() => this.findings().filter((finding) => finding.level === 'warn' && finding.check.startsWith('Warning')));
 
   /** Coste mensual orientativo de los nodos del lienzo en la nube activa. */
-  readonly cost = computed(() => estimateCost(this.nodes(), this.selectedId(), this.studio.costs()));
+  /** Precios de lista reales de la nube elegida, si el backend los ha dado; mandan sobre las cifras orientativas. */
+  readonly livePrices = computed(() => this.pricing.monthlyFor(this.selectedId()));
+  readonly cost = computed(() => estimateCost(this.nodes(), this.selectedId(), this.studio.costs(), this.livePrices()));
+  /** Coste de cada nodo, para su etiqueta: importe y si es un precio real, o «sin estimación». */
+  readonly nodeCosts = computed(() => {
+    const estimate = this.cost();
+    const byNode = new Map<string, { label: string; live: boolean; title: string }>();
+    for (const item of estimate.categories.flatMap((category) => category.items)) {
+      const quote = item.live ? this.pricing.quotesFor(this.selectedId())[item.type] : undefined;
+      byNode.set(item.nodeId, {
+        label: `${formatUsd(item.usd)}/mes`, live: item.live === true,
+        title: quote
+          ? `Precio de lista real · ${quote.sku} · ${quote.source ?? ''} (${quote.region ?? ''}). ${quote.note ?? ''}`
+          : 'Estimación orientativa, no un precio consultado',
+      });
+    }
+    for (const item of estimate.unestimated) {
+      byNode.set(item.nodeId, { label: 'sin estimación', live: false, title: 'Sin precio público ni cifra orientativa: no suma al total' });
+    }
+    return byNode;
+  });
+  readonly pricingState = this.pricing.state;
 
   // ---------- Caos ----------
   readonly chaosOpen = signal(false);
@@ -244,6 +293,7 @@ export class CloudInfraComponent {
     return {
       links: touching.map((link) => ({
         from: link.from, to: link.to, outgoing: link.from === node.id, label: label(link.from === node.id ? link.to : link.from),
+        kind: link.kind ?? null,
       })),
       targets: this.nodes()
         .filter((candidate) => candidate.id !== node.id && !touching.some((link) => link.from === node.id && link.to === candidate.id))
@@ -277,6 +327,46 @@ export class CloudInfraComponent {
         // Sin almacenamiento (modo privado) el proyecto solo vive mientras dure la página.
       }
     });
+    // La galería de patrones de datos vive fuera de esta tarjeta: sigue la nube del lienzo y le pide cargar.
+    effect(() => {
+      this.studio.activeProvider.set(this.selectedId());
+      this.studio.canvasHasContent.set(this.nodes().length > 0);
+    }, { allowSignalWrites: true });
+    this.studio.blueprintRequests.pipe(takeUntilDestroyed()).subscribe((load) => this.loadBlueprint(load));
+    // Precios reales: al añadir o quitar un tipo de servicio, o al cambiar de nube, se piden al backend
+    // (que consulta las API públicas y lo cuenta por SSE). En modo demo no se pide nada.
+    let priced = '';
+    effect(() => {
+      const provider = this.selectedId();
+      const types = [...new Set(this.nodes().map((node) => node.type))].sort();
+      const key = `${provider}:${types.join(',')}`;
+      if (key !== priced) {
+        priced = key;
+        untracked(() => this.pricing.refresh(provider, types));
+      }
+    }, { allowSignalWrites: true });
+    // Filtro «Grafo» del inspector: tras cada cambio, y agrupando los seguidos, el diff del JSON del grafo.
+    let snapshot: GraphSnapshot = graphOf(this.project());
+    let pending: ReturnType<typeof setTimeout> | undefined;
+    effect(() => {
+      const project = this.project();
+      clearTimeout(pending);
+      pending = setTimeout(() => {
+        const next = graphOf(project);
+        this.inspector.publishGraph(diffGraph(snapshot, next), serializeProject(project));
+        snapshot = next;
+      }, GRAPH_DIFF_DEBOUNCE_MS);
+    });
+    inject(DestroyRef).onDestroy(() => clearTimeout(pending));
+    // Cada regla del grafo que se incumple deja su aviso en el inspector, una sola vez.
+    effect(() => {
+      const current = this.violations();
+      const fresh = current.filter((violation) => !this.announcedViolations.has(violation.message));
+      this.announcedViolations = new Set(current.map((violation) => violation.message));
+      for (const violation of fresh) {
+        this.events.emitFromUser([['warn', 'Graph Rule', violation.message]], violation.nodeId);
+      }
+    }, { allowSignalWrites: true });
   }
 
   /**
@@ -608,19 +698,25 @@ export class CloudInfraComponent {
     };
 
     // Origen del tráfico según el tipo de servicio; si ya no está en el lienzo, el nodo más cercano.
-    const anchor = this.nodes().find((candidate) => candidate.id === item.connectFrom) ?? nearest(this.nodes(), position);
+    // Una pieza de datos solo se conecta con lo que sus reglas admiten; si no hay nada, queda suelta.
+    const anchor = endpointOf(item.type) === 'service'
+      ? (this.nodes().find((candidate) => candidate.id === item.connectFrom) ?? nearest(this.nodes(), position))
+      : anchorFor(item.type, item.connectFrom, position, this.nodes());
     this.nodes.update((nodes) => [...nodes, node]);
     if (anchor) {
-      this.links.update((links) => [...links, { from: anchor.id, to: id }]);
+      const kind = inferKind(anchor.type, item.type);
+      this.links.update((links) => [...links, { from: anchor.id, to: id, ...(kind ? { kind } : {}) }]);
     }
     this.activeId.set(id);
     this.modified.set(true);
 
     const name = this.serviceOf(node);
-    const resource = forProvider(item.terraform, this.selectedId());
+    const resource = item.terraform ? forProvider(item.terraform, this.selectedId()) : null;
     this.events.emitFromUser([
       ['info', 'Terraform Plan +1 to add', `${name} · ${item.capability}`],
-      ['ok', `Terraform Apply: resource "${resource}"`, `"${id.replace(/-/g, '_')}" { … } · creation complete`],
+      resource
+        ? ['ok', `Terraform Apply: resource "${resource}"`, `"${id.replace(/-/g, '_')}" { … } · creation complete`]
+        : ['warn', 'Terraform', `${name}: sin soporte de Terraform todavía`],
       ['ok', `Deploying Node: ${name}`, this.selected().name],
       ['ok', 'Route Table Updated', anchor ? `${this.serviceOf(anchor)} → ${name}` : name],
       ...this.validationSteps(),
@@ -757,6 +853,31 @@ export class CloudInfraComponent {
       },
       error: (error: unknown) => this.projectError.set(`No se pudo abrir «${entry.name}»: ${describe(error)}`),
     });
+  }
+
+  /**
+   * Carga un patrón de datos de la galería. Sustituye el lienzo o se agrega a lo que hay, en
+   * la nube que esté elegida; en los dos casos es un solo paso de deshacer.
+   */
+  loadBlueprint({ blueprint, mode }: BlueprintLoad): void {
+    this.projectError.set(null);
+    const built = { ...blueprint.build(), provider: this.selectedId() };
+    const merged = mode === 'add' ? mergeBlueprint(this.project(), built) : null;
+    if (merged && !merged.ok) {
+      this.projectError.set(merged.error);
+      return;
+    }
+    this.record();
+    this.apply(merged?.ok ? merged.project : built);
+    this.modified.set(true);
+    this.cloudProject.set(null);
+    this.cloudTitle.set('');
+    this.events.emitFromUser([
+      ['info', 'Blueprint', `«${blueprint.name}» v${blueprint.version} ${merged?.ok ? `agregado al lienzo (${merged.added} piezas nuevas)` : 'cargado en el lienzo'}`],
+      ...this.validationSteps(),
+    ]);
+    this.inspector.select('terraform');
+    this.host.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
   }
 
   /** Guarda el lienzo en el backend: como proyecto nuevo o actualizando el que se abrió. */
@@ -956,7 +1077,8 @@ export class CloudInfraComponent {
       return;
     }
     this.record();
-    this.links.update((links) => [...links, { from, to }]);
+    const kind = inferKind(source.type, target.type);
+    this.links.update((links) => [...links, { from, to, ...(kind ? { kind } : {}) }]);
     this.activeId.set(to);
     this.modified.set(true);
     this.events.emitFromUser([['ok', 'Route Table Updated', `${this.serviceOf(source)} → ${this.serviceOf(target)}`], ...this.validationSteps()]);
@@ -971,6 +1093,27 @@ export class CloudInfraComponent {
     this.links.update((links) => links.filter((link) => !(link.from === from && link.to === to)));
     this.modified.set(true);
     this.events.emitFromUser([['ok', 'Route Table Updated', '1 ruta eliminada'], ...this.validationSteps()]);
+  }
+
+  /** Cambia qué lleva una conexión; `null` la deja como tráfico de peticiones corriente. */
+  setLinkKind(from: string, to: string, kind: LinkKind | null): void {
+    const link = this.links().find((candidate) => candidate.from === from && candidate.to === to);
+    if (!link || (link.kind ?? null) === kind) {
+      return;
+    }
+    this.record();
+    this.links.update((links) => links.map((candidate) => {
+      if (candidate !== link) {
+        return candidate;
+      }
+      const { kind: _previous, ...rest } = candidate;
+      return kind ? { ...rest, kind } : rest;
+    }));
+    this.modified.set(true);
+  }
+
+  kindLabel(kind: LinkKind | undefined): string | null {
+    return kind ? KIND_LABELS[kind] : null;
   }
 
   // ---------- Propiedades de un nodo ----------

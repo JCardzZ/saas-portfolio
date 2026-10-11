@@ -210,7 +210,7 @@
     "id": "azure:newsql-pg",
     "provider": "azure",
     "code": "newsql-pg",
-    "name": "Cosmos DB for PostgreSQL",
+    "name": "Azure Database for PostgreSQL (Elastic Clusters)",
     "category": "data",
     "defaultMonthlyCost": 110,
     "isEnterprise": true
@@ -240,6 +240,33 @@
     "name": "Cosmos DB (multirregión)",
     "category": "data",
     "defaultMonthlyCost": 24,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:global-database",
+    "provider": "aws",
+    "code": "global-database",
+    "name": "Aurora Global Database",
+    "category": "data",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:global-database",
+    "provider": "gcp",
+    "code": "global-database",
+    "name": "Cloud Spanner",
+    "category": "data",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:global-database",
+    "provider": "azure",
+    "code": "global-database",
+    "name": "Azure SQL Database (failover groups)",
+    "category": "data",
+    "defaultMonthlyCost": 0,
     "isEnterprise": true
   },
   {
@@ -432,6 +459,33 @@
     "isEnterprise": true
   },
   {
+    "id": "aws:event-stream",
+    "provider": "aws",
+    "code": "event-stream",
+    "name": "Kinesis Data Streams",
+    "category": "messaging",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:event-stream",
+    "provider": "gcp",
+    "code": "event-stream",
+    "name": "Pub/Sub",
+    "category": "messaging",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:event-stream",
+    "provider": "azure",
+    "code": "event-stream",
+    "name": "Event Hubs",
+    "category": "messaging",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
     "id": "aws:queue",
     "provider": "aws",
     "code": "queue",
@@ -538,6 +592,276 @@
     "category": "messaging",
     "defaultMonthlyCost": 80,
     "isEnterprise": true
+  },
+  {
+    "id": "aws:cdc",
+    "provider": "aws",
+    "code": "cdc",
+    "name": "Database Migration Service",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:cdc",
+    "provider": "gcp",
+    "code": "cdc",
+    "name": "Datastream",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:cdc",
+    "provider": "azure",
+    "code": "cdc",
+    "name": "Data Factory (CDC)",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:debezium",
+    "provider": "aws",
+    "code": "debezium",
+    "name": "Debezium",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:debezium",
+    "provider": "gcp",
+    "code": "debezium",
+    "name": "Debezium",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:debezium",
+    "provider": "azure",
+    "code": "debezium",
+    "name": "Debezium",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:goldengate",
+    "provider": "aws",
+    "code": "goldengate",
+    "name": "Oracle GoldenGate",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:goldengate",
+    "provider": "gcp",
+    "code": "goldengate",
+    "name": "Oracle GoldenGate",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:goldengate",
+    "provider": "azure",
+    "code": "goldengate",
+    "name": "Oracle GoldenGate",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:kafka",
+    "provider": "aws",
+    "code": "kafka",
+    "name": "Apache Kafka",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:kafka",
+    "provider": "gcp",
+    "code": "kafka",
+    "name": "Apache Kafka",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:kafka",
+    "provider": "azure",
+    "code": "kafka",
+    "name": "Apache Kafka",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:snowflake",
+    "provider": "aws",
+    "code": "snowflake",
+    "name": "Snowflake",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:snowflake",
+    "provider": "gcp",
+    "code": "snowflake",
+    "name": "Snowflake",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:snowflake",
+    "provider": "azure",
+    "code": "snowflake",
+    "name": "Snowflake",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:databricks",
+    "provider": "aws",
+    "code": "databricks",
+    "name": "Databricks",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "gcp:databricks",
+    "provider": "gcp",
+    "code": "databricks",
+    "name": "Databricks",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "azure:databricks",
+    "provider": "azure",
+    "code": "databricks",
+    "name": "Databricks",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": true
+  },
+  {
+    "id": "aws:bi",
+    "provider": "aws",
+    "code": "bi",
+    "name": "Amazon Quick Sight",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:bi",
+    "provider": "gcp",
+    "code": "bi",
+    "name": "Looker",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:bi",
+    "provider": "azure",
+    "code": "bi",
+    "name": "Power BI Embedded",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:tableau",
+    "provider": "aws",
+    "code": "tableau",
+    "name": "Tableau",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:tableau",
+    "provider": "gcp",
+    "code": "tableau",
+    "name": "Tableau",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:tableau",
+    "provider": "azure",
+    "code": "tableau",
+    "name": "Tableau",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:powerbi",
+    "provider": "aws",
+    "code": "powerbi",
+    "name": "Power BI",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:powerbi",
+    "provider": "gcp",
+    "code": "powerbi",
+    "name": "Power BI",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:powerbi",
+    "provider": "azure",
+    "code": "powerbi",
+    "name": "Power BI",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "aws:looker-studio",
+    "provider": "aws",
+    "code": "looker-studio",
+    "name": "Looker Studio",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "gcp:looker-studio",
+    "provider": "gcp",
+    "code": "looker-studio",
+    "name": "Looker Studio",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
+  },
+  {
+    "id": "azure:looker-studio",
+    "provider": "azure",
+    "code": "looker-studio",
+    "name": "Looker Studio",
+    "category": "data-analytics",
+    "defaultMonthlyCost": 0,
+    "isEnterprise": false
   },
   {
     "id": "aws:prometheus",

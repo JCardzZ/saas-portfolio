@@ -1,0 +1,210 @@
+{
+  "cloudProvider": "aws",
+  "nodes": [
+    {
+      "id": "users",
+      "type": "users",
+      "x": 64,
+      "y": 250,
+      "zone": "outside",
+      "role": "Navegador",
+      "service": "Visitantes",
+      "icon": null,
+      "terraform": null,
+      "why": "Entran por HTTPS; nunca hablan directamente con la nube."
+    },
+    {
+      "id": "edge",
+      "type": "edge",
+      "x": 196,
+      "y": 250,
+      "zone": "outside",
+      "role": "CDN · WAF · DNS",
+      "service": "Cloudflare",
+      "icon": "cloudflare",
+      "terraform": "cloudflare_record",
+      "why": "Borde común a las tres nubes: caché, protección y la IP real del visitante."
+    },
+    {
+      "id": "lb",
+      "type": "lb",
+      "x": 402,
+      "y": 250,
+      "zone": "public",
+      "role": "Balanceador",
+      "icon": {
+        "default": "provider",
+        "aws": "awsElb",
+        "azure": "azAppGateway"
+      },
+      "service": {
+        "aws": "Application LB",
+        "gcp": "Cloud Load Balancing",
+        "azure": "Application Gateway"
+      },
+      "terraform": {
+        "aws": "aws_lb",
+        "gcp": "google_compute_global_forwarding_rule",
+        "azure": "azurerm_application_gateway"
+      },
+      "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
+    },
+    {
+      "id": "api",
+      "type": "containers",
+      "x": 556,
+      "y": 250,
+      "zone": "compute",
+      "role": "API Spring Boot",
+      "icon": {
+        "default": "docker",
+        "aws": "awsFargate",
+        "gcp": "gcpCloudRun",
+        "azure": "azContainerApps"
+      },
+      "service": {
+        "aws": "ECS Fargate",
+        "gcp": "Cloud Run",
+        "azure": "Container Apps"
+      },
+      "terraform": {
+        "aws": "aws_ecs_service",
+        "gcp": "google_cloud_run_v2_service",
+        "azure": "azurerm_container_app"
+      },
+      "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
+    },
+    {
+      "id": "primary",
+      "type": "global-database",
+      "x": 710,
+      "y": 250,
+      "zone": "data",
+      "role": "Primaria · escrituras",
+      "service": {
+        "aws": "Aurora Global Database",
+        "gcp": "Cloud Spanner",
+        "azure": "Azure SQL Database (failover groups)"
+      },
+      "icon": {
+        "default": "provider",
+        "aws": "awsAurora",
+        "gcp": "gcpSpanner"
+      },
+      "terraform": {
+        "aws": "aws_rds_global_cluster",
+        "gcp": "google_spanner_instance",
+        "azure": "azurerm_mssql_failover_group"
+      },
+      "why": "Una región atiende las escrituras y otra guarda una réplica lista para tomar el relevo si la primera cae.",
+      "custom": true
+    },
+    {
+      "id": "api-standby",
+      "type": "containers",
+      "x": 149,
+      "y": 468,
+      "zone": "managed",
+      "role": "API en espera",
+      "service": {
+        "aws": "ECS Fargate",
+        "gcp": "Cloud Run",
+        "azure": "Container Apps"
+      },
+      "icon": {
+        "default": "docker",
+        "aws": "awsFargate",
+        "gcp": "gcpCloudRun",
+        "azure": "azContainerApps"
+      },
+      "terraform": {
+        "aws": "aws_ecs_service",
+        "gcp": "google_cloud_run_v2_service",
+        "azure": "azurerm_container_app"
+      },
+      "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
+      "custom": true
+    },
+    {
+      "id": "replica",
+      "type": "global-database",
+      "x": 149,
+      "y": 558,
+      "zone": "managed",
+      "role": "Réplica · otra región",
+      "service": {
+        "aws": "Aurora Global Database",
+        "gcp": "Cloud Spanner",
+        "azure": "Azure SQL Database (failover groups)"
+      },
+      "icon": {
+        "default": "provider",
+        "aws": "awsAurora",
+        "gcp": "gcpSpanner"
+      },
+      "terraform": {
+        "aws": "aws_rds_global_cluster",
+        "gcp": "google_spanner_instance",
+        "azure": "azurerm_mssql_failover_group"
+      },
+      "why": "Una región atiende las escrituras y otra guarda una réplica lista para tomar el relevo si la primera cae.",
+      "custom": true
+    },
+    {
+      "id": "secrets",
+      "type": "secrets",
+      "x": 865,
+      "y": 215,
+      "zone": "managed",
+      "role": "Secretos",
+      "icon": {
+        "default": "provider",
+        "aws": "awsSecretsManager",
+        "azure": "azKeyVault"
+      },
+      "service": {
+        "aws": "Secrets Manager",
+        "gcp": "Secret Manager",
+        "azure": "Key Vault"
+      },
+      "terraform": {
+        "aws": "aws_secretsmanager_secret",
+        "gcp": "google_secret_manager_secret",
+        "azure": "azurerm_key_vault"
+      },
+      "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
+    }
+  ],
+  "connections": [
+    {
+      "from": "users",
+      "to": "edge"
+    },
+    {
+      "from": "edge",
+      "to": "lb"
+    },
+    {
+      "from": "lb",
+      "to": "api"
+    },
+    {
+      "from": "api",
+      "to": "primary"
+    },
+    {
+      "from": "primary",
+      "to": "replica",
+      "kind": "REPLICATION"
+    },
+    {
+      "from": "edge",
+      "to": "api-standby",
+      "label": "failover"
+    },
+    {
+      "from": "api-standby",
+      "to": "replica"
+    }
+  ]
+}

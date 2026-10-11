@@ -1,0 +1,156 @@
+{
+  "logical": {
+    "postgres": "database",
+    "nosql": "database",
+    "newsql-pg": "database",
+    "global-sql": "global-database",
+    "global-database": "global-database",
+    "graph": "database",
+    "mongodb": "database",
+    "wide-column": "database",
+    "warehouse": "data-warehouse",
+    "sql-query": "data-warehouse",
+    "streaming": "event-stream",
+    "event-stream": "event-stream",
+    "queue": "queue",
+    "pubsub": "queue",
+    "rabbitmq": "queue",
+    "stream-processing": "stream-processing",
+    "cdc": "cdc",
+    "debezium": "cdc",
+    "goldengate": "cdc",
+    "kafka": "event-stream",
+    "snowflake": "data-warehouse",
+    "databricks": "stream-processing",
+    "bi": "bi",
+    "tableau": "bi",
+    "powerbi": "bi",
+    "looker-studio": "bi"
+  },
+  "incoming": {
+    "database": [
+      "service",
+      "database",
+      "global-database",
+      "cdc",
+      "stream-processing"
+    ],
+    "global-database": [
+      "service",
+      "database",
+      "global-database",
+      "cdc"
+    ],
+    "cdc": [
+      "database",
+      "global-database"
+    ],
+    "event-stream": [
+      "service",
+      "cdc",
+      "event-stream",
+      "queue",
+      "stream-processing"
+    ],
+    "queue": [
+      "service",
+      "cdc",
+      "event-stream",
+      "queue",
+      "stream-processing"
+    ],
+    "stream-processing": [
+      "cdc",
+      "event-stream",
+      "queue"
+    ],
+    "data-warehouse": [
+      "service",
+      "database",
+      "global-database",
+      "cdc",
+      "event-stream",
+      "queue",
+      "stream-processing",
+      "data-warehouse"
+    ],
+    "bi": [
+      "data-warehouse",
+      "database",
+      "global-database"
+    ]
+  },
+  "kinds": {
+    "CDC_STREAM": {
+      "from": [
+        "database",
+        "global-database",
+        "cdc"
+      ],
+      "to": [
+        "cdc",
+        "event-stream",
+        "queue",
+        "stream-processing",
+        "data-warehouse",
+        "database",
+        "global-database"
+      ]
+    },
+    "EVENT_BUS": {
+      "from": [
+        "service",
+        "cdc",
+        "event-stream",
+        "queue",
+        "stream-processing"
+      ],
+      "to": [
+        "service",
+        "event-stream",
+        "queue",
+        "stream-processing"
+      ]
+    },
+    "ANALYTICS_SINK": {
+      "from": [
+        "service",
+        "database",
+        "global-database",
+        "cdc",
+        "event-stream",
+        "queue",
+        "stream-processing",
+        "data-warehouse"
+      ],
+      "to": [
+        "data-warehouse",
+        "bi"
+      ]
+    },
+    "REPLICATION": {
+      "from": [
+        "database",
+        "global-database"
+      ],
+      "to": [
+        "database",
+        "global-database"
+      ]
+    }
+  },
+  "maxInstances": {
+    "global-database": 3,
+    "event-stream": 4,
+    "cdc": 3,
+    "debezium": 2,
+    "goldengate": 1,
+    "kafka": 1,
+    "snowflake": 1,
+    "databricks": 1,
+    "bi": 1,
+    "tableau": 1,
+    "powerbi": 1,
+    "looker-studio": 1
+  }
+}

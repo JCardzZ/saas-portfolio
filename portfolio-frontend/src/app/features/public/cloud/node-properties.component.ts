@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { AutofocusDirective } from '../../../shared/ui/autofocus.directive';
-import { CloudNode, CloudProviderId, NodeProps, ZoneId } from './cloud-topology.data';
+import { CloudNode, CloudProviderId, LINK_KINDS, LinkKind, NodeProps, ZoneId } from './cloud-topology.data';
 import { secretEnvKeys } from './terraform-generator';
 
 /** Cambio pedido desde el panel: solo los campos que se han tocado. */
@@ -84,6 +84,12 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
                 <span class="min-w-0 flex-1 truncate">
                   <span class="sr-only">{{ link.outgoing ? 'Hacia' : 'Desde' }}</span> {{ link.label }}
                 </span>
+                <select class="field !w-auto !py-0.5 text-[11px]" [attr.aria-label]="'Tipo de la conexión con ' + link.label" (change)="onKind(link, $event)">
+                  <option value="" [selected]="!link.kind">Peticiones</option>
+                  @for (option of linkKinds; track option.kind) {
+                    <option [value]="option.kind" [selected]="link.kind === option.kind" [title]="option.hint">{{ option.name }}</option>
+                  }
+                </select>
                 <button type="button" class="rounded-full px-1.5 text-zinc-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0a84ff]" [attr.aria-label]="'Quitar la conexión con ' + link.label" (click)="disconnected.emit({ from: link.from, to: link.to })">×</button>
               </li>
             } @empty {
@@ -138,13 +144,15 @@ export class NodePropertiesComponent {
   readonly provider = input.required<CloudProviderId>();
 
   /** Conexiones del nodo, con el nombre del nodo del otro extremo. */
-  readonly links = input<{ from: string; to: string; outgoing: boolean; label: string }[]>([]);
+  readonly links = input<{ from: string; to: string; outgoing: boolean; label: string; kind?: LinkKind | null }[]>([]);
+  readonly linkKinds = LINK_KINDS;
   /** Nodos con los que todavía se puede conectar. */
   readonly targets = input<{ id: string; label: string }[]>([]);
 
   readonly changed = output<NodePatch>();
   readonly connected = output<string>();
   readonly disconnected = output<{ from: string; to: string }>();
+  readonly kindChanged = output<{ from: string; to: string; kind: LinkKind | null }>();
   readonly closed = output<void>();
 
   readonly zones = NODE_ZONES;
@@ -157,6 +165,11 @@ export class NodePropertiesComponent {
       this.connected.emit(select.value);
       select.value = '';
     }
+  }
+
+  onKind(link: { from: string; to: string }, event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.kindChanged.emit({ from: link.from, to: link.to, kind: value ? (value as LinkKind) : null });
   }
 
   value(event: Event): string {

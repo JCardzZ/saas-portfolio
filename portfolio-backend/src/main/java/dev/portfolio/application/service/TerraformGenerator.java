@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
@@ -22,17 +23,25 @@ import java.util.regex.Pattern;
  */
 final class TerraformGenerator {
 
-    private static final Map<String, String> PROVIDER_SOURCES = Map.of(
-            "aws", "hashicorp/aws",
-            "google", "hashicorp/google",
-            "azurerm", "hashicorp/azurerm",
-            "azuread", "hashicorp/azuread",
-            "cloudflare", "cloudflare/cloudflare",
-            "helm", "hashicorp/helm",
-            "vault", "hashicorp/vault",
-            "datadog", "DataDog/datadog",
-            "mongodbatlas", "mongodb/mongodbatlas",
-            "elasticstack", "elastic/elasticstack");
+    private static final Map<String, String> PROVIDER_SOURCES = Map.ofEntries(
+            Map.entry("aws", "hashicorp/aws"),
+            Map.entry("google", "hashicorp/google"),
+            Map.entry("azurerm", "hashicorp/azurerm"),
+            Map.entry("azuread", "hashicorp/azuread"),
+            Map.entry("cloudflare", "cloudflare/cloudflare"),
+            Map.entry("helm", "hashicorp/helm"),
+            Map.entry("vault", "hashicorp/vault"),
+            Map.entry("datadog", "DataDog/datadog"),
+            Map.entry("mongodbatlas", "mongodb/mongodbatlas"),
+            Map.entry("elasticstack", "elastic/elasticstack"),
+            Map.entry("snowflake", "snowflakedb/snowflake"),
+            Map.entry("databricks", "databricks/databricks"));
+
+    /**
+     * Servicios del catálogo que el generador todavía no sabe aprovisionar: cada uno deja su
+     * aviso en main.tf en vez de omitirse en silencio. La misma lista que terraform-generator.ts.
+     */
+    private static final Set<String> UNSUPPORTED_TYPES = Set.of("debezium", "goldengate", "tableau", "powerbi", "looker-studio");
 
     private static final Map<CloudProviderDomain, List<String>> PROVIDER_BLOCK = Map.of(
             CloudProviderDomain.AWS, List.of("provider \"aws\" {", "  region = var.region", "}"),
@@ -96,7 +105,17 @@ final class TerraformGenerator {
             lines.add("}");
         }
 
-        List<String> unmanaged = nodes.stream().filter(node -> node.get("terraform") == null)
+        List<Map<String, Object>> unsupported = nodes.stream()
+                .filter(node -> node.get("terraform") == null && UNSUPPORTED_TYPES.contains(text(node, "type"))).toList();
+        if (!unsupported.isEmpty()) {
+            lines.add("");
+            for (Map<String, Object> node : unsupported) {
+                String name = text(node, "name").strip();
+                lines.add("# " + oneLine(name.isEmpty() ? forProvider(node.get("service"), provider) : name) + ": sin soporte de Terraform todavía");
+            }
+        }
+        List<String> unmanaged = nodes.stream()
+                .filter(node -> node.get("terraform") == null && !UNSUPPORTED_TYPES.contains(text(node, "type")))
                 .map(node -> oneLine(forProvider(node.get("service"), provider))).toList();
         if (!unmanaged.isEmpty()) {
             lines.add("");

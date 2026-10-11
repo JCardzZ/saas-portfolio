@@ -7,7 +7,13 @@ import { TechIconComponent } from '../../../shared/ui/tech-icon.component';
 import { TECH_ICONS } from '../../../shared/ui/tech-icons';
 import { SystemEventKind } from '../data/system-events.service';
 import { TelemetryStreamService } from '../data/telemetry-stream.service';
+import { JsonTokenType, tokenizeJson } from '../data/graph-diff';
 import { InspectorLayout, InspectorMode, TraceInspectorService } from '../data/trace-inspector.service';
+
+/** Colores de la sintaxis JSON en el filtro «Grafo». */
+const TOKEN_CLASSES: Record<JsonTokenType, string> = {
+  key: 'text-sky-300', string: 'text-emerald-200', number: 'text-amber-200', literal: 'text-violet-300', punct: 'text-zinc-500',
+};
 
 const KIND_CLASSES: Record<SystemEventKind, string> = {
   ok: 'text-emerald-400',
@@ -146,8 +152,16 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
             <app-tech-icon class="ml-1" [icon]="icon" [size]="14" />
             <h3 class="min-w-0 flex-1 truncate font-mono text-[11px] font-normal text-zinc-100">
               {{ layout() === 'right' ? 'Traza' : 'Inspector de traza' }} · {{ title() }}
-              <span class="text-zinc-400">— {{ live() ? 'en vivo' : 'simulación' }}</span>
+              <span class="text-zinc-400">— {{ inspector.graphView() ? 'lienzo' : live() ? 'en vivo' : 'simulación' }}</span>
             </h3>
+            <button
+              type="button"
+              class="focus-ring rounded-md px-2 py-1 font-mono text-[11px] transition hover:bg-white/10 hover:text-white"
+              [class]="inspector.graphView() ? 'bg-white/15 text-white' : 'text-zinc-400'"
+              [attr.aria-pressed]="inspector.graphView()"
+              title="Filtro Grafo: diff del JSON del lienzo"
+              (click)="inspector.selectGraph()"
+            >Grafo</button>
 
             @if (layout() === 'floating') {
               <button
@@ -177,17 +191,49 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
           </header>
 
           <div #log class="min-h-0 flex-1 overflow-y-auto px-3 py-2.5 font-mono text-[11px] leading-relaxed" role="log" aria-live="off" tabindex="0" [attr.aria-label]="'Eventos de ' + title()">
-            @for (event of inspector.events(); track event.id) {
-              <p class="animate-slide-up break-words">
-                @if (event.origin === 'live') {
-                  <span class="text-emerald-400" title="Evento real del backend">●</span>
+            @if (inspector.graphView()) {
+              <div class="mb-2 flex flex-wrap items-center gap-2">
+                <span class="text-zinc-400">Diff del JSON del grafo del lienzo, tras cada cambio.</span>
+                <button
+                  type="button"
+                  class="focus-ring rounded-full border border-white/20 px-2.5 py-0.5 text-zinc-100 hover:bg-white/10"
+                  [attr.aria-expanded]="fullJson()"
+                  (click)="fullJson.set(!fullJson())"
+                >{{ fullJson() ? 'Ver el diff' : 'Ver JSON completo' }}</button>
+              </div>
+              @if (fullJson()) {
+                <pre class="whitespace-pre-wrap break-words" data-testid="graph-json">@for (token of jsonTokens(); track $index) {<span [class]="tokenClasses[token.type]">{{ token.text }}</span>}</pre>
+              } @else {
+                @for (entry of inspector.graphEntries(); track entry.id) {
+                  <div class="animate-slide-up mb-1.5" data-testid="graph-entry">
+                    <p><span class="text-zinc-600">{{ entry.time }}</span> <span class="text-sky-300">[Graph Diff]</span> <span class="text-zinc-400">{{ entry.summary }}</span></p>
+                    @for (line of entry.lines; track $index) {
+                      <p class="break-words pl-3" [class]="line.sign === '+' ? 'bg-emerald-400/[0.07]' : 'bg-red-400/[0.07]'">
+                        <span [class]="line.changed ? 'text-amber-300' : line.sign === '+' ? 'text-emerald-300' : 'text-red-300'">{{ line.changed ? '~' : '' }}{{ line.sign }} {{ line.label }}</span>
+                        @for (token of line.tokens; track $index) {<span [class]="tokenClasses[token.type]">{{ token.text }}</span>}
+                      </p>
+                    }
+                  </div>
+                } @empty {
+                  <p class="text-zinc-500">Aún no hay cambios en el grafo. Edita el lienzo del Estudio de arquitectura y aparecerán aquí.</p>
                 }
-                <span class="text-zinc-600">{{ event.time }}</span>
-                <span [class]="kindClasses[event.kind]"> [{{ event.tag }}]</span>
-                <span class="text-zinc-400"> {{ event.detail }}</span>
-              </p>
-            } @empty {
-              <p class="text-zinc-500">Aún no hay eventos de {{ title() }}. Aparecerán aquí en cuanto intervenga en una petición.</p>
+              }
+            } @else {
+              @for (event of inspector.events(); track event.id) {
+                <p class="animate-slide-up break-words">
+                  @if (event.origin === 'live') {
+                    <span class="text-emerald-400" title="Evento real del backend">●</span>
+                  }
+                  <span class="text-zinc-600">{{ event.time }}</span>
+                  @if (event.level) {
+                    <span [class]="kindClasses[event.kind]"> [{{ event.level }}]</span>
+                  }
+                  <span [class]="kindClasses[event.kind]"> [{{ event.tag }}]</span>
+                  <span class="text-zinc-400"> {{ event.detail }}</span>
+                </p>
+              } @empty {
+                <p class="text-zinc-500">Aún no hay eventos de {{ title() }}. Aparecerán aquí en cuanto intervenga en una petición.</p>
+              }
             }
           </div>
         </section>
@@ -278,8 +324,12 @@ export class TraceInspectorComponent {
   readonly modeButtons = computed(() => (this.layout() === 'sheet' ? [] : MODE_BUTTONS));
   /** El botón verde: ampliado solo tiene sentido acoplado abajo o como hoja. */
   readonly maximized = computed(() => this.tall() && (this.layout() === 'bottom' || this.layout() === 'sheet'));
+  /** Filtro «Grafo»: el JSON completo en lugar del diff. */
+  readonly fullJson = signal(false);
+  readonly tokenClasses = TOKEN_CLASSES;
+  readonly jsonTokens = computed(() => tokenizeJson(this.inspector.graphJson()));
   readonly countLabel = computed(() => {
-    const count = this.inspector.events().length;
+    const count = this.inspector.graphView() ? this.inspector.graphEntries().length : this.inspector.events().length;
     return `${count} ${count === 1 ? 'evento' : 'eventos'}`;
   });
 
@@ -297,6 +347,7 @@ export class TraceInspectorComponent {
 
   constructor() {
     effect(() => {
+      this.inspector.graphEntries();
       this.inspector.events();
       const element = this.log()?.nativeElement;
       if (element) {

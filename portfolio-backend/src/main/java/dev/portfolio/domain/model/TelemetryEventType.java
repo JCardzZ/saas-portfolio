@@ -5,5 +5,13 @@ public enum TelemetryEventType {
     CACHE_MISS,
     VECTOR_SEARCH,
     RAG_QUERY,
-    JWT_VERIFIED
+    JWT_VERIFIED,
+    /** Se va a pedir una tarifa a la API pública de un proveedor cloud. */
+    PRICING_REQUEST,
+    /** Una tarifa leída del proveedor queda guardada en caché. */
+    PRICING_CACHED,
+    /** Un servicio no tiene precio público: queda sin estimación. */
+    PRICING_UNESTIMATED,
+    /** El proveedor no respondió: se sirve la última tarifa conocida o ninguna. */
+    PRICING_FALLBACK
 }

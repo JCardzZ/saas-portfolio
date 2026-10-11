@@ -185,3 +185,74 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 });
+
+test.describe('patrones de datos en el Estudio, en escritorio', () => {
+  async function openStudio(page: Page): Promise<void> {
+    await page.route(/^https:\/\/api\.example\.com\//, (route) => route.abort());
+    await page.route(/^https:\/\/raw\.githubusercontent\.com\//, (route) => route.abort());
+    await page.goto('/');
+    await expect(page.locator('h1')).toBeVisible();
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    await page.evaluate(() => document.getElementById('cloud')?.scrollIntoView({ block: 'start' }));
+    await expect(page.locator('#cloud app-data-blueprints li[data-blueprint]')).toHaveCount(3, { timeout: 15_000 });
+    await page.waitForTimeout(400);
+  }
+
+  test('la galería muestra los tres patrones en una fila y los traduce a la nube del lienzo', async ({ page }, testInfo) => {
+    await openStudio(page);
+    const gallery = page.locator('app-data-blueprints');
+    const tops = await gallery.locator('li[data-blueprint]').evaluateAll((cards) => cards.map((card) => Math.round(card.getBoundingClientRect().top)));
+    expect(new Set(tops).size, 'las tres tarjetas en la misma fila').toBe(1);
+    await expect(gallery.locator('li[data-blueprint="cdc-realtime"]')).toContainText('RDS PostgreSQL → Database Migration Service → Redshift');
+
+    await page.locator('app-cloud-infra [role="radio"]', { hasText: 'Azure' }).click();
+    await expect(gallery.locator('li[data-blueprint="cdc-realtime"]')).toContainText('Data Factory (CDC)');
+    await expect(gallery.locator('li[data-blueprint="multi-region-recovery"]')).toContainText('Azure SQL Database (failover groups)');
+    await gallery.scrollIntoViewIfNeeded();
+    await capture(page, testInfo, 'app-data-blueprints', 'patrones-de-datos');
+  });
+
+  test('cargar un patrón reemplaza el lienzo, sin avisos, y el filtro Grafo enseña el diff', async ({ page }, testInfo) => {
+    await openStudio(page);
+    const studio = page.locator('app-cloud-infra');
+    const card = page.locator('li[data-blueprint="event-analytics"]');
+    await card.getByRole('button', { name: 'Cargar en el lienzo' }).click();
+    await card.getByRole('button', { name: 'Reemplazar' }).click();
+
+    await expect(studio.locator('svg text.node-service', { hasText: 'Kinesis Data Streams' })).toBeVisible();
+    await expect(studio.locator('path.wire[data-kind="EVENT_BUS"]')).toHaveCount(3);
+    await expect(studio.locator('path.wire[data-kind="ANALYTICS_SINK"]')).toHaveCount(2);
+    await expect(studio.locator('[data-testid="graph-warnings"]')).toHaveCount(0);
+    await expect(studio.locator('[data-testid="rule-badge"]')).toHaveCount(0);
+    // Los nodos del patrón no se pisan.
+    const spots = await studio.locator('g.node').evaluateAll((nodes) => nodes.map((node) => { const r = node.getBoundingClientRect(); return `${Math.round(r.left)},${Math.round(r.top)}`; }));
+    expect(new Set(spots).size, 'nodos en posiciones distintas').toBe(spots.length);
+    await capture(page, testInfo, 'app-cloud-infra', 'estudio-analitica-por-eventos');
+
+    await studio.getByRole('button', { name: 'Grafo', exact: true }).click();
+    const inspector = page.locator('app-trace-inspector');
+    await expect(inspector.locator('h3')).toContainText('Grafo');
+    await expect(inspector.locator('[data-testid="graph-entry"]').first()).toContainText('[Graph Diff]');
+    await expect(inspector.locator('[data-testid="graph-entry"]').first()).toContainText('+ nodo');
+    await inspector.getByRole('button', { name: 'Ver JSON completo' }).click();
+    await expect(inspector.locator('[data-testid="graph-json"]')).toContainText('"kind": "EVENT_BUS"');
+    await expect(inspector.locator('[data-testid="graph-json"]')).toContainText('"version": 2');
+  });
+
+  test('una instancia duplicada y un servicio sin Terraform ni coste se avisan a la vista', async ({ page }, testInfo) => {
+    await openStudio(page);
+    const studio = page.locator('app-cloud-infra');
+    await studio.getByRole('button', { name: 'Editar arquitectura' }).click();
+    const add = studio.locator('app-service-catalog button[aria-label^="Añadir Tableau"]');
+    await add.click();
+    await add.click();
+
+    await expect(studio.locator('[data-testid="graph-warnings"] li')).toHaveText(['Instancia duplicada: Tableau #2. Este lienzo admite una sola.']);
+    await expect(studio.locator('[data-testid="rule-badge"]')).toHaveCount(1);
+    await expect(studio.locator('app-cost-badge')).toContainText('+2 sin estimación');
+    await studio.getByRole('button', { name: 'main.tf', exact: true }).click();
+    await expect(studio.locator('[data-testid="terraform-gap"]').first()).toHaveText('Tableau: sin soporte de Terraform todavía');
+    await expect(studio.locator('#main-tf-panel pre')).toContainText('# Tableau: sin soporte de Terraform todavía');
+    await capture(page, testInfo, 'app-cloud-infra', 'estudio-avisos-de-reglas');
+  });
+});

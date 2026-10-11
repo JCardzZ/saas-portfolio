@@ -1,18 +1,29 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 
 import { TechIconKey } from '../../../shared/ui/tech-icons';
+import { DiffLine, GraphChange, diffLines, summarize } from './graph-diff';
 import { SystemEvent, SystemEventsService } from './system-events.service';
 
 /** Tecnologías con actividad propia en el flujo de eventos y que, por tanto, se pueden inspeccionar. */
 export const INSPECTABLE_TECHS: readonly TechIconKey[] = [
   'angular', 'spring', 'redis', 'postgresql', 'gemini', 'jwt',
-  'aws', 'gcp', 'azure', 'terraform', 'kubernetes', 'cloudflare', 'docker', 'githubActions',
+  'aws', 'gcp', 'azure', 'terraform', 'kubernetes', 'cloudflare', 'docker', 'githubActions', 'graph',
 ];
 
 // Servicios gestionados que son, a efectos de traza, la tecnología que alojan.
 const ALIASES: Partial<Record<TechIconKey, TechIconKey>> = { neon: 'postgresql', upstash: 'redis' };
 
 const MAX_SHOWN = 40;
+/** Cambios del grafo que se conservan en el filtro «Grafo». */
+const MAX_GRAPH_ENTRIES = 30;
+
+/** Un cambio del grafo del Estudio, ya preparado para pintarse. */
+export interface GraphEntry {
+  id: number;
+  time: string;
+  summary: string;
+  lines: DiffLine[];
+}
 
 /**
  * Dónde se coloca el panel: acoplado abajo o a la derecha (la página se encoge para no quedar
@@ -81,6 +92,34 @@ export class TraceInspectorService {
       : (event: SystemEvent) => event.techs.includes(selected);
     return this.systemEvents.events().filter(matches).slice(-MAX_SHOWN);
   });
+
+  private readonly _graphEntries = signal<GraphEntry[]>([]);
+  /** Filtro «Grafo»: los últimos cambios del grafo del lienzo, como diff de su JSON. */
+  readonly graphEntries = this._graphEntries.asReadonly();
+  private readonly _graphJson = signal('');
+  /** El JSON completo del grafo tal como está ahora. */
+  readonly graphJson = this._graphJson.asReadonly();
+  /** Se está viendo el filtro «Grafo» en lugar de la traza de una tecnología. */
+  readonly graphView = computed(() => this._selected() === 'graph');
+  private nextGraphId = 1;
+
+  /** El Estudio publica aquí cada cambio de su grafo (ya con su espera para agrupar cambios seguidos). */
+  publishGraph(changes: GraphChange[], json: string, at = new Date()): void {
+    this._graphJson.set(json);
+    if (changes.length === 0) {
+      return;
+    }
+    const entry: GraphEntry = {
+      id: this.nextGraphId++, time: at.toLocaleTimeString('es-ES', { hour12: false }), summary: summarize(changes), lines: diffLines(changes),
+    };
+    this._graphEntries.update((entries) => [...entries, entry].slice(-MAX_GRAPH_ENTRIES));
+  }
+
+  /** Abre el filtro «Grafo». */
+  selectGraph(): void {
+    this._component.set(null);
+    this._selected.set('graph');
+  }
 
   /** Tecnología inspeccionable que corresponde a un logo, o `null` si no tiene traza propia. */
   static inspectable(icon: TechIconKey | undefined): TechIconKey | null {

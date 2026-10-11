@@ -1,5 +1,6 @@
 package dev.portfolio.application.service;
 
+import dev.portfolio.testsupport.GraphRulesFixture;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase.Draft;
 import dev.portfolio.application.port.out.ArchitectureProjectRepositoryPort;
 import dev.portfolio.domain.exception.InvalidRequestException;
@@ -50,7 +51,7 @@ public class ArchitectureProjectServiceTest {
     private static final List<Map<String, Object>> LINKS = List.of(Map.of("from", "api", "to", "api"));
 
     private final InMemoryRepository repository = new InMemoryRepository();
-    private final ArchitectureProjectService service = new ArchitectureProjectService(repository);
+    private final ArchitectureProjectService service = new ArchitectureProjectService(repository, GraphRulesFixture.load());
 
     private static Draft draft(String title) {
         return new Draft(title, "  Una descripción  ", CloudProviderDomain.AZURE, NODES, LINKS, List.of());
@@ -132,5 +133,19 @@ public class ArchitectureProjectServiceTest {
                 .isInstanceOf(InvalidRequestException.class);
         assertThatThrownBy(() -> service.create(new Draft("ok", null, CloudProviderDomain.AWS, NODES, LINKS, Collections.nCopies(25, Map.of()))))
                 .isInstanceOf(InvalidRequestException.class);
+    }
+    @Test
+    void refusesToSaveAGraphThatBreaksTheRulesOfTheStudio() {
+        List<Map<String, Object>> nodes = List.of(Map.of("id", "api", "type", "containers"), Map.of("id", "cdc-1", "type", "cdc"));
+        Draft broken = new Draft("CDC mal conectado", null, CloudProviderDomain.AWS, nodes, List.of(Map.of("from", "api", "to", "cdc-1")), List.of());
+
+        assertThatThrownBy(() -> service.create(broken)).isInstanceOf(InvalidRequestException.class)
+                .hasMessageStartingWith("Conexión no permitida: api → cdc-1");
+        assertThat(service.findAll()).isEmpty();
+
+        // Guardado bien, tampoco se puede actualizar a un grafo que las incumpla.
+        ArchitectureProjectDomain saved = service.create(new Draft("CDC", null, CloudProviderDomain.AWS, nodes, List.of(), List.of()));
+        assertThatThrownBy(() -> service.update(saved.id(), broken)).isInstanceOf(InvalidRequestException.class);
+        assertThat(service.findById(saved.id()).connections()).isEmpty();
     }
 }

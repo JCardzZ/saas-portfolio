@@ -313,6 +313,44 @@ test.describe('página pública en móviles y tabletas', () => {
     await check('estudio-en-edicion', 'app-cloud-infra');
   });
 
+  test('la galería de patrones de datos cabe en la pantalla y carga un patrón preguntando antes', async ({ page }, testInfo) => {
+    await openLanding(page);
+    await loadEverything(page);
+    const gallery = page.locator('#cloud app-data-blueprints');
+    await gallery.scrollIntoViewIfNeeded();
+    await expect(gallery.locator('li[data-blueprint]')).toHaveCount(3);
+
+    // Cada tarjeta, con su miniatura, cabe en el ancho de la pantalla.
+    const width = page.viewportSize()!.width;
+    const cards = await gallery.locator('li[data-blueprint], li[data-blueprint] svg').evaluateAll((elements) =>
+      elements.map((element) => { const rect = element.getBoundingClientRect(); return { left: rect.left, right: rect.right }; }));
+    for (const card of cards) {
+      expect(card.left, 'borde izquierdo de una tarjeta').toBeGreaterThanOrEqual(0);
+      expect(card.right, 'borde derecho de una tarjeta').toBeLessThanOrEqual(width + 1);
+    }
+    expect(await overflowing(page), 'elementos que se salen de la pantalla').toEqual([]);
+    await capture(page, testInfo, 'patrones-de-datos');
+
+    // El lienzo ya tiene la arquitectura de referencia: antes de cargar, pregunta.
+    const card = gallery.locator('li[data-blueprint="cdc-realtime"]');
+    await card.getByRole('button', { name: 'Cargar en el lienzo' }).click();
+    await expect(card.getByText('El lienzo ya tiene contenido')).toBeVisible();
+    for (const name of ['Reemplazar', 'Agregar al lienzo', 'Cancelar']) {
+      const box = (await card.getByRole('button', { name }).boundingBox())!;
+      expect(box.x + box.width, `${name} dentro de la pantalla`).toBeLessThanOrEqual(width + 1);
+    }
+    expect(await overflowing(page), 'con la pregunta abierta').toEqual([]);
+
+    await card.getByRole('button', { name: 'Agregar al lienzo' }).click();
+    const studio = page.locator('#cloud app-cloud-infra');
+    await expect(studio.locator('svg text.node-service', { hasText: 'Database Migration Service' })).toBeVisible();
+    await expect(studio.locator('path.wire[data-kind="CDC_STREAM"]')).toHaveCount(2);
+    // Lo que ya estaba no se duplica y nada arranca con avisos.
+    await expect(studio.locator('svg text.node-service', { hasText: 'Application LB' })).toHaveCount(1);
+    await expect(studio.locator('[data-testid="graph-warnings"]')).toHaveCount(0);
+    expect(await overflowing(page), 'tras cargar el patrón').toEqual([]);
+  });
+
   test('los grafos de arquitectura y de pipeline pasan a vertical en el móvil y se manejan con el dedo', async ({ page }, testInfo) => {
     await openLanding(page);
     await loadEverything(page);

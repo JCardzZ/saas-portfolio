@@ -1,5 +1,5 @@
 import { HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick, flush } from '@angular/core/testing';
 import { throwError } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
@@ -219,6 +219,7 @@ describe('copilot in the studio', () => {
     element.querySelector<HTMLButtonElement>('button[aria-label="Deshacer"]')!.click();
     fixture.detectChanges();
     expect(component.nodes().length).toBe(12);
+    flush();
   }));
 
   it('adds technologies outside the catalog as external pieces without icon or Terraform, and ignores unknown codes', () => {

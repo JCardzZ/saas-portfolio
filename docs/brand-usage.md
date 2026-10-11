@@ -16,6 +16,8 @@ no se da nada por permitido de memoria. No es asesoría legal.
 | Cloudflare, Cloudflare Pages | **Sin logo: nombre en texto** | [Cloudflare trademark](https://www.cloudflare.com/trademark/): los logos necesitan permiso escrito (salvo sus insignias web, sin alterar). El nombre puede usarse en texto, como adjetivo («servicios de Cloudflare»). |
 | Google Gemini | **Sin logo: nombre en texto** | No se encontró una guía de uso del logo para desarrolladores. Sin confirmar. |
 | Groq, OpenRouter, Anthropic (Claude), OpenAI | **Sin logo: nombre en texto** | Guías no encontradas o no legibles en la consulta (la de OpenAI respondió 403). Sin confirmar. |
+| Apache Kafka, Debezium, Oracle GoldenGate, Snowflake, Databricks, Tableau, Power BI, Looker Studio | **Sin logo: nombre en texto** | Guías de marca no consultadas una a una; ninguna da un permiso general conocido para usar el logo en un sitio de terceros. Regla del proyecto: sin permiso explícito, nombre en texto. En el Estudio usan el símbolo neutro `dataService`. |
+| Servicios de datos nuevos de AWS, Google Cloud y Azure (Kinesis Data Streams, Database Migration Service, Aurora Global Database, Amazon Quick Sight, Datastream, Looker, Data Factory, Azure SQL Database, Power BI Embedded) | **Icono genérico de su nube, con el nombre al lado** | Sus iconos de arquitectura oficiales sí se podrían usar (filas de arriba), pero no están copiados en `public/cloud-icons/`. Hasta copiarlos sin modificar del paquete oficial, el nodo muestra el icono de la nube y el nombre del servicio; no se dibuja ni se aproxima ninguno. |
 | GitHub, GitHub Actions, Docker, Neon, Upstash, Caddy | **Sin logo en las vistas «Arquitectura en producción» y «Pipeline CI/CD»** | Guías no consultadas. Sin confirmar. |
 
 ## Cómo se aplica en el código
@@ -24,6 +26,8 @@ no se da nada por permitido de memoria. No es asesoría legal.
   `deploy/topology.json` tienen `icon: null` y hay tests que fallan si aparece una imagen en un nodo.
 - **Resto del sitio** (`shared/ui/tech-icons.ts`): `cloudflare`, `cloudflarePages` y `gemini` usan
   un símbolo neutro (un aro, `official: false`), no el logo, con el nombre siempre al lado.
+- **Productos de datos de terceros** (categoría «Datos y analítica» del Estudio): `icon: 'dataService'`,
+  el mismo aro neutro, y hay un test que falla si alguno pasa a llevar logo.
 - **Iconos de AWS, Azure y Google Cloud** (`public/cloud-icons/`): copiados sin modificar de los
   paquetes oficiales; se pintan como imagen, sin recolorear, recortar ni girar, y siempre con el
   nombre del servicio. Solo aparecen en el diagrama del Estudio de arquitectura.

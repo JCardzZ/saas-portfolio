@@ -1,5 +1,11 @@
 package dev.portfolio.infrastructure.config;
 
+import java.io.UncheckedIOException;
+import java.io.InputStream;
+import java.io.IOException;
+import org.springframework.core.io.ClassPathResource;
+import dev.portfolio.domain.model.ArchitectureGraphRules;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.portfolio.application.port.in.ArchitectureCopilotUseCase;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase;
 import dev.portfolio.application.port.in.ArticleUseCase;
@@ -52,6 +58,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties(RateLimitProperties.class)
 public class UseCaseConfig {
+
+    static final String GRAPH_RULES = "architecture/graph-rules.json";
 
     @Bean
     public TechnologyUseCase technologyUseCase(TechnologyRepositoryPort repository, CachePort cache) {
@@ -112,8 +120,22 @@ public class UseCaseConfig {
     }
 
     @Bean
-    public ArchitectureProjectUseCase architectureProjectUseCase(ArchitectureProjectRepositoryPort repository) {
-        return new ArchitectureProjectService(repository);
+    public ArchitectureProjectUseCase architectureProjectUseCase(ArchitectureProjectRepositoryPort repository, ArchitectureGraphRules rules) {
+        return new ArchitectureProjectService(repository, rules);
+    }
+
+    /**
+     * Reglas del grafo del Estudio, que el frontend exporta con {@code npm run export:presets}.
+     * Van en el classpath: si faltan o no se leen, la aplicación no arranca, porque sin ellas
+     * se guardaría cualquier grafo.
+     */
+    @Bean
+    public ArchitectureGraphRules architectureGraphRules(ObjectMapper objectMapper) {
+        try (InputStream json = new ClassPathResource(GRAPH_RULES).getInputStream()) {
+            return objectMapper.readValue(json, ArchitectureGraphRules.class);
+        } catch (IOException e) {
+            throw new UncheckedIOException("No se pudieron leer las reglas del grafo (" + GRAPH_RULES + ")", e);
+        }
     }
 
     @Bean

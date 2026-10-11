@@ -12,7 +12,22 @@ const PROVIDER_SOURCES: Record<string, string> = {
   datadog: 'DataDog/datadog',
   mongodbatlas: 'mongodb/mongodbatlas',
   elasticstack: 'elastic/elasticstack',
+  snowflake: 'snowflakedb/snowflake',
+  databricks: 'databricks/databricks',
 };
+
+/**
+ * Servicios del catálogo que el generador todavía no sabe aprovisionar. No se callan: cada
+ * uno deja su aviso en `main.tf` y en el panel. (Un sistema del centro de datos propio es otra
+ * cosa: queda «fuera de Terraform» porque no se aprovisiona en la nube.)
+ */
+export const TERRAFORM_UNSUPPORTED_TYPES: readonly string[] = ['debezium', 'goldengate', 'tableau', 'powerbi', 'looker-studio'];
+
+/** Nombres de los servicios del lienzo que aún no tienen soporte de Terraform. */
+export function unsupportedTerraform(nodes: CloudNode[], provider: CloudProviderId): string[] {
+  return nodes.filter((node) => !node.terraform && TERRAFORM_UNSUPPORTED_TYPES.includes(node.type))
+    .map((node) => oneLine(node.name?.trim() || forProvider(node.service, provider)));
+}
 
 const CLOUD_PROVIDER_BLOCK: Record<CloudProviderId, string[]> = {
   aws: ['provider "aws" {', '  region = var.region', '}'],
@@ -75,7 +90,12 @@ export function generateMainTf(nodes: CloudNode[], links: CloudLink[], provider:
     );
   }
 
-  const unmanaged = nodes.filter((node) => !node.terraform).map((node) => oneLine(forProvider(node.service, provider)));
+  const unsupported = unsupportedTerraform(nodes, provider);
+  if (unsupported.length) {
+    lines.push('', ...unsupported.map((name) => `# ${name}: sin soporte de Terraform todavía`));
+  }
+  const unmanaged = nodes.filter((node) => !node.terraform && !TERRAFORM_UNSUPPORTED_TYPES.includes(node.type))
+    .map((node) => oneLine(forProvider(node.service, provider)));
   if (unmanaged.length) {
     lines.push('', `# Fuera de Terraform: ${unmanaged.join(', ')}`);
   }

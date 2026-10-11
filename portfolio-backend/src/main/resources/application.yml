@@ -90,6 +90,46 @@ security:
     terraform:
       max-requests: ${TERRAFORM_RATE_LIMIT_MAX_REQUESTS:30}
       window: ${TERRAFORM_RATE_LIMIT_WINDOW:1m}
+    # Cotizaciones (POST /public/architecture/pricing) por dirección de origen
+    pricing:
+      max-requests: ${PRICING_RATE_LIMIT_MAX_REQUESTS:30}
+      window: ${PRICING_RATE_LIMIT_WINDOW:1m}
+
+# MOTOR DE PRECIOS (FinOps). Lee precios de lista de las fuentes públicas de los proveedores; Azure
+# y AWS no necesitan claves. Cada tarifa se guarda 24 h; la última conocida se conserva 30 días para
+# servirla si el proveedor no responde. Con PRICING_AZURE_ENABLED=false y
+# PRICING_AWS_ENABLED=false no se hace ninguna llamada saliente y todo se cotiza como «precio desconocido».
+pricing:
+  cache-ttl: ${PRICING_CACHE_TTL:24h}
+  last-known-ttl: ${PRICING_LAST_KNOWN_TTL:30d}
+  azure:
+    enabled: ${PRICING_AZURE_ENABLED:true}
+    base-url: ${PRICING_AZURE_BASE_URL:https://prices.azure.com/api/retail/prices}
+    region: ${PRICING_AZURE_REGION:eastus}
+    connect-timeout: 3s
+    read-timeout: 6s
+    # Se abre con el 50% de fallos en las últimas 10 llamadas y reintenta al minuto
+    circuit-breaker:
+      failure-rate-threshold: 50
+      sliding-window-size: 10
+      minimum-calls: 4
+      open-duration: 60s
+      half-open-calls: 2
+
+  # AWS: ficheros públicos de precios por servicio y región, sin clave. Se leen en streaming; uno
+  # mayor que max-bytes no se lee (el de EC2 pesa unos 460 MB: por eso no hay tarifa de máquinas).
+  aws:
+    enabled: ${PRICING_AWS_ENABLED:true}
+    base-url: ${PRICING_AWS_BASE_URL:https://pricing.us-east-1.amazonaws.com}
+    connect-timeout: 3s
+    read-timeout: 20s
+    max-bytes: ${PRICING_AWS_MAX_BYTES:48MB}
+  # Google Cloud: su Pricing API exige clave (GCP_PRICING_API_KEY). Sin clave, o sin SKU asignados
+  # en pricing.gcp.skus.<código> (sku-id, label, note), no se hace ninguna llamada.
+  gcp:
+    api-key: ${GCP_PRICING_API_KEY:}
+    base-url: ${PRICING_GCP_BASE_URL:https://cloudbilling.googleapis.com}
+    region: ${PRICING_GCP_REGION:us-east1}
 
 # MOTOR DE IA (GEMINI). Sin GEMINI_API_KEY la aplicación arranca y las llamadas de IA responden 503.
 # Cambiar el modelo de embeddings obliga a reindexar: los vectores de modelos distintos no son comparables.

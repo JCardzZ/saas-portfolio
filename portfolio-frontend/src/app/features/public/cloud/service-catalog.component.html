@@ -28,7 +28,7 @@
                 draggable="true"
                 class="focus-ring group flex w-full cursor-grab items-center gap-2.5 rounded-xl border border-transparent px-2 py-1.5 text-left transition duration-300 ease-spring hover:border-white/15 hover:bg-white/[0.07] active:cursor-grabbing"
                 [attr.aria-label]="'Añadir ' + nameOf(item) + ': ' + item.capability"
-                [title]="item.why + ' · ' + terraformOf(item)"
+                [title]="item.why + (gapOf(item) ? ' ' + gapOf(item) : '') + ' · ' + terraformOf(item)"
                 (click)="picked.emit(item)"
                 (dragstart)="onDragStart($event, item)"
               >
@@ -41,6 +41,9 @@
                     }
                   </span>
                   <span class="block truncate text-[10.5px] text-zinc-500">{{ item.capability }}</span>
+                  @if (gapOf(item)) {
+                    <span class="block text-[10px] text-amber-200" data-testid="no-equivalent">Sin equivalente directo en {{ providerName() }}</span>
+                  }
                 </span>
                 <span class="text-base leading-none text-zinc-500 transition group-hover:text-white" aria-hidden="true">+</span>
               </button>

@@ -10,3 +10,12 @@ vulnerabilities:
     # la línea 6.2 de Spring Boot 3.5 ya no recibe parches públicos. Se quita al migrar a Spring Boot 4.
     statement: No aplica (la API no usa XsltView ni renderiza vistas). Pendiente de migrar a Spring Boot 4.
     expired_at: 2027-01-31
+  - id: CVE-2026-47890
+    # Spring MVC / WebFlux: inyección de saltos de línea al renderizar fragmentos de vistas dentro
+    # de un stream de Server-Sent Events; el navegador de otros usuarios leería campos SSE falsos.
+    # Esta API emite JSON puro mediante SseEmitter (TelemetryStreamBroadcaster), sin renderizado
+    # de plantillas en el servidor: no hay motor de vistas ni se usa FragmentsRendering.
+    # La corrección de código abierto solo existe en Spring Framework 7.0.9 (Spring Boot 4);
+    # la línea 6.2 de Spring Boot 3.5 ya no recibe parches públicos. Se quita al migrar a Spring Boot 4.
+    statement: Inyección en fragmentos de vistas no aplicable. La API emite JSON puro mediante SseEmitter sin renderizado Server-Side de plantillas.
+    expired_at: 2027-04-10
