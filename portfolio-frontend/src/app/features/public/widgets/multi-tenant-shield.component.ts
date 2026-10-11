@@ -34,8 +34,8 @@ const NEAREST = 3;
 const VECTOR_COUNT = 48;
 
 const TENANTS: Tenant[] = [
-  { id: 'A', name: 'Empresa A', slug: 'empresa-a', y: 72, color: '#38bdf8', query: { x: 468, y: 96 } },
-  { id: 'B', name: 'Empresa B', slug: 'empresa-b', y: 176, color: '#fbbf24', query: { x: 520, y: 150 } },
+  { id: 'A', name: 'Empresa A', slug: 'empresa-a', y: 72, color: 'var(--accent-text)', query: { x: 468, y: 96 } },
+  { id: 'B', name: 'Empresa B', slug: 'empresa-b', y: 176, color: 'var(--text-2)', query: { x: 520, y: 150 } },
 ];
 
 /**
@@ -69,7 +69,7 @@ const TENANTS: Tenant[] = [
     }
     .beam-pulse {
       fill: none;
-      stroke: #fff;
+      stroke: var(--text-1);
       stroke-width: 2.6;
       stroke-linecap: round;
       stroke-dasharray: 5 95;
@@ -92,9 +92,9 @@ const TENANTS: Tenant[] = [
       animation: appear 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
     }
     .leak {
-      stroke: #f87171;
+      stroke: var(--status-danger);
       stroke-dasharray: 3 3;
-      filter: drop-shadow(0 0 4px #f87171);
+      filter: drop-shadow(0 0 4px var(--status-danger));
     }
     @keyframes appear {
       from { opacity: 0; }
@@ -104,19 +104,19 @@ const TENANTS: Tenant[] = [
       transition: stroke 0.5s, opacity 0.5s, fill 0.5s;
     }
     .gate-off rect {
-      stroke: #f87171;
+      stroke: var(--status-danger);
       fill: rgb(248 113 113 / 0.1);
     }
     .gate text {
-      font-size: 9.5px;
-      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      font-size: 12px;
+      font-family: var(--font-mono);
     }
     .tenant, .database {
       cursor: pointer;
       outline: none;
     }
     .database:focus-visible text {
-      fill: #fff;
+      fill: var(--text-1);
       text-decoration: underline;
     }
     .tenant rect {
@@ -124,7 +124,7 @@ const TENANTS: Tenant[] = [
       transition: filter 0.5s, opacity 0.5s;
     }
     .tenant:focus-visible rect {
-      stroke: #fff;
+      stroke: var(--text-1);
       stroke-width: 2;
     }
     .tenant text {

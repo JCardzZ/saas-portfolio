@@ -1,49 +1,22 @@
-:host(:hover) .wire,
-:host(.theater-expanded) .wire {
-  stroke: rgb(255 255 255 / 0.3);
-}
+/* Nodo, zonas y cables con el lenguaje único del sitio (docs/DESIGN.md §9.6): neutros, borde de 1 px;
+   el acento marca la selección y verde, ámbar y rojo solo el estado. */
 
-/* Zonas, al estilo de los diagramas de los proveedores: nube, red privada y subredes. */
-.zone {
-  fill: rgb(255 255 255 / 0.015);
-  stroke-width: 1.2;
-  stroke-dasharray: 6 5;
-  transition: stroke 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.zone-cloud { stroke: var(--provider); }
-.zone-network { stroke: rgb(52 211 153 / 0.6); fill: rgb(52 211 153 / 0.03); }
-.zone-public { stroke: none; fill: rgb(52 211 153 / 0.07); }
-.zone-private { stroke: none; fill: rgb(10 132 255 / 0.08); }
-.zone-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.03em; }
-.zone-sub { fill: #a1a1aa; font-size: 9.5px; }
+/* Zonas: se distinguen por el patrón de su borde y su rótulo, no por el color. */
+.zone { fill: rgb(14 15 18 / 0.5); stroke: var(--border-strong); stroke-width: 1; transition: stroke var(--duration-base); }
+.zone-cloud { stroke-dasharray: 10 6; }
+.zone-network { stroke-dasharray: none; }
+.zone-public, .zone-private { stroke: var(--border-subtle); stroke-dasharray: none; fill: rgb(22 24 29 / 0.55); }
+.zone-label { fill: var(--text-2); font-size: 12px; font-weight: 500; letter-spacing: 0.04em; }
+.zone-sub { fill: var(--text-3); font-size: 12px; }
 
-.wire {
-  fill: none;
-  stroke: rgb(255 255 255 / 0.16);
-  stroke-width: 1.5;
-  transition: stroke 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-/* Conexiones que entran o salen del nodo activo: brillan con su color de marca (brand-glow). */
-.wire-active {
-  stroke: var(--flow, var(--provider)) !important;
-  stroke-width: 2.6;
-  filter: drop-shadow(0 0 4px var(--flow, var(--provider))) drop-shadow(0 0 12px var(--flow, var(--provider)));
-}
-.pulse-active {
-  stroke: #fff;
-  stroke-width: 3.5;
-  filter: drop-shadow(0 0 6px var(--flow, #38bdf8));
-}
-/* brand-glow: el cable hacia un componente añadido brilla con el color de su marca. */
-.wire-glow {
-  stroke: var(--glow) !important;
-  filter: drop-shadow(0 0 5px var(--glow));
-  animation: wire-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-@keyframes wire-in {
-  from { opacity: 0; stroke-width: 5; }
-}
-.wire-label { fill: #71717a; font-size: 9.5px; }
+.wire { fill: none; stroke: var(--border-strong); stroke-width: 1; transition: stroke var(--duration-base) var(--ease-standard); }
+/* Conexiones que entran o salen del nodo activo. */
+.wire-active { stroke: var(--accent-text) !important; stroke-width: 1.5; }
+.pulse-active { stroke-width: 3; }
+/* El cable hacia un componente recién añadido. */
+.wire-glow { stroke: var(--accent-text) !important; animation: wire-in 0.6s var(--ease-emphasized) backwards; }
+@keyframes wire-in { from { opacity: 0; } }
+.wire-label { fill: var(--text-3); font-size: 12px; }
 
 /* Conexiones de datos: mismo trazo fino, distinto patrón según lo que llevan. */
 .wire[data-kind='CDC_STREAM'] { stroke-dasharray: 1.5 4; stroke-linecap: round; }
@@ -51,109 +24,61 @@
 .wire[data-kind='ANALYTICS_SINK'] { stroke-dasharray: 10 3 2 3; }
 .wire[data-kind='REPLICATION'] { stroke-dasharray: 3 3; }
 
-/* Coste mensual de cada nodo, a caballo de su borde inferior. */
-.node-cost rect { fill: #0a0a0a; stroke: rgb(255 255 255 / 0.14); stroke-width: 1; }
-.node-cost text { fill: #a1a1aa; font-size: 8.5px; font-variant-numeric: tabular-nums; }
-.node-cost-live rect { stroke: rgb(52 211 153 / 0.55); }
-.node-cost-live text { fill: #6ee7b7; }
+/* Coste mensual de cada nodo, bajo su borde inferior. El precio real se marca con el acento. */
+.node-cost rect { fill: var(--bg-surface-1); stroke: var(--border-subtle); stroke-width: 1; }
+.node-cost text { fill: var(--text-2); font-size: 9px; font-variant-numeric: tabular-nums; }
+.node-cost-live rect { stroke: var(--accent-text); }
+.node-cost-live text { fill: var(--accent-text); }
 
 /* Aviso de una regla del grafo incumplida, en la esquina del nodo. */
-.rule-badge circle { fill: #f59e0b; stroke: #0a0a0a; stroke-width: 1.5; }
-.rule-badge text { fill: #0a0a0a; font-size: 11px; font-weight: 700; }
+.rule-badge circle { fill: var(--status-warn); stroke: var(--bg-canvas); stroke-width: 1.5; }
+.rule-badge text { fill: var(--bg-surface-1); font-size: 12px; font-weight: 700; }
 
-/* Pulso de luz que recorre cada conexión en el sentido de la petición. */
-.pulse {
-  fill: none;
-  stroke: #7dd3fc;
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-dasharray: 5 95;
-  filter: drop-shadow(0 0 4px #38bdf8);
-  animation: flow 2s linear infinite;
-}
-@keyframes flow {
-  from { stroke-dashoffset: 100; }
-  to { stroke-dashoffset: 0; }
-}
-@keyframes node-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.9); }
-}
+/* Pulso que recorre cada conexión en el sentido de la petición. */
+.pulse { fill: none; stroke: var(--accent-text); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 4 96; animation: flow 2s linear infinite; }
+@keyframes flow { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@keyframes node-in { from { opacity: 0; transform: translateY(6px); } }
 
-.node {
-  cursor: pointer;
-  outline: none;
-}
-.node rect {
-  fill: rgb(24 24 27 / 0.92);
-  stroke: rgb(255 255 255 / 0.16);
-  stroke-width: 1;
-  transition: fill 0.5s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-    filter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.node-active rect {
-  fill: color-mix(in srgb, var(--brand, #fff) 14%, rgb(24 24 27));
-  stroke: var(--brand, #fff);
-  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--brand, #fff) 60%, transparent));
-}
-.node:focus-visible rect { stroke: #fff; stroke-width: 2; }
-/* Componente añadido por el visitante: borde discontinuo y entrada con rebote. */
-.node-custom {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: node-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-}
-.node-custom rect { stroke-dasharray: 5 4; stroke: var(--brand, #fff); }
+.node { cursor: pointer; outline: none; }
+.node rect { fill: var(--bg-surface-2); stroke: var(--border-subtle); stroke-width: 1; transition: stroke var(--duration-fast) var(--ease-standard); }
+.node:hover rect { stroke: var(--border-strong); }
+.node-active rect, .node-active:hover rect { stroke: var(--accent-text); stroke-width: 1.5; }
+.node:focus-visible rect { stroke: var(--accent-text); stroke-width: 2; }
+/* Componente añadido por el visitante: borde discontinuo. */
+.node-custom { transform-box: fill-box; transform-origin: center; animation: node-in 0.4s var(--ease-emphasized) backwards; }
+.node-custom rect { stroke-dasharray: 5 4; stroke: var(--border-strong); }
 .node-editing { cursor: grab; touch-action: none; }
 .node-editing:active { cursor: grabbing; }
 .node-icon,
 .node text { pointer-events: none; }
 /* El nombre del servicio cambia con el proveedor: entra con un fundido. */
-.node-service {
-  fill: #fff;
-  font-size: 11px;
-  font-weight: 600;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: node-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-.node-role { fill: #a1a1aa; font-size: 9.5px; }
+.node-service { fill: var(--text-1); font-size: 12px; font-weight: 600; transform-box: fill-box; transform-origin: center; animation: node-in 0.4s var(--ease-emphasized) backwards; }
+.node-role { fill: var(--text-2); font-size: 10px; }
 
 .remove { cursor: pointer; outline: none; }
-.remove circle { fill: #ef4444; transition: fill 0.2s; }
-.remove:hover circle,
-.remove:focus-visible circle { fill: #f87171; }
-.remove:focus-visible circle { stroke: #fff; stroke-width: 1.5; }
+.remove circle { fill: var(--status-danger); }
+.remove:focus-visible circle { stroke: var(--text-1); stroke-width: 1.5; }
 
-.canvas-editing {
-  background-image: radial-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px);
-  background-size: 22px 22px;
-  border-radius: 1rem;
-}
+.canvas-editing { background-image: radial-gradient(var(--border-subtle) 1px, transparent 1px); background-size: 24px 24px; border-radius: var(--radius-panel); }
 
-/* Simulación de caos: el cable afectado cambia de color y parpadea; el nodo lleva su estado. */
+/* Simulación de caos: el cable afectado cambia a su color de estado y parpadea; el nodo lleva su rótulo. */
 .wire-warn,
-.wire-down {
-  stroke-width: 2.2;
-  animation: wire-blink 0.7s ease-in-out infinite alternate;
-}
-.wire-warn { stroke: #fbbf24 !important; filter: drop-shadow(0 0 5px #fbbf24); }
-.wire-down { stroke: #ef4444 !important; stroke-dasharray: 6 5; filter: drop-shadow(0 0 6px #ef4444); }
-@keyframes wire-blink {
-  from { opacity: 1; }
-  to { opacity: 0.35; }
-}
+.wire-down { stroke-width: 1.5; animation: wire-blink 0.7s ease-in-out infinite alternate; }
+.wire-warn { stroke: var(--status-warn) !important; }
+.wire-down { stroke: var(--status-danger) !important; stroke-dasharray: 6 5; }
+@keyframes wire-blink { from { opacity: 1; } to { opacity: 0.35; } }
 /* Por una conexión caída no circula tráfico. */
 .pulse-off { display: none; }
 
-.node-chaos-down rect { stroke: #ef4444; fill: rgb(127 29 29 / 0.5); filter: drop-shadow(0 0 12px rgb(239 68 68 / 0.6)); }
-.node-chaos-warn rect { stroke: #fbbf24; filter: drop-shadow(0 0 10px rgb(251 191 36 / 0.45)); }
-.node-chaos-ok rect { stroke: #34d399; filter: drop-shadow(0 0 10px rgb(52 211 153 / 0.45)); }
+.node-chaos-down rect { stroke: var(--status-danger); }
+.node-chaos-warn rect { stroke: var(--status-warn); }
+.node-chaos-ok rect { stroke: var(--status-ok); }
 
-.chaos-badge { pointer-events: none; animation: node-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; transform-box: fill-box; transform-origin: center; }
-.chaos-badge text { fill: #0a0a0a; font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em; font-family: ui-monospace, monospace; }
-.chaos-badge[data-level='down'] rect { fill: #f87171; }
-.chaos-badge[data-level='warn'] rect { fill: #fbbf24; }
-.chaos-badge[data-level='ok'] rect { fill: #34d399; }
+.chaos-badge { pointer-events: none; animation: node-in 0.3s var(--ease-emphasized) backwards; transform-box: fill-box; transform-origin: center; }
+.chaos-badge text { fill: var(--bg-surface-1); font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em; font-family: var(--font-mono); }
+.chaos-badge[data-level='down'] rect { fill: var(--status-danger); }
+.chaos-badge[data-level='warn'] rect { fill: var(--status-warn); }
+.chaos-badge[data-level='ok'] rect { fill: var(--status-ok); }
 
 @media (prefers-reduced-motion: reduce) {
   .wire-warn,

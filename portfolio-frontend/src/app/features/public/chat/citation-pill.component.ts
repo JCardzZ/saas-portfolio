@@ -16,14 +16,14 @@ const CMS_LABELS: Record<string, string> = {
   template: `
     <button
       type="button"
-      class="focus-ring inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-zinc-200 backdrop-blur-md transition duration-300 ease-spring hover:bg-white/20"
+      class="focus-ring inline-flex max-w-full items-center gap-1.5 rounded-control border border-line-strong bg-surface-3 px-3 py-1 text-xs font-medium text-ink-1 backdrop-blur-md transition duration-300 ease-spring hover:bg-surface-3"
       [attr.aria-expanded]="expanded()"
       (click)="expanded.set(!expanded())"
     >
-      <span class="h-1.5 w-1.5 shrink-0 rounded-full" [class]="isCms() ? 'bg-emerald-400' : 'bg-accent'"></span>
+      <span class="h-1.5 w-1.5 shrink-0 rounded-full" [class]="isCms() ? 'bg-status-ok' : 'bg-accent-solid'"></span>
       <span class="truncate">{{ label() }}</span>
       @if (citation().lineNumberRange) {
-        <span class="shrink-0 text-zinc-400">L{{ citation().lineNumberRange }}</span>
+        <span class="shrink-0 text-ink-2">L{{ citation().lineNumberRange }}</span>
       }
     </button>
 
@@ -34,14 +34,14 @@ const CMS_LABELS: Record<string, string> = {
       [attr.inert]="expanded() ? null : ''"
     >
       <div class="overflow-hidden">
-        <div class="mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/40">
-          <p class="border-b border-white/10 px-3 py-2 font-mono text-[11px] text-zinc-400">
+        <div class="mt-2 overflow-hidden rounded-panel border border-line-subtle bg-surface-2">
+          <p class="border-b border-line-subtle px-3 py-2 font-mono text-xs text-ink-2">
             {{ citation().filePath }}
             @if (citation().lineNumberRange) {
               <span> · líneas {{ citation().lineNumberRange }}</span>
             }
           </p>
-          <pre class="max-h-56 overflow-auto px-3 py-2 font-mono text-xs leading-relaxed text-zinc-200">{{
+          <pre class="max-h-56 overflow-auto px-3 py-2 font-mono text-xs leading-relaxed text-ink-1">{{
             citation().codeSnippet
           }}</pre>
         </div>

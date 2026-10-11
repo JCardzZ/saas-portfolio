@@ -34,20 +34,20 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
   imports: [AutofocusDirective],
   host: { class: 'block', '(keydown.escape)': 'closed.emit(); $event.stopPropagation()', '(keydown)': '$event.stopPropagation()' },
   template: `
-    <section class="flex max-h-[32rem] animate-scale-up flex-col overflow-hidden rounded-2xl border border-white/15 bg-zinc-950/95 text-zinc-100 shadow-2xl backdrop-blur-2xl" role="dialog" aria-labelledby="node-properties-title">
-      <header class="flex items-center gap-2 border-b border-white/10 px-3 py-2">
+    <section class="flex max-h-[32rem] animate-scale-up flex-col overflow-hidden rounded-panel border border-line-strong bg-surface-1/95 text-ink-1 shadow-2xl backdrop-blur-2xl" role="dialog" aria-labelledby="node-properties-title">
+      <header class="flex items-center gap-2 border-b border-line-subtle px-3 py-2">
         <h4 id="node-properties-title" class="min-w-0 flex-1 truncate text-sm font-semibold">Propiedades · {{ service() }}</h4>
-        <button type="button" class="focus-ring rounded-full px-2 text-lg leading-none text-zinc-400 hover:text-white" aria-label="Cerrar las propiedades" (click)="closed.emit()">×</button>
+        <button type="button" class="focus-ring rounded-control px-2 text-lg leading-none text-ink-2 hover:text-ink-1" aria-label="Cerrar las propiedades" (click)="closed.emit()">×</button>
       </header>
 
       <div class="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 text-xs">
         <label class="block">
-          <span class="text-zinc-400">Nombre del recurso</span>
+          <span class="text-ink-2">Nombre del recurso</span>
           <input appAutofocus type="text" maxlength="60" class="field" [placeholder]="service()" [value]="node().name ?? ''" (input)="changed.emit({ name: value($event) })" />
         </label>
 
         <label class="block">
-          <span class="text-zinc-400">Subred / zona de red</span>
+          <span class="text-ink-2">Subred / zona de red</span>
           <select class="field" [value]="node().zone" (change)="changed.emit({ zone: $any(value($event)) })">
             @for (zone of zones; track zone.id) {
               <option [value]="zone.id" [selected]="zone.id === node().zone">{{ zone.name }}</option>
@@ -56,7 +56,7 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
         </label>
 
         <label class="block">
-          <span class="text-zinc-400">Capacidad / instancia</span>
+          <span class="text-ink-2">Capacidad / instancia</span>
           <input type="text" maxlength="60" class="field font-mono" list="instance-hints" [placeholder]="hints()[0]" [value]="node().props?.instance ?? ''" (input)="changed.emit({ props: { instance: value($event) } })" />
           <datalist id="instance-hints">
             @for (hint of hints(); track hint) {
@@ -66,34 +66,34 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
         </label>
 
         <label class="block">
-          <span class="text-zinc-400">Puertos</span>
+          <span class="text-ink-2">Puertos</span>
           <input type="text" maxlength="80" class="field font-mono" placeholder="8080, 443" [value]="node().props?.ports ?? ''" (input)="changed.emit({ props: { ports: value($event) } })" />
         </label>
 
         <label class="block">
-          <span class="text-zinc-400">Variables de entorno <span class="text-zinc-600">(CLAVE=valor, una por línea)</span></span>
+          <span class="text-ink-2">Variables de entorno <span class="text-ink-3">(CLAVE=valor, una por línea)</span></span>
           <textarea rows="4" maxlength="2000" class="field resize-y font-mono" placeholder="SPRING_PROFILES_ACTIVE=prod" [value]="node().props?.env ?? ''" (input)="changed.emit({ props: { env: value($event) } })"></textarea>
         </label>
 
         <div>
-          <span class="text-zinc-400">Conexiones</span>
+          <span class="text-ink-2">Conexiones</span>
           <ul class="mt-1 space-y-1">
             @for (link of links(); track link.from + '>' + link.to) {
-              <li class="flex items-center gap-2 rounded-lg bg-white/5 px-2 py-1">
-                <span class="font-mono text-zinc-500" aria-hidden="true">{{ link.outgoing ? '→' : '←' }}</span>
+              <li class="flex items-center gap-2 rounded-control bg-surface-2 px-2 py-1">
+                <span class="font-mono text-ink-3" aria-hidden="true">{{ link.outgoing ? '→' : '←' }}</span>
                 <span class="min-w-0 flex-1 truncate">
                   <span class="sr-only">{{ link.outgoing ? 'Hacia' : 'Desde' }}</span> {{ link.label }}
                 </span>
-                <select class="field !w-auto !py-0.5 text-[11px]" [attr.aria-label]="'Tipo de la conexión con ' + link.label" (change)="onKind(link, $event)">
+                <select class="field !w-auto !py-0.5 text-xs" [attr.aria-label]="'Tipo de la conexión con ' + link.label" (change)="onKind(link, $event)">
                   <option value="" [selected]="!link.kind">Peticiones</option>
                   @for (option of linkKinds; track option.kind) {
                     <option [value]="option.kind" [selected]="link.kind === option.kind" [title]="option.hint">{{ option.name }}</option>
                   }
                 </select>
-                <button type="button" class="rounded-full px-1.5 text-zinc-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0a84ff]" [attr.aria-label]="'Quitar la conexión con ' + link.label" (click)="disconnected.emit({ from: link.from, to: link.to })">×</button>
+                <button type="button" class="rounded-control px-1.5 text-ink-2 hover:text-ink-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-text" [attr.aria-label]="'Quitar la conexión con ' + link.label" (click)="disconnected.emit({ from: link.from, to: link.to })">×</button>
               </li>
             } @empty {
-              <li class="text-zinc-500">Sin conexiones.</li>
+              <li class="text-ink-3">Sin conexiones.</li>
             }
           </ul>
           @if (targets().length > 0) {
@@ -108,15 +108,15 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
         </div>
 
         @if (secrets().length > 0) {
-          <p class="rounded-lg border border-amber-400/40 bg-amber-400/10 px-2 py-1.5 text-amber-100" role="status">
+          <p class="rounded-control border border-status-warn/40 bg-status-warn/10 px-2 py-1.5 text-status-warn" role="status">
             {{ secrets().join(', ') }} parece una credencial. No se exporta a Terraform, pero sí queda guardada en tu navegador
             y en el JSON del proyecto: usa un valor de ejemplo.
           </p>
         }
       </div>
 
-      <footer class="border-t border-white/10 px-3 py-2 text-[10px] leading-snug text-zinc-500">
-        Recurso de Terraform: <span class="font-mono text-zinc-300">{{ resource() ?? 'fuera de Terraform' }}</span>
+      <footer class="border-t border-line-subtle px-3 py-2 text-xs leading-snug text-ink-3">
+        Recurso de Terraform: <span class="font-mono text-ink-2">{{ resource() ?? 'fuera de Terraform' }}</span>
       </footer>
     </section>
   `,
@@ -129,10 +129,10 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
       border: 1px solid rgb(255 255 255 / 0.12);
       background: rgb(0 0 0 / 0.5);
       padding: 0.35rem 0.55rem;
-      color: #fff;
+      color: var(--text-1);
       font-size: 0.75rem;
     }
-    .field:focus-visible { outline: 2px solid #0a84ff; outline-offset: 1px; }
+    .field:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

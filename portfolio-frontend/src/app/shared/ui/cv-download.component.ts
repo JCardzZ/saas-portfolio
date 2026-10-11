@@ -73,13 +73,7 @@ export class CvPickerService {
   standalone: true,
   host: { class: 'inline-block' },
   template: `
-    <button
-      type="button"
-      class="focus-ring inline-flex items-center gap-2 rounded-full font-medium transition duration-300 ease-spring"
-      [class]="variant() === 'nav' ? 'px-3 py-1.5 text-sm text-zinc-300 hover:text-white' : 'glass px-6 py-2.5 text-[15px] text-white hover:bg-white/10'"
-      aria-haspopup="dialog"
-      (click)="picker.open.set(true)"
-    >
+    <button type="button" [class]="classes[variant()]" aria-haspopup="dialog" (click)="picker.open.set(true)">
       <svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M4.5 7 8 10.5 11.5 7M3 13.5h10" /></svg>
       {{ variant() === 'nav' ? 'CV' : 'Descargar CV' }}
     </button>
@@ -88,8 +82,9 @@ export class CvPickerService {
 })
 export class CvDownloadComponent {
   readonly picker = inject(CvPickerService);
-  /** `nav`: enlace compacto para la barra. `button`: botón de vidrio para el hero y el pie. */
-  readonly variant = input<'nav' | 'button'>('button');
+  /** `nav`: compacto, para la barra. `primary`: la acción principal del hero. `button`: secundario (pie). */
+  readonly variant = input<'nav' | 'primary' | 'button'>('button');
+  readonly classes = { nav: 'ui-btn-ghost', primary: 'ui-btn-primary ui-btn-lg', button: 'ui-btn-secondary ui-btn-lg' };
 }
 
 /**
@@ -103,48 +98,48 @@ export class CvDownloadComponent {
   imports: [FocusTrapDirective, AutofocusDirective],
   template: `
     @if (picker.open()) {
-      <div class="fixed inset-0 z-50 flex animate-fade-in items-start justify-center overflow-y-auto bg-black/70 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(6dvh,env(safe-area-inset-bottom))] pt-[max(6dvh,env(safe-area-inset-top))] backdrop-blur-sm" (click)="close()" (keydown.escape)="close()">
+      <div class="fixed inset-0 z-50 flex animate-fade-in items-start justify-center overflow-y-auto bg-canvas/70 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(6dvh,env(safe-area-inset-bottom))] pt-[max(6dvh,env(safe-area-inset-top))] backdrop-blur-sm" (click)="close()" (keydown.escape)="close()">
         <section
           appFocusTrap
           role="dialog"
           aria-modal="true"
           aria-labelledby="cv-picker-title"
-          class="w-full max-w-4xl animate-scale-up rounded-3xl border border-white/10 bg-zinc-900/90 p-5 text-zinc-100 shadow-2xl shadow-black/70 backdrop-blur-2xl sm:p-6"
+          class="w-full max-w-4xl animate-scale-up rounded-card border border-line-subtle bg-surface-2/95 p-5 text-ink-1 shadow-2xl shadow-black/70 backdrop-blur-2xl sm:p-6"
           (click)="$event.stopPropagation()"
         >
           <header class="flex items-start justify-between gap-4">
             <div>
-              <h2 id="cv-picker-title" class="text-xl font-semibold tracking-tight text-white">Descargar CV</h2>
-              <p class="mt-1 text-sm text-zinc-400">Elige formato e idioma. Todos salen de la misma trayectoria que ves en esta página.</p>
+              <h2 id="cv-picker-title" class="text-xl font-semibold tracking-tight text-ink-1">Descargar CV</h2>
+              <p class="mt-1 text-sm text-ink-2">Elige formato e idioma. Todos salen de la misma trayectoria que ves en esta página.</p>
             </div>
-            <button type="button" appAutofocus class="focus-ring flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white" aria-label="Cerrar" (click)="close()">
+            <button type="button" appAutofocus class="focus-ring flex h-8 w-8 shrink-0 items-center justify-center rounded-control text-ink-2 transition hover:bg-surface-3 hover:text-ink-1" aria-label="Cerrar" (click)="close()">
               <svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
             </button>
           </header>
 
-          <label class="mt-4 inline-flex min-h-[44px] cursor-pointer items-center gap-3 text-sm text-zinc-200">
+          <label class="mt-4 inline-flex min-h-[44px] cursor-pointer items-center gap-3 text-sm text-ink-1">
             <input type="checkbox" role="switch" class="peer sr-only" [checked]="picker.withPhoto()" (change)="picker.withPhoto.set($any($event.target).checked)" />
-            <span class="relative h-6 w-10 rounded-full bg-white/15 transition peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-white after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-4" aria-hidden="true"></span>
+            <span class="relative h-6 w-10 rounded-full bg-surface-3 transition peer-checked:bg-accent-solid peer-focus-visible:ring-2 peer-focus-visible:ring-white after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-4" aria-hidden="true"></span>
             Incluir foto de perfil
-            <span class="text-xs text-zinc-500">{{ picker.withPhoto() ? 'algunos procesos piden el CV sin foto' : 'CV sin foto' }}</span>
+            <span class="text-xs text-ink-3">{{ picker.withPhoto() ? 'algunos procesos piden el CV sin foto' : 'CV sin foto' }}</span>
           </label>
 
           <ul class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
             @for (option of designed; track option.lang + option.type) {
               <li>
                 <a
-                  class="focus-ring group block rounded-2xl border border-white/10 bg-white/[0.03] p-2.5 transition duration-300 ease-spring hover:-translate-y-1 hover:border-white/30 hover:bg-white/[0.07]"
+                  class="focus-ring group block rounded-panel border border-line-subtle bg-surface-2 p-2.5 transition duration-300 ease-spring hover:-translate-y-1 hover:border-line-strong hover:bg-surface-2"
                   [href]="urlOf(option)"
                   [attr.download]="'cv-' + option.lang + '-' + option.type + '.pdf'"
                   [attr.hreflang]="option.lang"
                   [attr.aria-label]="'Descargar ' + option.label + ' en PDF' + (picker.withPhoto() ? '' : ', sin foto')"
                 >
-                  <span class="block overflow-hidden rounded-xl bg-white">
+                  <span class="block overflow-hidden rounded-panel bg-white">
                     <img class="block aspect-[210/297] w-full object-cover object-top" [src]="previewOf(option)" alt="" loading="lazy" width="496" height="702" />
                   </span>
-                  <span class="mt-2.5 block text-sm font-medium text-white">{{ option.label }}</span>
-                  <span class="block text-[11px] text-zinc-400">{{ option.hint }}</span>
-                  <span class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-medium text-white transition group-hover:bg-accent-hover">
+                  <span class="mt-2.5 block text-sm font-medium text-ink-1">{{ option.label }}</span>
+                  <span class="block text-xs text-ink-2">{{ option.hint }}</span>
+                  <span class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent-solid px-3 py-1 text-xs font-medium text-white transition group-hover:bg-accent-solid-hover">
                     <svg viewBox="0 0 16 16" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M4.5 7 8 10.5 11.5 7M3 13.5h10" /></svg>
                     PDF
                   </span>
@@ -153,18 +148,18 @@ export class CvDownloadComponent {
             }
           </ul>
 
-          <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
-            <p class="mr-1 text-xs text-zinc-400">Para sistemas de selección (ATS), texto plano:</p>
+          <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-line-subtle pt-4">
+            <p class="mr-1 text-xs text-ink-2">Para sistemas de selección (ATS), texto plano:</p>
             @for (option of ats; track option.lang) {
-              <a class="focus-ring tap inline-flex items-center rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-100 transition hover:bg-white/10" [href]="urlOf(option)" [attr.download]="'cv-' + option.lang + '-ats.pdf'" [attr.hreflang]="option.lang">
-                {{ option.label }} <span class="text-zinc-500">· {{ option.hint }}</span>
+              <a class="focus-ring tap inline-flex items-center rounded-control border border-line-strong px-3 py-1 text-xs text-ink-1 transition hover:bg-surface-3" [href]="urlOf(option)" [attr.download]="'cv-' + option.lang + '-ats.pdf'" [attr.hreflang]="option.lang">
+                {{ option.label }} <span class="text-ink-3">· {{ option.hint }}</span>
               </a>
             }
             @if (jsonUrl) {
-              <a class="focus-ring tap inline-flex items-center rounded-full border border-white/15 px-3 py-1 font-mono text-xs text-zinc-100 transition hover:bg-white/10" [href]="jsonUrl" target="_blank" rel="noopener">JSON API</a>
+              <a class="focus-ring tap inline-flex items-center rounded-control border border-line-strong px-3 py-1 font-mono text-xs text-ink-1 transition hover:bg-surface-3" [href]="jsonUrl" target="_blank" rel="noopener">JSON API</a>
             }
           </div>
-          <p class="mt-3 text-[11px] leading-snug text-zinc-500">
+          <p class="mt-3 text-xs leading-snug text-ink-3">
             {{ demo ? 'Modo demo: se descargan las copias exportadas del CV.' : 'El PDF se genera al momento desde la trayectoria publicada; la miniatura es de la última exportación.' }}
           </p>
         </section>

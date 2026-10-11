@@ -124,15 +124,14 @@ const LEVELS: C4Level[] = [
   template: `
     <app-theater-toggle name="Arquitectura en vivo" />
     <div class="flex flex-wrap items-center justify-between gap-3 pr-10">
-      <h3 class="text-xl font-semibold tracking-tight text-white">Arquitectura en vivo</h3>
+      <h3 class="text-title-2 text-ink-1">Arquitectura en vivo</h3>
 
-      <div class="glass flex max-w-full overflow-x-auto rounded-full p-1 [scrollbar-width:none]" role="tablist" aria-label="Nivel del modelo C4" (keydown)="onTabKeydown($event)">
+      <div class="ui-segmented" role="tablist" aria-label="Nivel del modelo C4" (keydown)="onTabKeydown($event)">
         @for (candidate of levels; track candidate.id) {
           <button
             type="button"
             role="tab"
-            class="focus-ring shrink-0 rounded-full px-3 py-1 text-xs font-medium transition duration-500 ease-spring"
-            [class]="candidate.id === level().id ? 'bg-white/15 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'"
+            class="ui-segment"
             [id]="'c4-tab-' + candidate.id"
             [attr.aria-selected]="candidate.id === level().id"
             [attr.tabindex]="candidate.id === level().id ? 0 : -1"
@@ -146,12 +145,12 @@ const LEVELS: C4Level[] = [
     </div>
 
     <div id="c4-panel" role="tabpanel" [attr.aria-labelledby]="'c4-tab-' + level().id">
-      <p class="mt-3 text-sm text-zinc-400">
-        <span class="font-medium text-zinc-200">{{ level().title }}.</span> {{ level().description }}
+      <p class="mt-3 text-body-sm text-ink-2">
+        <span class="font-medium text-ink-1">{{ level().title }}.</span> {{ level().description }}
       </p>
 
       <div class="theater-stage mt-3 overflow-x-auto">
-        <svg viewBox="0 0 600 300" class="w-full min-w-[520px]" role="group" [attr.aria-label]="level().title">
+        <svg viewBox="0 0 600 300" class="w-full min-w-[600px]" role="group" [attr.aria-label]="level().title">
           <!-- Cambiar de nivel recrea el grupo: los nodos entran escalonados en lugar de saltar. -->
           @for (current of [level()]; track current.id) {
             <g class="level">
@@ -178,7 +177,7 @@ const LEVELS: C4Level[] = [
                   (focus)="activate(node)"
                   (click)="activate(node); pop(node, $event)"
                 >
-                  <rect [attr.x]="node.x - width() / 2" [attr.y]="node.y - halfHeight" [attr.width]="width()" [attr.height]="height" rx="16" />
+                  <rect [attr.x]="node.x - width() / 2" [attr.y]="node.y - halfHeight" [attr.width]="width()" [attr.height]="height" rx="8" />
                   @if (iconOf(node); as icon) {
                     <svg class="node-icon" [attr.x]="iconBox(node).x" [attr.y]="iconBox(node).y" [attr.width]="iconBox(node).size" [attr.height]="iconBox(node).size" viewBox="0 0 24 24" aria-hidden="true">
                       <path [attr.d]="icon.path" [attr.fill]="icon.color" />
@@ -194,64 +193,39 @@ const LEVELS: C4Level[] = [
       </div>
 
       <div class="mt-3 flex min-h-[3.25rem] flex-wrap items-center gap-2" aria-live="polite">
-        <p class="mr-1 text-sm font-medium text-white">{{ active().label }}</p>
+        <p class="mr-1 text-body-sm font-medium text-ink-1">{{ active().label }}</p>
         @for (fact of active().facts; track level().id + active().id + fact) {
-          <span
-            class="animate-slide-up rounded-full border px-2.5 py-1 font-mono text-[11px]"
-            [class]="active().tone === 'pure' ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300' : active().tone === 'framework' ? 'border-accent/50 bg-accent/10 text-sky-300' : 'border-white/10 bg-white/5 text-zinc-300'"
-          >{{ fact }}</span>
+          <span class="ui-badge animate-fade-in font-mono">{{ fact }}</span>
         }
       </div>
     </div>
   `,
   styles: `
-    /* Al pasar por la tarjeta (o en modo teatro) el diagrama gana contraste y los logos brillan más. */
-    :host(:hover) .edge:not(.edge-active),
-    :host(.theater-expanded) .edge:not(.edge-active) {
-      stroke: rgb(255 255 255 / 0.26);
-    }
-    :host(:hover) .pulse,
-    :host(.theater-expanded) .pulse {
-      opacity: 1;
-    }
-    :host(:hover) .node rect,
-    :host(.theater-expanded) .node rect {
-      stroke-width: 1.4;
-    }
-    :host(:hover) .node-icon,
-    :host(.theater-expanded) .node-icon {
-      filter: drop-shadow(0 0 4px var(--brand, #0a84ff));
-    }
-    :host(:hover) .node-active .node-icon,
-    :host(.theater-expanded) .node-active .node-icon {
-      filter: drop-shadow(0 0 9px var(--brand, #0a84ff));
-    }
+    /* Nodo único del sitio (docs/DESIGN.md §9.6): superficie neutra, borde de 1 px, radio 8. El
+       seleccionado se marca con el acento; el color de marca no sale del icono. */
     .edge {
       fill: none;
-      stroke: rgb(255 255 255 / 0.12);
-      stroke-width: 1.5;
-      transition: stroke 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-      animation: fade 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+      stroke: var(--border-strong);
+      stroke-width: 1;
+      transition: stroke var(--duration-base) var(--ease-standard);
+      animation: fade 0.5s var(--ease-emphasized) backwards;
     }
     .edge-active {
-      stroke: rgb(10 132 255 / 0.55);
+      stroke: var(--accent-text);
     }
-    /* Un trazo corto que recorre la línea: el "pulso de luz" de la petición. */
+    /* Un trazo corto que recorre la línea: el pulso de la petición. */
     .pulse {
       fill: none;
-      stroke: #7dd3fc;
-      stroke-width: 2.5;
+      stroke: var(--accent-text);
+      stroke-width: 2;
       stroke-linecap: round;
-      stroke-dasharray: 5 95;
-      opacity: 0.55;
-      filter: drop-shadow(0 0 4px #38bdf8);
+      stroke-dasharray: 4 96;
+      opacity: 0.7;
       animation: flow linear infinite;
-      transition: opacity 0.5s;
     }
     .pulse-active {
       opacity: 1;
-      stroke: #fff;
-      filter: drop-shadow(0 0 6px #0a84ff);
+      stroke-width: 2.5;
     }
     @keyframes flow {
       from { stroke-dashoffset: 100; }
@@ -261,69 +235,62 @@ const LEVELS: C4Level[] = [
       from { opacity: 0; }
     }
     @keyframes node-in {
-      from { opacity: 0; transform: translateY(10px) scale(0.94); }
+      from { opacity: 0; transform: translateY(8px); }
     }
     .node {
       cursor: pointer;
       outline: none;
       transform-box: fill-box;
       transform-origin: center;
-      animation: node-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+      animation: node-in 0.5s var(--ease-emphasized) backwards;
     }
     .node rect {
-      fill: rgb(255 255 255 / 0.05);
-      stroke: rgb(255 255 255 / 0.14);
+      fill: var(--bg-surface-2);
+      stroke: var(--border-subtle);
       stroke-width: 1;
-      transition: fill 0.5s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-        filter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: stroke var(--duration-fast) var(--ease-standard);
     }
-    /* brand-glow: el nodo activo brilla con el color de marca de su tecnología (azul si no tiene). */
-    .node-active rect {
-      fill: color-mix(in srgb, var(--brand, #0a84ff) 16%, transparent);
-      stroke: var(--brand, #0a84ff);
-      filter: drop-shadow(0 0 14px color-mix(in srgb, var(--brand, #0a84ff) 65%, transparent));
+    .node:hover rect {
+      stroke: var(--border-strong);
     }
+    .node-active rect,
+    .node-active:hover rect {
+      stroke: var(--accent-text);
+      stroke-width: 1.5;
+    }
+    /* Excepción vigente (docs/DESIGN.md §2.4): el resplandor de marca de los logos se mantiene. */
     .node-icon {
       pointer-events: none;
       transition: filter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
+    :host(:hover) .node-icon,
+    :host(.theater-expanded) .node-icon {
+      filter: drop-shadow(0 0 4px var(--brand, #0a84ff));
+    }
     .node-active .node-icon {
       filter: drop-shadow(0 0 5px var(--brand, #0a84ff));
     }
-    /* Nivel de código: verde para el núcleo sin frameworks, azul para adaptadores y frameworks. */
-    .node-pure rect {
-      stroke: rgb(52 211 153 / 0.45);
-    }
-    .node-pure.node-active rect {
-      fill: rgb(52 211 153 / 0.14);
-      stroke: #34d399;
-      filter: drop-shadow(0 0 14px rgb(52 211 153 / 0.6));
-    }
-    .node-framework rect {
-      stroke: rgb(10 132 255 / 0.5);
-    }
-    .node-framework.node-active rect {
-      fill: rgb(10 132 255 / 0.16);
-      stroke: #0a84ff;
-      filter: drop-shadow(0 0 14px rgb(10 132 255 / 0.65));
+    :host(:hover) .node-active .node-icon,
+    :host(.theater-expanded) .node-active .node-icon {
+      filter: drop-shadow(0 0 9px var(--brand, #0a84ff));
     }
     .node-code .node-label {
-      font-family: "SF Mono", ui-monospace, Menlo, monospace;
-      font-size: 11.5px;
+      font-family: var(--font-mono);
+      font-size: 12px;
     }
     .node:focus-visible rect {
-      stroke: #fff;
+      stroke: var(--accent-text);
       stroke-width: 2;
     }
     .node-label {
-      fill: #fff;
+      fill: var(--text-1);
       font-size: 13px;
       font-weight: 600;
       pointer-events: none;
     }
     .node-role {
-      fill: #a1a1aa;
-      font-size: 10px;
+      fill: var(--text-2);
+      font-size: 12px;
       pointer-events: none;
     }
   `,

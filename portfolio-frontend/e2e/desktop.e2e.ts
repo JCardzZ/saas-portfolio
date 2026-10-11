@@ -174,9 +174,15 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
     await page.locator('app-pipeline-view button.node', { hasText: 'Backend unit' }).click();
     const detail = page.locator('app-pipeline-view div[aria-live="polite"]');
     await expect(detail).toContainText('Por qué existe');
-    const graphBox = (await page.locator('app-pipeline-view app-stage-graph').boundingBox())!;
-    const detailBox = (await detail.boundingBox())!;
-    expect(detailBox.y, 'la ficha se abre debajo del grafo, no encima').toBeGreaterThanOrEqual(graphBox.y + graphBox.height);
+    // Las dos medidas en el mismo instante: al abrirse, la ficha se lleva a la vista y la página se mueve.
+    const [graphBottom, detailTop] = await page.evaluate(() => {
+      const view = document.querySelector('app-pipeline-view')!;
+      return [
+        view.querySelector('app-stage-graph')!.getBoundingClientRect().bottom,
+        view.querySelector('div[aria-live="polite"]')!.getBoundingClientRect().top,
+      ];
+    });
+    expect(detailTop, 'la ficha se abre debajo del grafo, no encima').toBeGreaterThanOrEqual(graphBottom);
     await page.mouse.move(0, 0);
     await capture(page, testInfo, 'app-pipeline-view', 'pipeline-view-con-ficha');
 
@@ -229,7 +235,8 @@ test.describe('patrones de datos en el Estudio, en escritorio', () => {
     expect(new Set(spots).size, 'nodos en posiciones distintas').toBe(spots.length);
     await capture(page, testInfo, 'app-cloud-infra', 'estudio-analitica-por-eventos');
 
-    await studio.getByRole('button', { name: 'Grafo', exact: true }).click();
+    await studio.locator('button[aria-controls="menu-view"]').click();
+    await studio.getByRole('button', { name: /^Grafo/ }).click();
     const inspector = page.locator('app-trace-inspector');
     await expect(inspector.locator('h3')).toContainText('Grafo');
     await expect(inspector.locator('[data-testid="graph-entry"]').first()).toContainText('[Graph Diff]');
@@ -250,7 +257,8 @@ test.describe('patrones de datos en el Estudio, en escritorio', () => {
     await expect(studio.locator('[data-testid="graph-warnings"] li')).toHaveText(['Instancia duplicada: Tableau #2. Este lienzo admite una sola.']);
     await expect(studio.locator('[data-testid="rule-badge"]')).toHaveCount(1);
     await expect(studio.locator('app-cost-badge')).toContainText('+2 sin estimación');
-    await studio.getByRole('button', { name: 'main.tf', exact: true }).click();
+    await studio.locator('button[aria-controls="menu-view"]').click();
+    await studio.getByRole('button', { name: /^main\.tf/ }).click();
     await expect(studio.locator('[data-testid="terraform-gap"]').first()).toHaveText('Tableau: sin soporte de Terraform todavía');
     await expect(studio.locator('#main-tf-panel pre')).toContainText('# Tableau: sin soporte de Terraform todavía');
     await capture(page, testInfo, 'app-cloud-infra', 'estudio-avisos-de-reglas');

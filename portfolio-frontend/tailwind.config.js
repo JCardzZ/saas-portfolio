@@ -1,5 +1,9 @@
 /** @type {import('tailwindcss').Config} */
-const spring = 'cubic-bezier(0.16, 1, 0.3, 1)';
+const plugin = require('tailwindcss/plugin');
+const tokens = require('./design-tokens');
+
+const theme = tokens.tailwindTheme();
+const spring = tokens.easing.emphasized;
 
 module.exports = {
   darkMode: 'class',
@@ -8,22 +12,9 @@ module.exports = {
   content: ['./src/**/*.{html,ts}'],
   theme: {
     extend: {
-      fontFamily: {
-        sans: [
-          '-apple-system',
-          'BlinkMacSystemFont',
-          '"SF Pro Display"',
-          '"SF Pro Text"',
-          '"Helvetica Neue"',
-          'system-ui',
-          'sans-serif',
-        ],
-        mono: ['"SF Mono"', 'ui-monospace', 'Menlo', 'Consolas', 'monospace'],
-      },
-      colors: {
-        accent: { DEFAULT: '#0a84ff', hover: '#409cff' },
-      },
-      transitionTimingFunction: { spring },
+      ...theme,
+      // `ease-spring` es el nombre anterior de `ease-emphasized`.
+      transitionTimingFunction: { ...theme.transitionTimingFunction, spring },
       keyframes: {
         fadeIn: { from: { opacity: '0' }, to: { opacity: '1' } },
         slideUp: {
@@ -47,5 +38,8 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // Los mismos tokens como variables CSS, para SVG y estilos de componente.
+    plugin(({ addBase }) => addBase({ ':root': tokens.cssVariables() })),
+  ],
 };

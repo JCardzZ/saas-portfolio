@@ -135,24 +135,23 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
     .tool {
       display: inline-flex; align-items: center; justify-content: center;
       min-width: 28px; height: 28px; padding: 0 0.5rem;
-      border: 1px solid rgb(255 255 255 / 0.1); border-radius: 8px; background: #18181b;
-      color: #d4d4d8; font-size: 0.75rem; line-height: 1;
+      border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-surface-2);
+      color: var(--text-2); font-size: 0.75rem; line-height: 1;
       transition: border-color 0.2s ease-out, color 0.2s ease-out;
     }
-    .tool:hover:not(:disabled) { border-color: rgb(255 255 255 / 0.32); color: #fff; }
     .tool:disabled { opacity: 0.35; }
     .tool.wide { padding: 0 0.75rem; }
-    .tool[aria-pressed='true'] { border-color: rgb(255 255 255 / 0.32); color: #fff; }
+    .tool:hover:not(:disabled), .tool[aria-pressed='true'] { border-color: var(--border-strong); color: var(--text-1); }
     /* Con el dedo, los controles miden 44 px. */
     @media (pointer: coarse) { .tool { min-width: 44px; height: 44px; } }
-    .level { min-width: 3.25rem; text-align: center; color: #a1a1aa; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+    .level { min-width: 3.25rem; text-align: center; color: var(--text-2); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
 
     /* ── Columnas con conexiones ── */
     .graph { position: relative; transform-origin: 0 0; }
     .stage { display: contents; }
     .stage-name {
       position: absolute; left: var(--x); top: var(--y); margin: 0;
-      color: #71717a; font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-3); font-size: 0.75rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
     }
     .edges { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
     .edges path {
@@ -165,7 +164,7 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
 
     .spark {
       position: absolute; left: 0; top: 0; width: 4px; height: 4px; margin: -2px 0 0 -2px;
-      border-radius: 9999px; background: #fff; box-shadow: 0 0 6px 1px rgb(255 255 255 / 0.7);
+      border-radius: 9999px; background: var(--accent-text);
       offset-rotate: 0deg;
       animation: travel 3.5s linear infinite;
       transition: opacity 0.25s ease-out;
@@ -183,7 +182,7 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
       position: absolute; left: var(--x); top: var(--y); width: var(--node-width); height: var(--node-height);
       display: flex; align-items: center; gap: 0.625rem; padding: 0 0.75rem;
       border: 1px solid rgb(255 255 255 / 0.1); border-radius: 8px;
-      background: #18181b; /* un punto más claro que la tarjeta, y opaco: las líneas pasan por detrás */
+      background: var(--bg-surface-2); /* un punto más claro que la tarjeta, y opaco: las líneas pasan por detrás */
       text-align: left;
       transition: opacity 0.25s ease-out, border-color 0.25s ease-out;
     }
@@ -191,22 +190,22 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
     .icon { flex: none; width: 16px; height: 16px; overflow: hidden; transition: width 0.25s ease-out, height 0.25s ease-out; }
     .node.active .icon { width: 20px; height: 20px; }
     .text { display: flex; min-width: 0; flex: 1; flex-direction: column; }
-    .name { color: #fafafa; font-size: 0.875rem; font-weight: 500; line-height: 1.3; }
-    .detail { color: #a1a1aa; font-size: 0.75rem; line-height: 1.3; }
+    .name { color: var(--text-1); font-size: 0.875rem; font-weight: 500; line-height: 1.3; }
+    .detail { color: var(--text-2); font-size: 0.75rem; line-height: 1.3; }
     /* En columnas cada texto va en una línea; el nombre completo está en la ficha y en la etiqueta accesible. */
     .name, .detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .dot { flex: none; width: 8px; height: 8px; border-radius: 9999px; background: #52525b; }
+    .dot { flex: none; width: 8px; height: 8px; border-radius: 9999px; background: var(--text-3); }
 
     /* El estado va en el punto (y en el borde punteado de lo planificado); el fondo no cambia. */
-    .tone-ok .dot { background: #34d399; }
-    .tone-failed .dot { background: #f87171; }
-    .tone-skipped .dot { background: #52525b; }
-    .tone-skipped .name { color: #a1a1aa; }
-    .tone-idle .dot, .tone-pending .dot { background: transparent; box-shadow: inset 0 0 0 1px #71717a; }
+    .tone-ok .dot { background: var(--status-ok); }
+    .tone-failed .dot { background: var(--status-danger); }
+    .tone-skipped .dot { background: var(--text-3); }
+    .tone-skipped .name { color: var(--text-2); }
+    .tone-idle .dot, .tone-pending .dot { background: transparent; box-shadow: inset 0 0 0 1px var(--text-3); }
     .tone-pending { opacity: 0.4; }
     .tone-planned { border-style: dashed; border-color: rgb(255 255 255 / 0.22); }
-    .tone-planned .dot { background: transparent; box-shadow: inset 0 0 0 1px #a1a1aa; }
-    .tone-running .dot { background: #0a84ff; animation: pulse 0.9s ease-in-out infinite; }
+    .tone-planned .dot { background: transparent; box-shadow: inset 0 0 0 1px var(--text-2); }
+    .tone-running .dot { background: var(--accent-text); animation: pulse 0.9s ease-in-out infinite; }
     @keyframes pulse { 50% { opacity: 0.25; } }
 
     /* Con un nodo señalado, lo que no está en su camino baja al 40 %. */
@@ -216,7 +215,7 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
     .pill .node { border-radius: 9999px; padding: 0 0.875rem; gap: 0.5rem; }
     .pill .text { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
     .pill .name { font-size: 0.8125rem; }
-    .pill .detail { flex: none; font-size: 0.6875rem; font-variant-numeric: tabular-nums; }
+    .pill .detail { flex: none; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
     .pill .dot { order: -1; }
 
     /* ── Vertical (no caben dos columnas): etapas apiladas, sin líneas ── */

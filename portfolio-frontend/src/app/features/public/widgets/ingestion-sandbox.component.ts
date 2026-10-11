@@ -68,13 +68,8 @@ const SHOWN_DIMENSIONS = 48;
 const TOTAL_DIMENSIONS = 768;
 const STEP_MS = 750;
 
-const CHUNK_STYLES = [
-  'border-sky-300/40 bg-sky-300/[0.06]',
-  'border-violet-300/40 bg-violet-300/[0.06]',
-  'border-emerald-300/40 bg-emerald-300/[0.06]',
-  'border-amber-300/40 bg-amber-300/[0.06]',
-  'border-pink-300/40 bg-pink-300/[0.06]',
-];
+/** Fragmentos alternos: dos superficies neutras bastan para distinguir uno del siguiente. */
+const CHUNK_STYLES = ['border-line-subtle bg-surface-2', 'border-line-strong bg-surface-3'];
 
 /**
  * Recorre en tres pasos lo que hace la ingesta RAG con un texto: trocear, etiquetar y vectorizar.

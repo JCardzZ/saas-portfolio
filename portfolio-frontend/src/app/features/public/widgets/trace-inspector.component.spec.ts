@@ -143,15 +143,16 @@ describe('TraceInspectorComponent', () => {
       expect(root.getPropertyValue('--dock-bottom')).toBe('0px');
     });
 
-    it('keeps the macOS window chrome: red closes, yellow minimises, green maximises', () => {
+    it('keeps the three window controls, neutral until the header is hovered or one has focus', () => {
       const { element, press, panel, inspector } = open();
       const lights = Array.from(element.querySelectorAll<HTMLButtonElement>('header [aria-label="Ventana del inspector"] button'));
       expect(lights.map((light) => light.getAttribute('aria-label'))).toEqual([
         'Cerrar el inspector de traza', 'Minimizar a píldora', 'Maximizar el inspector',
       ]);
-      expect(lights.map((light) => getComputedStyle(light.querySelector('span')!).backgroundColor)).toEqual([
-        'rgb(255, 95, 87)', 'rgb(254, 188, 46)', 'rgb(40, 200, 64)',
-      ]);
+      const colours = () => lights.map((light) => getComputedStyle(light.querySelector('span')!).backgroundColor);
+      expect(colours()).toEqual(['rgb(58, 63, 74)', 'rgb(58, 63, 74)', 'rgb(58, 63, 74)']);
+      // El color de cada uno (rojo, ámbar, verde) llega por CSS al pasar el cursor por la cabecera o con foco.
+      expect(lights.map((light) => light.querySelector('span')!.className)).toEqual(['traffic-close', 'traffic-minimize', 'traffic-maximize']);
       expect(getComputedStyle(element.querySelector('h3')!).fontFamily).toContain('monospace');
 
       // Desde flotante, el verde lo acopla abajo ya ampliado.
@@ -317,7 +318,7 @@ describe('TraceInspectorComponent', () => {
     expect(create().element.querySelector('section')).toBeNull();
   });
 
-  it('opens tinted with the brand colour and lists only that technologys events', () => {
+  it('opens with a neutral header that names the technology and lists only its events', () => {
     const { fixture, element } = create();
     const events = TestBed.inject(SystemEventsService);
     events.emit('ok', '200 OK CacheHit Redis', 'GET /public/projects · 1 ms');
@@ -328,7 +329,9 @@ describe('TraceInspectorComponent', () => {
 
     expect(element.querySelector('h3')?.textContent).toContain('Inspector de traza · Redis');
     expect(element.querySelector('h3')?.textContent).toContain('simulación');
-    expect(element.querySelector<HTMLElement>('header')!.style.background).toContain('rgb(255, 68, 56)');
+    // La tecnología se indica con su icono y su nombre; la cabecera no se tiñe.
+    expect(element.querySelector<HTMLElement>('header')!.style.background).toBe('');
+    expect(element.querySelector('header app-tech-icon')).not.toBeNull();
     const lines = Array.from(element.querySelectorAll('[role="log"] p')).map((line) => line.textContent);
     expect(lines.length).toBe(1);
     expect(lines[0]).toContain('[200 OK CacheHit Redis]');

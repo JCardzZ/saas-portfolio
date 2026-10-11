@@ -1,44 +1,33 @@
-<div class="dock-aware dark safe-x min-h-dvh bg-black [color-scheme:dark] text-zinc-100 selection:bg-accent/40">
+<div class="dock-aware dark safe-x min-h-dvh bg-canvas [color-scheme:dark] text-ink-1 selection:bg-accent-solid/50">
   <app-public-navbar (openChat)="chatOpen.set(true)" />
 
-  <main class="mx-auto max-w-6xl px-5 pb-24 pt-[calc(8rem+env(safe-area-inset-top,0px))]">
-    <section class="animate-slide-up pb-20 text-center">
-      <p class="text-sm font-medium text-accent">Plataforma de portafolio</p>
-      <h1 class="mx-auto mt-3 max-w-3xl text-balance text-5xl font-semibold tracking-tight text-white sm:text-7xl">
-        Ingeniería que se puede interrogar.
-      </h1>
-      <p class="mx-auto mt-6 max-w-xl text-balance text-lg text-zinc-400">
-        Proyectos, tecnologías y el propio código de esta plataforma, con un asistente que responde citando sus fuentes.
+  <main class="mx-auto max-w-6xl px-6 pb-24 pt-[calc(7rem+env(safe-area-inset-top,0px))] max-[399px]:px-4 sm:pt-[calc(9rem+env(safe-area-inset-top,0px))]">
+    <!-- Primero quién: nombre y rol se leen antes que nada (docs/DESIGN.md §8.2). -->
+    <section class="animate-slide-up pb-16 sm:pb-24" aria-labelledby="hero-titulo">
+      <h1 id="hero-titulo" class="text-display-sm text-ink-1 sm:text-display">Manuel Cardoza</h1>
+      <p class="mt-3 text-body-lg font-medium text-ink-1" data-testid="hero-role">{{ heroRole }}</p>
+      <p class="mt-4 max-w-[40rem] text-balance text-body-lg text-ink-2">
+        Ingeniería que se puede interrogar: proyectos, tecnologías y el propio código de esta plataforma, con un
+        asistente que responde citando sus fuentes.
       </p>
-      <div class="mt-9 flex flex-wrap justify-center gap-3">
-        <button
-          type="button"
-          class="focus-ring rounded-full bg-accent px-6 py-2.5 text-[15px] font-medium text-white transition duration-300 ease-spring hover:bg-accent-hover active:scale-95"
-          (click)="chatOpen.set(true)"
-        >
-          Preguntar a la IA
-        </button>
-        <a
-          href="#proyectos"
-          class="focus-ring glass tap rounded-full px-6 py-2.5 text-[15px] font-medium text-white transition duration-300 ease-spring hover:bg-white/10"
-        >
-          Ver proyectos
-        </a>
-        <app-cv-download />
+      <div class="mt-8 flex flex-wrap gap-3">
+        <app-cv-download variant="primary" />
+        <button type="button" class="ui-btn-secondary ui-btn-lg" (click)="chatOpen.set(true)">Preguntar a la IA</button>
+        <a href="#proyectos" class="ui-btn-secondary ui-btn-lg tap">Ver proyectos</a>
       </div>
     </section>
 
     @if (catalog.error(); as message) {
-      <div class="glass mx-auto mb-16 max-w-md rounded-3xl p-6 text-center" role="alert">
-        <p class="text-sm text-zinc-300">{{ message }}</p>
-        <button type="button" class="focus-ring mt-3 rounded-full px-3 py-1 text-sm font-medium text-accent hover:text-accent-hover" (click)="catalog.load()">
+      <div class="ui-card mb-16 max-w-md" role="alert">
+        <p class="text-body-sm text-ink-2">{{ message }}</p>
+        <button type="button" class="ui-btn-secondary mt-4" (click)="catalog.load()">
           Reintentar
         </button>
       </div>
     }
 
-    <section id="plataforma" class="mb-20 scroll-mt-24" aria-labelledby="plataforma-titulo">
-      <h2 id="plataforma-titulo" class="mb-6 text-3xl font-semibold tracking-tight text-white">Arquitectura</h2>
+    <section id="plataforma" class="scroll-mt-24" aria-labelledby="plataforma-titulo">
+      <app-section-header headingId="plataforma-titulo" title="Arquitectura" intro="Cómo está construida esta plataforma por dentro. Cada diagrama parte de su configuración real; lo que es simulación lo dice." />
       <div class="bento-grid">
         <app-architecture-canvas class="animate-slide-up md:col-span-4" />
         <app-telemetry-monitor class="animate-slide-up md:col-span-2 [animation-delay:80ms]" />
@@ -52,8 +41,8 @@
     </section>
 
     <!-- Lo que hay desplegado de verdad y cómo llega hasta ahí. Datos reales o etiquetados como planificados. -->
-    <section id="entrega" class="mb-20 scroll-mt-24" aria-labelledby="entrega-titulo">
-      <h2 id="entrega-titulo" class="mb-6 text-3xl font-semibold tracking-tight text-white">Arquitectura real y entrega</h2>
+    <section id="entrega" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="entrega-titulo">
+      <app-section-header headingId="entrega-titulo" title="Arquitectura real y entrega" intro="Lo que hay desplegado hoy y cómo llega hasta ahí: topología, pipeline de CI/CD y despliegues, con datos reales o marcados como planificados." />
       @defer (on viewport; prefetch on idle) {
         <div class="grid gap-4 [&>*]:min-w-0">
           <app-production-architecture class="animate-slide-up" />
@@ -61,12 +50,12 @@
           <app-deploy-timeline class="animate-slide-up" />
         </div>
       } @placeholder {
-        <div class="bento-card flex min-h-[24rem] items-center justify-center text-sm text-zinc-500">Cargando la arquitectura en producción…</div>
+        <div class="bento-card flex min-h-[24rem] items-center justify-center text-body-sm text-ink-3">Cargando la arquitectura en producción…</div>
       }
     </section>
 
-    <section id="cloud" class="mb-20 scroll-mt-24" aria-labelledby="cloud-titulo">
-      <h2 id="cloud-titulo" class="mb-6 text-3xl font-semibold tracking-tight text-white">Cloud &amp; DevOps</h2>
+    <section id="cloud" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="cloud-titulo">
+      <app-section-header headingId="cloud-titulo" title="Cloud &amp; DevOps" intro="Un estudio para dibujar la misma plataforma en AWS, Google Cloud o Azure, con comprobaciones de seguridad, coste orientativo y un esqueleto de Terraform." />
       <!-- El estudio pesa: su código se descarga cuando la sección está a punto de verse. -->
       @defer (on viewport; prefetch on idle) {
         <div class="grid gap-4 [&>*]:min-w-0">
@@ -74,38 +63,38 @@
           <app-data-blueprints class="animate-slide-up" />
         </div>
       } @placeholder {
-        <div class="bento-card flex min-h-[36rem] items-center justify-center text-sm text-zinc-500">Cargando el estudio de arquitectura…</div>
+        <div class="bento-card flex min-h-[36rem] items-center justify-center text-body-sm text-ink-3">Cargando el estudio de arquitectura…</div>
       }
     </section>
 
-    <section id="proyectos" class="scroll-mt-24" aria-labelledby="proyectos-titulo">
-      <h2 id="proyectos-titulo" class="mb-6 text-3xl font-semibold tracking-tight text-white">Proyectos</h2>
+    <section id="proyectos" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="proyectos-titulo">
+      <app-section-header headingId="proyectos-titulo" title="Proyectos" intro="Trabajo publicado, con su código y las tecnologías que usa." />
 
       <div class="bento-grid">
         @if (catalog.loading()) {
           @for (skeleton of skeletons; track skeleton) {
-            <div class="glass h-44 animate-pulse rounded-3xl md:col-span-2" aria-hidden="true"></div>
+            <div class="h-44 animate-pulse rounded-card border border-line-subtle bg-surface-1 md:col-span-2" aria-hidden="true"></div>
           }
         } @else {
           @for (project of catalog.projects(); track project.id; let index = $index) {
             <article
               class="bento-card flex animate-slide-up flex-col"
-              [class]="index === 0 ? 'md:col-span-4 md:row-span-2' : 'md:col-span-2'"
+              [class]="index === 0 ? 'md:col-span-4' : 'md:col-span-2'"
               [style.animation-delay.ms]="index * 60"
             >
-              <h3 class="font-semibold tracking-tight text-white" [class]="index === 0 ? 'text-3xl' : 'text-xl'">
+              <h3 class="text-ink-1" [class]="index === 0 ? 'text-title-1-sm' : 'text-title-2'">
                 {{ project.title }}
               </h3>
-              <p class="mt-2 text-zinc-400" [class]="index === 0 ? 'max-w-xl text-base' : 'text-sm'">{{ project.summary }}</p>
+              <p class="mt-2 text-ink-2" [class]="index === 0 ? 'max-w-xl text-body' : 'text-body-sm'">{{ project.summary }}</p>
 
               @if (project.metricsImpact) {
-                <p class="mt-4 text-sm font-medium text-emerald-400">{{ project.metricsImpact }}</p>
+                <p class="mt-4 text-body-sm font-medium text-ink-1">{{ project.metricsImpact }}</p>
               }
 
               @if (project.technologiesUsed?.length) {
                 <ul class="mt-4 flex flex-wrap gap-1.5" aria-label="Tecnologías usadas">
                   @for (id of project.technologiesUsed; track id) {
-                    <li class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-zinc-300">
+                    <li class="ui-badge">
                       @if (iconFor(catalog.technologyName(id)); as icon) {
                         <app-tech-icon [icon]="icon" [size]="12" />
                       }
@@ -115,45 +104,42 @@
                 </ul>
               }
 
-              <div class="mt-auto flex gap-4 pt-6 text-sm font-medium">
+              <div class="mt-auto flex gap-4 pt-6 text-body-sm font-medium">
                 @if (project.githubRepoUrl) {
-                  <a class="focus-ring tap inline-flex items-center rounded text-accent hover:text-accent-hover" [href]="project.githubRepoUrl" target="_blank" rel="noopener noreferrer">Código ↗</a>
+                  <a class="ui-focus tap inline-flex items-center rounded-mark text-accent-text hover:underline" [href]="project.githubRepoUrl" target="_blank" rel="noopener noreferrer">Código ↗</a>
                 }
                 @if (project.demoVideoUrl) {
-                  <a class="focus-ring tap inline-flex items-center rounded text-accent hover:text-accent-hover" [href]="project.demoVideoUrl" target="_blank" rel="noopener noreferrer">Demo ↗</a>
+                  <a class="ui-focus tap inline-flex items-center rounded-mark text-accent-text hover:underline" [href]="project.demoVideoUrl" target="_blank" rel="noopener noreferrer">Demo ↗</a>
                 }
               </div>
             </article>
           } @empty {
             @if (!catalog.error()) {
-              <p class="glass rounded-3xl p-6 text-sm text-zinc-400 md:col-span-6">Aún no hay proyectos publicados.</p>
+              <p class="ui-card text-body-sm text-ink-2 md:col-span-6">Aún no hay proyectos publicados.</p>
             }
           }
 
-          <button
-            type="button"
-            class="bento-card focus-ring flex flex-col justify-between text-left md:col-span-2"
-            (click)="chatOpen.set(true)"
-          >
-            <span class="text-xl font-semibold tracking-tight text-white">¿Cómo está construido?</span>
-            <span class="mt-6 text-sm text-zinc-400">Pregúntale al asistente; responde con el archivo y las líneas exactas.</span>
+          <!-- Cierra la fila: ocupa las columnas que queden libres. -->
+          <button type="button" class="bento-card ui-card-interactive flex flex-col justify-between text-left" [class]="askSpan()" (click)="chatOpen.set(true)">
+            <span class="text-title-2 text-ink-1">¿Cómo está construido?</span>
+            <span class="mt-6 text-body-sm text-ink-2">Pregúntale al asistente; responde con el archivo y las líneas exactas.</span>
           </button>
         }
       </div>
     </section>
 
-    <section id="tecnologias" class="mt-20 scroll-mt-24" aria-labelledby="tecnologias-titulo">
-      <h2 id="tecnologias-titulo" class="mb-6 text-3xl font-semibold tracking-tight text-white">Tecnologías</h2>
+    <section id="tecnologias" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="tecnologias-titulo">
+      <app-section-header headingId="tecnologias-titulo" title="Tecnologías" intro="El stack con el que trabajo, agrupado por área." />
 
       <div class="bento-grid">
         @if (catalog.loading()) {
           @for (skeleton of skeletons; track skeleton) {
-            <div class="glass h-36 animate-pulse rounded-3xl md:col-span-2" aria-hidden="true"></div>
+            <div class="h-36 animate-pulse rounded-card border border-line-subtle bg-surface-1 md:col-span-2" aria-hidden="true"></div>
           }
         } @else {
           @for (group of catalog.technologyGroups(); track group.category; let index = $index) {
             <article class="bento-card animate-slide-up md:col-span-2" [style.animation-delay.ms]="index * 60">
-              <h3 class="text-xs font-medium uppercase tracking-wider text-zinc-500">{{ group.category }}</h3>
+              <h3 class="text-overline uppercase text-ink-3">{{ group.category }}</h3>
               <ul class="mt-4 space-y-3">
                 @for (technology of group.technologies; track technology.id) {
                   <li class="group flex items-center gap-3">
@@ -161,7 +147,7 @@
                       @if (inspectable(technology.name); as tech) {
                         <button
                           type="button"
-                          class="focus-ring brand-glow rounded-md transition duration-300 ease-spring hover:scale-110"
+                          class="ui-focus brand-glow rounded-mark transition duration-300 ease-spring hover:scale-110"
                           [attr.aria-label]="'Inspeccionar la traza de ' + icon.title"
                           (mouseenter)="inspector.select(tech)"
                           (focus)="inspector.select(tech)"
@@ -175,16 +161,16 @@
                     } @else if (technology.iconUrl) {
                       <img class="h-6 w-6 shrink-0" [src]="technology.iconUrl" alt="" loading="lazy" (error)="hideBrokenIcon($event)" />
                     } @else {
-                      <span class="h-6 w-6 shrink-0 rounded-md border border-white/10 bg-white/5" aria-hidden="true"></span>
+                      <span class="h-6 w-6 shrink-0 rounded-mark border border-line-subtle bg-surface-2" aria-hidden="true"></span>
                     }
                     <span class="min-w-0">
-                      <span class="block truncate text-[15px] font-medium text-white">
+                      <span class="block truncate text-body-sm font-medium text-ink-1">
                         {{ technology.name }}
                         @if (technology.isFeatured) {
-                          <span class="ml-1 align-middle text-[10px] font-semibold uppercase tracking-wider text-accent">Destacada</span>
+                          <span class="ui-badge ui-badge-accent ml-1 align-middle">Destacada</span>
                         }
                       </span>
-                      <span class="block truncate text-xs text-zinc-500">{{ technology.proficiencyLevel }}</span>
+                      <span class="block truncate text-caption font-normal text-ink-3">{{ technology.proficiencyLevel }}</span>
                     </span>
                   </li>
                 }
@@ -192,32 +178,35 @@
             </article>
           } @empty {
             @if (!catalog.error()) {
-              <p class="glass rounded-3xl p-6 text-sm text-zinc-400 md:col-span-6">Aún no hay tecnologías publicadas.</p>
+              <p class="ui-card text-body-sm text-ink-2 md:col-span-6">Aún no hay tecnologías publicadas.</p>
             }
           }
         }
       </div>
     </section>
 
-    <section id="articulos" class="mt-20 scroll-mt-24" aria-labelledby="articulos-titulo">
-      <h2 id="articulos-titulo" class="mb-6 text-3xl font-semibold tracking-tight text-white">Artículos</h2>
+    <section id="articulos" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="articulos-titulo">
+      <app-section-header headingId="articulos-titulo" title="Artículos" intro="Notas técnicas. El asistente también puede citarlas." />
       <app-articles-hub />
     </section>
 
-    <section id="trayectoria" class="mt-20 scroll-mt-24" aria-labelledby="trayectoria-titulo">
-      <h2 id="trayectoria-titulo" class="mb-6 text-3xl font-semibold tracking-tight text-white">Trayectoria</h2>
+    <section id="trayectoria" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="trayectoria-titulo">
+      <app-section-header headingId="trayectoria-titulo" title="Trayectoria" intro="Experiencia y formación. El CV descargable sale de este mismo contenido." />
       <app-career-timeline />
     </section>
   </main>
 
-  <!-- El pie deja sitio a lo que va fijo abajo (la insignia de demo) y a la barra de gestos. -->
-  <footer class="border-t border-white/10 pb-[calc(var(--badge-space,0px)+env(safe-area-inset-bottom,0px))]">
-    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8">
-      <p class="text-sm text-zinc-400">
-        <span class="font-medium text-zinc-200">Manuel Cardoza</span> · Desarrollador Backend. El CV sale del mismo
-        documento que la línea de tiempo y el asistente.
+  <!-- El pie deja sitio a la píldora del inspector (o del aviso de demo) y a la barra de gestos. -->
+  <footer class="mt-8 border-t border-line-subtle pb-[calc(var(--pill-space,0px)+env(safe-area-inset-bottom,0px))]">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8 max-[399px]:px-4">
+      <p class="max-w-[40rem] text-body-sm text-ink-2">
+        <span class="font-medium text-ink-1">Manuel Cardoza</span> · El CV sale del mismo documento que la línea de
+        tiempo y el asistente.
       </p>
-      <app-cv-download />
+      <div class="flex flex-wrap items-center gap-2">
+        <a routerLink="/admin" class="ui-btn-ghost ui-btn-lg tap">Admin</a>
+        <app-cv-download />
+      </div>
     </div>
   </footer>
 

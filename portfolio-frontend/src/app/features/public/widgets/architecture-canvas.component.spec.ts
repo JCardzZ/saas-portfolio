@@ -54,7 +54,7 @@ describe('ArchitectureCanvasComponent', () => {
     expect(element.querySelectorAll('path.edge-active').length).toBe(1);
   });
 
-  it('maps the backend packages at the code level, colouring each by its architecture rule', () => {
+  it('maps the backend packages at the code level, each with its architecture rule', () => {
     const { fixture, element } = create();
 
     tab(element, 'Código').click();
@@ -71,7 +71,8 @@ describe('ArchitectureCanvasComponent', () => {
     expect(element.querySelector('.node-active.node-pure .node-label')?.textContent).toBe('domain');
     const rule = element.querySelector('[aria-live] span')!;
     expect(rule.textContent).toBe('0 importaciones de Spring/JPA/Frameworks');
-    expect(rule.className).toContain('emerald');
+    // La regla se lee en una insignia neutra: el color no distingue capas.
+    expect(rule.className).toContain('ui-badge');
 
     Array.from(element.querySelectorAll<SVGGElement>('g.node'))
       .find((node) => node.textContent?.includes('infrastructure.adapter'))!
@@ -79,7 +80,7 @@ describe('ArchitectureCanvasComponent', () => {
     fixture.detectChanges();
     const frameworkRule = element.querySelector('[aria-live] span')!;
     expect(frameworkRule.textContent).toBe('Adapters & Frameworks');
-    expect(frameworkRule.className).toContain('accent');
+    expect(frameworkRule.className).toContain('ui-badge');
   });
 
   it('draws each technology logo inside its node and glows in its brand colour', () => {

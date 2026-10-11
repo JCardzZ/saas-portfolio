@@ -46,16 +46,16 @@ const POINTS_PER_CLUSTER = 14;
   host: { class: 'bento-card block' },
   template: `
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-      <h3 class="text-xl font-semibold tracking-tight text-white">Búsqueda vectorial</h3>
-      <p class="text-xs text-zinc-500">Mueve el cursor por el mapa o elige una pregunta</p>
+      <h3 class="text-xl font-semibold tracking-tight text-ink-1">Búsqueda vectorial</h3>
+      <p class="text-xs text-ink-3">Mueve el cursor por el mapa o elige una pregunta</p>
     </div>
 
     <div class="mt-3 flex flex-wrap gap-2">
       @for (suggestion of suggestions; track suggestion.label) {
         <button
           type="button"
-          class="focus-ring rounded-full border px-3 py-1 text-xs transition duration-300 ease-spring"
-          [class]="activeSuggestion() === suggestion.label ? 'border-accent bg-accent/20 text-white' : 'border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10'"
+          class="focus-ring rounded-control border px-3 py-1 text-xs transition duration-300 ease-spring"
+          [class]="activeSuggestion() === suggestion.label ? 'border-accent-text bg-accent-text/20 text-ink-1' : 'border-line-subtle bg-surface-2 text-ink-2 hover:bg-surface-3'"
           [attr.aria-pressed]="activeSuggestion() === suggestion.label"
           (click)="select(suggestion)"
         >
@@ -67,7 +67,7 @@ const POINTS_PER_CLUSTER = 14;
     <div class="mt-4 grid gap-5 md:grid-cols-3 [&>*]:min-w-0">
       <svg
         [attr.viewBox]="viewBox"
-        class="w-full cursor-crosshair touch-none rounded-2xl border border-white/10 bg-black/40 md:col-span-2"
+        class="w-full cursor-crosshair touch-none rounded-panel border border-line-subtle bg-surface-2 md:col-span-2"
         role="img"
         aria-label="Mapa de fragmentos indexados; la pregunta se conecta con los cinco más afines"
         (pointermove)="follow($event)"
@@ -85,16 +85,16 @@ const POINTS_PER_CLUSTER = 14;
       </svg>
 
       <div aria-live="polite">
-        <p class="text-xs font-medium uppercase tracking-wider text-zinc-500">Más afines</p>
+        <p class="text-xs font-medium uppercase tracking-wider text-ink-3">Más afines</p>
         <ol class="mt-2 space-y-1.5">
           @for (match of matches(); track match.id) {
-            <li class="flex animate-fade-in items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5">
-              <span class="min-w-0 truncate font-mono text-[11px] text-zinc-200">{{ match.source }}</span>
-              <span class="shrink-0 font-mono text-[11px] tabular-nums text-accent">{{ match.similarity.toFixed(2) }}</span>
+            <li class="flex animate-fade-in items-center justify-between gap-3 rounded-panel border border-line-subtle bg-surface-2 px-3 py-1.5">
+              <span class="min-w-0 truncate font-mono text-xs text-ink-1">{{ match.source }}</span>
+              <span class="shrink-0 font-mono text-xs tabular-nums text-accent-text">{{ match.similarity.toFixed(2) }}</span>
             </li>
           }
         </ol>
-        <p class="mt-3 text-[11px] leading-snug text-zinc-500">
+        <p class="mt-3 text-xs leading-snug text-ink-3">
           Proyección 2D ilustrativa. El índice real compara vectores de 768 dimensiones por distancia coseno.
         </p>
       </div>
@@ -105,21 +105,20 @@ const POINTS_PER_CLUSTER = 14;
       fill: rgb(255 255 255 / 0.22);
     }
     .match {
-      fill: #0a84ff;
-      filter: drop-shadow(0 0 6px rgb(10 132 255 / 0.9));
+      fill: var(--accent-text);
+      filter: drop-shadow(0 0 6px rgb(111 168 255 / 0.9));
       animation: pop 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
       transform-box: fill-box;
       transform-origin: center;
     }
     .link {
-      stroke: #7dd3fc;
+      stroke: var(--accent-text);
       stroke-width: 1.2;
       stroke-linecap: round;
-      filter: drop-shadow(0 0 3px #38bdf8);
+      filter: drop-shadow(0 0 3px var(--accent-text));
     }
     .query {
-      fill: #fff;
-      filter: drop-shadow(0 0 8px #fff);
+      fill: var(--accent-text);
     }
     .query-halo {
       fill: none;

@@ -1,3 +1,5 @@
+@import './styles/fonts.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -72,18 +74,19 @@
     @apply px-4 py-3 text-sm text-slate-700;
   }
 
-  /* Vista pública: superficies de vidrio sobre negro puro */
+  /* Vidrio: solo para lo que flota sobre contenido (barra, diálogos, paneles flotantes). */
   .glass {
-    @apply border border-white/10 bg-white/5 backdrop-blur-xl;
+    @apply border border-line-strong bg-surface-2/80 backdrop-blur-xl;
   }
 
   .bento-grid {
-    @apply grid grid-flow-dense grid-cols-1 gap-4 md:grid-cols-6;
+    @apply grid grid-flow-dense grid-cols-1 gap-4 md:grid-cols-6 md:gap-6;
   }
 
+  /* Tarjeta de la página pública: opaca (docs/DESIGN.md §9.2). Al pasar el cursor solo cambia el borde. */
   .bento-card {
-    @apply glass rounded-3xl p-6 transition duration-500 ease-spring
-      hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.08] hover:shadow-2xl hover:shadow-black/60;
+    @apply rounded-card border border-line-subtle bg-surface-1 p-6 transition-colors duration-fast ease-standard
+      hover:border-line-strong;
   }
 
   /* Resplandor con el color de marca (--brand lo define app-tech-icon o el nodo del diagrama). */
@@ -97,8 +100,111 @@
     filter: drop-shadow(0 0 8px var(--brand, #0a84ff));
   }
 
+  /* ───── Sistema de diseño del sitio público (docs/DESIGN.md §9). Prefijo `ui-`: las clases sin
+     prefijo de arriba (.btn, .card…) son las de la administración, que es clara. ───── */
+
+  /* Foco visible: anillo de 2 px en el acento, separado 2 px del control. */
+  .ui-focus {
+    @apply focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+      focus-visible:outline-accent-text;
+  }
+
+  /* Botón: rectángulo de radio 8 (la píldora se reserva para estado y etiquetas). 32 px de alto;
+     `.ui-btn-lg` son 40 px (hero y diálogos). Con el dedo, la regla táctil global lo lleva a 44.
+     La altura es un mínimo: con el texto ampliado el botón crece o parte la línea, no se desborda. */
+  .ui-btn {
+    @apply ui-focus inline-flex min-h-8 max-w-full select-none items-center justify-center gap-2 rounded-control
+      border border-transparent px-3 py-1 text-center text-body-sm font-medium transition-colors duration-fast ease-standard
+      active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-disabled disabled:active:scale-100
+      aria-disabled:cursor-not-allowed aria-disabled:text-ink-disabled;
+  }
+  .ui-btn-lg {
+    @apply min-h-10 px-4;
+  }
+  /* Solo icono: cuadrado. Necesita aria-label. */
+  .ui-btn-icon {
+    @apply w-8 px-0;
+  }
+  .ui-btn-icon.ui-btn-lg {
+    @apply w-10;
+  }
+  /* Una sola acción primaria por vista o por barra. */
+  .ui-btn-primary {
+    @apply ui-btn bg-accent-solid text-white hover:bg-accent-solid-hover disabled:bg-surface-3 disabled:text-ink-disabled;
+  }
+  .ui-btn-secondary {
+    @apply ui-btn border-line-strong bg-surface-2 text-ink-1 hover:bg-surface-3 disabled:hover:bg-surface-2;
+  }
+  .ui-btn-ghost {
+    @apply ui-btn text-ink-2 hover:bg-surface-3 hover:text-ink-1 disabled:hover:bg-transparent;
+  }
+  .ui-btn-danger {
+    @apply ui-btn border-line-strong bg-surface-2 text-status-danger hover:bg-surface-3 disabled:hover:bg-surface-2;
+  }
+
+  /* Tarjeta opaca: la profundidad sale de la superficie y el borde. El vidrio queda para la barra,
+     los diálogos y los paneles flotantes. */
+  .ui-card {
+    @apply rounded-card border border-line-subtle bg-surface-1 p-6;
+  }
+  /* Tarjeta de ancho completo. */
+  .ui-card-lg {
+    @apply p-8;
+  }
+  /* Toda la tarjeta es un enlace o un botón. */
+  .ui-card-interactive {
+    @apply ui-focus transition-colors duration-fast ease-standard hover:border-line-strong;
+  }
+  /* Tarjeta dentro de tarjeta. */
+  .ui-card-inset {
+    @apply rounded-panel border border-line-subtle bg-surface-2 p-4;
+  }
+
+  /* Insignia: píldora de 24 px. El tono neutro es el de por defecto; el estado va siempre con texto. */
+  .ui-badge {
+    @apply inline-flex min-h-6 max-w-full items-center gap-1 rounded-full border border-line-subtle bg-surface-2 px-2
+      text-caption text-ink-2;
+  }
+  .ui-badge-accent {
+    @apply border-transparent bg-accent-text/[0.14] text-accent-text;
+  }
+  .ui-badge-ok {
+    @apply border-transparent bg-status-ok/[0.14] text-status-ok;
+  }
+  .ui-badge-warn {
+    @apply border-transparent bg-status-warn/[0.14] text-status-warn;
+  }
+  .ui-badge-danger {
+    @apply border-transparent bg-status-danger/[0.14] text-status-danger;
+  }
+  /* Punto de 6 px delante del texto de una insignia. */
+  .ui-badge-dot {
+    @apply h-1.5 w-1.5 shrink-0 rounded-full bg-current;
+  }
+
+  /* Pestañas segmentadas (cambian la vista de una misma tarjeta). Van sobre role="tablist" y
+     role="tab"; la activa es la que lleva aria-selected="true". */
+  .ui-segmented {
+    @apply inline-flex max-w-full gap-0.5 overflow-x-auto rounded-control bg-surface-2 p-0.5 [scrollbar-width:none];
+  }
+  .ui-segment {
+    @apply ui-focus inline-flex min-h-7 shrink-0 items-center justify-center whitespace-nowrap rounded-[6px] px-3 text-body-sm
+      font-medium text-ink-2 transition-colors duration-fast ease-standard hover:text-ink-1
+      aria-selected:bg-surface-3 aria-selected:text-ink-1 aria-checked:bg-surface-3 aria-checked:text-ink-1;
+  }
+
+  /* Pestañas subrayadas (cambian de contenido). */
+  .ui-tabs {
+    @apply flex max-w-full gap-4 overflow-x-auto border-b border-line-subtle [scrollbar-width:none];
+  }
+  .ui-tab {
+    @apply ui-focus -mb-px inline-flex min-h-9 shrink-0 items-center whitespace-nowrap border-b-2 border-transparent text-body-sm
+      font-medium text-ink-2 transition-colors duration-fast ease-standard hover:text-ink-1
+      aria-selected:border-accent-text aria-selected:text-ink-1;
+  }
+
   .focus-ring {
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-text focus-visible:ring-offset-2
       focus-visible:ring-offset-black;
   }
 }
@@ -196,11 +302,11 @@
 .markdown h4 {
   font-weight: 600;
   line-height: 1.3;
-  color: #fff;
+  color: var(--text-1);
 }
 .markdown h1 { font-size: 1.2em; }
 .markdown h2 { font-size: 1.1em; }
-.markdown strong { font-weight: 600; color: #fff; }
+.markdown strong { font-weight: 600; color: var(--text-1); }
 .markdown ul,
 .markdown ol {
   padding-left: 1.3em;
@@ -209,7 +315,7 @@
 .markdown ol { list-style: decimal; }
 .markdown li + li { margin-top: 0.3em; }
 .markdown a {
-  color: #0a84ff;
+  color: var(--accent-text);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -217,7 +323,7 @@
   border-radius: 0.375rem;
   background: rgb(255 255 255 / 0.12);
   padding: 0.1em 0.35em;
-  font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.88em;
 }
 .markdown pre {
@@ -236,7 +342,7 @@
 .markdown blockquote {
   border-left: 2px solid rgb(255 255 255 / 0.25);
   padding-left: 0.8em;
-  color: #a1a1aa;
+  color: var(--text-2);
 }
 .markdown table {
   display: block;
@@ -276,62 +382,54 @@
 .dock-resizing .dock-aware { transition: none; }
 .dock-resizing { user-select: none; }
 
-/* Estudio de arquitectura · barra del proyecto: botones y menús desplegables (CloudInfraComponent). */
+/* Estudio de arquitectura · menús de la barra (CloudInfraComponent). `.project-button` es el botón
+   secundario del sistema, para los que quedan fuera de la barra. */
 .project-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  border-radius: 9999px;
-  border: 1px solid rgb(255 255 255 / 0.15);
-  background: rgb(255 255 255 / 0.05);
-  padding: 0.3rem 0.85rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #e4e4e7;
-  transition: background 0.3s;
+  @apply ui-btn-secondary;
 }
-.project-button:hover:not(:disabled) { background: rgb(255 255 255 / 0.1); }
-.project-button:disabled { opacity: 0.35; cursor: not-allowed; }
-.project-button:focus-visible, .project-button:focus-within { outline: 2px solid #0a84ff; outline-offset: 2px; }
 .project-menu {
   position: absolute;
   left: 0;
-  top: calc(100% + 0.4rem);
+  top: calc(100% + 0.5rem);
   z-index: 30;
-  border-radius: 1rem;
-  border: 1px solid rgb(255 255 255 / 0.15);
-  background: rgb(9 9 11 / 0.96);
-  padding: 0.35rem;
-  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.7);
+  max-width: calc(100vw - 3rem);
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface-2);
+  padding: 0.25rem;
+  box-shadow: var(--shadow-floating);
 }
 .project-item {
   display: block;
   width: 100%;
-  border-radius: 0.7rem;
-  padding: 0.4rem 0.55rem;
+  border-radius: var(--radius-control);
+  padding: 0.5rem 0.75rem;
   text-align: left;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-1);
 }
-.project-item:hover, .project-item:focus-visible { background: rgb(255 255 255 / 0.1); outline: none; }
+.project-item:hover:not(:disabled), .project-item:focus-visible, .project-item:focus-within { background: var(--bg-surface-3); outline: none; }
+.project-item:disabled { color: var(--text-disabled); cursor: not-allowed; }
 
 /* Estudio de arquitectura · zonas editables del lienzo (CloudInfraComponent). */
-svg .zone.zone-region { stroke: #a78bfa; stroke-dasharray: 2 5; }
-svg .zone.zone-selected { stroke: #fff !important; stroke-width: 1.8; stroke-dasharray: none; }
+svg .zone.zone-region { stroke-dasharray: 2 5; }
+svg .zone.zone-selected { stroke: var(--accent-text) !important; stroke-width: 1.5; stroke-dasharray: none; }
 .zone-grip { fill: transparent; cursor: move; outline: none; touch-action: none; }
 .zone-grip:hover, .zone-grip:focus-visible { fill: rgb(255 255 255 / 0.08); }
 .zone-grip:focus-visible { stroke: #fff; stroke-width: 1.5; }
 .zone-corner { fill: rgb(255 255 255 / 0.45); cursor: nwse-resize; touch-action: none; }
 .zone-corner:hover { fill: #fff; }
-svg .zone.zone-target { stroke: #fff; stroke-width: 2; stroke-dasharray: none; fill: rgb(255 255 255 / 0.09); }
+svg .zone.zone-target { stroke: var(--accent-text); stroke-width: 1.5; stroke-dasharray: none; fill: rgb(111 168 255 / 0.08); }
 .connect { cursor: crosshair; outline: none; touch-action: none; }
-.connect circle { fill: #0a84ff; transition: fill 0.2s; }
-.connect:hover circle, .connect:focus-visible circle, .connect[aria-pressed='true'] circle { fill: #409cff; }
+.connect circle { fill: var(--accent-solid); transition: fill 0.2s; }
+.connect:hover circle, .connect:focus-visible circle, .connect[aria-pressed='true'] circle { fill: var(--accent-text); }
 .connect:focus-visible circle { stroke: #fff; stroke-width: 1.5; }
-svg .wire.wire-preview { stroke: #0a84ff; stroke-width: 2; stroke-dasharray: 6 5; pointer-events: none; }
+svg .wire.wire-preview { stroke: var(--accent-text); stroke-width: 1.5; stroke-dasharray: 6 5; pointer-events: none; }
 
 /* Estudio de arquitectura · tráfico en vivo (CloudInfraComponent). */
-svg .pulse.pulse-warn { stroke: #f87171; filter: drop-shadow(0 0 5px #ef4444); }
-svg .pulse.pulse-boost { stroke: #34d399; filter: drop-shadow(0 0 5px #10b981); }
+svg .pulse.pulse-warn { stroke: var(--status-danger); }
+svg .pulse.pulse-boost { stroke: var(--status-ok); }
 /* Reloj del widget de métricas: su animación no se ve; cada vuelta es un latido de la simulación. */
 .vitals-clock { animation: vitals-beat 1.4s linear infinite; }
 @keyframes vitals-beat { 50% { opacity: 0.55; } }
@@ -348,6 +446,11 @@ svg .pulse.pulse-boost { stroke: #34d399; filter: drop-shadow(0 0 5px #10b981); 
 @media (pointer: coarse) {
   :where(button, summary, select, textarea, [role='button'], [role='tab'], [role='switch'],
     input:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='hidden'])) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Los controles del sistema de diseño fijan su propia altura mínima: aquí sube a la táctil. */
+  .ui-btn, .ui-btn-primary, .ui-btn-secondary, .ui-btn-ghost, .ui-btn-danger, .ui-segment, .ui-tab {
     min-height: 44px;
     min-width: 44px;
   }

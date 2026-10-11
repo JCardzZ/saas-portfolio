@@ -44,14 +44,13 @@ const REPLAY_STAGE_MS = 850;
   template: `
     <app-theater-toggle name="Pipeline CI/CD" />
     <div class="flex flex-wrap items-center justify-between gap-3 pr-10">
-      <h3 class="text-xl font-semibold tracking-tight text-white">Pipeline CI/CD</h3>
-      <div class="glass flex max-w-full overflow-x-auto rounded-full p-1 [scrollbar-width:none]" role="tablist" aria-label="Workflow">
+      <h3 class="text-xl font-semibold tracking-tight text-ink-1">Pipeline CI/CD</h3>
+      <div class="ui-segmented" role="tablist" aria-label="Workflow">
         @for (tab of tabs; track tab.key) {
           <button
             type="button"
             role="tab"
-            class="focus-ring shrink-0 rounded-full px-3.5 py-1 text-xs font-medium transition duration-300 ease-spring"
-            [class]="tab.key === key() ? 'bg-white/15 text-white' : 'text-zinc-400 hover:text-white'"
+            class="ui-segment"
             [attr.aria-selected]="tab.key === key()"
             (click)="choose(tab.key)"
           >{{ tab.label }}</button>
@@ -59,18 +58,18 @@ const REPLAY_STAGE_MS = 850;
       </div>
     </div>
 
-    <p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-400" aria-live="polite">
+    <p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-2" aria-live="polite">
       <span class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-medium"
-        [class]="replaying() ? 'border-accent/50 text-accent' : 'border-white/10 text-zinc-300'">
+        [class]="replaying() ? 'border-accent-text/50 text-accent-text' : 'border-line-subtle text-ink-2'">
         {{ replaying() ? 'Reproducción animada' : dataLabel() }}
       </span>
       @if (run(); as run) {
-        <span>Commit <code class="font-mono text-zinc-200">{{ run.sha.slice(0, 7) }}</code></span>
+        <span>Commit <code class="font-mono text-ink-1">{{ run.sha.slice(0, 7) }}</code></span>
         @if (run.durationSeconds !== null) {
           <span>Duración total: {{ duration(run.durationSeconds) }}</span>
         }
         @if (runUrl(); as url) {
-          <a class="focus-ring tap inline-flex items-center rounded text-accent hover:text-accent-hover" [href]="url" target="_blank" rel="noopener noreferrer">Ver en GitHub ↗</a>
+          <a class="focus-ring tap inline-flex items-center rounded text-accent-text hover:underline" [href]="url" target="_blank" rel="noopener noreferrer">Ver en GitHub ↗</a>
         }
       }
     </p>
@@ -85,43 +84,43 @@ const REPLAY_STAGE_MS = 850;
       (picked)="pick($event)"
     />
 
-    <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-zinc-400" aria-label="Leyenda">
-      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true"></span>Correcto</li>
-      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-zinc-600" aria-hidden="true"></span>Omitido</li>
-      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-red-400" aria-hidden="true"></span>Fallido</li>
+    <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2" aria-label="Leyenda">
+      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-ok" aria-hidden="true"></span>Correcto</li>
+      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-line-control" aria-hidden="true"></span>Omitido</li>
+      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-danger" aria-hidden="true"></span>Fallido</li>
     </ul>
 
     <div class="mt-4 flex flex-wrap items-center gap-3">
       <button
         type="button"
-        class="focus-ring rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-white transition duration-300 ease-spring hover:bg-accent-hover disabled:opacity-40"
+        class="focus-ring rounded-control bg-accent-solid px-4 py-1.5 text-sm font-medium text-white transition duration-300 ease-spring hover:bg-accent-solid-hover disabled:opacity-40"
         [disabled]="!run() || replaying()"
         (click)="replay()"
       >Reproducir última ejecución</button>
-      <p class="text-xs text-zinc-500">
+      <p class="text-xs text-ink-3">
         Estados y duraciones son los de la ejecución real; la reproducción los recorre acelerados.
       </p>
     </div>
 
-    <div #detail class="mt-4 min-h-[7rem] scroll-mb-24 scroll-mt-24 rounded-2xl border border-white/10 bg-black/30 p-4" aria-live="polite">
+    <div #detail class="mt-4 min-h-[7rem] scroll-mb-24 scroll-mt-24 rounded-panel border border-line-subtle bg-surface-2 p-4" aria-live="polite">
       @if (active(); as job) {
-        <p class="text-sm font-semibold text-white">{{ job.name }}</p>
-        <p class="mt-1 text-sm text-zinc-300">{{ job.note.what }}</p>
-        <p class="mt-1 text-sm text-zinc-400"><span class="text-zinc-300">Por qué existe:</span> {{ job.note.why }}</p>
+        <p class="text-sm font-semibold text-ink-1">{{ job.name }}</p>
+        <p class="mt-1 text-sm text-ink-2">{{ job.note.what }}</p>
+        <p class="mt-1 text-sm text-ink-2"><span class="text-ink-2">Por qué existe:</span> {{ job.note.why }}</p>
         <dl class="mt-3 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
-          <div class="flex justify-between gap-3"><dt class="text-zinc-500">Estado</dt><dd class="text-zinc-200">{{ job.status }}</dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-ink-3">Estado</dt><dd class="text-ink-1">{{ job.status }}</dd></div>
           @if (job.duration) {
-            <div class="flex justify-between gap-3"><dt class="text-zinc-500">Duración</dt><dd class="text-zinc-200">{{ job.duration }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-ink-3">Duración</dt><dd class="text-ink-1">{{ job.duration }}</dd></div>
           }
           @if (job.needs) {
-            <div class="flex justify-between gap-3"><dt class="text-zinc-500">Espera a</dt><dd class="text-right text-zinc-200">{{ job.needs }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-ink-3">Espera a</dt><dd class="text-right text-ink-1">{{ job.needs }}</dd></div>
           }
           @for (metric of job.metrics; track metric.label) {
-            <div class="flex justify-between gap-3"><dt class="text-zinc-500">{{ metric.label }}</dt><dd class="break-all text-right font-mono text-zinc-200">{{ metric.value }}</dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-ink-3">{{ metric.label }}</dt><dd class="break-all text-right font-mono text-ink-1">{{ metric.value }}</dd></div>
           }
         </dl>
       } @else {
-        <p class="text-sm text-zinc-400">Toca un job para ver qué hace, por qué existe y sus datos de la última ejecución.</p>
+        <p class="text-sm text-ink-2">Toca un job para ver qué hace, por qué existe y sus datos de la última ejecución.</p>
       }
     </div>
   `,

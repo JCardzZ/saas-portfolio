@@ -25,8 +25,8 @@ interface Fact {
   template: `
     <app-theater-toggle name="Arquitectura en producción" />
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pr-10">
-      <h3 class="text-xl font-semibold tracking-tight text-white">Arquitectura en producción</h3>
-      <p class="text-xs text-zinc-500">La de hoy, generada de <code class="break-all font-mono">deploy/topology.json</code></p>
+      <h3 class="text-xl font-semibold tracking-tight text-ink-1">Arquitectura en producción</h3>
+      <p class="text-xs text-ink-3">La de hoy, generada de <code class="break-all font-mono">deploy/topology.json</code></p>
     </div>
 
     <app-stage-graph
@@ -40,33 +40,33 @@ interface Fact {
       (picked)="pick($event)"
     />
 
-    <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-zinc-400" aria-label="Leyenda">
-      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true"></span>En producción</li>
-      <li class="inline-flex items-center gap-2"><span class="w-4 border-t border-dashed border-zinc-400" aria-hidden="true"></span>Planificado</li>
+    <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2" aria-label="Leyenda">
+      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-ok" aria-hidden="true"></span>En producción</li>
+      <li class="inline-flex items-center gap-2"><span class="w-4 border-t border-dashed border-line-control" aria-hidden="true"></span>Planificado</li>
     </ul>
 
-    <div #detail class="mt-4 min-h-[7rem] scroll-mb-24 scroll-mt-24 rounded-2xl border border-white/10 bg-black/30 p-4" aria-live="polite">
+    <div #detail class="mt-4 min-h-[7rem] scroll-mb-24 scroll-mt-24 rounded-panel border border-line-subtle bg-surface-2 p-4" aria-live="polite">
       @if (active(); as node) {
-        <p class="flex flex-wrap items-center gap-2 text-sm font-semibold text-white">
+        <p class="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink-1">
           {{ node.label }}
-          <span class="rounded-full border px-2 py-0.5 text-[11px] font-medium"
-            [class]="node.status === 'live' ? 'border-emerald-400/40 text-emerald-300' : 'border-dashed border-zinc-400/60 text-zinc-300'">
+          <span class="rounded-full border px-2 py-0.5 text-xs font-medium"
+            [class]="node.status === 'live' ? 'border-status-ok/40 text-status-ok' : 'border-dashed border-line-control text-ink-2'">
             {{ node.status === 'live' ? 'en producción' : 'planificado' }}
           </span>
         </p>
-        <p class="mt-1 text-sm text-zinc-300">{{ node.what }}</p>
-        <p class="mt-1 text-sm text-zinc-400"><span class="text-zinc-300">Por qué:</span> {{ node.why }}</p>
+        <p class="mt-1 text-sm text-ink-2">{{ node.what }}</p>
+        <p class="mt-1 text-sm text-ink-2"><span class="text-ink-2">Por qué:</span> {{ node.why }}</p>
         @if (facts().length > 0) {
           <dl class="mt-3 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
             @for (fact of facts(); track fact.label) {
-              <div class="flex justify-between gap-3"><dt class="text-zinc-500">{{ fact.label }}</dt><dd class="break-all text-right font-mono text-zinc-200">{{ fact.value }}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-ink-3">{{ fact.label }}</dt><dd class="break-all text-right font-mono text-ink-1">{{ fact.value }}</dd></div>
             }
           </dl>
         } @else if (node.status === 'planned') {
-          <p class="mt-3 text-xs text-zinc-500">Sin datos de despliegue: todavía no existe en producción.</p>
+          <p class="mt-3 text-xs text-ink-3">Sin datos de despliegue: todavía no existe en producción.</p>
         }
       } @else {
-        <p class="text-sm text-zinc-400">Toca una pieza para ver qué es, por qué se eligió y sus datos reales.</p>
+        <p class="text-sm text-ink-2">Toca una pieza para ver qué es, por qué se eligió y sus datos reales.</p>
       }
     </div>
   `,

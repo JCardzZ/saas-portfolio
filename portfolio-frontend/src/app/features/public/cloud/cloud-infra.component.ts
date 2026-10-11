@@ -253,7 +253,7 @@ export class CloudInfraComponent {
   readonly saving = signal(false);
   readonly zoneKinds = ZONE_KINDS;
   /** Menú desplegado de la barra del proyecto. */
-  readonly menu = signal<'presets' | 'export' | 'zones' | 'cloud' | null>(null);
+  readonly menu = signal<'project' | 'presets' | 'export' | 'cloud' | 'view' | 'analyze' | 'zones' | null>(null);
   readonly projectError = signal<string | null>(null);
   readonly exporting = signal(false);
   private readonly history = new History<StudioProject>();
@@ -975,6 +975,11 @@ export class CloudInfraComponent {
   }
 
   /** Imagen del diagrama tal como está: PNG a triple resolución (fondo oscuro o transparente) o SVG. */
+  /** Fondo oscuro de las imágenes exportadas: la superficie de las tarjetas (un archivo suelto no puede usar la variable CSS). */
+  darkBackground(): string {
+    return getComputedStyle(document.documentElement).getPropertyValue('--bg-surface-1').trim() || 'black';
+  }
+
   async exportImage(format: 'png' | 'svg', background: string | null): Promise<void> {
     const svg = this.canvas()?.nativeElement;
     this.menu.set(null);

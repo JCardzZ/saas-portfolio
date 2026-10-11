@@ -1,6 +1,6 @@
 <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-  <h3 class="text-xl font-semibold tracking-tight text-white">Simulador de ingesta RAG</h3>
-  <p class="text-xs text-zinc-500">Pega un texto o elige una plantilla</p>
+  <h3 class="text-xl font-semibold tracking-tight text-ink-1">Simulador de ingesta RAG</h3>
+  <p class="text-xs text-ink-3">Pega un texto o elige una plantilla</p>
 </div>
 
 <div class="mt-4 grid gap-6 lg:grid-cols-2">
@@ -9,8 +9,8 @@
       @for (template of templates; track template.label) {
         <button
           type="button"
-          class="focus-ring rounded-full border px-3 py-1 text-xs transition duration-300 ease-spring"
-          [class]="activeTemplate() === template.label ? 'border-accent bg-accent/20 text-white' : 'border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10'"
+          class="focus-ring rounded-control border px-3 py-1 text-xs transition duration-300 ease-spring"
+          [class]="activeTemplate() === template.label ? 'border-accent-text bg-accent-text/20 text-ink-1' : 'border-line-subtle bg-surface-2 text-ink-2 hover:bg-surface-3'"
           [attr.aria-pressed]="activeTemplate() === template.label"
           (click)="useTemplate(template)"
         >
@@ -22,7 +22,7 @@
     <label class="sr-only" for="ingestion-input">Texto a indexar</label>
     <textarea
       id="ingestion-input"
-      class="focus-ring min-h-[14rem] flex-1 resize-y rounded-2xl border border-white/10 bg-black/40 p-3 font-mono text-xs leading-relaxed text-zinc-200 placeholder:text-zinc-600"
+      class="focus-ring min-h-[14rem] flex-1 resize-y rounded-panel border border-line-subtle bg-surface-2 p-3 font-mono text-xs leading-relaxed text-ink-1 placeholder:text-ink-3"
       spellcheck="false"
       placeholder="Pega aquí código o texto…"
       [formControl]="input"
@@ -32,7 +32,7 @@
     <div class="flex flex-wrap items-center gap-4">
       <button
         type="button"
-        class="focus-ring rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition duration-300 ease-spring hover:bg-accent-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+        class="focus-ring rounded-control bg-accent-solid px-5 py-2 text-sm font-medium text-white transition duration-300 ease-spring hover:bg-accent-solid-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         [disabled]="!input.value.trim()"
         (click)="process()"
       >
@@ -43,12 +43,12 @@
         @for (name of steps; track name; let index = $index) {
           <li
             class="flex items-center gap-1.5 transition-colors duration-500 ease-spring"
-            [class]="step() > index ? 'text-white' : 'text-zinc-600'"
+            [class]="step() > index ? 'text-ink-1' : 'text-ink-3'"
             [attr.aria-current]="step() === index + 1 ? 'step' : null"
           >
             <span
-              class="flex h-5 w-5 items-center justify-center rounded-full border text-[10px] transition-colors duration-500 ease-spring"
-              [class]="step() > index ? 'border-accent bg-accent text-white' : 'border-white/15'"
+              class="flex h-5 w-5 items-center justify-center rounded-full border text-xs transition-colors duration-500 ease-spring"
+              [class]="step() > index ? 'border-accent-text bg-accent-solid text-white' : 'border-line-strong'"
             >{{ index + 1 }}</span>
             {{ name }}
           </li>
@@ -59,26 +59,26 @@
 
   <div class="min-w-0 space-y-5" aria-live="polite">
     @if (step() === 0) {
-      <p class="text-sm text-zinc-500">Pulsa «Procesar ingesta» para ver los tres pasos.</p>
+      <p class="text-sm text-ink-3">Pulsa «Procesar ingesta» para ver los tres pasos.</p>
     }
 
     @if (step() >= 1) {
       <section class="animate-slide-up">
-        <h4 class="text-xs font-medium uppercase tracking-wider text-zinc-500">
+        <h4 class="text-xs font-medium uppercase tracking-wider text-ink-3">
           1 · Segmentación en {{ chunks().length }} {{ chunks().length === 1 ? 'chunk' : 'chunks' }}
         </h4>
         <div class="mt-2 max-h-64 space-y-2 overflow-y-auto pr-1">
           @for (chunk of chunks(); track $index) {
             <button
               type="button"
-              class="focus-ring block w-full animate-slide-up rounded-xl border p-2.5 text-left backdrop-blur-md transition duration-300 ease-spring"
+              class="focus-ring block w-full animate-slide-up rounded-panel border p-2.5 text-left backdrop-blur-md transition duration-300 ease-spring"
               [class]="chunkStyle($index) + (selectedIndex() === $index ? ' ring-1 ring-white/60' : ' opacity-70 hover:opacity-100')"
               [style.animation-delay.ms]="$index * 90"
               [attr.aria-pressed]="selectedIndex() === $index"
               (click)="selectedIndex.set($index)"
             >
-              <span class="font-mono text-[10px] text-zinc-400">chunk {{ $index }} · líneas {{ chunk.startLine }}-{{ chunk.endLine }}</span>
-              <pre class="mt-1 max-h-24 overflow-hidden whitespace-pre-wrap break-words font-mono text-[11px] leading-snug text-zinc-200">{{ chunk.content }}</pre>
+              <span class="font-mono text-xs text-ink-2">chunk {{ $index }} · líneas {{ chunk.startLine }}-{{ chunk.endLine }}</span>
+              <pre class="mt-1 max-h-24 overflow-hidden whitespace-pre-wrap break-words font-mono text-xs leading-snug text-ink-1">{{ chunk.content }}</pre>
             </button>
           }
         </div>
@@ -87,32 +87,32 @@
 
     @if (step() >= 2 && selected(); as chunk) {
       <section class="animate-slide-up">
-        <h4 class="text-xs font-medium uppercase tracking-wider text-zinc-500">2 · Metadatos del chunk {{ selectedIndex() }}</h4>
-        <dl class="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 rounded-xl border border-white/10 bg-white/5 p-3 font-mono text-[11px]">
-          <dt class="text-zinc-500">tenant_id</dt><dd class="truncate text-zinc-200">default-tenant</dd>
-          <dt class="text-zinc-500">source_id</dt><dd class="truncate text-zinc-200">{{ sourceId() }}</dd>
-          <dt class="text-zinc-500">chunk_index</dt><dd class="text-zinc-200">{{ selectedIndex() }}</dd>
-          <dt class="text-zinc-500">kind</dt><dd class="text-zinc-200">{{ kind() }}</dd>
-          <dt class="text-zinc-500">lineNumberRange</dt><dd class="text-zinc-200">{{ chunk.startLine }}-{{ chunk.endLine }}</dd>
+        <h4 class="text-xs font-medium uppercase tracking-wider text-ink-3">2 · Metadatos del chunk {{ selectedIndex() }}</h4>
+        <dl class="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 rounded-panel border border-line-subtle bg-surface-2 p-3 font-mono text-xs">
+          <dt class="text-ink-3">tenant_id</dt><dd class="truncate text-ink-1">default-tenant</dd>
+          <dt class="text-ink-3">source_id</dt><dd class="truncate text-ink-1">{{ sourceId() }}</dd>
+          <dt class="text-ink-3">chunk_index</dt><dd class="text-ink-1">{{ selectedIndex() }}</dd>
+          <dt class="text-ink-3">kind</dt><dd class="text-ink-1">{{ kind() }}</dd>
+          <dt class="text-ink-3">lineNumberRange</dt><dd class="text-ink-1">{{ chunk.startLine }}-{{ chunk.endLine }}</dd>
         </dl>
       </section>
     }
 
     @if (step() >= 3 && selected()) {
       <section class="animate-slide-up">
-        <h4 class="text-xs font-medium uppercase tracking-wider text-zinc-500">
+        <h4 class="text-xs font-medium uppercase tracking-wider text-ink-3">
           3 · Embedding · {{ shownDimensions }} de {{ totalDimensions }} dimensiones
         </h4>
         <div class="mt-2 grid grid-cols-8 gap-1 sm:grid-cols-12" role="img" [attr.aria-label]="'Vector ilustrativo del chunk ' + selectedIndex()">
           @for (value of embedding(); track selectedIndex() + '-' + $index) {
             <span
-              class="animate-scale-up rounded-md py-1 text-center font-mono text-[9px] tabular-nums text-zinc-100"
+              class="animate-scale-up rounded-control py-1 text-center font-mono text-xs tabular-nums text-ink-1"
               [style.background]="cellColor(value)"
               [style.animation-delay.ms]="$index * 12"
             >{{ value.toFixed(2) }}</span>
           }
         </div>
-        <p class="mt-2 text-[11px] leading-snug text-zinc-500">
+        <p class="mt-2 text-xs leading-snug text-ink-3">
           Vector ilustrativo calculado en tu navegador a partir del texto; no es la salida de Gemini. El troceo sí es el
           algoritmo real, con límites reducidos para la demo.
         </p>
