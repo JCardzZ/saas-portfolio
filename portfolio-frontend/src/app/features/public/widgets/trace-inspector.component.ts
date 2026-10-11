@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, Injector, afterNextRender, computed, effect, inject, signal, viewChild,
 } from '@angular/core';
 
+import { runtimeConfig } from '../../../core/config/runtime-config';
+import { DemoNoticeComponent, DemoNoticeHost } from '../../../shared/ui/demo-notice.component';
 import { ghostOf, playGenie } from '../../../shared/ui/genie';
 import { TechIconComponent } from '../../../shared/ui/tech-icon.component';
 import { TECH_ICONS } from '../../../shared/ui/tech-icons';
@@ -40,6 +42,8 @@ const SHEET_HEIGHT_TALL = '70dvh';
 const FLOATING_WIDTH = 384;
 const FLOATING_HEIGHT = 300;
 const EDGE = 8;
+/** Alto que ocupa una píldora en la esquina, con su margen. */
+const PILL_SPACE = '3.5rem';
 const KEYBOARD_STEP = 24;
 
 const LAYOUT_CLASSES: Record<Exclude<InspectorLayout, 'pill'>, string> = {
@@ -67,7 +71,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
 @Component({
   selector: 'app-trace-inspector',
   standalone: true,
-  imports: [TechIconComponent],
+  imports: [TechIconComponent, DemoNoticeComponent],
   template: `
     @if (icon(); as icon) {
       @if (layout() === 'pill') {
@@ -83,6 +87,9 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
             Inspector de traza · {{ title() }}
             <span class="tabular-nums text-zinc-400">({{ countLabel() }})</span>
           </button>
+          @if (demo) {
+            <app-demo-notice short class="mx-1" />
+          }
           <button type="button" class="focus-ring mr-1 flex h-6 w-6 items-center justify-center rounded-full text-zinc-400 hover:bg-white/10 hover:text-white" aria-label="Cerrar el inspector de traza" (click)="inspector.close()">
             <svg viewBox="0 0 16 16" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
           </button>
@@ -154,6 +161,9 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
               {{ layout() === 'right' ? 'Traza' : 'Inspector de traza' }} · {{ title() }}
               <span class="text-zinc-400">— {{ inspector.graphView() ? 'lienzo' : live() ? 'en vivo' : 'simulación' }}</span>
             </h3>
+            @if (demo) {
+              <app-demo-notice short />
+            }
             <button
               type="button"
               class="focus-ring rounded-md px-2 py-1 font-mono text-[11px] transition hover:bg-white/10 hover:text-white"
@@ -238,6 +248,11 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
           </div>
         </section>
       }
+    } @else if (demo) {
+      <!-- Inspector cerrado: el aviso de demo ocupa la esquina de su píldora. No es interactivo. -->
+      <div data-demo-pill style="bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); right: calc(1rem + env(safe-area-inset-right, 0px))" class="pointer-events-none fixed z-[46] flex max-w-[calc(100vw-2rem)] rounded-full bg-surface-1 shadow-floating">
+        <app-demo-notice />
+      </div>
     }
   `,
   styles: `
@@ -283,6 +298,10 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
 export class TraceInspectorComponent {
   readonly inspector = inject(TraceInspectorService);
   private readonly telemetry = inject(TelemetryStreamService);
+
+  /** En modo demo el aviso es un segmento de esta barra (docs/DESIGN.md §8.4). */
+  readonly demo = runtimeConfig.mockMode;
+  private readonly demoHost = inject(DemoNoticeHost);
 
   readonly kindClasses = KIND_CLASSES;
   readonly icon = computed(() => {
@@ -362,11 +381,16 @@ export class TraceInspectorComponent {
       const root = document.documentElement.style;
       root.setProperty('--dock-right', open && layout === 'right' ? RIGHT_WIDTH : '0px');
       root.setProperty('--dock-bottom', open && (layout === 'bottom' || layout === 'sheet') ? this.height()! : '0px');
+      // Una píldora en la esquina (inspector minimizado o aviso de demo): el pie le deja sitio.
+      root.setProperty('--pill-space', (open && layout === 'pill') || (!open && this.demo) ? PILL_SPACE : '0px');
     });
+    this.demoHost.hosted.set(true);
     inject(DestroyRef).onDestroy(() => {
       document.documentElement.classList.remove('dock-resizing');
       document.documentElement.style.removeProperty('--dock-right');
       document.documentElement.style.removeProperty('--dock-bottom');
+      document.documentElement.style.removeProperty('--pill-space');
+      this.demoHost.hosted.set(false);
     });
   }
 
