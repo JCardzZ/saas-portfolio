@@ -54,8 +54,6 @@ public class UnmappedServiceAdapter implements PricingProviderPort {
                     product + " se contrata con oferta comercial: no tiene precio en una API pública.");
         }
         log.info("FinOps: sin tarifa pública asignada para '{}' en {}", serviceCode, provider.displayName());
-        return PriceQuote.unknown(serviceCode, provider, provider == CloudProviderDomain.AZURE
-                ? "Este servicio no tiene todavía un SKU de Azure asignado."
-                : "Todavía no hay un adaptador de precios para " + provider.displayName() + ".");
+        return PriceQuote.unknown(serviceCode, provider, "Este servicio no tiene todavía una tarifa de " + provider.displayName() + " asignada.");
     }
 }
