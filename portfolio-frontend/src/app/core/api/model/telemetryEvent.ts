@@ -22,6 +22,10 @@ export namespace TelemetryEvent {
         VectorSearch: 'VECTOR_SEARCH',
         RagQuery: 'RAG_QUERY',
         JwtVerified: 'JWT_VERIFIED',
+        PricingRequest: 'PRICING_REQUEST',
+        PricingCached: 'PRICING_CACHED',
+        PricingUnestimated: 'PRICING_UNESTIMATED',
+        PricingFallback: 'PRICING_FALLBACK',
     } as const;
     export type EventTypeEnum = typeof EventTypeEnum[keyof typeof EventTypeEnum];
 }

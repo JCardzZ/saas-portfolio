@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.time.Duration;
 
 @ConfigurationProperties(prefix = "security.rate-limit")
-public record RateLimitProperties(Limit authToken, Limit ragQuery, Limit ragQueryGlobal, Limit terraform) {
+public record RateLimitProperties(Limit authToken, Limit ragQuery, Limit ragQueryGlobal, Limit terraform, Limit pricing) {
 
     public record Limit(int maxRequests, Duration window) {
 

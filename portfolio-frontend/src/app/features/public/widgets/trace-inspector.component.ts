@@ -225,6 +225,9 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
                     <span class="text-emerald-400" title="Evento real del backend">●</span>
                   }
                   <span class="text-zinc-600">{{ event.time }}</span>
+                  @if (event.level) {
+                    <span [class]="kindClasses[event.kind]"> [{{ event.level }}]</span>
+                  }
                   <span [class]="kindClasses[event.kind]"> [{{ event.tag }}]</span>
                   <span class="text-zinc-400"> {{ event.detail }}</span>
                 </p>

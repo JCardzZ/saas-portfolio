@@ -10,6 +10,8 @@ import { mockApiInterceptor, resetMockApi } from '../../../core/mock/mock-api.in
 import { SystemEventsService } from '../data/system-events.service';
 import { TraceInspectorService } from '../data/trace-inspector.service';
 import { ArchitectureStudioService as ArchitectureStudio } from './architecture-studio.service';
+import { PriceQuote, PricingRequest } from '../../../core/api';
+import { resetRuntimeConfig, runtimeConfig } from '../../../core/config/runtime-config';
 import { CloudInfraComponent, GRAPH_DIFF_DEBOUNCE_MS } from './cloud-infra.component';
 import { DATA_BLUEPRINTS } from './data-blueprints';
 import { CLOUD_NODES } from './cloud-topology.data';
@@ -1887,5 +1889,79 @@ describe('CloudInfraComponent', () => {
       expect(inspector.graphView()).toBeTrue();
       flush();
     }));
+  });
+  describe('live list prices', () => {
+    const costs = (element: HTMLElement) => Array.from(element.querySelectorAll('[data-testid="node-cost"]'))
+      .map((badge) => [badge.querySelector('text')!.textContent, badge.classList.contains('node-cost-live')]);
+
+    afterEach(() => resetRuntimeConfig());
+
+    it('labels every node with its monthly cost and, in demo mode, says they are all rough figures', () => {
+      const { fixture, element, component } = create();
+      const api = spyOn(TestBed.inject(ArchitectureStudioApi), 'publicArchitecturePricingPost');
+
+      expect(costs(element)).toContain(['$36/mes', false]);
+      expect(costs(element).some(([, live]) => live)).toBeFalse();
+      expect(component.cost().liveUsd).toBe(0);
+      expect(component.pricingState()).toBe('demo');
+      const badge = element.querySelector('app-cost-badge')!;
+      expect(badge.querySelector('[data-testid="cost-live"]')).toBeNull();
+      badge.querySelector('button')!.click();
+      fixture.detectChanges();
+      expect(badge.querySelector('[data-testid="cost-source"]')!.textContent!.trim())
+        .toBe('Modo demo: sin backend no se consultan precios. Todas las cifras son orientativas.');
+      // En modo demo no se pide ningún precio.
+      provider(element, 'Azure').click();
+      fixture.detectChanges();
+      expect(api).not.toHaveBeenCalled();
+    });
+
+    it('with a backend, asks for the prices when the cloud or the services change and shows the real ones', () => {
+      (runtimeConfig as { mockMode: boolean }).mockMode = false;
+      const quote = (code: string, monthlyCost: number, sku: string): PriceQuote =>
+        ({ code, status: 'LIVE', sku, monthlyCost, currency: 'USD', region: 'eastus', source: 'Azure Retail Prices API', note: 'Solo cómputo.' });
+      const api = spyOn(TestBed.inject(ArchitectureStudioApi), 'publicArchitecturePricingPost').and.callFake(((request: PricingRequest) => of({
+        cloudProvider: request.cloudProvider, currency: 'USD',
+        quotes: request.cloudProvider === 'azure'
+          ? [quote('postgres', 12.41, 'PostgreSQL B1MS'), quote('redis', 40.15, 'Redis Basic C1'), quote('vm', 70.08, 'D2s_v5'),
+             { code: 'snowflake', status: 'UNESTIMATED_ENTERPRISE_LICENSE' }]
+          : request.services.map((code) => ({ code, status: 'UNKNOWN_PRICING' })),
+      })) as never);
+
+      const { fixture, element, component } = edit();
+      // Al abrir, pide los precios de la nube y los servicios del lienzo.
+      expect(api).toHaveBeenCalledTimes(1);
+      expect(api.calls.mostRecent().args[0].cloudProvider).toBe('aws');
+      expect(api.calls.mostRecent().args[0].services).toContain('postgres');
+      expect(component.cost().liveUsd).toBe(0);
+
+      provider(element, 'Azure').click();
+      fixture.detectChanges();
+      expect(api).toHaveBeenCalledTimes(2);
+      expect(component.pricingState()).toBe('live');
+      expect(costs(element)).toContain(['$12/mes', true]);
+      expect(costs(element)).toContain(['$40/mes', true]);
+      expect(component.cost().liveUsd).toBeCloseTo(52.56, 2);
+      expect(element.querySelector('[data-testid="cost-live"]')!.textContent).toBe('$53 reales');
+      expect(Array.from(element.querySelectorAll('[data-testid="node-cost"] title')).map((title) => title.textContent))
+        .toContain('Precio de lista real · PostgreSQL B1MS · Azure Retail Prices API (eastus). Solo cómputo.');
+
+      // Añadir un tipo nuevo vuelve a pedir; una segunda instancia del mismo tipo, no.
+      catalogEntry(element, 'Virtual Machines').click();
+      fixture.detectChanges();
+      expect(api).toHaveBeenCalledTimes(3);
+      expect(api.calls.mostRecent().args[0].services).toContain('vm');
+      expect(costs(element)).toContain(['$70/mes', true]);
+      catalogEntry(element, 'Virtual Machines').click();
+      fixture.detectChanges();
+      expect(api).toHaveBeenCalledTimes(3);
+      expect(component.cost().liveUsd).toBeCloseTo(52.56 + 140.16, 2);
+
+      // Un producto con licencia sigue sin estimación: ni precio ni cero.
+      catalogEntry(element, 'Snowflake').click();
+      fixture.detectChanges();
+      expect(costs(element)).toContain(['sin estimación', false]);
+      expect(component.cost().unestimated.map((item) => item.name)).toEqual(['Snowflake']);
+    });
   });
 });

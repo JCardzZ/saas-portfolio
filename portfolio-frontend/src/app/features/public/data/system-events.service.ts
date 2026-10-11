@@ -20,7 +20,11 @@ export interface SystemEvent {
   stagger: number;
   /** Pieza concreta de un diagrama a la que pertenece (id del nodo), si el evento es solo suyo. */
   component?: string;
+  /** Nivel de log con el que lo emitió el backend, si lo declara: se escribe delante, `[INFO]`. */
+  level?: SystemEventLevel;
 }
+
+export type SystemEventLevel = 'INFO' | 'SUCCESS' | 'WARN';
 
 export type SystemEventStep = [kind: SystemEventKind, tag: string, detail?: string];
 
@@ -47,8 +51,8 @@ export class SystemEventsService {
   }
 
   /** Evento real recibido del backend. */
-  emitLive(kind: SystemEventKind, tag: string, detail: string, at: Date): void {
-    this.push([[kind, tag, detail]], false, 'live', at);
+  emitLive(kind: SystemEventKind, tag: string, detail: string, at: Date, level?: SystemEventLevel): void {
+    this.push([[kind, tag, detail]], false, 'live', at, undefined, level);
   }
 
   /** Secuencia simulada por un widget ante una acción del visitante: entra escalonada y marcada como suya. */
@@ -66,11 +70,11 @@ export class SystemEventsService {
     }
   }
 
-  private push(steps: SystemEventStep[], fromUser: boolean, origin: SystemEvent['origin'], at = new Date(), component?: string): void {
+  private push(steps: SystemEventStep[], fromUser: boolean, origin: SystemEvent['origin'], at = new Date(), component?: string, level?: SystemEventLevel): void {
     const time = timestamp(at);
     const added = steps.map(([kind, tag, detail = ''], index) => ({
       id: this.nextId++, time, kind, tag, detail, fromUser, origin, techs: techsOf(tag, detail),
-      stagger: index * STAGGER_MS, component,
+      stagger: index * STAGGER_MS, component, ...(level ? { level } : {}),
     }));
     this._events.update((events) => [...events, ...added].slice(-MAX_EVENTS));
   }
@@ -93,7 +97,8 @@ const TECH_RULES: [tech: TechIconKey, pattern: RegExp][] = [
   ['jwt', /jwt|ROLE_/i],
   ['spring', /\b(GET|POST|PUT|DELETE) \/|\b(200|429|503)\b|ingest|spring boot/i],
   ['angular', /\b(GET|POST) \/(public|ai)\b/i],
-  ['terraform', /terraform|deploying node|destroying node|route table|^(check|warning):/i],
+  // Los precios del lienzo se leen en la misma consola que su Terraform.
+  ['terraform', /terraform|deploying node|destroying node|route table|^(check|warning):|^finops /i],
   ['kubernetes', /kubernetes|\b(EKS|GKE|AKS)\b/i],
   ['cloudflare', /cloudflare/i],
   ['githubActions', /github actions/i],

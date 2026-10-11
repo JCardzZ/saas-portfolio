@@ -1,5 +1,9 @@
 package dev.portfolio.infrastructure.adapter.in.web.mapper;
 
+import java.math.RoundingMode;
+import dev.portfolio.model.PricingResponse;
+import dev.portfolio.domain.model.pricing.PriceQuote;
+import dev.portfolio.domain.model.pricing.Currency;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase.Draft;
 import dev.portfolio.domain.model.ArchitectureProjectDomain;
 import dev.portfolio.domain.model.CloudCatalogItemDomain;
@@ -58,6 +62,32 @@ public class ArchitectureWebMapper {
                 .category(item.category())
                 .defaultMonthlyCost(item.defaultMonthlyCost())
                 .isEnterprise(item.enterprise())).toList();
+    }
+
+    public PricingResponse toDto(CloudProviderDomain provider, List<PriceQuote> quotes) {
+        return new PricingResponse()
+                .cloudProvider(PricingResponse.CloudProviderEnum.fromValue(provider.code()))
+                .currency(Currency.USD.code())
+                .quotes(quotes.stream().map(this::toDto).toList());
+    }
+
+    /** Sin precio, la cotización solo lleva su código, su estado y el motivo: ningún cero que confundir con un dato. */
+    private dev.portfolio.model.PriceQuote toDto(PriceQuote quote) {
+        dev.portfolio.model.PriceQuote dto = new dev.portfolio.model.PriceQuote()
+                .code(quote.serviceCode())
+                .status(dev.portfolio.model.PriceQuote.StatusEnum.fromValue(quote.status().name()))
+                .note(quote.note().isEmpty() ? null : quote.note());
+        quote.price().ifPresent(pricing -> dto
+                .sku(pricing.sku())
+                .description(pricing.description())
+                .region(pricing.region())
+                .unit(dev.portfolio.model.PriceQuote.UnitEnum.fromValue(pricing.unit().name()))
+                .unitPrice(pricing.unitPrice().amount().doubleValue())
+                .monthlyCost(pricing.monthlyCost().map(monthly -> monthly.amount().setScale(2, RoundingMode.HALF_UP).doubleValue()).orElse(null))
+                .currency(pricing.unitPrice().currency().code())
+                .source(pricing.source())
+                .fetchedAt(pricing.fetchedAt().atOffset(ZoneOffset.UTC)));
+        return dto;
     }
 
     public TerraformBundle toDto(TerraformBundleDomain bundle) {

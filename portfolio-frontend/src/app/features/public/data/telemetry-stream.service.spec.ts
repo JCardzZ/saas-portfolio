@@ -83,6 +83,33 @@ describe('TelemetryStreamService', () => {
     ]);
   });
 
+  it('writes the pricing lifecycle with its log level, in the console of the studio', () => {
+    const { service, events } = setup();
+    service.connect();
+    created[0].onopen!();
+    const send = (eventType: string, details: string) =>
+      created[0].onmessage!({ data: JSON.stringify({ timestamp: '2026-10-10T10:00:00Z', eventType, details, traceId: 't' }) });
+
+    send('PRICING_REQUEST', "Dispatching GET to Azure Retail API for SKU 'D2s_v5'...");
+    send('PRICING_CACHED', "SKU 'D2s_v5' cached -> $0.0960 USD/hr");
+    send('PRICING_UNESTIMATED', "Service 'Snowflake' requires enterprise quote -> Pricing marked as Unestimated.");
+    send('PRICING_FALLBACK', "Provider unavailable -> serving last known price for SKU 'D2s_v5' ($0.0960 USD/hr)");
+
+    expect(events.events().map((event) => `[${event.level}] [${event.tag}] ${event.detail}`)).toEqual([
+      "[INFO] [FinOps Engine] Dispatching GET to Azure Retail API for SKU 'D2s_v5'...",
+      "[SUCCESS] [FinOps Cache] SKU 'D2s_v5' cached -> $0.0960 USD/hr",
+      "[WARN] [FinOps Engine] Service 'Snowflake' requires enterprise quote -> Pricing marked as Unestimated.",
+      "[WARN] [FinOps Engine] Provider unavailable -> serving last known price for SKU 'D2s_v5' ($0.0960 USD/hr)",
+    ]);
+    expect(events.events().map((event) => [event.origin, event.kind])).toEqual([['live', 'info'], ['live', 'ok'], ['live', 'warn'], ['live', 'warn']]);
+    // Se ven en la consola del Estudio (filtro Terraform) y, si nombran una nube, en la suya.
+    expect(events.events().every((event) => event.techs.includes('terraform'))).toBeTrue();
+    expect(events.events()[0].techs).toContain('azure');
+    // Los demás eventos no llevan nivel: se pintan como siempre.
+    send('CACHE_HIT', 'portfolio:projects:all');
+    expect(events.events().at(-1)!.level).toBeUndefined();
+  });
+
   it('shows unknown event types generically and ignores malformed payloads', () => {
     const { service, events } = setup();
     service.connect();

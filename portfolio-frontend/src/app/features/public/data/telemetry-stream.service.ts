@@ -2,7 +2,7 @@ import { Injectable, InjectionToken, inject, signal } from '@angular/core';
 
 import { runtimeConfig } from '../../../core/config/runtime-config';
 import { TelemetryEvent } from '../../../core/api';
-import { SystemEventKind, SystemEventsService } from './system-events.service';
+import { SystemEventKind, SystemEventsService, SystemEventLevel } from './system-events.service';
 
 export interface TelemetryStreamConfig {
   /** Con `false` nunca se abre la conexión (modo demo). */
@@ -31,12 +31,17 @@ export type TelemetryStatus = 'simulated' | 'connecting' | 'live';
 
 const CLOSED = 2;
 
-const PRESENTATION: Record<TelemetryEvent.EventTypeEnum, [kind: SystemEventKind, tag: string]> = {
+const PRESENTATION: Record<TelemetryEvent.EventTypeEnum, [kind: SystemEventKind, tag: string, level?: SystemEventLevel]> = {
   CACHE_HIT: ['ok', '200 OK CacheHit Redis'],
   CACHE_MISS: ['cache', 'CacheMiss → PostgreSQL'],
   VECTOR_SEARCH: ['vector', 'pgvector CosineDistance'],
   RAG_QUERY: ['ai', 'RAG query'],
   JWT_VERIFIED: ['auth', 'JWT Verified'],
+  // Motor de precios: cada consulta a la API pública de un proveedor y lo que resulta de ella.
+  PRICING_REQUEST: ['info', 'FinOps Engine', 'INFO'],
+  PRICING_CACHED: ['ok', 'FinOps Cache', 'SUCCESS'],
+  PRICING_UNESTIMATED: ['warn', 'FinOps Engine', 'WARN'],
+  PRICING_FALLBACK: ['warn', 'FinOps Engine', 'WARN'],
 };
 
 /**
@@ -98,9 +103,9 @@ export class TelemetryStreamService {
     if (!event) {
       return;
     }
-    const [kind, tag] = PRESENTATION[event.eventType] ?? ['info', event.eventType];
+    const [kind, tag, level] = PRESENTATION[event.eventType] ?? ['info', event.eventType];
     const at = new Date(event.timestamp);
-    this.events.emitLive(kind, tag, event.details ?? '', Number.isNaN(at.getTime()) ? new Date() : at);
+    this.events.emitLive(kind, tag, event.details ?? '', Number.isNaN(at.getTime()) ? new Date() : at, level);
   }
 }
 
