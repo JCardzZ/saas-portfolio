@@ -45,12 +45,21 @@ public class ArchitectureProjectService implements ArchitectureProjectUseCase {
 
     @Override
     public List<ArchitectureProjectDomain> findAll() {
-        return repository.findAll();
+        return repository.findAll().stream().filter(this::visible).toList();
+    }
+
+    /**
+     * Los sistemas de ejemplo (plantillas con diseño de sistema) solo existen para quien pregunta
+     * con la flag {@code studio.system-templates} encendida. Se siembran igual, para que encenderla
+     * no exija desplegar.
+     */
+    private boolean visible(ArchitectureProjectDomain project) {
+        return !(project.preset() && project.system() != null) || flags.isEnabled(FeatureFlagDomain.STUDIO_SYSTEM_TEMPLATES);
     }
 
     @Override
     public ArchitectureProjectDomain findById(String id) {
-        return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException(RESOURCE, id));
+        return repository.findById(id).filter(this::visible).orElseThrow(() -> new ResourceNotFoundException(RESOURCE, id));
     }
 
     @Override

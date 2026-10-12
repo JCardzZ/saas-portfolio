@@ -20,7 +20,7 @@
 | 2 · Conexiones inteligentes | `feat/studio-smart-connections` | Integrado en `main` | #24 |
 | 3 · Oracle Cloud | `feat/cloud-oracle` | Integrado en `main` con el gate en rojo (ver Estado) | #25 |
 | 4 · Diseño de sistemas | `feat/system-design` | PR abierto; verificado en local | ver GitHub |
-| 5 · Plantillas de sistemas | — | Sin empezar | — |
+| 5 · Plantillas de sistemas | `feat/system-templates` (sobre la del hito 4) | Terminado en local; PR cuando se integre el hito 4 | — |
 | 6 · MCP núcleo | — | Sin empezar | — |
 | 7 · MCP calidad y observabilidad | — | Sin empezar | — |
 | 8 · Sección web | — | Sin empezar | — |
@@ -71,6 +71,16 @@
 - **Esquema del proyecto: versión 3**, con migración 2 → 3. El fixture v2 (`e2e/fixtures/studio-project-v2-exposed-database.json`) sigue abriendo.
 - Verificado en local: `./gradlew test`, 536 tests del frontend, build (470 kB de 500), Spectral y los escenarios Playwright del hito en escritorio, tablet y móvil (Chromium). **Sin ejecutar en local: `integrationTest` (incluye la migración V8), WebKit y Lighthouse.** Los corre la CI del PR.
 
+## Hito 5 · qué se hizo
+
+- `system/system-templates.ts`: seis sistemas de ejemplo (fintech, e-commerce, telemedicina, movilidad, educación, IoT), cada uno con sus dos vistas (infraestructura + diseño de sistema), requisitos no funcionales, entre dos y cuatro decisiones clave de una línea y versión.
+- Mismo mecanismo que las plantillas y los patrones de datos: `build()` en el frontend, `npm run export:presets` → `presets.json` (ahora con `system`) → el backend los siembra. Entran también en los casos golden de Terraform.
+- Con `studio.system-templates` encendida, el menú Proyecto → Plantillas gana la sección «Sistemas completos»: nombre, etiqueta **«Ejemplo ficticio»**, sector, requisitos, coste estimado (calculado con el estimador del Estudio, no escrito a mano) y decisiones.
+- Con la flag apagada no se ofrecen en el frontend y el backend no los devuelve (ni en la lista ni por id, 404), aunque estén sembrados.
+- Un test obliga a que cada plantilla nazca sin nada que corregir: grafo válido, todo desplegado, requisitos cumplidos y dentro de presupuesto.
+- Las pestañas de vista (hito 4) pasan a su propia fila, encima de la barra: en la misma fila desplazaban el menú de plantillas fuera de la pantalla en tablet.
+- Verificado en local: `./gradlew test`, 546 tests del frontend, build (470 kB), Playwright en escritorio, tablet y móvil (Chromium). **Sin ejecutar en local: `integrationTest`, WebKit y Lighthouse.**
+
 ## Decisiones del autor (2026-10-11)
 
 1. Servidor MCP con el SDK oficial `mcp-core` 2.0.1 y transporte Servlet, sirviendo 2025-11-25, detrás de una capa propia para migrar a 2026-07-28 cuando el SDK la publique.
@@ -112,6 +122,9 @@
 - **Hito 4 · el contrato nuevo no usa enumerados cerrados** (`severity`, `kind`, `language`, `cloudProvider` son texto con su descripción), para que crecer no vuelva a romper `📜 Breaking`.
 - **Hito 4 · el diseño de sistemas comparte el cupo del generador de Terraform** (`rateLimitProperties.terraform()`), con su propia clave (`system-design:<ip>`).
 - **Hito 4 · en el móvil la vista de Aplicación es de solo lectura** (por debajo de 640 px), como pediste para lo nuevo.
+- **Hito 5 · los sistemas de ejemplo se cargan desde el frontend** (`build()`), como los patrones de datos; el backend los siembra y los sirve por su API, que es de donde los leerá la herramienta MCP `listar_plantillas`.
+- **Hito 5 · el coste que se muestra se calcula al vuelo** con `estimateCost`, y el presupuesto de cada plantilla es un número redondo por encima: si alguien cambia una cifra orientativa y una plantilla se sale de presupuesto, el test falla.
+- **Hito 5 · al cargar un sistema con `studio.system-design` encendida se abre por la vista de Aplicación**; con ella apagada se carga solo la infraestructura (el diseño viaja en el proyecto, sin verse).
 
 ## Documentación oficial verificada (2026-10-11)
 
@@ -147,8 +160,8 @@
 
 ## Pendientes
 
-- CI gate del PR del hito 4 e integrarlo.
-- Hitos 5 a 8.
+- CI gate del PR del hito 4 (#27) e integrarlo; después, PR del hito 5.
+- Hitos 6 a 8 (MCP).
 - Sin confirmar del hito 4: el `.proto` generado no se ha pasado por `protoc` (no hay compilador en la CI); el OpenAPI sí se analiza como YAML en los tests, pero no se ha pasado por un validador de OpenAPI.
 
 ## Notas para `CLAUDE.md` (pendientes de copiar)
@@ -195,3 +208,10 @@ La sesión está aislada en el worktree y no puede escribir en el `CLAUDE.md` de
 - **Endpoints** (etiqueta `System Design`, en `FeatureGateConfig.GATES`: 404 con la flag apagada): `GET /public/architecture/system-design/catalog`, `POST …/evaluate`, `POST …/generate`. `SystemDesignUseCase` es lo que usará la herramienta MCP `disenar_sistema`.
 - **Persistencia**: columna `system_json` (migración `V8`), `ArchitectureProjectDomain.system` (nullable; hay un constructor sin él). Al guardar se valida contra el catálogo (`SystemDesignRules.validated`): una categoría u opción desconocida es un 400.
 - En el modo demo no se simula la generación (404 del mock): el panel lo dice. **Bundle inicial: 470 kB** de 500.
+
+### PLANTILLAS DE SISTEMAS (hito 5, flag `studio.system-templates`)
+- `features/public/cloud/system/system-templates.ts` (`SYSTEM_TEMPLATES`, `SystemTemplate extends StudioPreset` con `version`, `sector` y `decisions`): seis sistemas **ficticios**. Su id empieza por `system-` y su descripción termina con la frase «Ejemplo ficticio: ilustra un tipo de sistema; no describe el de ninguna empresa.» La etiqueta visible es `FICTIONAL_LABEL`.
+- **Una plantilla nueva tiene que nacer sin nada que corregir** (`system-templates.spec.ts`): `checkGraph`, `advisories` y `evaluateSystem` vacíos, con el coste estimado dentro de su presupuesto. Después, `npm run export:presets` (entra en `presets.json` con su `system` y en los casos golden).
+- Se listan en Proyecto → Plantillas → «Sistemas completos» (`systemTemplates()` en el lienzo); **no** en la lista general (`SYSTEM_TEMPLATE_IDS` se filtra en `ArchitectureStudioService`, como `BLUEPRINT_IDS`).
+- Backend: `ArchitectureProjectService.visible` oculta las plantillas con diseño de sistema mientras la flag esté apagada (lista y `findById`). El sembrado no depende de la flag.
+- Las pestañas «Infraestructura | Aplicación» van en su propia fila, encima de la barra del Estudio.

@@ -27,7 +27,8 @@ class ArchitecturePresetSeederTest {
 
     @Test
     void seedsTheScenariosAndPatternsAsReadOnlyPresets() throws Exception {
-        assertThat(seeder.seed()).isEqualTo(11);
+        // Once escenarios y patrones, más seis sistemas de ejemplo que no se ven con su flag apagada.
+        assertThat(seeder.seed()).isEqualTo(17);
 
         List<ArchitectureProjectDomain> presets = service.findAll();
         assertThat(presets).allMatch(ArchitectureProjectDomain::preset);
@@ -40,6 +41,35 @@ class ArchitecturePresetSeederTest {
         assertThat(service.findById("electoral").title()).isEqualTo("Plataforma electoral anti-DDoS");
         // Todas dicen que son un escenario ilustrativo, no la infraestructura de nadie.
         assertThat(presets).allSatisfy(preset -> assertThat(preset.description()).contains("no describe la infraestructura real de ninguna entidad"));
+    }
+
+    /** Los sistemas de ejemplo se siembran siempre, pero solo existen para quien pregunta con la flag encendida. */
+    @Test
+    void seedsTheSystemTemplatesAndShowsThemOnlyWhileTheirFlagIsOn() throws Exception {
+        seeder.seed();
+        ArchitectureProjectService withFlag = new ArchitectureProjectService(repository, GraphRulesFixture.load(),
+                flag -> flag == dev.portfolio.domain.model.FeatureFlagDomain.STUDIO_SYSTEM_TEMPLATES, SystemDesignFixture.rules());
+
+        assertThat(service.findAll()).noneMatch(preset -> preset.system() != null);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.findById("system-fintech"))
+                .isInstanceOf(dev.portfolio.domain.exception.ResourceNotFoundException.class);
+
+        List<ArchitectureProjectDomain> systems = withFlag.findAll().stream().filter(preset -> preset.system() != null).toList();
+        assertThat(systems).extracting(ArchitectureProjectDomain::id).containsExactlyInAnyOrder(
+                "system-fintech", "system-ecommerce", "system-telemedicine", "system-mobility", "system-education", "system-iot");
+        assertThat(systems).allMatch(ArchitectureProjectDomain::preset);
+        // Todos dicen que son ficticios.
+        assertThat(systems).allSatisfy(preset -> assertThat(preset.description()).contains("Ejemplo ficticio: ilustra un tipo de sistema; no describe el de ninguna empresa."));
+        ArchitectureProjectDomain fintech = withFlag.findById("system-fintech");
+        assertThat(fintech.system().choices()).containsEntry("auth", "oidc-managed").containsEntry("bff", "gateway");
+        assertThat(fintech.system().deployments()).containsEntry("database", "postgres");
+        assertThat(fintech.system().nfr().compliance()).containsExactly("pci");
+        assertThat(fintech.system().nfr().availability()).isEqualTo(99.95);
+        // Tal como se siembran no tienen nada que corregir: ni reglas del grafo ni del sistema.
+        for (ArchitectureProjectDomain system : systems) {
+            assertThat(GraphRulesFixture.load().diagnostics(system.nodes(), system.connections())).as(system.id()).isEmpty();
+            assertThat(SystemDesignFixture.rules().evaluate(system.system(), system.nodes(), null, system.cloudProvider())).as(system.id()).isEmpty();
+        }
     }
 
     @Test

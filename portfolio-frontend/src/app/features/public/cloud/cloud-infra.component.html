@@ -5,7 +5,15 @@
 <!-- Barra con jerarquía (docs/DESIGN.md §9.5): contexto a la izquierda, menús agrupados en el centro
      y, a la derecha, las dos acciones principales. Los menús están siempre en el DOM y se ocultan con
      `hidden`, para que sus acciones sigan siendo las mismas se abra o no el menú. -->
-<div class="mt-4 flex flex-wrap items-center gap-2" role="toolbar" aria-label="Estudio de arquitectura">
+@if (systemDesign()) {
+  <!-- Las dos vistas del mismo proyecto: lo que se construye y dónde corre. Van en su propia fila,
+       encima de la barra, para no desplazar los menús de esta. -->
+  <div class="mt-4 ui-segmented" role="tablist" aria-label="Vista del proyecto">
+    <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'infra'" (click)="view.set('infra')">Infraestructura</button>
+    <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'app'" (click)="view.set('app')">Aplicación</button>
+  </div>
+}
+<div [class.mt-4]="!systemDesign()" [class.mt-2]="systemDesign()" class="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Estudio de arquitectura">
   <div class="ui-segmented" role="radiogroup" aria-label="Proveedor de nube">
     @for (provider of providers(); track provider.id) {
       <button type="button" role="radio" class="ui-segment gap-2" [attr.aria-checked]="provider.id === selectedId()" (click)="select(provider.id)">
@@ -14,14 +22,6 @@
       </button>
     }
   </div>
-
-  @if (systemDesign()) {
-    <!-- Las dos vistas del mismo proyecto: lo que se construye y dónde corre. -->
-    <div class="ui-segmented" role="tablist" aria-label="Vista del proyecto">
-      <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'infra'" (click)="view.set('infra')">Infraestructura</button>
-      <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'app'" (click)="view.set('app')">Aplicación</button>
-    </div>
-  }
 
   <div class="relative" data-menu>
     <button type="button" class="ui-btn-secondary" [attr.aria-expanded]="menu() === 'project'" aria-controls="menu-project" (click)="menu.set(menu() === 'project' ? null : 'project')">
@@ -43,6 +43,27 @@
     </ul>
     @if (menu() === 'presets') {
       <ul id="menu-presets" class="project-menu max-h-[26rem] w-96 overflow-y-auto">
+        @if (systemTemplates().length) {
+          <li class="px-2 pb-1 pt-1 text-xs font-medium uppercase tracking-wider text-ink-3" id="system-templates-title">Sistemas completos</li>
+          @for (entry of systemTemplates(); track entry.template.id) {
+            <li>
+              <button type="button" class="project-item" data-testid="system-template" (click)="loadSystemTemplate(entry.template)">
+                <span class="block font-medium text-ink-1">
+                  {{ entry.template.name }}
+                  <span class="ml-1 ui-badge ui-badge-warn">{{ fictionalLabel }}</span>
+                </span>
+                <span class="block text-xs text-ink-2">{{ entry.template.sector }} · {{ entry.template.summary }}</span>
+                <span class="mt-1 block text-xs text-ink-3">{{ entry.cloud }} · {{ entry.requirements }} · ≈ {{ entry.cost }}/mes (orientativo)</span>
+                <span class="mt-1 block text-xs leading-snug text-ink-2">
+                  @for (decision of entry.template.decisions; track decision) {
+                    <span class="block">· {{ decision }}</span>
+                  }
+                </span>
+              </button>
+            </li>
+          }
+          <li class="mx-2 my-1 border-t border-line-subtle" role="separator"></li>
+        }
         @for (preset of presets(); track preset.id) {
           <li>
             <button type="button" class="project-item" (click)="loadPreset(preset)">
