@@ -203,6 +203,8 @@ Toda sección empieza igual: `title-1` + **una frase** en `body-lg` / `--text-2`
 
 Deja de ser un elemento fijo propio. Es un **segmento de la barra del Inspector de traza** (insignia `warn`: «Modo demo · datos simulados» o «… el servidor no responde»), visible en todos sus modos, incluida la píldora minimizada. Con el inspector cerrado, queda como esa misma píldora en su esquina, dentro del hueco que ya reservan `--dock-right` / `--dock-bottom`. Desaparece `--badge-space`.
 
+**En un móvil** (menos de 640 px de ancho o de 500 de alto) el inspector cerrado no deja una píldora flotando sobre el contenido: queda su **barra recogida al pie**, de lado a lado, opaca, de 36 px, con el aviso como segmento. La página le reserva el hueco (`--dock-bottom`) y la barra respeta la zona segura inferior y las laterales (`env(safe-area-inset-*)`), así que queda sobre el indicador de inicio y sobre la barra de Safari.
+
 ## 9. Componentes base
 
 Todos: foco visible con anillo de 2 px en `--accent-text` y 2 px de separación; zona táctil de 44 × 44 px con `pointer: coarse`; texto mínimo de 12 px.
@@ -284,6 +286,16 @@ Un solo nodo para «Arquitectura en producción», el pipeline, «Arquitectura e
 - **Pulsos y partículas**: un único color (`accent-text`); en ámbar o rojo solo durante un fallo.
 - **Zonas**: `surface-1` al 50 %, borde 1 px neutro (continuo = red, guiones largos = nube, guiones cortos = región), rótulo `overline` en `text-3`.
 - Separaciones mínimas vigentes: 48 px entre columnas y 24 px entre nodos.
+
+### 9.6.1 Diagramas en pantallas estrechas
+
+Un diagrama elige su disposición por **el ancho de su contenedor**, no por el de la ventana (`appContainerWidth`): una tarjeta estrecha en una tableta cuenta igual que un móvil.
+
+- **Si no cabe a su tamaño natural, no se reduce ni se desplaza dentro de su marco**: se dibuja de nuevo, de los mismos datos, **de arriba abajo**. Nodos a todo el ancho, uno bajo otro en el orden de la petición; las conexiones entre vecinos son un tramo recto y las demás bajan por carriles a la izquierda (`shared/ui/vertical-flow.ts`). El SVG mide lo que su contenedor (1 unidad = 1 px), así que **el texto sigue a 12 px o más**.
+- **Nada recortado**: ningún nodo, etiqueta o línea fuera de lo que se ve de su contenedor, y ningún `overflow` horizontal dentro de un diagrama. Un nombre que no cabe se acorta con puntos suspensivos y va entero en la etiqueta accesible.
+- **Pestañas segmentadas**: si no caben en una fila, pasan a la siguiente (`.ui-segmented` hace `flex-wrap`); las de niveles C4 van en rejilla de 2 × 2 (`.ui-segmented-grid`). Nunca cortadas ni ocultas tras un scroll.
+- **Estudio**: por debajo de 720 px de lienzo (1088 px con el dedo, donde reducido ni se lee ni se acierta a tocar) es de **solo lectura**: la vista vertical del proyecto, con zoom por pellizco o botones, arrastre cuando está ampliado y «Ajustar a pantalla». Métricas y FinOps bajan a una fila bajo el diagrama; nunca encima.
+- Lo comprueba `e2e/diagrams.e2e.ts` en 14 anchos (320–440 y 744–1024), en vertical y horizontal, con Chromium y WebKit.
 
 ### 9.7 Panel flotante
 
