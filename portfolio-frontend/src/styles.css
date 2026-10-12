@@ -185,10 +185,16 @@
   /* Pestañas segmentadas (cambian la vista de una misma tarjeta). Van sobre role="tablist" y
      role="tab"; la activa es la que lleva aria-selected="true". */
   .ui-segmented {
-    @apply inline-flex max-w-full gap-0.5 overflow-x-auto rounded-control bg-surface-2 p-0.5 [scrollbar-width:none];
+    /* Si sus segmentos no caben en una fila pasan a la siguiente: nunca quedan cortados ni ocultos tras un scroll. */
+    @apply inline-flex max-w-full flex-wrap gap-0.5 rounded-control bg-surface-2 p-0.5;
+  }
+  /* Cuando sus segmentos no caben en una fila: rejilla de dos columnas, todos a la vista. */
+  .ui-segmented-grid {
+    @apply grid w-full grid-cols-2 overflow-visible;
   }
   .ui-segment {
-    @apply ui-focus inline-flex min-h-7 shrink-0 items-center justify-center whitespace-nowrap rounded-[6px] px-3 text-body-sm
+    /* Un segmento más ancho que su fila (texto ampliado) parte su rótulo en vez de salirse. */
+    @apply ui-focus inline-flex min-h-7 min-w-0 max-w-full items-center justify-center rounded-[6px] px-3 text-center text-body-sm
       font-medium text-ink-2 transition-colors duration-fast ease-standard hover:text-ink-1
       aria-selected:bg-surface-3 aria-selected:text-ink-1 aria-checked:bg-surface-3 aria-checked:text-ink-1;
   }
