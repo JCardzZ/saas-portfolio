@@ -1,0 +1,350 @@
+[ {
+  "inputSchema" : {
+    "properties" : {
+      "nube" : {
+        "description" : "Solo las plantillas de esta nube.",
+        "enum" : [ "aws", "gcp", "azure" ],
+        "type" : "string"
+      }
+    },
+    "type" : "object"
+  },
+  "kind" : "READ",
+  "name" : "listar_plantillas",
+  "outputSchema" : {
+    "properties" : {
+      "plantillas" : {
+        "items" : {
+          "type" : "object"
+        },
+        "type" : "array"
+      }
+    },
+    "required" : [ "plantillas" ],
+    "type" : "object"
+  },
+  "version" : "1.0.0"
+}, {
+  "inputSchema" : {
+    "properties" : {
+      "conexiones" : {
+        "description" : "Conexiones entre nodos. Cada una: from y to (ids de nodo) y, opcional, kind (CDC_STREAM, EVENT_BUS, ANALYTICS_SINK o REPLICATION).",
+        "items" : {
+          "type" : "object"
+        },
+        "maxItems" : 200,
+        "type" : "array"
+      },
+      "nodos" : {
+        "description" : "Nodos del diagrama. Cada uno: id, type (tipo de servicio del catálogo: containers, postgres, redis, queue…), zone (outside, global, public, compute, data, managed, external), service (nombre, o un objeto con aws/gcp/azure) y, opcional, terraform (tipo de recurso, o un objeto por nube).",
+        "items" : {
+          "type" : "object"
+        },
+        "maxItems" : 60,
+        "type" : "array"
+      },
+      "nube" : {
+        "description" : "Nube con cuyos nombres de servicio se citan los nodos en los diagnósticos.",
+        "enum" : [ "aws", "gcp", "azure" ],
+        "type" : "string"
+      }
+    },
+    "required" : [ "nodos" ],
+    "type" : "object"
+  },
+  "kind" : "READ",
+  "name" : "validar_arquitectura",
+  "outputSchema" : {
+    "properties" : {
+      "avisos" : {
+        "type" : "integer"
+      },
+      "diagnosticos" : {
+        "items" : {
+          "type" : "object"
+        },
+        "type" : "array"
+      },
+      "errores" : {
+        "type" : "integer"
+      },
+      "valida" : {
+        "type" : "boolean"
+      }
+    },
+    "required" : [ "valida", "diagnosticos" ],
+    "type" : "object"
+  },
+  "version" : "1.0.0"
+}, {
+  "inputSchema" : {
+    "properties" : {
+      "conexiones" : {
+        "description" : "Conexiones entre nodos. Cada una: from y to (ids de nodo) y, opcional, kind (CDC_STREAM, EVENT_BUS, ANALYTICS_SINK o REPLICATION).",
+        "items" : {
+          "type" : "object"
+        },
+        "maxItems" : 200,
+        "type" : "array"
+      },
+      "nodos" : {
+        "description" : "Nodos del diagrama. Cada uno: id, type (tipo de servicio del catálogo: containers, postgres, redis, queue…), zone (outside, global, public, compute, data, managed, external), service (nombre, o un objeto con aws/gcp/azure) y, opcional, terraform (tipo de recurso, o un objeto por nube).",
+        "items" : {
+          "type" : "object"
+        },
+        "maxItems" : 60,
+        "type" : "array"
+      },
+      "nube" : {
+        "description" : "Nube para la que se genera.",
+        "enum" : [ "aws", "gcp", "azure" ],
+        "type" : "string"
+      }
+    },
+    "required" : [ "nube", "nodos" ],
+    "type" : "object"
+  },
+  "kind" : "GENERATE",
+  "name" : "generar_terraform",
+  "outputSchema" : {
+    "properties" : {
+      "esqueleto" : {
+        "type" : "boolean"
+      },
+      "mainTf" : {
+        "type" : "string"
+      },
+      "sintaxisComprobada" : {
+        "type" : "boolean"
+      },
+      "variablesTf" : {
+        "type" : "string"
+      }
+    },
+    "required" : [ "esqueleto", "mainTf", "variablesTf" ],
+    "type" : "object"
+  },
+  "version" : "1.0.0"
+}, {
+  "inputSchema" : {
+    "properties" : {
+      "nube" : {
+        "description" : "Nube en la que se cotiza.",
+        "enum" : [ "aws", "gcp", "azure" ],
+        "type" : "string"
+      },
+      "servicios" : {
+        "description" : "Tipos de servicio del catálogo: vm, kubernetes, postgres, redis, queue, streaming…",
+        "items" : {
+          "maxLength" : 48,
+          "type" : "string"
+        },
+        "maxItems" : 60,
+        "minItems" : 1,
+        "type" : "array"
+      }
+    },
+    "required" : [ "nube", "servicios" ],
+    "type" : "object"
+  },
+  "kind" : "READ",
+  "name" : "estimar_costos",
+  "outputSchema" : {
+    "properties" : {
+      "moneda" : {
+        "type" : "string"
+      },
+      "servicios" : {
+        "items" : {
+          "type" : "object"
+        },
+        "type" : "array"
+      },
+      "sinEstimacion" : {
+        "type" : "integer"
+      },
+      "totalMensual" : {
+        "type" : "number"
+      }
+    },
+    "required" : [ "moneda", "servicios", "sinEstimacion" ],
+    "type" : "object"
+  },
+  "version" : "1.0.0"
+}, {
+  "inputSchema" : {
+    "properties" : {
+      "pregunta" : {
+        "description" : "La pregunta, en lenguaje natural.",
+        "maxLength" : 2000,
+        "minLength" : 3,
+        "type" : "string"
+      }
+    },
+    "required" : [ "pregunta" ],
+    "type" : "object"
+  },
+  "kind" : "READ",
+  "name" : "preguntar_portafolio",
+  "outputSchema" : {
+    "properties" : {
+      "citas" : {
+        "items" : {
+          "type" : "object"
+        },
+        "type" : "array"
+      },
+      "respuesta" : {
+        "type" : "string"
+      }
+    },
+    "required" : [ "respuesta", "citas" ],
+    "type" : "object"
+  },
+  "version" : "1.0.0"
+}, {
+  "inputSchema" : {
+    "properties" : {
+      "disponibilidad" : {
+        "description" : "Disponibilidad objetivo, en %.",
+        "enum" : [ 99, 99.9, 99.95, 99.99 ],
+        "type" : "number"
+      },
+      "latenciaMs" : {
+        "description" : "Latencia p95 objetivo, en milisegundos.",
+        "minimum" : 1,
+        "type" : "number"
+      },
+      "nube" : {
+        "description" : "Nube en la que se despliega.",
+        "enum" : [ "aws", "gcp", "azure" ],
+        "type" : "string"
+      },
+      "plantilla" : {
+        "description" : "Id de un sistema de ejemplo del que partir (ver listar_plantillas). Sin él se elige el más parecido.",
+        "maxLength" : 64,
+        "type" : "string"
+      },
+      "presupuestoUsd" : {
+        "description" : "Presupuesto mensual de la nube, en USD.",
+        "minimum" : 1,
+        "type" : "number"
+      },
+      "region" : {
+        "description" : "Región de la nube, con el nombre que le da el proveedor (por ejemplo us-east-1).",
+        "maxLength" : 40,
+        "type" : "string"
+      },
+      "regulacion" : {
+        "description" : "Regulaciones que aplican: pci (pagos con tarjeta), health (datos de salud) o ninguna.",
+        "items" : {
+          "enum" : [ "ninguna", "pci", "health" ],
+          "type" : "string"
+        },
+        "type" : "array"
+      },
+      "rps" : {
+        "description" : "Peticiones por segundo en el pico.",
+        "minimum" : 1,
+        "type" : "number"
+      },
+      "stack" : {
+        "additionalProperties" : false,
+        "description" : "Elecciones de la aplicación, por categoría. Lo que no se indique queda como en el sistema de partida.",
+        "properties" : {
+          "api" : {
+            "description" : "Estilo de API: ¿Cómo hablan cliente y backend?",
+            "enum" : [ "rest", "grpc", "graphql", "events" ],
+            "type" : "string"
+          },
+          "auth" : {
+            "description" : "Autenticación: ¿Quién identifica al usuario?",
+            "enum" : [ "oidc-managed", "jwt-own", "session" ],
+            "type" : "string"
+          },
+          "backend" : {
+            "description" : "Backend: ¿Con qué se escribe la lógica?",
+            "enum" : [ "spring-boot", "node", "go" ],
+            "type" : "string"
+          },
+          "bff" : {
+            "description" : "BFF: ¿Hay una capa a medida de cada cliente?",
+            "enum" : [ "bff", "gateway" ],
+            "type" : "string"
+          },
+          "cache" : {
+            "description" : "Caché: ¿Qué se evita recalcular?",
+            "enum" : [ "redis", "cdn" ],
+            "type" : "string"
+          },
+          "client" : {
+            "description" : "Cliente: ¿Desde dónde se usa?",
+            "enum" : [ "web-spa", "web-ssr", "mobile-native", "mobile-cross" ],
+            "type" : "string"
+          },
+          "database" : {
+            "description" : "Base de datos: ¿Dónde viven los datos?",
+            "enum" : [ "postgresql", "document", "key-value" ],
+            "type" : "string"
+          },
+          "push" : {
+            "description" : "Tiempo real y push: ¿El servidor avisa al cliente?",
+            "enum" : [ "push-service", "websocket", "sse" ],
+            "type" : "string"
+          },
+          "queue" : {
+            "description" : "Colas y eventos: ¿Qué trabajo puede esperar?",
+            "enum" : [ "queue", "stream", "pubsub" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "usuarios" : {
+        "description" : "Usuarios activos al mes.",
+        "minimum" : 1,
+        "type" : "number"
+      }
+    },
+    "type" : "object"
+  },
+  "kind" : "GENERATE",
+  "name" : "disenar_sistema",
+  "outputSchema" : {
+    "properties" : {
+      "aplicacion" : {
+        "items" : {
+          "type" : "object"
+        },
+        "type" : "array"
+      },
+      "archivos" : {
+        "items" : {
+          "type" : "object"
+        },
+        "type" : "array"
+      },
+      "nube" : {
+        "type" : "string"
+      },
+      "pendiente" : {
+        "items" : {
+          "type" : "object"
+        },
+        "type" : "array"
+      },
+      "plantilla" : {
+        "type" : "object"
+      },
+      "region" : {
+        "type" : "string"
+      },
+      "requisitos" : {
+        "type" : "object"
+      }
+    },
+    "required" : [ "plantilla", "nube", "aplicacion", "pendiente", "archivos" ],
+    "type" : "object"
+  },
+  "version" : "1.0.0"
+} ]

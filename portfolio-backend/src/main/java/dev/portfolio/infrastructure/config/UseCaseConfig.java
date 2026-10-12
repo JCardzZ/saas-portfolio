@@ -1,5 +1,7 @@
 package dev.portfolio.infrastructure.config;
 
+import dev.portfolio.application.port.in.McpAccessUseCase;
+import dev.portfolio.application.service.McpAccessService;
 import dev.portfolio.application.port.in.SystemDesignUseCase;
 import dev.portfolio.application.service.SystemDesignService;
 import dev.portfolio.domain.model.system.SystemDesignRules;
@@ -170,10 +172,16 @@ public class UseCaseConfig {
         return new TerraformService(rateLimiter, rateLimitProperties.terraform().toPolicy());
     }
 
+    @Bean
+    public McpAccessUseCase mcpAccessUseCase(RateLimiterPort rateLimiter, RateLimitProperties rateLimitProperties) {
+        return new McpAccessService(rateLimiter, rateLimitProperties.mcp().toPolicy(), rateLimitProperties.mcpGlobal().toPolicy());
+    }
+
     /** Comparte el cupo del generador de Terraform: las dos cosas compilan lo mismo a partir de un lienzo. */
     @Bean
-    public SystemDesignUseCase systemDesignUseCase(SystemDesignRules rules, RateLimiterPort rateLimiter, RateLimitProperties rateLimitProperties) {
-        return new SystemDesignService(rules, rateLimiter, rateLimitProperties.terraform().toPolicy());
+    public SystemDesignUseCase systemDesignUseCase(SystemDesignRules rules, RateLimiterPort rateLimiter, RateLimitProperties rateLimitProperties,
+                                                   ArchitectureProjectRepositoryPort projects) {
+        return new SystemDesignService(rules, rateLimiter, rateLimitProperties.terraform().toPolicy(), projects);
     }
 
     /** Catálogo y reglas del diseño de sistemas, que el frontend exporta con {@code npm run export:presets}. */

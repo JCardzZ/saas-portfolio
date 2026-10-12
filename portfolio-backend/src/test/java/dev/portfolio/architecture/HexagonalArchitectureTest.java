@@ -19,6 +19,7 @@ class HexagonalArchitectureTest {
     private static final String APPLICATION = "dev.portfolio.application..";
     private static final String INFRASTRUCTURE = "dev.portfolio.infrastructure..";
     private static final String WEB = "dev.portfolio.infrastructure.adapter.in.web..";
+    private static final String MCP = "dev.portfolio.infrastructure.adapter.in.mcp..";
     private static final String CONTROLLERS = "dev.portfolio.infrastructure.adapter.in.web.controller..";
     private static final String OUT_ADAPTERS = "dev.portfolio.infrastructure.adapter.out..";
     private static final String PERSISTENCE = "dev.portfolio.infrastructure.adapter.out.persistence..";
@@ -74,6 +75,31 @@ class HexagonalArchitectureTest {
             .should().dependOnClassesThat().resideInAnyPackage(
                     "dev.portfolio.application.service..", "dev.portfolio.application.port.out..", OUT_ADAPTERS)
             .because("los controladores solo delegan en los casos de uso");
+
+    // El servidor MCP es otro adaptador de entrada: sus herramientas no se saltan la capa de aplicación.
+    @ArchTest
+    static final ArchRule mcp_tools_use_only_inbound_ports = noClasses()
+            .that().resideInAPackage(MCP)
+            .should().dependOnClassesThat().resideInAnyPackage(
+                    "dev.portfolio.application.service..", "dev.portfolio.application.port.out..", OUT_ADAPTERS, WEB)
+            .because("las herramientas MCP llaman a los mismos casos de uso que la API, sin lógica propia ni acceso directo a nada");
+
+    // Ninguna herramienta guarda, cambia ni borra: del lado de la aplicación solo puede leer y generar.
+    @ArchTest
+    static final ArchRule mcp_tools_never_write = noClasses()
+            .that().resideInAPackage(MCP)
+            .should().callMethodWhere(com.tngtech.archunit.core.domain.JavaCall.Predicates.target(
+                    com.tngtech.archunit.base.DescribedPredicate.describe("un método de un caso de uso que escribe", target ->
+                            target.getOwner().getPackageName().equals("dev.portfolio.application.port.in")
+                                    && target.getName().matches("create|update|delete|save|set|register.*|index.*|upload.*|remove.*|publish.*"))))
+            .because("el servidor MCP es de solo lectura y generación: nunca guarda ni aplica nada");
+
+    // Solo una clase conoce el SDK de MCP: migrar de revisión del protocolo es cambiarla a ella.
+    @ArchTest
+    static final ArchRule only_the_sdk_server_knows_the_mcp_sdk = noClasses()
+            .that().resideInAPackage(INFRASTRUCTURE).and().doNotHaveSimpleName("McpSdkServer")
+            .should().dependOnClassesThat().resideInAPackage("io.modelcontextprotocol..")
+            .because("el SDK queda detrás de McpSdkServer para poder cambiar de revisión del protocolo sin tocar las herramientas");
 
     @ArchTest
     static final ArchRule web_layer_does_not_reach_outbound_adapters = noClasses()

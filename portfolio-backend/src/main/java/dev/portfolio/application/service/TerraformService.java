@@ -1,5 +1,6 @@
 package dev.portfolio.application.service;
 
+import dev.portfolio.domain.model.HclSyntax;
 import dev.portfolio.application.port.in.TerraformUseCase;
 import dev.portfolio.application.port.out.RateLimiterPort;
 import dev.portfolio.domain.exception.InvalidRequestException;
@@ -34,8 +35,21 @@ public class TerraformService implements TerraformUseCase {
             throw new InvalidRequestException("La topología necesita una nube");
         }
         ArchitectureGraph.validate(nodes, connections, List.of());
-        return new TerraformBundleDomain(
+        return checked(new TerraformBundleDomain(
                 TerraformGenerator.mainTf(nodes, connections, provider),
-                TerraformGenerator.variablesTf(nodes, provider));
+                TerraformGenerator.variablesTf(nodes, provider)));
+    }
+
+    /**
+     * Lo generado se comprueba antes de salir: un esqueleto con la sintaxis rota no se entrega.
+     * Si pasa, es un fallo del generador, no de quien llama.
+     */
+    static TerraformBundleDomain checked(TerraformBundleDomain bundle) {
+        List<String> errors = new java.util.ArrayList<>(HclSyntax.errors(bundle.mainTf()).stream().map(error -> "main.tf, " + error).toList());
+        errors.addAll(HclSyntax.errors(bundle.variablesTf()).stream().map(error -> "variables.tf, " + error).toList());
+        if (!errors.isEmpty()) {
+            throw new IllegalStateException("El generador de Terraform produjo HCL mal formado: " + String.join("; ", errors));
+        }
+        return bundle;
     }
 }

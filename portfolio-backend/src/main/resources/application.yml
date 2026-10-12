@@ -94,6 +94,15 @@ security:
     pricing:
       max-requests: ${PRICING_RATE_LIMIT_MAX_REQUESTS:30}
       window: ${PRICING_RATE_LIMIT_WINDOW:1m}
+    # Llamadas a herramientas del servidor MCP (/mcp) por dirección de origen. Sin autenticación:
+    # los clientes que se conectan desde la nube de su proveedor comparten dirección y cupo.
+    mcp:
+      max-requests: ${MCP_RATE_LIMIT_MAX_REQUESTS:30}
+      window: ${MCP_RATE_LIMIT_WINDOW:1m}
+    # Tope diario de llamadas a herramientas MCP entre todos los orígenes
+    mcp-global:
+      max-requests: ${MCP_GLOBAL_LIMIT_MAX_REQUESTS:2000}
+      window: ${MCP_GLOBAL_LIMIT_WINDOW:24h}
 
 # MOTOR DE PRECIOS (FinOps). Lee precios de lista de las fuentes públicas de los proveedores; Azure
 # y AWS no necesitan claves. Cada tarifa se guarda 24 h; la última conocida se conserva 30 días para

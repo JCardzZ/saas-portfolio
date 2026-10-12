@@ -249,6 +249,55 @@ class PlatformIntegrationTest {
     }
 
     /** Estado del limitador en Redis, para entender un fallo: clave = valor (ms que le quedan). */
+    /**
+     * El servidor MCP dentro de la aplicación real: detrás de su flag, y con un cliente MCP de
+     * verdad hablando con las plantillas sembradas en PostgreSQL y los contadores de Redis.
+     */
+    @Test
+    @Order(7)
+    void the_mcp_server_is_behind_its_flag_and_serves_a_real_client() {
+        HttpHeaders json = new HttpHeaders();
+        json.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+        json.set(HttpHeaders.ACCEPT, "application/json, text/event-stream");
+        String ping = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"}";
+        // Apagada: la ruta no existe.
+        assertThat(http.exchange("/mcp", HttpMethod.POST, new HttpEntity<>(ping, json), String.class).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        HttpHeaders auth = bearer(token());
+        for (String flag : List.of("mcp.section", "studio.system-templates")) {
+            assertThat(http.exchange("/admin/features/" + flag, HttpMethod.PUT, new HttpEntity<>(Map.of("enabled", true), auth), JsonNode.class)
+                    .getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        io.modelcontextprotocol.client.McpSyncClient client = io.modelcontextprotocol.client.McpClient.sync(
+                        io.modelcontextprotocol.client.transport.HttpClientStreamableHttpTransport.builder("http://localhost:" + port).endpoint("/v1/mcp").build())
+                .requestTimeout(java.time.Duration.ofSeconds(30)).build();
+        try (client) {
+            client.initialize();
+            assertThat(client.getServerInfo().name()).isEqualTo("portfolio-platform");
+            assertThat(client.listTools().tools()).extracting(io.modelcontextprotocol.spec.McpSchema.Tool::name).containsExactly(
+                    "listar_plantillas", "validar_arquitectura", "generar_terraform", "estimar_costos", "preguntar_portafolio", "disenar_sistema");
+
+            io.modelcontextprotocol.spec.McpSchema.CallToolResult templates = client.callTool(
+                    new io.modelcontextprotocol.spec.McpSchema.CallToolRequest("listar_plantillas", Map.of()));
+            assertThat(templates.isError()).isFalse();
+            assertThat(templates.toString()).contains("core-banking").contains("system-fintech");
+
+            // Un sistema diseñado sobre lo que hay sembrado, con sus archivos.
+            io.modelcontextprotocol.spec.McpSchema.CallToolResult designed = client.callTool(
+                    new io.modelcontextprotocol.spec.McpSchema.CallToolRequest("disenar_sistema", Map.of(
+                            "nube", "aws", "region", "us-east-1", "usuarios", 200000, "presupuestoUsd", 500, "regulacion", List.of("pci"),
+                            "stack", Map.of("backend", "spring-boot"))));
+            assertThat(designed.isError()).as(designed.toString()).isFalse();
+            assertThat(designed.toString()).contains("Billetera digital").contains("openapi.yaml").contains("resource \\\"aws_");
+
+            // El recurso de proyectos sale de PostgreSQL por el mismo caso de uso que la API pública.
+            assertThat(client.readResource(new io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest("portfolio://catalogo/servicios")).contents()).isNotEmpty();
+        }
+        // Cada llamada a una herramienta contó en Redis, por origen y en el tope de todos.
+        assertThat(redis.keys("*mcp:*")).hasSizeGreaterThanOrEqualTo(2);
+    }
+
     private List<String> rateLimitKeys() {
         List<String> state = new ArrayList<>();
         for (String key : redis.keys("portfolio:ratelimit:*")) {

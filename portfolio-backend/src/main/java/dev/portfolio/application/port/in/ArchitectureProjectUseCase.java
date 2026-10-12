@@ -29,6 +29,15 @@ public interface ArchitectureProjectUseCase {
     ArchitectureProjectDomain registerPreset(String id, Draft draft);
 
     /**
+     * Comprueba un grafo que no está guardado: su forma y lo que dicen de él las reglas, nodo a
+     * nodo. No depende de ninguna flag ni guarda nada.
+     *
+     * @param provider nube con cuyos nombres se citan los nodos; {@code null} si no se sabe
+     * @throws dev.portfolio.domain.exception.InvalidRequestException si el grafo no tiene la forma de un proyecto
+     */
+    List<GraphDiagnosticDomain> validate(CloudProviderDomain provider, List<Map<String, Object>> nodes, List<Map<String, Object>> connections);
+
+    /**
      * Lo que las reglas del grafo dicen de un proyecto, nodo a nodo. Vacío mientras la flag
      * {@code studio.smart-rules} esté apagada.
      */

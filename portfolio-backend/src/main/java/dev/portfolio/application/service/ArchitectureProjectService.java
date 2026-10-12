@@ -8,6 +8,7 @@ import dev.portfolio.domain.exception.ResourceNotFoundException;
 import dev.portfolio.domain.model.ArchitectureGraph;
 import dev.portfolio.domain.model.ArchitectureGraphRules;
 import dev.portfolio.domain.model.ArchitectureProjectDomain;
+import dev.portfolio.domain.model.CloudProviderDomain;
 import dev.portfolio.domain.model.FeatureFlagDomain;
 import dev.portfolio.domain.model.GraphDiagnosticDomain;
 import dev.portfolio.domain.model.system.SystemDesignDomain;
@@ -33,6 +34,12 @@ public class ArchitectureProjectService implements ArchitectureProjectUseCase {
         this.rules = rules;
         this.flags = flags;
         this.systemRules = systemRules;
+    }
+
+    @Override
+    public List<GraphDiagnosticDomain> validate(CloudProviderDomain provider, List<Map<String, Object>> nodes, List<Map<String, Object>> connections) {
+        ArchitectureGraph.validate(nodes, connections, List.of());
+        return rules.diagnostics(nodes, connections, provider);
     }
 
     @Override
