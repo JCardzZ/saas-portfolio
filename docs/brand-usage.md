@@ -18,6 +18,7 @@ no se da nada por permitido de memoria. No es asesoría legal.
 | Groq, OpenRouter, Anthropic (Claude), OpenAI | **Sin logo: nombre en texto** | Guías no encontradas o no legibles en la consulta (la de OpenAI respondió 403). Sin confirmar. |
 | Apache Kafka, Debezium, Oracle GoldenGate, Snowflake, Databricks, Tableau, Power BI, Looker Studio | **Sin logo: nombre en texto** | Guías de marca no consultadas una a una; ninguna da un permiso general conocido para usar el logo en un sitio de terceros. Regla del proyecto: sin permiso explícito, nombre en texto. En el Estudio usan el símbolo neutro `dataService`. |
 | Servicios de datos nuevos de AWS, Google Cloud y Azure (Kinesis Data Streams, Database Migration Service, Aurora Global Database, Amazon Quick Sight, Datastream, Looker, Data Factory, Azure SQL Database, Power BI Embedded) | **Icono genérico de su nube, con el nombre al lado** | Sus iconos de arquitectura oficiales sí se podrían usar (filas de arriba), pero no están copiados en `public/cloud-icons/`. Hasta copiarlos sin modificar del paquete oficial, el nodo muestra el icono de la nube y el nombre del servicio; no se dibuja ni se aproxima ninguno. |
+| Oracle, Oracle Cloud Infrastructure (OCI) y sus servicios | **Sin logo: nombre en texto.** Consulta del 11 de octubre de 2026 | [Third Party Usage Guidelines for Oracle Trademarks](https://www.oracle.com/legal/trademarks/): la página respondió 403 y no se pudo leer; el resumen del buscador dice que cubre los nombres (se pueden usar para referirse a los productos de Oracle) y que los logos se rigen por otro documento, que no se localizó. **Sin confirmar**: no se usa ningún logo ni icono de Oracle. La nube `oci` y sus servicios llevan el aro neutro y el nombre oficial en texto. No se sugiere alianza ni patrocinio. |
 | GitHub, GitHub Actions, Docker, Neon, Upstash, Caddy | **Sin logo en las vistas «Arquitectura en producción» y «Pipeline CI/CD»** | Guías no consultadas. Sin confirmar. |
 
 ## Cómo se aplica en el código
@@ -28,6 +29,8 @@ no se da nada por permitido de memoria. No es asesoría legal.
   un símbolo neutro (un aro, `official: false`), no el logo, con el nombre siempre al lado.
 - **Productos de datos de terceros** (categoría «Datos y analítica» del Estudio): `icon: 'dataService'`,
   el mismo aro neutro, y hay un test que falla si alguno pasa a llevar logo.
+- **Oracle Cloud** (`cloud.oracle`): `oci` en `tech-icons.ts` es el aro neutro; un diagrama en OCI no pinta
+  ningún icono de arquitectura de otra nube (hay tests que lo comprueban).
 - **Iconos de AWS, Azure y Google Cloud** (`public/cloud-icons/`): copiados sin modificar de los
   paquetes oficiales; se pintan como imagen, sin recolorear, recortar ni girar, y siempre con el
   nombre del servicio. Solo aparecen en el diagrama del Estudio de arquitectura.

@@ -1908,6 +1908,62 @@ describe('CloudInfraComponent', () => {
       });
     });
   });
+  describe('Oracle Cloud (cloud.oracle)', () => {
+    const clouds = (element: HTMLElement) =>
+      Array.from(element.querySelectorAll('[role="radiogroup"][aria-label="Proveedor de nube"] [role="radio"]')).map((item) => item.textContent?.trim());
+
+    it('is not offered while the flag is off', () => {
+      const { element } = create();
+
+      expect(clouds(element)).toEqual(['AWS', 'GCP', 'Azure']);
+    });
+
+    it('still shows a project that was saved in OCI', () => {
+      localStorage.setItem('architecture-studio-project', serializeProject({ ...referenceProject(), provider: 'oci' }));
+      const { element } = create();
+
+      expect(clouds(element)).toEqual(['AWS', 'GCP', 'Azure', 'OCI']);
+      expect(provider(element, 'OCI').getAttribute('aria-checked')).toBe('true');
+    });
+
+    describe('with the flag on', () => {
+      beforeEach(async () => {
+        await OpenFeature.setProviderAndWait(new PlatformFlagsProvider(() => Promise.resolve({ 'cloud.oracle': true })));
+      });
+      afterEach(async () => {
+        await OpenFeature.clearProviders();
+      });
+
+      it('translates the diagram, the network and the Terraform to OCI, without any cloud logo', () => {
+        const { fixture, element, component } = create();
+        expect(clouds(element)).toEqual(['AWS', 'GCP', 'Azure', 'OCI']);
+
+        provider(element, 'OCI').click();
+        fixture.detectChanges();
+
+        expect(services(element)).toEqual(jasmine.arrayContaining(['OCI Database with PostgreSQL', 'OCI Cache', 'Container Instances', 'Load Balancer', 'Vault']));
+        expect(services(element)).not.toContain('RDS PostgreSQL');
+        expect(element.textContent).toContain('Oracle Cloud · región');
+        expect(component.mainTf()).toContain('provider "oci"');
+        expect(component.mainTf()).toContain('resource "oci_core_vcn" "main"');
+        // Ningún icono de arquitectura de otra nube en un diagrama de OCI.
+        const images = Array.from(element.querySelectorAll('svg[role="group"] image.node-icon')).map((image) => image.getAttribute('href'));
+        expect(images.filter((href) => /cloud-icons\/(aws|gcp|azure)\//.test(href ?? ''))).toEqual([]);
+      });
+
+      it('shows no hand-written cost for a cloud service in OCI: each one is "sin estimación"', () => {
+        const { fixture, element } = create();
+        provider(element, 'OCI').click();
+        fixture.detectChanges();
+
+        const labels = Array.from(element.querySelectorAll('[data-testid="node-cost"] text')).map((label) => label.textContent?.trim());
+        expect(labels.length).toBeGreaterThan(5);
+        // La única cifra es la de Cloudflare, que no es un servicio de la nube.
+        expect(new Set(labels)).toEqual(new Set(['sin estimación', '$20/mes']));
+      });
+    });
+  });
+
   describe('data patterns', () => {
     const data = (element: HTMLElement) => Array.from(element.querySelectorAll('path.wire[data-kind]')).map((wire) => wire.getAttribute('data-kind'));
     const warnings = (element: HTMLElement) =>

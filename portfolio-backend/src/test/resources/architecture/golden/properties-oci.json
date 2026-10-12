@@ -1,0 +1,307 @@
+{
+  "cloudProvider": "oci",
+  "nodes": [
+    {
+      "id": "users",
+      "type": "users",
+      "x": 64,
+      "y": 250,
+      "zone": "outside",
+      "role": "Navegador",
+      "service": "Visitantes",
+      "icon": null,
+      "terraform": null,
+      "why": "Entran por HTTPS; nunca hablan directamente con la nube."
+    },
+    {
+      "id": "edge",
+      "type": "edge",
+      "x": 196,
+      "y": 250,
+      "zone": "outside",
+      "role": "CDN · WAF · DNS",
+      "service": "Cloudflare",
+      "icon": "cloudflare",
+      "terraform": "cloudflare_record",
+      "why": "Borde común a las tres nubes: caché, protección y la IP real del visitante."
+    },
+    {
+      "id": "static",
+      "type": "static",
+      "x": 402,
+      "y": 95,
+      "zone": "global",
+      "role": "Frontend Angular",
+      "icon": {
+        "default": "provider",
+        "gcp": "gcpStorage",
+        "aws": "awsCloudFront",
+        "azure": "azFrontDoor"
+      },
+      "service": {
+        "aws": "S3 + CloudFront",
+        "gcp": "Cloud Storage + CDN",
+        "azure": "Storage + Front Door",
+        "oci": "Object Storage"
+      },
+      "terraform": {
+        "aws": "aws_cloudfront_distribution",
+        "gcp": "google_storage_bucket",
+        "azure": "azurerm_cdn_frontdoor_profile",
+        "oci": "oci_objectstorage_bucket"
+      },
+      "why": "El build estático del frontend, servido desde almacenamiento de objetos."
+    },
+    {
+      "id": "lb",
+      "type": "lb",
+      "x": 402,
+      "y": 250,
+      "zone": "public",
+      "role": "Balanceador",
+      "icon": {
+        "default": "provider",
+        "aws": "awsElb",
+        "azure": "azAppGateway"
+      },
+      "service": {
+        "aws": "Application LB",
+        "gcp": "Cloud Load Balancing",
+        "azure": "Application Gateway",
+        "oci": "Load Balancer"
+      },
+      "terraform": {
+        "aws": "aws_lb",
+        "gcp": "google_compute_global_forwarding_rule",
+        "azure": "azurerm_application_gateway",
+        "oci": "oci_load_balancer_load_balancer"
+      },
+      "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
+    },
+    {
+      "id": "api",
+      "type": "containers",
+      "x": 556,
+      "y": 250,
+      "zone": "compute",
+      "role": "API Spring Boot",
+      "icon": {
+        "default": "docker",
+        "aws": "awsFargate",
+        "gcp": "gcpCloudRun",
+        "azure": "azContainerApps"
+      },
+      "service": {
+        "aws": "ECS Fargate",
+        "gcp": "Cloud Run",
+        "azure": "Container Apps",
+        "oci": "Container Instances"
+      },
+      "terraform": {
+        "aws": "aws_ecs_service",
+        "gcp": "google_cloud_run_v2_service",
+        "azure": "azurerm_container_app",
+        "oci": "oci_container_instances_container_instance"
+      },
+      "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS.",
+      "name": "API  de \"pagos\"",
+      "props": {
+        "instance": "t3.medium",
+        "ports": "8080, 443",
+        "env": "SPRING_PROFILES_ACTIVE=prod\nJWT_SECRET=abc\nRUTA=${HOME} \"x\"\nno valida=1\nVACIA="
+      }
+    },
+    {
+      "id": "postgres",
+      "type": "postgres",
+      "x": 710,
+      "y": 250,
+      "zone": "data",
+      "role": "PostgreSQL + pgvector",
+      "icon": {
+        "default": "postgresql",
+        "aws": "awsRds",
+        "gcp": "gcpCloudSql",
+        "azure": "azPostgresql"
+      },
+      "service": {
+        "aws": "RDS PostgreSQL",
+        "gcp": "Cloud SQL",
+        "azure": "PostgreSQL Flexible",
+        "oci": "OCI Database with PostgreSQL"
+      },
+      "terraform": {
+        "aws": "aws_db_instance",
+        "gcp": "google_sql_database_instance",
+        "azure": "azurerm_postgresql_flexible_server",
+        "oci": "oci_psql_db_system"
+      },
+      "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
+    },
+    {
+      "id": "redis",
+      "type": "redis",
+      "x": 710,
+      "y": 340,
+      "zone": "data",
+      "role": "Redis",
+      "icon": {
+        "default": "redis",
+        "aws": "awsElastiCache",
+        "azure": "azRedis"
+      },
+      "service": {
+        "aws": "ElastiCache",
+        "gcp": "Memorystore",
+        "azure": "Cache for Redis",
+        "oci": "OCI Cache"
+      },
+      "terraform": {
+        "aws": "aws_elasticache_replication_group",
+        "gcp": "google_redis_instance",
+        "azure": "azurerm_redis_cache",
+        "oci": "oci_redis_redis_cluster"
+      },
+      "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
+    },
+    {
+      "id": "secrets",
+      "type": "secrets",
+      "x": 865,
+      "y": 215,
+      "zone": "managed",
+      "role": "Secretos",
+      "icon": {
+        "default": "provider",
+        "aws": "awsSecretsManager",
+        "azure": "azKeyVault"
+      },
+      "service": {
+        "aws": "Secrets Manager",
+        "gcp": "Secret Manager",
+        "azure": "Key Vault",
+        "oci": "Vault"
+      },
+      "terraform": {
+        "aws": "aws_secretsmanager_secret",
+        "gcp": "google_secret_manager_secret",
+        "azure": "azurerm_key_vault",
+        "oci": "oci_vault_secret"
+      },
+      "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
+    },
+    {
+      "id": "observability",
+      "type": "native-monitoring",
+      "x": 865,
+      "y": 300,
+      "zone": "managed",
+      "role": "Logs y métricas",
+      "icon": {
+        "default": "provider",
+        "aws": "awsCloudWatch",
+        "azure": "azMonitor"
+      },
+      "service": {
+        "aws": "CloudWatch",
+        "gcp": "Cloud Monitoring",
+        "azure": "Azure Monitor",
+        "oci": "Monitoring"
+      },
+      "terraform": {
+        "aws": "aws_cloudwatch_log_group",
+        "gcp": "google_monitoring_alert_policy",
+        "azure": "azurerm_log_analytics_workspace",
+        "oci": "oci_monitoring_alarm"
+      },
+      "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
+    },
+    {
+      "id": "registry",
+      "type": "registry",
+      "x": 865,
+      "y": 385,
+      "zone": "managed",
+      "role": "Registro de imágenes",
+      "icon": {
+        "default": "docker",
+        "aws": "awsEcr",
+        "azure": "azContainerRegistry"
+      },
+      "service": {
+        "aws": "ECR",
+        "gcp": "Artifact Registry",
+        "azure": "Container Registry",
+        "oci": "Container Registry"
+      },
+      "terraform": {
+        "aws": "aws_ecr_repository",
+        "gcp": "google_artifact_registry_repository",
+        "azure": "azurerm_container_registry",
+        "oci": "oci_artifacts_container_repository"
+      },
+      "why": "Guarda la imagen del backend que despliega la capa de cómputo."
+    },
+    {
+      "id": "gemini",
+      "type": "gemini",
+      "x": 556,
+      "y": 668,
+      "zone": "external",
+      "role": "Servicio externo",
+      "service": "Gemini API",
+      "icon": "gemini",
+      "terraform": null,
+      "why": "Embeddings y respuestas del asistente; la API sale a Internet solo para esto."
+    },
+    {
+      "id": "cicd",
+      "type": "cicd",
+      "x": 865,
+      "y": 668,
+      "zone": "external",
+      "role": "CI/CD",
+      "service": "Terraform + Docker",
+      "icon": "terraform",
+      "terraform": null,
+      "why": "La infraestructura se define como código y la imagen se publica en el registro."
+    }
+  ],
+  "connections": [
+    {
+      "from": "users",
+      "to": "edge"
+    },
+    {
+      "from": "edge",
+      "to": "static",
+      "label": "estáticos"
+    },
+    {
+      "from": "edge",
+      "to": "lb",
+      "label": "/v1"
+    },
+    {
+      "from": "lb",
+      "to": "api"
+    },
+    {
+      "from": "api",
+      "to": "postgres"
+    },
+    {
+      "from": "api",
+      "to": "redis"
+    },
+    {
+      "from": "api",
+      "to": "gemini",
+      "label": "salida NAT"
+    },
+    {
+      "from": "cicd",
+      "to": "registry"
+    }
+  ]
+}

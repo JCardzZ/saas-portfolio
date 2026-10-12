@@ -7,7 +7,7 @@
      `hidden`, para que sus acciones sigan siendo las mismas se abra o no el menú. -->
 <div class="mt-4 flex flex-wrap items-center gap-2" role="toolbar" aria-label="Estudio de arquitectura">
   <div class="ui-segmented" role="radiogroup" aria-label="Proveedor de nube">
-    @for (provider of providers; track provider.id) {
+    @for (provider of providers(); track provider.id) {
       <button type="button" role="radio" class="ui-segment gap-2" [attr.aria-checked]="provider.id === selectedId()" (click)="select(provider.id)">
         <app-tech-icon [icon]="icons[provider.id]" [size]="16" />
         {{ provider.name }}
@@ -425,7 +425,8 @@
             }
           }
           @for (name of [serviceOf(node)]; track name) {
-            <text class="node-service" [attr.x]="node.x" [attr.y]="node.y + (iconOf(node) ? 7 : -1)" text-anchor="middle">{{ name }}</text>
+            <!-- Los nombres oficiales de OCI son largos («OCI Database with PostgreSQL»): se ajustan al ancho del nodo. -->
+            <text class="node-service" [attr.x]="node.x" [attr.y]="node.y + (iconOf(node) ? 7 : -1)" text-anchor="middle" [attr.textLength]="selectedId() === 'oci' && name.length > 19 ? width - 10 : null" [attr.lengthAdjust]="selectedId() === 'oci' && name.length > 19 ? 'spacingAndGlyphs' : null">{{ name }}</text>
           }
           <text class="node-role" [attr.x]="node.x" [attr.y]="node.y + (iconOf(node) ? 22 : 15)" text-anchor="middle">{{ node.role }}</text>
         </g>

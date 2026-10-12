@@ -1100,7 +1100,7 @@ components:
       required: [prompt, cloudProvider, nodes, connections]
       properties:
         prompt: { type: string, maxLength: 1000, example: "¿Cómo hago esta arquitectura más resiliente?" }
-        cloudProvider: { type: string, enum: [aws, gcp, azure] }
+        cloudProvider: { type: string, enum: [aws, gcp, azure, oci], description: "`oci` (Oracle Cloud Infrastructure) is only accepted while the `cloud.oracle` feature flag is on." }
         nodes: { type: array, maxItems: 60, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
         connections: { type: array, maxItems: 200, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
 
@@ -1198,7 +1198,7 @@ components:
         id: { type: string, example: "core-banking" }
         title: { type: string, example: "Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)" }
         description: { type: string }
-        cloudProvider: { type: string, enum: [aws, gcp, azure] }
+        cloudProvider: { type: string, enum: [aws, gcp, azure, oci], description: "`oci` (Oracle Cloud Infrastructure) is only accepted while the `cloud.oracle` feature flag is on." }
         isPreset: { type: boolean, description: "Shipped with the platform and read-only." }
         createdAt: { type: string, format: date-time }
 
@@ -1237,7 +1237,7 @@ components:
       properties:
         title: { type: string, maxLength: 120 }
         description: { type: string, maxLength: 500 }
-        cloudProvider: { type: string, enum: [aws, gcp, azure] }
+        cloudProvider: { type: string, enum: [aws, gcp, azure, oci], description: "`oci` (Oracle Cloud Infrastructure) is only accepted while the `cloud.oracle` feature flag is on." }
         nodes: { type: array, maxItems: 60, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
         connections: { type: array, maxItems: 200, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
         zones: { type: array, maxItems: 24, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
@@ -1246,7 +1246,7 @@ components:
       type: object
       required: [cloudProvider, nodes, connections]
       properties:
-        cloudProvider: { type: string, enum: [aws, gcp, azure] }
+        cloudProvider: { type: string, enum: [aws, gcp, azure, oci], description: "`oci` (Oracle Cloud Infrastructure) is only accepted while the `cloud.oracle` feature flag is on." }
         nodes: { type: array, maxItems: 60, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
         connections: { type: array, maxItems: 200, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
 
@@ -1353,7 +1353,7 @@ components:
       type: object
       required: [cloudProvider, services]
       properties:
-        cloudProvider: { type: string, enum: [aws, gcp, azure] }
+        cloudProvider: { type: string, enum: [aws, gcp, azure, oci], description: "`oci` (Oracle Cloud Infrastructure) is only accepted while the `cloud.oracle` feature flag is on." }
         services:
           description: Service codes of the catalog (the `type` of each node of the canvas).
           type: array
@@ -1365,7 +1365,7 @@ components:
       type: object
       required: [cloudProvider, currency, quotes]
       properties:
-        cloudProvider: { type: string, enum: [aws, gcp, azure] }
+        cloudProvider: { type: string, enum: [aws, gcp, azure, oci], description: "`oci` (Oracle Cloud Infrastructure) is only accepted while the `cloud.oracle` feature flag is on." }
         currency: { type: string, example: "USD" }
         quotes:
           type: array

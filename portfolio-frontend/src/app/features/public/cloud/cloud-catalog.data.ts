@@ -1,3 +1,4 @@
+import { ORACLE_EQUIVALENTS, withOracle } from './cloud-oracle.data';
 import { CloudProviderId, IconRef, PerProvider, ZoneId } from './cloud-topology.data';
 
 /**
@@ -40,7 +41,7 @@ export interface CatalogCategory {
   items: CatalogItem[];
 }
 
-export const SERVICE_CATALOG: CatalogCategory[] = [
+const CATALOG: CatalogCategory[] = [
   {
     id: 'compute',
     name: 'Cómputo',
@@ -373,3 +374,12 @@ export const SERVICE_CATALOG: CatalogCategory[] = [
     ],
   },
 ];
+
+/** Cada servicio con su equivalente en OCI y, donde no lo hay, su aviso (`cloud-oracle.data.ts`). */
+function inOracle(item: CatalogItem): CatalogItem {
+  const gap = ORACLE_EQUIVALENTS[item.type]?.noDirectEquivalent;
+  const piece = withOracle(item);
+  return gap ? { ...piece, noDirectEquivalent: { ...piece.noDirectEquivalent, oci: gap } } : piece;
+}
+
+export const SERVICE_CATALOG: CatalogCategory[] = CATALOG.map((category) => ({ ...category, items: category.items.map(inOracle) }));

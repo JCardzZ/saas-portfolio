@@ -22,6 +22,7 @@ const TERMS: Record<CloudProviderId, { multiAz: string; privateAccess: string; p
   aws: { multiAz: 'Multi-AZ', privateAccess: 'VPC endpoints (PrivateLink)', peering: 'VPC Peering o PrivateLink', commitment: 'Savings Plans e instancias reservadas' },
   gcp: { multiAz: 'alta disponibilidad regional', privateAccess: 'Private Service Connect', peering: 'VPC Network Peering', commitment: 'descuentos por compromiso de uso' },
   azure: { multiAz: 'redundancia de zona', privateAccess: 'Private Endpoints', peering: 'VNet Peering o Private Link', commitment: 'reservas y planes de ahorro' },
+  oci: { multiAz: 'varios dominios de disponibilidad o de fallo', privateAccess: 'acceso privado a los servicios desde la VCN', peering: 'emparejamiento de VCN', commitment: 'un compromiso anual de consumo' },
 };
 
 const COMPUTE_TYPES = ['containers', 'kubernetes', 'vm'];
@@ -111,11 +112,15 @@ export function auditTopology(nodes: CloudNode[], links: CloudLink[], provider: 
   if (monitoring.length > 1) {
     add('cost', 'action', 'Observabilidad duplicada', `${monitoring.map(name).join(', ')} recogen en buena parte las mismas métricas: elige una como fuente principal.`);
   }
-  const others = CLOUD_PROVIDERS.filter((candidate) => candidate.id !== provider)
+  // Oracle Cloud no tiene cifras orientativas: ni se compara con ella ni se la compara con las demás.
+  const others = provider === 'oci' ? [] : CLOUD_PROVIDERS.filter((candidate) => candidate.id !== provider && candidate.id !== 'oci')
     .map((candidate) => ({ name: candidate.name, total: estimateCost(nodes, candidate.id, costs).total }))
     .sort((a, b) => a.total - b.total);
   const current = CLOUD_PROVIDERS.find((candidate) => candidate.id === provider)!.name;
-  if (others[0] && others[0].total < estimate.total * 0.9) {
+  if (provider === 'oci') {
+    add('cost', 'action', 'Sin comparación de costes en OCI',
+      'El estudio solo muestra en OCI los precios de la lista pública de Oracle; lo demás queda «sin estimación», así que el total no se puede comparar con el de otra nube.');
+  } else if (others[0] && others[0].total < estimate.total * 0.9) {
     add('cost', 'action', `Esta topología sale más barata en ${others[0].name}`,
       `≈ ${formatUsd(others[0].total)} al mes frente a ≈ ${formatUsd(estimate.total)} en ${current}, con las mismas piezas (estimación orientativa).`);
   } else {

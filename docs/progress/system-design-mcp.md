@@ -6,7 +6,8 @@
 ## Estado
 
 - **Plan aprobado** el 2026-10-11, con las seis decisiones de abajo. Trabajo autónomo: solo parar si algo rompe producción, exige gastar dinero o cambia el alcance.
-- **Hito actual: 2 · Conexiones inteligentes**, terminado en local y con PR abierto. Los hitos 0 y 1 están **integrados en `main`** (PR #22 y #23, los abrió e integró el autor).
+- **Hito actual: 4 · Diseño de sistemas** (sin empezar). Los hitos 0 a 3 están **integrados en `main`** (PR #22, #23, #24 y #25).
+- **El hito 3 no se ha desplegado todavía**: el PR #25 se integró antes de que terminara su CI, el check `📜 Breaking` falló en `main` y el CD se saltó. Producción sigue con el hito 2. Se despliega con la siguiente CI en verde de `main`.
 - `gh` tiene sesión desde el 2026-10-11 (cuenta JCardzZ): cada hito sale de `origin/main`, con su PR; con el CI gate en verde se integra y se sigue.
 - **Worktree**: `.claude/worktrees/system-design-mcp`.
 - `CLAUDE.md` no se versiona y no existe en el worktree: se actualiza el del checkout principal (`/Users/jcardzz/dev/saas/saas-portfolio/CLAUDE.md`).
@@ -17,8 +18,8 @@
 | - | - | - | - |
 | 0 · Feature flags | `feat/feature-flags` | Integrado en `main` | #22 |
 | 1 · Lienzo responsivo | `feat/studio-responsive-canvas` | Integrado en `main` | #23 |
-| 2 · Conexiones inteligentes | `feat/studio-smart-connections` | PR abierto; verificado en local | ver GitHub |
-| 3 · Oracle Cloud | — | Sin empezar | — |
+| 2 · Conexiones inteligentes | `feat/studio-smart-connections` | Integrado en `main` | #24 |
+| 3 · Oracle Cloud | `feat/cloud-oracle` | Integrado en `main` con el gate en rojo (ver Estado) | #25 |
 | 4 · Diseño de sistemas | — | Sin empezar | — |
 | 5 · Plantillas de sistemas | — | Sin empezar | — |
 | 6 · MCP núcleo | — | Sin empezar | — |
@@ -49,6 +50,16 @@
 - Sin cambio de esquema del proyecto. Fixture de proyecto antiguo: `e2e/fixtures/studio-project-v2-exposed-database.json` (lo escribe `tools/export-e2e-fixtures.mjs`); abre igual con la flag apagada y encendida.
 - Verificado en local: `./gradlew test`, 479 tests del frontend, build (466 kB de 500), Spectral sin errores, Playwright en `desktop-1440-chromium`, `tablet-820-chromium` e `iphone-390-chromium`. **Sin ejecutar en local: `integrationTest`, WebKit y Lighthouse** (los corre la CI).
 
+## Hito 3 · qué se hizo
+
+- `cloud-oracle.data.ts`: qué servicio de OCI y qué recurso de `oracle/oci` cubre cada pieza, y dónde no hay equivalente directo (8 piezas, con su trade-off). Fuentes en `docs/architecture/cloud-equivalences.md`.
+- `CloudProviderId` gana `oci`; `PerProvider` lo lleva opcional. Catálogo, arquitectura de referencia y proyectos guardados reciben su nombre en OCI al cargarse (`withOracle`); un nodo sin él sale como «Sin equivalente en OCI» y deja su aviso en `main.tf`.
+- Terraform (los dos generadores, con casos golden `properties-oci`, `unsupported-oci` y `legacy-oci`): proveedor `oracle/oci`, `oci_core_vcn`, región por defecto `us-ashburn-1`.
+- Precios: `OciPriceListAdapter` lee la lista pública de Oracle (7 números de parte). Sin precio real, «sin estimación»: en OCI no hay cifras a mano para servicios de la nube, ni comparación de costes con otras nubes.
+- Flag: el selector solo ofrece OCI con `cloud.oracle` encendida (o si el proyecto abierto ya está en OCI); el backend responde «nube no admitida» (400) a `oci` con la flag apagada (`CloudProviders.resolve`).
+- Marca: sin logo de Oracle (su guía respondió 403); aro neutro y nombre en texto. `docs/brand-usage.md`.
+- Verificado en local: `./gradlew test`, 495 tests del frontend, build (466 kB), Spectral, Playwright en escritorio, tablet y móvil (Chromium). **Sin ejecutar en local: `integrationTest`, WebKit y Lighthouse.**
+
 ## Decisiones del autor (2026-10-11)
 
 1. Servidor MCP con el SDK oficial `mcp-core` 2.0.1 y transporte Servlet, sirviendo 2025-11-25, detrás de una capa propia para migrar a 2026-07-28 cuando el SDK la publique.
@@ -77,6 +88,12 @@
 - **Hito 2 · con la flag apagada el lienzo sigue creando cualquier conexión** y avisando después, como antes.
 - **Hito 2 · el frontend no pinta los `diagnostics` del backend**: calcula los mismos con las mismas reglas. El campo queda para la API y para la herramienta `validar_arquitectura` del hito 6.
 - **Hito 2 · `UseCaseConfig` recibe `ObjectProvider<FeatureFlags>`**: en un contexto parcial sin proveedor (tests `@WebMvcTest` que importan la configuración) las flags cuentan como apagadas, sin tocar los tests existentes.
+- **Hito 3 · OCI no tiene filas en el catálogo del backend** (`catalog.json` sigue con tres nubes): sus nombres van en el Estudio y sus precios salen de la lista de Oracle. Consecuencia: en OCI el copiloto responde, pero no propone piezas del catálogo.
+- **Hito 3 · con la flag apagada, `oci` es una nube desconocida para la API** (400 con el mensaje de siempre), no un 404: los endpoints ya existían y solo cambia un valor del enumerado.
+- **Hito 3 · un producto de terceros cuesta lo mismo en cualquier nube**: en OCI solo Cloudflare, Datadog y similares conservan su cifra orientativa.
+- **Hito 3 · los nombres largos de OCI se ajustan al ancho del nodo** (`textLength`), solo en OCI, para no cambiar el dibujo de las otras nubes.
+- **Añadir un valor a un enumerado de una respuesta hace fallar `📜 Breaking`** (oasdiff, `response-property-enum-value-added`), en el PR y en el push a `main`. Pasó con `oci` en `cloudProvider` (hito 3): el cambio es intencionado y va detrás de una flag, pero el check no lo sabe. En adelante el contrato solo crece con campos y esquemas nuevos; si hace falta otro valor en una respuesta, se decide con el autor antes de abrir el PR.
+- **Los PR se abren como borrador** y pasan a «listo» cuando el CI gate está en verde, para que no se integren a medias.
 
 ## Documentación oficial verificada (2026-10-11)
 
@@ -112,8 +129,8 @@
 
 ## Pendientes
 
-- CI gate del PR del hito 2 e integrarlo.
-- Hitos 3 a 8.
+- Dejar `main` en verde para que el CD despliegue el hito 3.
+- Hitos 4 a 8.
 
 ## Notas para `CLAUDE.md` (pendientes de copiar)
 
@@ -143,3 +160,10 @@ La sesión está aislada en el worktree y no puede escribir en el `CLAUDE.md` de
 - API: `ArchitectureProject.diagnostics` (opcional; `GraphDiagnostic {nodeId, rule, severity, message, suggestion?, from?, to?}`), solo con la flag encendida. `ArchitectureProjectUseCase.diagnose(nodes, connections)` es lo que usará la herramienta MCP `validar_arquitectura`.
 - Proyectos de ejemplo para e2e: `node tools/export-e2e-fixtures.mjs` → `e2e/fixtures/`.
 - **Bundle inicial: 466 kB** de 500.
+
+### ORACLE CLOUD (hito 3, flag `cloud.oracle`)
+- **`oci` es la cuarta nube**, pero no es como las otras tres: `PerProvider` la lleva **opcional** (`BaseProviderId` son las tres que siempre están). Sus nombres y recursos no se escriben en el catálogo sino en `cloud-oracle.data.ts` (`ORACLE_EQUIVALENTS`), que `SERVICE_CATALOG`, `CLOUD_NODES` y `parseProject` aplican con `withOracle`. **Un servicio nuevo del catálogo con nombre por nube necesita su fila ahí** (hay un test que falla si falta) y su línea en `docs/architecture/cloud-equivalences.md` con la fuente.
+- `forProvider(valor, 'oci')` devuelve «Sin equivalente en OCI» si falta; para Terraform se usa **`resourceFor`**, que devuelve `null`. Los dos generadores dejan `# …: sin recurso de Terraform equivalente en OCI`.
+- **En OCI no hay cifras de coste escritas a mano** para servicios de la nube: solo el precio de la lista pública de Oracle (`OciPriceListAdapter` + `OciSkuCatalog`, tabla cerrada de números de parte; `PRICING_OCI_ENABLED`, `PRICING_OCI_BASE_URL`). OCI tampoco entra en la comparación de costes de la auditoría ni tiene filas en `catalog.json`.
+- **Flag**: frontend, `providers()` del lienzo; backend, `CloudProviders.resolve(code, flags)` en los controladores y el mapper que reciben una nube (con la flag apagada: 400 «Nube no admitida», igual que una nube desconocida).
+- **Sin logo de Oracle** (`TECH_ICONS.oci` es el aro neutro). Un diagrama en OCI no pinta iconos de AWS, Azure ni Google Cloud.

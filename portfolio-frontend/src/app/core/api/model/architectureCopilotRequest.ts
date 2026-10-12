@@ -11,6 +11,9 @@
 
 export interface ArchitectureCopilotRequest { 
     prompt: string;
+    /**
+     * `oci` (Oracle Cloud Infrastructure) is only accepted while the `cloud.oracle` feature flag is on.
+     */
     cloudProvider: ArchitectureCopilotRequest.CloudProviderEnum;
     nodes: Array<{ [key: string]: any; }>;
     connections: Array<{ [key: string]: any; }>;
@@ -20,6 +23,7 @@ export namespace ArchitectureCopilotRequest {
         Aws: 'aws',
         Gcp: 'gcp',
         Azure: 'azure',
+        Oci: 'oci',
     } as const;
     export type CloudProviderEnum = typeof CloudProviderEnum[keyof typeof CloudProviderEnum];
 }

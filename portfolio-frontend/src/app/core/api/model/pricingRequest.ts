@@ -10,6 +10,9 @@
 
 
 export interface PricingRequest { 
+    /**
+     * `oci` (Oracle Cloud Infrastructure) is only accepted while the `cloud.oracle` feature flag is on.
+     */
     cloudProvider: PricingRequest.CloudProviderEnum;
     /**
      * Service codes of the catalog (the `type` of each node of the canvas).
@@ -21,6 +24,7 @@ export namespace PricingRequest {
         Aws: 'aws',
         Gcp: 'gcp',
         Azure: 'azure',
+        Oci: 'oci',
     } as const;
     export type CloudProviderEnum = typeof CloudProviderEnum[keyof typeof CloudProviderEnum];
 }

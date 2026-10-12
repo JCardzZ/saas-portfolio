@@ -35,7 +35,8 @@
       "service": {
         "aws": "WAF",
         "gcp": "Cloud Armor",
-        "azure": "Web Application Firewall"
+        "azure": "Web Application Firewall",
+        "oci": "Web Application Firewall"
       },
       "icon": {
         "default": "provider",
@@ -46,7 +47,8 @@
       "terraform": {
         "aws": "aws_wafv2_web_acl",
         "gcp": "google_compute_security_policy",
-        "azure": "azurerm_web_application_firewall_policy"
+        "azure": "azurerm_web_application_firewall_policy",
+        "oci": "oci_waf_web_app_firewall"
       },
       "why": "Filtra tráfico malicioso antes de que llegue a la aplicación.",
       "custom": true
@@ -61,7 +63,8 @@
       "service": {
         "aws": "Amazon API Gateway",
         "gcp": "Apigee",
-        "azure": "API Management"
+        "azure": "API Management",
+        "oci": "API Gateway"
       },
       "icon": {
         "default": "provider",
@@ -72,7 +75,8 @@
       "terraform": {
         "aws": "aws_apigatewayv2_api",
         "gcp": "google_apigee_organization",
-        "azure": "azurerm_api_management"
+        "azure": "azurerm_api_management",
+        "oci": "oci_apigateway_gateway"
       },
       "why": "Puerta de entrada con cuotas, claves, versionado y portal de desarrolladores.",
       "custom": true
@@ -93,12 +97,14 @@
       "service": {
         "aws": "ECS Fargate",
         "gcp": "Cloud Run",
-        "azure": "Container Apps"
+        "azure": "Container Apps",
+        "oci": "Container Instances"
       },
       "terraform": {
         "aws": "aws_ecs_service",
         "gcp": "google_cloud_run_v2_service",
-        "azure": "azurerm_container_app"
+        "azure": "azurerm_container_app",
+        "oci": "oci_container_instances_container_instance"
       },
       "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
     },
@@ -112,7 +118,8 @@
       "service": {
         "aws": "MSK (Kafka)",
         "gcp": "Managed Kafka",
-        "azure": "Event Hubs"
+        "azure": "Event Hubs",
+        "oci": "Streaming with Apache Kafka"
       },
       "icon": {
         "default": "kafka",
@@ -122,7 +129,8 @@
       "terraform": {
         "aws": "aws_msk_cluster",
         "gcp": "google_managed_kafka_cluster",
-        "azure": "azurerm_eventhub_namespace"
+        "azure": "azurerm_eventhub_namespace",
+        "oci": "oci_managed_kafka_kafka_cluster"
       },
       "why": "Bus de eventos para desacoplar productores y consumidores.",
       "custom": true
@@ -137,7 +145,8 @@
       "service": {
         "aws": "ECS Fargate",
         "gcp": "Cloud Run",
-        "azure": "Container Apps"
+        "azure": "Container Apps",
+        "oci": "Container Instances"
       },
       "icon": {
         "default": "docker",
@@ -148,7 +157,8 @@
       "terraform": {
         "aws": "aws_ecs_service",
         "gcp": "google_cloud_run_v2_service",
-        "azure": "azurerm_container_app"
+        "azure": "azurerm_container_app",
+        "oci": "oci_container_instances_container_instance"
       },
       "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
       "custom": true
@@ -168,12 +178,14 @@
       "service": {
         "aws": "ElastiCache",
         "gcp": "Memorystore",
-        "azure": "Cache for Redis"
+        "azure": "Cache for Redis",
+        "oci": "OCI Cache"
       },
       "terraform": {
         "aws": "aws_elasticache_replication_group",
         "gcp": "google_redis_instance",
-        "azure": "azurerm_redis_cache"
+        "azure": "azurerm_redis_cache",
+        "oci": "oci_redis_redis_cluster"
       },
       "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
     },
@@ -193,12 +205,14 @@
       "service": {
         "aws": "RDS PostgreSQL",
         "gcp": "Cloud SQL",
-        "azure": "PostgreSQL Flexible"
+        "azure": "PostgreSQL Flexible",
+        "oci": "OCI Database with PostgreSQL"
       },
       "terraform": {
         "aws": "aws_db_instance",
         "gcp": "google_sql_database_instance",
-        "azure": "azurerm_postgresql_flexible_server"
+        "azure": "azurerm_postgresql_flexible_server",
+        "oci": "oci_psql_db_system"
       },
       "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
     },
@@ -217,12 +231,14 @@
       "service": {
         "aws": "CloudWatch",
         "gcp": "Cloud Monitoring",
-        "azure": "Azure Monitor"
+        "azure": "Azure Monitor",
+        "oci": "Monitoring"
       },
       "terraform": {
         "aws": "aws_cloudwatch_log_group",
         "gcp": "google_monitoring_alert_policy",
-        "azure": "azurerm_log_analytics_workspace"
+        "azure": "azurerm_log_analytics_workspace",
+        "oci": "oci_monitoring_alarm"
       },
       "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
     },

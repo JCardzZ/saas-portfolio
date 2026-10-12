@@ -28,6 +28,7 @@ final class TerraformGenerator {
             Map.entry("google", "hashicorp/google"),
             Map.entry("azurerm", "hashicorp/azurerm"),
             Map.entry("azuread", "hashicorp/azuread"),
+            Map.entry("oci", "oracle/oci"),
             Map.entry("cloudflare", "cloudflare/cloudflare"),
             Map.entry("helm", "hashicorp/helm"),
             Map.entry("vault", "hashicorp/vault"),
@@ -46,7 +47,11 @@ final class TerraformGenerator {
     private static final Map<CloudProviderDomain, List<String>> PROVIDER_BLOCK = Map.of(
             CloudProviderDomain.AWS, List.of("provider \"aws\" {", "  region = var.region", "}"),
             CloudProviderDomain.GCP, List.of("provider \"google\" {", "  project = var.project", "  region  = var.region", "}"),
-            CloudProviderDomain.AZURE, List.of("provider \"azurerm\" {", "  features {}", "}"));
+            CloudProviderDomain.AZURE, List.of("provider \"azurerm\" {", "  features {}", "}"),
+            CloudProviderDomain.OCI, List.of("provider \"oci\" {", "  region = var.region", "}"));
+
+    /** Lo que se muestra de una pieza que no tiene nombre en OCI. El mismo texto que en el frontend. */
+    private static final String NO_OCI_EQUIVALENT = "Sin equivalente en OCI";
 
     private static final Pattern RESOURCE_TYPE = Pattern.compile("^[a-z0-9_]{1,80}$");
     private static final Pattern ENV_KEY = Pattern.compile("^[A-Za-z_][A-Za-z0-9_]*$");
@@ -97,7 +102,7 @@ final class TerraformGenerator {
                     .toList();
             lines.add("");
             lines.add("resource \"" + resource.type() + "\" \"" + resource.name() + "\" {");
-            lines.add("  # " + oneLine(forProvider(resource.node().get("service"), provider)) + " · " + oneLine(text(resource.node(), "role")));
+            lines.add("  # " + oneLine(serviceOf(resource.node(), provider)) + " · " + oneLine(text(resource.node(), "role")));
             lines.addAll(propertyLines(resource));
             if (!dependencies.isEmpty()) {
                 lines.add("  depends_on = [" + String.join(", ", dependencies) + "]");
@@ -111,12 +116,25 @@ final class TerraformGenerator {
             lines.add("");
             for (Map<String, Object> node : unsupported) {
                 String name = text(node, "name").strip();
-                lines.add("# " + oneLine(name.isEmpty() ? forProvider(node.get("service"), provider) : name) + ": sin soporte de Terraform todavía");
+                lines.add("# " + oneLine(name.isEmpty() ? serviceOf(node, provider) : name) + ": sin soporte de Terraform todavía");
+            }
+        }
+        // Piezas con recurso de Terraform en otras nubes pero no en la elegida: se avisa, no se omiten.
+        List<Map<String, Object>> missing = nodes.stream().filter(node -> withoutResource(node, provider)).toList();
+        if (!missing.isEmpty()) {
+            lines.add("");
+            for (Map<String, Object> node : missing) {
+                String name = text(node, "name").strip();
+                // Sin nombre del servicio en esta nube, la pieza se nombra por lo que hace.
+                String label = !name.isEmpty() ? name
+                        : node.get("service") instanceof Map<?, ?> byCloud && byCloud.get(provider.code()) == null
+                        ? (text(node, "role").isBlank() ? text(node, "id") : text(node, "role")) : serviceOf(node, provider);
+                lines.add("# " + oneLine(label) + ": sin recurso de Terraform equivalente en " + provider.displayName());
             }
         }
         List<String> unmanaged = nodes.stream()
                 .filter(node -> node.get("terraform") == null && !UNSUPPORTED_TYPES.contains(text(node, "type")))
-                .map(node -> oneLine(forProvider(node.get("service"), provider))).toList();
+                .map(node -> oneLine(serviceOf(node, provider))).toList();
         if (!unmanaged.isEmpty()) {
             lines.add("");
             lines.add("# Fuera de Terraform: " + String.join(", ", unmanaged));
@@ -166,7 +184,7 @@ final class TerraformGenerator {
     private static List<Resource> resources(List<Map<String, Object>> nodes, CloudProviderDomain provider) {
         List<Resource> resources = new ArrayList<>();
         for (Map<String, Object> node : nodes) {
-            if (node.get("terraform") == null) {
+            if (node.get("terraform") == null || withoutResource(node, provider)) {
                 continue;
             }
             String type = forProvider(node.get("terraform"), provider);
@@ -210,6 +228,18 @@ final class TerraformGenerator {
             }
         }
         return entries;
+    }
+
+    /** Un nodo cuyo recurso de Terraform va por nube y no trae el de esta. */
+    private static boolean withoutResource(Map<String, Object> node, CloudProviderDomain provider) {
+        return node.get("terraform") instanceof Map<?, ?> byCloud && byCloud.get(provider.code()) == null;
+    }
+
+    /** Nombre del servicio del nodo en esa nube. */
+    private static String serviceOf(Map<String, Object> node, CloudProviderDomain provider) {
+        Object service = node.get("service");
+        return service instanceof Map<?, ?> byCloud && byCloud.get(provider.code()) == null && provider == CloudProviderDomain.OCI
+                ? NO_OCI_EQUIVALENT : forProvider(service, provider);
     }
 
     /** Valor de un campo que puede ser único o distinto en cada nube. */

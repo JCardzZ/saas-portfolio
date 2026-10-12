@@ -5,6 +5,9 @@ import dev.portfolio.model.PricingResponse;
 import dev.portfolio.domain.model.pricing.PriceQuote;
 import dev.portfolio.domain.model.pricing.Currency;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase.Draft;
+import dev.portfolio.application.port.in.FeatureFlagUseCase;
+import dev.portfolio.infrastructure.adapter.in.web.flags.CloudProviders;
+import org.springframework.beans.factory.ObjectProvider;
 import dev.portfolio.domain.model.ArchitectureProjectDomain;
 import dev.portfolio.domain.model.CloudCatalogItemDomain;
 import dev.portfolio.domain.model.CloudProviderDomain;
@@ -25,6 +28,12 @@ import java.util.Locale;
 /** A mano y no con MapStruct: los enumerados de nube se generan uno por esquema y el grafo es JSON libre. */
 @Component
 public class ArchitectureWebMapper {
+
+    private final ObjectProvider<FeatureFlagUseCase> flags;
+
+    public ArchitectureWebMapper(ObjectProvider<FeatureFlagUseCase> flags) {
+        this.flags = flags;
+    }
 
     public List<ArchitectureProjectSummary> toSummaries(List<ArchitectureProjectDomain> projects) {
         return projects.stream().map(project -> new ArchitectureProjectSummary()
@@ -68,7 +77,7 @@ public class ArchitectureWebMapper {
 
     public Draft toDraft(ArchitectureProjectRequest request) {
         return new Draft(request.getTitle(), request.getDescription(),
-                request.getCloudProvider() == null ? null : CloudProviderDomain.fromCode(request.getCloudProvider().getValue()),
+                request.getCloudProvider() == null ? null : CloudProviders.resolve(request.getCloudProvider().getValue(), flags),
                 request.getNodes(), request.getConnections(), request.getZones());
     }
 

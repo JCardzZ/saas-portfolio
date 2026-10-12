@@ -61,7 +61,9 @@ class CloudCatalogSeederTest {
 
         List<CloudCatalogItemDomain> all = service.find(Optional.empty());
         assertThat(all).hasSize(132);
-        assertThat(all).extracting(CloudCatalogItemDomain::provider).containsOnly(CloudProviderDomain.values());
+        assertThat(all).extracting(CloudCatalogItemDomain::provider).containsOnly(CloudProviderDomain.AWS, CloudProviderDomain.GCP, CloudProviderDomain.AZURE);
+        // Oracle Cloud no tiene filas en el catálogo: sus nombres van en el Estudio y sus precios, en la lista pública de Oracle.
+        assertThat(service.find(Optional.of(CloudProviderDomain.OCI))).isEmpty();
         assertThat(service.find(Optional.of(CloudProviderDomain.GCP))).hasSize(44).allMatch(item -> item.provider() == CloudProviderDomain.GCP);
 
         // La misma clase de servicio, con su nombre en cada nube.

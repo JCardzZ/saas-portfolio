@@ -1,7 +1,8 @@
 import { TECH_ICONS } from '../../../shared/ui/tech-icons';
 import { CatalogItem, SERVICE_CATALOG } from './cloud-catalog.data';
+import { withOracle } from './cloud-oracle.data';
 import {
-  CANVAS_HEIGHT, CANVAS_WIDTH, CLOUD_LINKS, CLOUD_NODES, CLOUD_PROVIDERS, CloudLink, CloudNode, CloudProviderId, IconRef, LINK_KINDS, LinkKind,
+  BASE_PROVIDER_IDS, CANVAS_HEIGHT, CANVAS_WIDTH, CLOUD_LINKS, CLOUD_NODES, CLOUD_PROVIDERS, CloudLink, CloudNode, CloudProviderId, IconRef, LINK_KINDS, LinkKind,
   NODE_HEIGHT, PerProvider, ZoneId,
 } from './cloud-topology.data';
 
@@ -412,7 +413,7 @@ export const PROJECT_STORAGE_KEY = 'architecture-studio-project';
 export const MAX_NODES = 60;
 const MAX_ZONES = 24;
 const MAX_LINKS = 200;
-const PROVIDERS: CloudProviderId[] = ['aws', 'gcp', 'azure'];
+const PROVIDERS: CloudProviderId[] = ['aws', 'gcp', 'azure', 'oci'];
 const ZONE_IDS: ZoneId[] = ['outside', 'global', 'public', 'compute', 'data', 'managed', 'external'];
 const KINDS: ZoneKind[] = ['cloud', 'region', 'vpc', 'public', 'private'];
 const ID = /^[A-Za-z0-9_-]{1,48}$/;
@@ -538,7 +539,8 @@ function parseNode(raw: unknown): CloudNode | null {
     ...(text_(props['ports'], 80) ? { ports: text_(props['ports'], 80)! } : {}),
     ...(typeof props['env'] === 'string' && props['env'].trim() ? { env: props['env'].slice(0, 2000) } : {}),
   };
-  return {
+  // A un nodo guardado antes de la cuarta nube se le añade su equivalente en OCI, si lo tiene.
+  return withOracle({
     id: raw['id'] as string,
     type: raw['type'] as string,
     x: Math.round(Math.min(CANVAS_WIDTH, Math.max(0, raw['x'] as number))),
@@ -552,7 +554,7 @@ function parseNode(raw: unknown): CloudNode | null {
     ...(raw['custom'] === true ? { custom: true } : {}),
     ...(text_(raw['name'], 60) ? { name: text_(raw['name'], 60)! } : {}),
     ...(Object.keys(cleanProps).length ? { props: cleanProps } : {}),
-  };
+  });
 }
 
 function parseZone(raw: unknown): StudioZone | null {
@@ -598,8 +600,9 @@ function perProvider(raw: unknown, max: number, pattern?: RegExp): string | PerP
   if (valid(raw)) {
     return raw;
   }
-  return isRecord(raw) && PROVIDERS.every((provider) => valid(raw[provider]))
-    ? { aws: raw['aws'] as string, gcp: raw['gcp'] as string, azure: raw['azure'] as string }
+  // OCI es opcional: un proyecto anterior a la cuarta nube no lo trae y sigue siendo válido.
+  return isRecord(raw) && BASE_PROVIDER_IDS.every((provider) => valid(raw[provider]))
+    ? { aws: raw['aws'] as string, gcp: raw['gcp'] as string, azure: raw['azure'] as string, ...(valid(raw['oci']) ? { oci: raw['oci'] } : {}) }
     : null;
 }
 

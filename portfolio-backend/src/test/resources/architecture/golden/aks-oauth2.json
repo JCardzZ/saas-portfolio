@@ -35,7 +35,8 @@
       "service": {
         "aws": "Amazon API Gateway",
         "gcp": "Apigee",
-        "azure": "API Management"
+        "azure": "API Management",
+        "oci": "API Gateway"
       },
       "icon": {
         "default": "provider",
@@ -46,7 +47,8 @@
       "terraform": {
         "aws": "aws_apigatewayv2_api",
         "gcp": "google_apigee_organization",
-        "azure": "azurerm_api_management"
+        "azure": "azurerm_api_management",
+        "oci": "oci_apigateway_gateway"
       },
       "why": "Puerta de entrada con cuotas, claves, versionado y portal de desarrolladores.",
       "custom": true,
@@ -64,7 +66,8 @@
       "service": {
         "aws": "EKS",
         "gcp": "GKE",
-        "azure": "AKS"
+        "azure": "AKS",
+        "oci": "Kubernetes Engine (OKE)"
       },
       "icon": {
         "default": "kubernetes",
@@ -75,7 +78,8 @@
       "terraform": {
         "aws": "aws_eks_cluster",
         "gcp": "google_container_cluster",
-        "azure": "azurerm_kubernetes_cluster"
+        "azure": "azurerm_kubernetes_cluster",
+        "oci": "oci_containerengine_cluster"
       },
       "why": "Orquestación de contenedores para varias réplicas y despliegues graduales.",
       "custom": true,
@@ -100,12 +104,14 @@
       "service": {
         "aws": "RDS PostgreSQL",
         "gcp": "Cloud SQL",
-        "azure": "PostgreSQL Flexible"
+        "azure": "PostgreSQL Flexible",
+        "oci": "OCI Database with PostgreSQL"
       },
       "terraform": {
         "aws": "aws_db_instance",
         "gcp": "google_sql_database_instance",
-        "azure": "azurerm_postgresql_flexible_server"
+        "azure": "azurerm_postgresql_flexible_server",
+        "oci": "oci_psql_db_system"
       },
       "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
     },
@@ -124,12 +130,14 @@
       "service": {
         "aws": "ElastiCache",
         "gcp": "Memorystore",
-        "azure": "Cache for Redis"
+        "azure": "Cache for Redis",
+        "oci": "OCI Cache"
       },
       "terraform": {
         "aws": "aws_elasticache_replication_group",
         "gcp": "google_redis_instance",
-        "azure": "azurerm_redis_cache"
+        "azure": "azurerm_redis_cache",
+        "oci": "oci_redis_redis_cluster"
       },
       "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
     },
@@ -143,7 +151,8 @@
       "service": {
         "aws": "Cognito",
         "gcp": "Identity Platform",
-        "azure": "Entra External ID"
+        "azure": "Entra External ID",
+        "oci": "IAM (Identity Domains)"
       },
       "icon": {
         "default": "provider",
@@ -153,7 +162,8 @@
       "terraform": {
         "aws": "aws_cognito_user_pool",
         "gcp": "google_identity_platform_config",
-        "azure": "azuread_application"
+        "azure": "azuread_application",
+        "oci": "oci_identity_domain"
       },
       "why": "Registro e inicio de sesión de usuarios finales.",
       "custom": true
@@ -173,12 +183,14 @@
       "service": {
         "aws": "Secrets Manager",
         "gcp": "Secret Manager",
-        "azure": "Key Vault"
+        "azure": "Key Vault",
+        "oci": "Vault"
       },
       "terraform": {
         "aws": "aws_secretsmanager_secret",
         "gcp": "google_secret_manager_secret",
-        "azure": "azurerm_key_vault"
+        "azure": "azurerm_key_vault",
+        "oci": "oci_vault_secret"
       },
       "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
     },
@@ -197,12 +209,14 @@
       "service": {
         "aws": "CloudWatch",
         "gcp": "Cloud Monitoring",
-        "azure": "Azure Monitor"
+        "azure": "Azure Monitor",
+        "oci": "Monitoring"
       },
       "terraform": {
         "aws": "aws_cloudwatch_log_group",
         "gcp": "google_monitoring_alert_policy",
-        "azure": "azurerm_log_analytics_workspace"
+        "azure": "azurerm_log_analytics_workspace",
+        "oci": "oci_monitoring_alarm"
       },
       "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
     },
@@ -221,12 +235,14 @@
       "service": {
         "aws": "ECR",
         "gcp": "Artifact Registry",
-        "azure": "Container Registry"
+        "azure": "Container Registry",
+        "oci": "Container Registry"
       },
       "terraform": {
         "aws": "aws_ecr_repository",
         "gcp": "google_artifact_registry_repository",
-        "azure": "azurerm_container_registry"
+        "azure": "azurerm_container_registry",
+        "oci": "oci_artifacts_container_repository"
       },
       "why": "Guarda la imagen del backend que despliega la capa de cómputo."
     }

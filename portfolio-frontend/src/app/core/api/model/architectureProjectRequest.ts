@@ -12,6 +12,9 @@
 export interface ArchitectureProjectRequest { 
     title: string;
     description?: string;
+    /**
+     * `oci` (Oracle Cloud Infrastructure) is only accepted while the `cloud.oracle` feature flag is on.
+     */
     cloudProvider: ArchitectureProjectRequest.CloudProviderEnum;
     nodes: Array<{ [key: string]: any; }>;
     connections: Array<{ [key: string]: any; }>;
@@ -22,6 +25,7 @@ export namespace ArchitectureProjectRequest {
         Aws: 'aws',
         Gcp: 'gcp',
         Azure: 'azure',
+        Oci: 'oci',
     } as const;
     export type CloudProviderEnum = typeof CloudProviderEnum[keyof typeof CloudProviderEnum];
 }

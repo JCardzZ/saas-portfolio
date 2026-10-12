@@ -40,12 +40,14 @@
       "service": {
         "aws": "Application LB",
         "gcp": "Cloud Load Balancing",
-        "azure": "Application Gateway"
+        "azure": "Application Gateway",
+        "oci": "Load Balancer"
       },
       "terraform": {
         "aws": "aws_lb",
         "gcp": "google_compute_global_forwarding_rule",
-        "azure": "azurerm_application_gateway"
+        "azure": "azurerm_application_gateway",
+        "oci": "oci_load_balancer_load_balancer"
       },
       "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
     },
@@ -65,12 +67,14 @@
       "service": {
         "aws": "ECS Fargate",
         "gcp": "Cloud Run",
-        "azure": "Container Apps"
+        "azure": "Container Apps",
+        "oci": "Container Instances"
       },
       "terraform": {
         "aws": "aws_ecs_service",
         "gcp": "google_cloud_run_v2_service",
-        "azure": "azurerm_container_app"
+        "azure": "azurerm_container_app",
+        "oci": "oci_container_instances_container_instance"
       },
       "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
     },
@@ -84,7 +88,8 @@
       "service": {
         "aws": "ECS Fargate",
         "gcp": "Cloud Run",
-        "azure": "Container Apps"
+        "azure": "Container Apps",
+        "oci": "Container Instances"
       },
       "icon": {
         "default": "docker",
@@ -95,7 +100,8 @@
       "terraform": {
         "aws": "aws_ecs_service",
         "gcp": "google_cloud_run_v2_service",
-        "azure": "azurerm_container_app"
+        "azure": "azurerm_container_app",
+        "oci": "oci_container_instances_container_instance"
       },
       "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
       "custom": true
@@ -116,12 +122,14 @@
       "service": {
         "aws": "RDS PostgreSQL",
         "gcp": "Cloud SQL",
-        "azure": "PostgreSQL Flexible"
+        "azure": "PostgreSQL Flexible",
+        "oci": "OCI Database with PostgreSQL"
       },
       "terraform": {
         "aws": "aws_db_instance",
         "gcp": "google_sql_database_instance",
-        "azure": "azurerm_postgresql_flexible_server"
+        "azure": "azurerm_postgresql_flexible_server",
+        "oci": "oci_psql_db_system"
       },
       "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
     },
@@ -135,7 +143,8 @@
       "service": {
         "aws": "Kinesis Data Streams",
         "gcp": "Pub/Sub",
-        "azure": "Event Hubs"
+        "azure": "Event Hubs",
+        "oci": "Streaming"
       },
       "icon": {
         "default": "provider",
@@ -145,7 +154,8 @@
       "terraform": {
         "aws": "aws_kinesis_stream",
         "gcp": "google_pubsub_topic",
-        "azure": "azurerm_eventhub"
+        "azure": "azurerm_eventhub",
+        "oci": "oci_streaming_stream"
       },
       "why": "Ingesta de eventos del propio proveedor: sin clúster que dimensionar, a cambio de su API en lugar de la de Kafka.",
       "custom": true
@@ -160,7 +170,8 @@
       "service": {
         "aws": "Managed Flink",
         "gcp": "Dataflow",
-        "azure": "Stream Analytics"
+        "azure": "Stream Analytics",
+        "oci": "Data Flow"
       },
       "icon": {
         "default": "provider",
@@ -171,7 +182,8 @@
       "terraform": {
         "aws": "aws_kinesisanalyticsv2_application",
         "gcp": "google_dataflow_job",
-        "azure": "azurerm_stream_analytics_job"
+        "azure": "azurerm_stream_analytics_job",
+        "oci": "oci_dataflow_application"
       },
       "why": "Transforma y agrega eventos en vuelo, sin gestionar el clúster.",
       "custom": true
@@ -186,7 +198,8 @@
       "service": {
         "aws": "Redshift",
         "gcp": "BigQuery",
-        "azure": "Synapse Analytics"
+        "azure": "Synapse Analytics",
+        "oci": "Autonomous AI Lakehouse"
       },
       "icon": {
         "default": "provider",
@@ -197,7 +210,8 @@
       "terraform": {
         "aws": "aws_redshift_cluster",
         "gcp": "google_bigquery_dataset",
-        "azure": "azurerm_synapse_workspace"
+        "azure": "azurerm_synapse_workspace",
+        "oci": "oci_database_autonomous_database"
       },
       "why": "Consultas analíticas sobre grandes volúmenes de datos.",
       "custom": true
@@ -212,13 +226,15 @@
       "service": {
         "aws": "Amazon Quick Sight",
         "gcp": "Looker",
-        "azure": "Power BI Embedded"
+        "azure": "Power BI Embedded",
+        "oci": "Analytics Cloud"
       },
       "icon": "provider",
       "terraform": {
         "aws": "aws_quicksight_data_source",
         "gcp": "google_looker_instance",
-        "azure": "azurerm_powerbi_embedded"
+        "azure": "azurerm_powerbi_embedded",
+        "oci": "oci_analytics_analytics_instance"
       },
       "why": "Paneles sobre el almacén de datos, con el servicio de inteligencia de negocio de cada nube.",
       "custom": true
@@ -238,12 +254,14 @@
       "service": {
         "aws": "Secrets Manager",
         "gcp": "Secret Manager",
-        "azure": "Key Vault"
+        "azure": "Key Vault",
+        "oci": "Vault"
       },
       "terraform": {
         "aws": "aws_secretsmanager_secret",
         "gcp": "google_secret_manager_secret",
-        "azure": "azurerm_key_vault"
+        "azure": "azurerm_key_vault",
+        "oci": "oci_vault_secret"
       },
       "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
     }
