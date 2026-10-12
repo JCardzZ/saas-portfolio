@@ -910,6 +910,20 @@ export class CloudInfraComponent {
     };
   }));
 
+  /**
+   * Ancho máximo del menú de plantillas para que no se salga de la ventana: el menú cuelga del
+   * botón «Proyecto», que en una pantalla estrecha no siempre queda pegado al borde izquierdo.
+   * Solo con los sistemas de ejemplo en la lista; sin ellos el menú se queda como estaba.
+   */
+  readonly presetsMaxWidth = computed(() => {
+    if (this.menu() !== 'presets' || !this.systemTemplates().length) {
+      return null;
+    }
+    const anchor = this.host.querySelector('[aria-controls="menu-project"]')?.parentElement;
+    const left = anchor?.getBoundingClientRect().left ?? 0;
+    return Math.max(240, document.documentElement.clientWidth - left - 12);
+  });
+
   /** Carga un sistema de ejemplo: su infraestructura y su diseño, en un solo paso de deshacer. */
   loadSystemTemplate(template: SystemTemplate): void {
     this.menu.set(null);
