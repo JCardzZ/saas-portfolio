@@ -2,22 +2,22 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-12T15:38:11.873Z",
+  "updatedAt": "2026-10-12T15:55:49.062Z",
   "workflows": {
     "ci": {
-      "runId": 38265482313,
-      "runNumber": 71,
-      "sha": "39c0a780659248268aef991efd04624919e79d66",
+      "runId": 38271304555,
+      "runNumber": 77,
+      "sha": "cadc08d5e68e58265827e1888f84a0bf84fd418e",
       "event": "push",
-      "startedAt": "2026-10-12T15:21:09Z",
-      "finishedAt": "2026-10-12T15:37:07.744Z",
-      "durationSeconds": 959,
+      "startedAt": "2026-10-12T15:35:05Z",
+      "finishedAt": "2026-10-12T15:55:49.062Z",
+      "durationSeconds": 1244,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 6,
+          "durationSeconds": 8,
           "runs": 1
         },
         {
@@ -28,9 +28,9 @@
         },
         {
           "id": "codeql",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 174,
+          "runs": 2
         },
         {
           "id": "spec-lint",
@@ -41,31 +41,31 @@
         {
           "id": "spec-breaking",
           "status": "success",
-          "durationSeconds": 13,
+          "durationSeconds": 9,
           "runs": 1
         },
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 34,
+          "durationSeconds": 31,
           "runs": 1
         },
         {
           "id": "backend-unit",
           "status": "success",
-          "durationSeconds": 120,
+          "durationSeconds": 110,
           "runs": 1,
           "metrics": {
-            "tests": 317,
+            "tests": 332,
             "failed": 0,
-            "skipped": 1,
-            "coverage": 89.2
+            "skipped": 2,
+            "coverage": 89.4
           }
         },
         {
           "id": "backend-integration",
           "status": "success",
-          "durationSeconds": 209,
+          "durationSeconds": 197,
           "runs": 1,
           "metrics": {
             "tests": 8,
@@ -76,7 +76,7 @@
         {
           "id": "backend-arch",
           "status": "success",
-          "durationSeconds": 88,
+          "durationSeconds": 87,
           "runs": 1,
           "metrics": {
             "tests": 15,
@@ -87,29 +87,29 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 54,
+          "durationSeconds": 63,
           "runs": 3,
           "metrics": {
-            "tests": 546
+            "tests": 564
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 41,
+          "durationSeconds": 43,
           "runs": 1,
           "metrics": {
-            "bundleKb": 469.8,
-            "bundleGzipKb": 129
+            "bundleKb": 472.4,
+            "bundleGzipKb": 129.9
           }
         },
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 71,
+          "durationSeconds": 88,
           "runs": 1,
           "metrics": {
-            "performance": 76,
+            "performance": 79,
             "accessibility": 97,
             "bestPractices": 96,
             "seo": 92
@@ -118,10 +118,10 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 629,
+          "durationSeconds": 802,
           "runs": 1,
           "metrics": {
-            "tests": 281,
+            "tests": 320,
             "failed": 0,
             "profiles": 13
           }
@@ -135,7 +135,7 @@
         {
           "id": "docker",
           "status": "success",
-          "durationSeconds": 177,
+          "durationSeconds": 196,
           "runs": 1,
           "metrics": {
             "vulnerabilities": 0
@@ -144,23 +144,23 @@
         {
           "id": "publish-image",
           "status": "success",
-          "durationSeconds": 71,
+          "durationSeconds": 70,
           "runs": 1,
           "metrics": {
-            "digest": "sha256:1e6b83d2d7ce649397e811c2e28752f9137e3133ecd3d397bf9b98c4d7fb7d7b",
-            "sbomPackages": 202
+            "digest": "sha256:c5572cad2422580a5196bdea27456a7b94232cc1634137dd2c3b3e40603bf684",
+            "sbomPackages": 207
           }
         },
         {
           "id": "coverage-badge",
           "status": "success",
-          "durationSeconds": 5,
+          "durationSeconds": 6,
           "runs": 1
         },
         {
           "id": "gate",
           "status": "success",
-          "durationSeconds": 4,
+          "durationSeconds": 3,
           "runs": 1
         }
       ]
