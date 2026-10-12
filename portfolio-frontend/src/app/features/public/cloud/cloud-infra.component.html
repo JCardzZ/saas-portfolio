@@ -279,7 +279,7 @@
     <app-service-catalog class="block h-72 animate-slide-up lg:h-auto lg:max-h-[34rem]" [provider]="selectedId()" [catalog]="catalog()" [fromServer]="catalogFromServer()" (picked)="add($event)" />
   }
 
-  <div class="relative min-w-0" appContainerWidth>
+  <div class="relative min-w-0" appContainerWidth data-stage>
   @if (compact()) {
     <!-- Sin sitio para el lienzo de trabajo: las mismas piezas y conexiones, de arriba abajo y de solo lectura. -->
     <app-studio-mobile-canvas [rows]="mobileRows()" [links]="mobileLinks()" [activeId]="activeId()" (picked)="pickMobile($event)" />
@@ -401,8 +401,11 @@
           [style.--brand]="iconOf(node)?.color"
           tabindex="0"
           role="button"
-          [attr.aria-label]="serviceOf(node) + ': ' + node.role + (chaosOf(node) ? '. Estado: ' + chaosOf(node)!.label : '') + (editing() ? '. Flechas para mover, Intro para sus propiedades, Suprimir para quitar' : '')"
+          [attr.aria-label]="serviceOf(node) + ': ' + node.role + (chaosOf(node) ? '. Estado: ' + chaosOf(node)!.label : '') + (editing() ? '. Flechas para mover, Intro para sus propiedades, Suprimir para quitar' : '. Intro para su ficha, flechas para ir a otro nodo')"
           [attr.aria-pressed]="node.id === activeId()"
+          [attr.aria-describedby]="tooltip()?.id === node.id ? 'node-tooltip' : null"
+          [attr.aria-haspopup]="editing() ? null : 'dialog'"
+          (blur)="hideTooltip()"
           (mouseenter)="activate(node, $event)"
           (mouseleave)="leave($event)"
           (focus)="activate(node, $event)"
@@ -474,6 +477,25 @@
             <circle [attr.cx]="node.x + width / 2 - 4" [attr.cy]="node.y - height / 2 + 4" r="10" />
             <path [attr.d]="'M' + (node.x + width / 2 - 8) + ' ' + (node.y - height / 2) + ' l8 8 m0 -8 l-8 8'" stroke="var(--bg-surface-1)" stroke-width="1.8" stroke-linecap="round" fill="none" />
           </g>
+          <!-- Ficha del servicio: en edición el clic sobre el nodo selecciona y mueve, así que se abre desde aquí. -->
+          <g
+            class="info"
+            tabindex="0"
+            role="button"
+            data-info-open
+            aria-haspopup="dialog"
+            [attr.aria-label]="'Ficha de ' + serviceOf(node)"
+            (pointerdown)="$event.stopPropagation()"
+            (click)="$event.stopPropagation(); openInfo(node)"
+            (keydown.enter)="$event.stopPropagation(); openInfo(node)"
+            (keydown.space)="$event.stopPropagation(); $event.preventDefault(); openInfo(node)"
+          >
+            @if (touch) {
+              <circle [attr.cx]="node.x - width / 2 + 4" [attr.cy]="node.y - height / 2 + 4" [attr.r]="touchTarget / 2" fill="transparent" stroke="none" />
+            }
+            <circle [attr.cx]="node.x - width / 2 + 4" [attr.cy]="node.y - height / 2 + 4" r="10" />
+            <text [attr.x]="node.x - width / 2 + 4" [attr.y]="node.y - height / 2 + 8.5" text-anchor="middle">i</text>
+          </g>
           <!-- Asa para conectar: se arrastra hasta otro nodo, o se pulsa y después se pulsa el destino. -->
           <g
             class="connect"
@@ -511,6 +533,54 @@
 
   <app-cost-badge [class]="fitted() || compact() ? 'block w-fit max-w-full' : 'absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)]'" [estimate]="cost()" [providerName]="selected().name" [pricingState]="pricingState()" />
   </div>
+
+  @if (tooltip(); as tip) {
+    <!-- Aviso mínimo del nodo: no recibe el cursor ni el foco. -->
+    <div
+      id="node-tooltip"
+      role="tooltip"
+      class="node-tooltip pointer-events-none absolute z-20 w-60 rounded-control border border-line-strong bg-surface-3 px-3 py-2 shadow-floating"
+      [class.node-tooltip-above]="tip.above"
+      [style.left.px]="tip.x"
+      [style.top.px]="tip.y"
+    >
+      <p class="text-body-sm font-medium text-ink-1">{{ tip.name }}</p>
+      <p class="text-caption font-normal text-ink-2">{{ tip.what }}</p>
+    </div>
+  }
+
+  @if (infoCard(); as card) {
+    @if (infoSheet()) {
+      <!-- Móvil y tableta: hoja inferior modal, sobre un telón. Va en <body>: dentro de la tarjeta del
+           Estudio quedaría por debajo del inspector de traza. -->
+      <div appPortal class="fixed inset-0 z-dialog" data-info-sheet>
+        <div class="absolute inset-0 bg-canvas/60" data-testid="info-backdrop" (click)="closeInfo()"></div>
+        <app-service-info-card
+          appFocusTrap
+          data-info-card
+          class="info-sheet absolute inset-x-0 mx-auto max-w-xl"
+          variant="sheet"
+          [card]="card"
+          (closed)="closeInfo()"
+          (providerChosen)="showInCloud($event)"
+        />
+      </div>
+    } @else {
+      <app-service-info-card
+        data-info-card
+        class="absolute z-20 w-[min(21rem,calc(100%-1rem))]"
+        [style.left.px]="infoPlacement()?.x ?? 0"
+        [style.top.px]="infoPlacement()?.y ?? 0"
+        [style.max-height.px]="infoPlacement()?.maxHeight ?? null"
+        [style.opacity]="infoPlacement() ? 1 : 0"
+        [card]="card"
+        [side]="infoPlacement()?.side ?? 'right'"
+        [arrow]="infoPlacement()?.arrow ?? 24"
+        (closed)="closeInfo()"
+        (providerChosen)="showInCloud($event)"
+      />
+    }
+  }
 
   @if (editing() && propertiesNode(); as node) {
     <app-node-properties
@@ -558,6 +628,7 @@
     @for (why of [node.why]; track why + selectedId()) {
       <p class="animate-slide-up text-sm text-ink-2">{{ why }}</p>
     }
+    <button type="button" class="ui-btn-ghost" data-info-open aria-haspopup="dialog" [attr.aria-expanded]="infoId() === node.id" (click)="infoId() === node.id ? closeInfo(false) : openInfo(node)">Ver ficha</button>
   }
 </div>
 

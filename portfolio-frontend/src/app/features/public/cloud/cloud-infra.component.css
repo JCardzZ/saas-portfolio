@@ -61,6 +61,18 @@
 .remove { cursor: pointer; outline: none; }
 .remove circle { fill: var(--status-danger); }
 .remove:focus-visible circle { stroke: var(--text-1); stroke-width: 1.5; }
+/* Botón «i» del nodo en edición: abre su ficha. */
+.info { cursor: pointer; outline: none; }
+.info circle { fill: var(--bg-surface-3); stroke: var(--border-control); stroke-width: 1; }
+.info text { fill: var(--text-1); font: 600 12px var(--font-mono); pointer-events: none; }
+.info:focus-visible circle { stroke: var(--accent-text); stroke-width: 1.5; }
+/* Aviso del nodo: centrado bajo él (o encima, si debajo no cabe). */
+.node-tooltip { transform: translateX(-50%); animation: tooltip-in var(--duration-base) var(--ease-standard) backwards; }
+.node-tooltip-above { transform: translate(-50%, -100%); }
+@keyframes tooltip-in { from { opacity: 0; } }
+/* Hoja inferior de la ficha: es modal, como los diálogos, así que cubre también el inspector acoplado
+   (en un móvil apaisado no hay alto para apilar las dos). Deja siempre a la vista una franja de la página. */
+.info-sheet { bottom: 0; max-height: calc(100dvh - 3rem); }
 
 .canvas-editing { background-image: radial-gradient(var(--border-subtle) 1px, transparent 1px); background-size: 24px 24px; border-radius: var(--radius-panel); }
 

@@ -40,7 +40,8 @@ export interface ServiceCard {
   equivalence: { direct: boolean; tradeoff: string | null };
   /** El mismo producto en cualquier nube: no hay equivalentes que ofrecer. */
   cloudAgnostic: boolean;
-  context: { receivesFrom: string[]; sendsTo: string[]; zone: string; warnings: string[] };
+  /** `why` es lo que el propio diagrama dice de esta pieza: por qué está ahí. */
+  context: { why: string | null; receivesFrom: string[]; sendsTo: string[]; zone: string; warnings: string[] };
   cost: { label: string; kind: CostKind; tag: string };
   equivalents: { provider: CloudProviderId; cloud: string; name: string; direct: boolean }[];
 }
@@ -102,6 +103,7 @@ export function buildServiceCard(node: CloudNode, context: CardContext): Service
     equivalence: { direct: !missing[provider], tradeoff: missing[provider] ?? null },
     cloudAgnostic: !info?.providers,
     context: {
+      why: info && node.why ? node.why : null,
       receivesFrom: named(links.filter((link) => link.to === node.id).map((link) => link.from)),
       sendsTo: named(links.filter((link) => link.from === node.id).map((link) => link.to)),
       zone: zone ? zoneLabel(zone, provider) : OUTSIDE,

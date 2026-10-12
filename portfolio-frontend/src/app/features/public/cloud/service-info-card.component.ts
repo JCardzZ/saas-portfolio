@@ -20,7 +20,7 @@ export const SHEET_DISMISS_PX = 80;
       role="dialog"
       [attr.aria-modal]="variant() === 'sheet' ? 'true' : null"
       [attr.aria-labelledby]="titleId()"
-      class="service-card relative flex max-h-full flex-col border border-line-strong bg-surface-2 text-ink-1 shadow-floating"
+      tabindex="-1" class="service-card relative flex max-h-full min-h-0 flex-col outline-none border border-line-strong bg-surface-2 text-ink-1 shadow-floating"
       [class]="variant() === 'sheet' ? 'rounded-t-card pb-[env(safe-area-inset-bottom)]' : 'rounded-panel'"
       [attr.data-side]="variant() === 'popover' ? side() : null"
       [style.--arrow.px]="arrow()"
@@ -82,6 +82,9 @@ export const SHEET_DISMISS_PX = 80;
 
         <div>
           <h4 class="text-overline uppercase text-ink-3">En este diagrama</h4>
+          @if (card().context.why; as why) {
+            <p class="mt-1 text-body-sm text-ink-1" data-testid="card-why">{{ why }}</p>
+          }
           <dl class="mt-1 space-y-1 text-body-sm">
             <div class="flex gap-2"><dt class="w-24 shrink-0 text-ink-3">Recibe de</dt><dd class="min-w-0 text-ink-1">{{ card().context.receivesFrom.join(', ') || 'Nadie' }}</dd></div>
             <div class="flex gap-2"><dt class="w-24 shrink-0 text-ink-3">Envía a</dt><dd class="min-w-0 text-ink-1">{{ card().context.sendsTo.join(', ') || 'Nadie' }}</dd></div>
@@ -135,9 +138,9 @@ export const SHEET_DISMISS_PX = 80;
 
       @if (card().docs; as docs) {
         <footer class="shrink-0 border-t border-line-subtle px-4 py-3">
-          <a class="ui-focus tap inline-flex items-center gap-1.5 rounded-mark text-body-sm text-accent-text hover:underline" [href]="docs.url" target="_blank" rel="noopener noreferrer">
-            Documentación oficial
-            <span class="text-ink-3">· {{ docs.host }}</span>
+          <a class="ui-focus tap inline-flex flex-wrap items-center gap-x-1.5 rounded-mark text-body-sm text-accent-text hover:underline" [href]="docs.url" target="_blank" rel="noopener noreferrer">
+            <span class="whitespace-nowrap">Documentación oficial</span>
+            <span class="whitespace-nowrap text-ink-3">· {{ docs.host }}</span>
             <span class="sr-only">(se abre en otra pestaña)</span>
           </a>
         </footer>
@@ -145,7 +148,7 @@ export const SHEET_DISMISS_PX = 80;
     </section>
   `,
   styles: `
-    :host { display: block; max-height: 100%; }
+    :host { display: flex; flex-direction: column; min-height: 0; }
     .service-card { animation: service-card-in var(--duration-base) var(--ease-standard) backwards; }
     @keyframes service-card-in { from { opacity: 0; transform: translateY(4px); } }
     /* La flecha es un cuadrado girado que asoma por el borde que mira al nodo. */
