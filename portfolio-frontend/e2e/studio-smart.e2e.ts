@@ -13,7 +13,9 @@ const OLD_PROJECT: { nodes: unknown[] } = JSON.parse(readFileSync(join(__dirname
  * en modo demo (sin backend), donde las flags se encienden en el navegador (`demo-feature-flags`).
  * En móviles y tabletas solo se comprueba la lectura; la edición, en escritorio.
  */
-const CANVAS = 'app-cloud-infra svg[role="group"]';
+const CANVAS = 'app-cloud-infra svg[data-work-canvas]';
+/** En estrecho el Estudio no muestra el lienzo de trabajo sino su vista vertical de solo lectura. */
+const MOBILE = 'app-cloud-infra app-studio-mobile-canvas';
 
 async function openStudio(page: Page, flags: Record<string, boolean>): Promise<void> {
   await page.addInitScript((value) => localStorage.setItem('demo-feature-flags', value), JSON.stringify(flags));
@@ -23,7 +25,8 @@ async function openStudio(page: Page, flags: Record<string, boolean>): Promise<v
   await expect(page.locator('h1')).toBeVisible();
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
   await page.evaluate(() => document.getElementById('cloud')?.scrollIntoView({ block: 'start' }));
-  await expect(page.locator(CANVAS)).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(`${CANVAS}, ${MOBILE}`).first()).toBeAttached({ timeout: 15_000 });
+  await expect(page.locator('app-cloud-infra')).toBeVisible();
   await page.waitForTimeout(400);
 }
 
@@ -44,6 +47,7 @@ const isDesktop = (testInfo: TestInfo) => testInfo.project.name.startsWith('desk
 test.describe('lienzo responsivo del Estudio (studio.smart-rules)', () => {
   test('«Ajustar a pantalla» muestra el diagrama entero, sin desplazar el marco ni la página', async ({ page }, testInfo) => {
     await openStudio(page, { 'studio.smart-rules': true });
+    test.skip((await page.locator(MOBILE).count()) > 0, 'en estrecho el lienzo de trabajo no se muestra: lo cubre diagrams.e2e.ts');
     await capture(page, testInfo, 'hito-1-ajustar-antes');
 
     await (await viewMenuItem(page, 'Ajustar a pantalla')).click();
@@ -149,7 +153,8 @@ test.describe('conexiones inteligentes del Estudio (studio.smart-rules)', () => 
     await page.addInitScript((project) => localStorage.setItem('architecture-studio-project', project), JSON.stringify(OLD_PROJECT));
     await openStudio(page, { 'studio.smart-rules': true });
 
-    await expect(page.locator(`${CANVAS} g.node`)).toHaveCount(OLD_PROJECT.nodes.length);
+    const nodes = (await page.locator(MOBILE).count()) ? `${MOBILE} [data-node-id]` : `${CANVAS} g.node`;
+    await expect(page.locator(nodes)).toHaveCount(OLD_PROJECT.nodes.length);
     const warnings = page.getByTestId('graph-warnings');
     await expect(warnings).toContainText('Riesgo de seguridad');
     await expect(warnings).toContainText('Pon una API en medio');

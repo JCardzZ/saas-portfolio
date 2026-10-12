@@ -33,6 +33,17 @@ const PROFILES: Profile[] = [
   { name: 'landscape-915', viewport: { width: 915, height: 412 } },
 ];
 
+/**
+ * Anchos en los que se comprueban los diagramas (diagrams.e2e.ts): móviles de 320 a 440 px
+ * (incluye los iPhone Pro Max actuales y los Android grandes) y tabletas de 744 a 1024, cada uno
+ * en vertical y en horizontal.
+ */
+const DIAGRAM_SIZES: [width: number, height: number][] = [
+  [320, 568], [360, 800], [375, 667], [390, 844], [393, 852], [402, 874], [412, 915], [430, 932], [440, 956],
+  [744, 1133], [768, 1024], [820, 1180], [834, 1194], [1024, 1366],
+];
+const DIAGRAM_VIEWPORTS = DIAGRAM_SIZES.flatMap(([width, height]) => [{ width, height }, { width: height, height: width }]);
+
 /** Dispositivo base de cada motor para los anchos sin perfil propio. */
 const BASE: Record<Engine, keyof typeof devices> = { chromium: 'Pixel 7', webkit: 'iPhone 15' };
 
@@ -83,6 +94,10 @@ export default defineConfig({
     // Móviles y tabletas: toda la batería de mobile.e2e.ts.
     ...PROFILES.flatMap((profile) => (['chromium', 'webkit'] as Engine[]).map((engine) => ({
       ...project(profile, engine), testMatch: ['**/mobile.e2e.ts', ...FLAGGED],
+    }))),
+    // Los diagramas, en cada ancho y orientación: nada recortado, texto legible, nada fijo encima.
+    ...DIAGRAM_VIEWPORTS.flatMap((viewport) => (['chromium', 'webkit'] as Engine[]).map((engine) => ({
+      ...project({ name: `diagramas-${viewport.width}x${viewport.height}`, viewport }, engine), testMatch: '**/diagrams.e2e.ts',
     }))),
     // Escritorio, con ratón: los diagramas en su disposición de columnas (desktop.e2e.ts).
     ...(['chromium', 'webkit'] as Engine[]).map((engine) => ({
