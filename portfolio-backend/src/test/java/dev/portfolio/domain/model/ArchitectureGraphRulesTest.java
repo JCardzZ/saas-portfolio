@@ -95,9 +95,74 @@ class ArchitectureGraphRulesTest {
 
     @Test
     void withNoRulesAcceptsEverything() {
-        ArchitectureGraphRules none = new ArchitectureGraphRules(null, null, null, null);
+        ArchitectureGraphRules none = new ArchitectureGraphRules(null, null, null, null, null, null, null);
 
         assertThat(none.violations(List.of(node("api", "containers"), node("cdc", "cdc")), List.of(link("api", "cdc")))).isEmpty();
+        assertThat(none.diagnostics(List.of(node("api", "containers"), node("cdc", "cdc")), List.of(link("api", "cdc")))).isEmpty();
+    }
+
+    private static Map<String, Object> placed(String id, String type, String zone, String service) {
+        return Map.of("id", id, "type", type, "zone", zone, "service", service);
+    }
+
+    @Test
+    void loadsTheExplanationsAndTheAdvisoryRulesTheStudioExports() {
+        assertThat(rules.advice().keySet()).isEqualTo(rules.incoming().keySet());
+        assertThat(rules.advice().get("bi").suggestion()).isEqualTo("Pon un almacén de datos en medio.");
+        assertThat(rules.placement()).extracting(ArchitectureGraphRules.PlacementRule::id).containsExactly("database-in-public-subnet");
+        assertThat(rules.exposure()).extracting(ArchitectureGraphRules.ExposureRule::id).containsExactly("internet-to-database");
+    }
+
+    @Test
+    void diagnosesABrokenConnectionOnItsTargetWithWhatToDoInstead() {
+        List<Map<String, Object>> nodes = List.of(placed("api", "containers", "compute", "ECS Fargate"),
+                Map.of("id", "flink-1", "type", "stream-processing", "zone", "managed", "service", "Flink", "name", "  Agregador  "));
+
+        assertThat(rules.diagnostics(nodes, List.of(link("api", "flink-1")))).containsExactly(new GraphDiagnosticDomain(
+                "flink-1", "connection", GraphDiagnosticDomain.Severity.ERROR,
+                "ECS Fargate no puede enviar datos a Agregador. Un procesador de streams consume de un stream, una cola o un CDC, no de una petición.",
+                "Pon una cola o un stream de eventos en medio.", "api", "flink-1"));
+    }
+
+    @Test
+    void warnsAboutADatabaseInAPublicSubnetAndAboutOneReachedFromTheInternet() {
+        List<Map<String, Object>> nodes = List.of(placed("users", "users", "outside", "Visitantes"),
+                placed("api", "containers", "compute", "ECS Fargate"), placed("postgres", "postgres", "public", "RDS PostgreSQL"));
+        List<Map<String, Object>> links = List.of(link("users", "postgres"), link("api", "postgres"));
+
+        // Son avisos: el grafo se puede guardar.
+        assertThat(rules.violations(nodes, links)).isEmpty();
+        assertThat(rules.diagnostics(nodes, links)).containsExactly(
+                new GraphDiagnosticDomain("postgres", "exposure", GraphDiagnosticDomain.Severity.WARNING,
+                        "Visitantes llega desde Internet y RDS PostgreSQL es una base de datos: no debe quedar expuesta.",
+                        "Pon una API en medio: Visitantes → API → RDS PostgreSQL.", "users", "postgres"),
+                new GraphDiagnosticDomain("postgres", "placement", GraphDiagnosticDomain.Severity.WARNING,
+                        "Riesgo de seguridad: RDS PostgreSQL está en una subred pública, alcanzable desde Internet.",
+                        "Muévela a una subred privada y deja en la pública solo el balanceador o el API gateway.", null, null));
+    }
+
+    @Test
+    void diagnosesTheInstancesThatAreOneTooManyAndAWrongLinkKind() {
+        List<Map<String, Object>> nodes = List.of(node("tableau-1", "tableau"), node("tableau-2", "tableau"),
+                node("api", "containers"), node("queue-1", "queue"));
+
+        List<GraphDiagnosticDomain> found = rules.diagnostics(nodes, List.of(link("api", "queue-1", "REPLICATION")));
+
+        assertThat(found).extracting(GraphDiagnosticDomain::rule, GraphDiagnosticDomain::nodeId, GraphDiagnosticDomain::severity)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("link-kind", "queue-1", GraphDiagnosticDomain.Severity.ERROR),
+                        org.assertj.core.groups.Tuple.tuple("max-instances", "tableau-2", GraphDiagnosticDomain.Severity.ERROR));
+    }
+
+    /** Un error en los diagnósticos es exactamente un grafo que no se puede guardar. */
+    @Test
+    void reportsAnErrorExactlyWhenTheGraphCannotBeSaved() {
+        List<Map<String, Object>> nodes = List.of(node("api", "containers"), node("cdc-1", "cdc"), node("postgres", "postgres"));
+        for (List<Map<String, Object>> links : List.of(List.of(link("api", "cdc-1")), List.of(link("postgres", "cdc-1")),
+                List.of(link("api", "postgres", "REPLICATION")), List.<Map<String, Object>>of())) {
+            boolean hasError = rules.diagnostics(nodes, links).stream().anyMatch(found -> found.severity() == GraphDiagnosticDomain.Severity.ERROR);
+            assertThat(hasError).as("%s", links).isEqualTo(!rules.violations(nodes, links).isEmpty());
+        }
     }
 
     /** Ninguna plantilla ni patrón de datos de los que siembra la plataforma arranca incumpliendo una regla. */
@@ -113,6 +178,7 @@ class ArchitectureGraphRulesTest {
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> connections = (List<Map<String, Object>>) preset.get("connections");
                 assertThat(rules.violations(nodes, connections)).as("%s", preset.get("id")).isEmpty();
+                assertThat(rules.diagnostics(nodes, connections)).as("%s", preset.get("id")).isEmpty();
             }
         }
     }

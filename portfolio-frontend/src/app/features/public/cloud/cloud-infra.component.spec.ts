@@ -18,6 +18,7 @@ import { CloudInfraComponent, GRAPH_DIFF_DEBOUNCE_MS } from './cloud-infra.compo
 import { directNodes, fits, settled } from './zone-layout';
 import { DATA_BLUEPRINTS } from './data-blueprints';
 import { CLOUD_NODES } from './cloud-topology.data';
+import { referenceProject, serializeProject } from './studio-project';
 
 describe('CloudInfraComponent', () => {
   beforeEach(() => {
@@ -1239,6 +1240,43 @@ describe('CloudInfraComponent', () => {
         expect(new Set(second.component.nodes().map((candidate) => candidate.id)).size).toBe(14);
       });
 
+      describe('a project saved before the smart rules existed', () => {
+        // Una base de datos en la subred pública y conectada directamente con los visitantes: hoy
+        // el lienzo no dejaría trazar esa conexión, pero el proyecto guardado tiene que abrir igual.
+        function storeOldProject() {
+          const old = referenceProject();
+          old.nodes = old.nodes.map((candidate) => (candidate.id === 'postgres' ? { ...candidate, zone: 'public' as const } : candidate));
+          old.links = [...old.links, { from: 'users', to: 'postgres' }];
+          localStorage.setItem('architecture-studio-project', serializeProject(old));
+          return old;
+        }
+
+        it('opens as it was, without warnings, while studio.smart-rules is off', () => {
+          const old = storeOldProject();
+          const { element, component } = create();
+
+          expect(component.nodes().length).toBe(old.nodes.length);
+          expect(component.wires().map((wire) => `${wire.from}>${wire.to}`)).toContain('users>postgres');
+          expect(element.querySelector('[data-testid="graph-warnings"]')).toBeNull();
+        });
+
+        it('opens as it was with studio.smart-rules on: the rules only warn', async () => {
+          await OpenFeature.setProviderAndWait(new PlatformFlagsProvider(() => Promise.resolve({ 'studio.smart-rules': true })));
+          try {
+            const old = storeOldProject();
+            const { element, component } = create();
+
+            expect(component.nodes().length).toBe(old.nodes.length);
+            expect(component.wires().map((wire) => `${wire.from}>${wire.to}`)).toContain('users>postgres');
+            const warnings = Array.from(element.querySelectorAll('[data-testid="graph-warnings"] li')).map((item) => item.textContent);
+            expect(warnings.length).toBe(2);
+            expect(warnings.join(' ')).toContain('Pon una API en medio');
+          } finally {
+            await OpenFeature.clearProviders();
+          }
+        });
+      });
+
       it('forgets the saved project on reset and ignores a corrupted one', () => {
         const { fixture, element } = edit();
         catalogEntry(element, 'Broker AMQP').click();
@@ -1781,6 +1819,89 @@ describe('CloudInfraComponent', () => {
         const stored = JSON.parse(localStorage.getItem('architecture-studio-project')!);
         expect(stored.links).toContain(jasmine.objectContaining({ from: 'lb', to: 'secrets' }));
         expect(element.querySelectorAll('path.wire').length).toBe(9);
+      });
+
+      it('creates any connection and highlights nothing while studio.smart-rules is off', () => {
+        const { fixture, element, component } = edit();
+        select(fixture, element, 'Visitantes');
+        handle(element).dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+        fixture.detectChanges();
+
+        expect(element.querySelector('.node-target-ok, .node-target-no')).toBeNull();
+        node(element, 'RDS PostgreSQL').dispatchEvent(new MouseEvent('click'));
+        fixture.detectChanges();
+        expect(wireKeys(component)).toContain('users>postgres');
+        expect(element.querySelector('[data-testid="connection-refusal"]')).toBeNull();
+      });
+
+      describe('with studio.smart-rules on', () => {
+        beforeEach(async () => {
+          await OpenFeature.setProviderAndWait(new PlatformFlagsProvider(() => Promise.resolve({ 'studio.smart-rules': true })));
+        });
+        afterEach(async () => {
+          await OpenFeature.clearProviders();
+        });
+
+        it('highlights the valid targets and dims the others while a connection is drawn', () => {
+          const { fixture, element } = edit();
+          select(fixture, element, 'Visitantes');
+          handle(element).dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+          fixture.detectChanges();
+
+          expect(node(element, 'ECS Fargate').classList).toContain('node-target-ok');
+          expect(node(element, 'RDS PostgreSQL').classList).toContain('node-target-no');
+          expect(node(element, 'Visitantes').classList).not.toContain('node-target-ok');
+          expect(node(element, 'Visitantes').classList).not.toContain('node-target-no');
+
+          diagram(element).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+          fixture.detectChanges();
+          expect(element.querySelector('.node-target-ok, .node-target-no')).toBeNull();
+        });
+
+        it('does not create a connection dropped on an invalid target, and says what to do instead', () => {
+          const { fixture, element, component } = edit();
+          const pointer = pointerOn(fixture, element);
+          select(fixture, element, 'Visitantes');
+
+          pointer(handle(element), 'pointerdown', 128, 250);
+          pointer(handle(element), 'pointermove', 600, 250);
+          pointer(handle(element), 'pointerup', 710, 250);
+
+          expect(wireKeys(component)).not.toContain('users>postgres');
+          expect(component.canUndo()).toBeFalse();
+          const refusal = element.querySelector('[data-testid="connection-refusal"]')!;
+          expect(refusal.getAttribute('role')).toBe('alert');
+          expect(refusal.textContent).toContain('Conexión no creada.');
+          expect(refusal.textContent).toContain('Pon una API en medio: Visitantes → API → RDS PostgreSQL.');
+          expect(tags()).toContain('Graph Rule');
+
+          refusal.querySelector('button')!.click();
+          fixture.detectChanges();
+          expect(element.querySelector('[data-testid="connection-refusal"]')).toBeNull();
+        });
+
+        it('still creates a valid connection, and that clears the last explanation', () => {
+          const { fixture, element, component } = edit();
+          component.connect('users', 'postgres');
+          fixture.detectChanges();
+          expect(element.querySelector('[data-testid="connection-refusal"]')).not.toBeNull();
+
+          component.connect('lb', 'secrets');
+          fixture.detectChanges();
+          expect(wireKeys(component)).toContain('lb>secrets');
+          expect(element.querySelector('[data-testid="connection-refusal"]')).toBeNull();
+        });
+
+        it('warns about a database moved into the public subnet, with what to do', () => {
+          const { fixture, element, component } = edit();
+          component.nodes.update((nodes) => nodes.map((candidate) => (candidate.id === 'postgres' ? { ...candidate, zone: 'public' as const } : candidate)));
+          fixture.detectChanges();
+
+          const warnings = element.querySelector('[data-testid="graph-warnings"]')!.textContent!;
+          expect(warnings).toContain('Riesgo de seguridad: RDS PostgreSQL está en una subred pública');
+          expect(warnings).toContain('Muévela a una subred privada');
+          expect(element.querySelectorAll('[data-testid="rule-badge"]').length).toBe(1);
+        });
       });
     });
   });

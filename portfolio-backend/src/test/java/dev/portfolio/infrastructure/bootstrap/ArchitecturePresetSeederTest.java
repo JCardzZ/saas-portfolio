@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
 class ArchitecturePresetSeederTest {
 
     private final InMemoryRepository repository = new InMemoryRepository();
-    private final ArchitectureProjectService service = new ArchitectureProjectService(repository, GraphRulesFixture.load());
+    private final ArchitectureProjectService service = new ArchitectureProjectService(repository, GraphRulesFixture.load(), flag -> false);
     private final ArchitecturePresetSeeder seeder = new ArchitecturePresetSeeder(service, new ObjectMapper());
 
     @Test

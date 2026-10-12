@@ -45,6 +45,9 @@
 .node-active rect, .node-active:hover rect { stroke: var(--accent-text); stroke-width: 1.5; }
 .node:focus-visible rect { stroke: var(--accent-text); stroke-width: 2; }
 /* Componente añadido por el visitante: borde discontinuo. */
+/* Al trazar una conexión (reglas inteligentes): se resaltan los destinos válidos y se atenúan los que no lo son. */
+.node-target-ok rect, .node-target-ok:hover rect { stroke: var(--status-ok); stroke-width: 1.5; }
+.node-target-no { opacity: 0.35; cursor: not-allowed; }
 .node-custom { transform-box: fill-box; transform-origin: center; animation: node-in 0.4s var(--ease-emphasized) backwards; }
 .node-custom rect { stroke-dasharray: 5 4; stroke: var(--border-strong); }
 .node-editing { cursor: grab; touch-action: none; }

@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { GraphDiagnostic } from './graphDiagnostic';
 
 
 export interface ArchitectureProject { 
@@ -22,6 +23,10 @@ export interface ArchitectureProject {
     nodes: Array<{ [key: string]: any; }>;
     connections: Array<{ [key: string]: any; }>;
     zones: Array<{ [key: string]: any; }>;
+    /**
+     * What the graph rules have to say about this project, node by node. Only present while the `studio.smart-rules` feature flag is on. A saved project never carries errors (saving one is rejected with 400); warnings do not prevent saving.
+     */
+    diagnostics?: Array<GraphDiagnostic>;
 }
 export namespace ArchitectureProject {
     export const CloudProviderEnum = {

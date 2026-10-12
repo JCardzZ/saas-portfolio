@@ -125,7 +125,26 @@ class ArchitectureStudioApiTest {
                 .andExpect(jsonPath("$.nodes[0].id").value("api"))
                 .andExpect(jsonPath("$.nodes[0].x").value(556))
                 .andExpect(jsonPath("$.connections[0].to").value("mq"))
-                .andExpect(jsonPath("$.zones[0].id").value("cloud"));
+                .andExpect(jsonPath("$.zones[0].id").value("cloud"))
+                // Sin diagnósticos (flag apagada) el campo no viaja.
+                .andExpect(jsonPath("$.diagnostics").doesNotExist());
+
+        given(projects.diagnose(PRESET.nodes(), PRESET.connections())).willReturn(List.of(
+                new dev.portfolio.domain.model.GraphDiagnosticDomain("api", "placement", dev.portfolio.domain.model.GraphDiagnosticDomain.Severity.WARNING,
+                        "Riesgo de seguridad", "Muévela a una subred privada", null, null),
+                new dev.portfolio.domain.model.GraphDiagnosticDomain("mq", "connection", dev.portfolio.domain.model.GraphDiagnosticDomain.Severity.ERROR,
+                        "No permitida", null, "api", "mq")));
+        mockMvc.perform(get("/public/architecture/projects/core-banking"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.diagnostics.length()").value(2))
+                .andExpect(jsonPath("$.diagnostics[0].nodeId").value("api"))
+                .andExpect(jsonPath("$.diagnostics[0].rule").value("placement"))
+                .andExpect(jsonPath("$.diagnostics[0].severity").value("warning"))
+                .andExpect(jsonPath("$.diagnostics[0].suggestion").value("Muévela a una subred privada"))
+                .andExpect(jsonPath("$.diagnostics[0].from").doesNotExist())
+                .andExpect(jsonPath("$.diagnostics[1].severity").value("error"))
+                .andExpect(jsonPath("$.diagnostics[1].from").value("api"))
+                .andExpect(jsonPath("$.diagnostics[1].suggestion").doesNotExist());
         mockMvc.perform(get("/public/architecture/projects/nope"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));

@@ -2,6 +2,7 @@ package dev.portfolio.application.port.in;
 
 import dev.portfolio.domain.model.ArchitectureProjectDomain;
 import dev.portfolio.domain.model.CloudProviderDomain;
+import dev.portfolio.domain.model.GraphDiagnosticDomain;
 
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,12 @@ public interface ArchitectureProjectUseCase {
 
     /** Crea o pone al día una plantilla de la plataforma, con un id fijo. */
     ArchitectureProjectDomain registerPreset(String id, Draft draft);
+
+    /**
+     * Lo que las reglas del grafo dicen de un proyecto, nodo a nodo. Vacío mientras la flag
+     * {@code studio.smart-rules} esté apagada.
+     */
+    List<GraphDiagnosticDomain> diagnose(List<Map<String, Object>> nodes, List<Map<String, Object>> connections);
 
     record Draft(String title, String description, CloudProviderDomain cloudProvider,
                  List<Map<String, Object>> nodes, List<Map<String, Object>> connections, List<Map<String, Object>> zones) {

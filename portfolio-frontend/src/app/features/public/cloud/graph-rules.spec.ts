@@ -1,7 +1,7 @@
 import { SERVICE_CATALOG } from './cloud-catalog.data';
 import { CLOUD_LINKS, CLOUD_NODES, CloudNode, LINK_KINDS } from './cloud-topology.data';
 import { DATA_BLUEPRINTS } from './data-blueprints';
-import { GRAPH_RULES, anchorFor, canConnect, checkGraph, endpointOf, inferKind } from './graph-rules';
+import { GRAPH_RULES, advisories, anchorFor, canConnect, checkGraph, connectionVerdict, endpointOf, inferKind } from './graph-rules';
 import { STUDIO_PRESETS } from './studio-project';
 import { TERRAFORM_UNSUPPORTED_TYPES } from './terraform-generator';
 
@@ -131,5 +131,74 @@ describe('graph rules', () => {
     // Sin nada que admita, queda suelto en vez de nacer con una conexión no permitida.
     expect(anchorFor('stream-processing', 'api', at, CLOUD_NODES)).toBeNull();
     expect(anchorFor('cdc', 'api', at, [])).toBeNull();
+  });
+
+  describe('smart connections (studio.smart-rules)', () => {
+    const placed = (id: string, type: string, zone: CloudNode['zone']): CloudNode => ({ ...node(id, type), zone });
+    const users = placed('Visitantes', 'users', 'outside');
+    const api = placed('API', 'containers', 'compute');
+    const database = placed('PostgreSQL', 'postgres', 'data');
+
+    it('explains every role that does not accept any source, with something to do instead', () => {
+      expect(Object.keys(GRAPH_RULES.advice).sort()).toEqual(Object.keys(GRAPH_RULES.incoming).sort());
+      for (const advice of Object.values(GRAPH_RULES.advice)) {
+        expect(advice.why.length).toBeGreaterThan(20);
+        expect(advice.suggestion).toMatch(/^(Pon|Conéctalo) /);
+      }
+    });
+
+    it('accepts what the rules allow', () => {
+      expect(connectionVerdict(api, database)).toEqual({ allowed: true });
+      expect(connectionVerdict(users, api)).toEqual({ allowed: true });
+    });
+
+    it('refuses a source the target role does not take, and says what to put in between', () => {
+      const verdict = connectionVerdict(api, placed('Flink', 'stream-processing', 'managed'));
+
+      expect(verdict).toEqual({
+        allowed: false,
+        reason: 'API no puede enviar datos a Flink. Un procesador de streams consume de un stream, una cola o un CDC, no de una petición.',
+        suggestion: 'Pon una cola o un stream de eventos en medio.',
+      });
+    });
+
+    it('refuses to expose a database to the Internet: an API goes in between', () => {
+      expect(connectionVerdict(users, database)).toEqual({
+        allowed: false,
+        reason: 'Visitantes llega desde Internet y PostgreSQL es una base de datos: no debe quedar expuesta.',
+        suggestion: 'Pon una API en medio: Visitantes → API → PostgreSQL.',
+      });
+      // La regla clásica la sigue admitiendo: un proyecto guardado así abre y se puede guardar.
+      expect(canConnect(users.type, database.type)).toBeTrue();
+    });
+
+    it('refuses a node connected to itself', () => {
+      expect(connectionVerdict(api, api).allowed).toBeFalse();
+    });
+
+    it('warns about a database in a public subnet and about one reached straight from the Internet', () => {
+      const exposed = placed('PostgreSQL', 'postgres', 'public');
+
+      expect(advisories([users, api, exposed], [{ from: users.id, to: exposed.id }, { from: api.id, to: exposed.id }])).toEqual([
+        {
+          rule: 'placement', nodeId: 'PostgreSQL',
+          message: 'Riesgo de seguridad: PostgreSQL está en una subred pública, alcanzable desde Internet.',
+          suggestion: 'Muévela a una subred privada y deja en la pública solo el balanceador o el API gateway.',
+        },
+        {
+          rule: 'exposure', nodeId: 'PostgreSQL', link: { from: 'Visitantes', to: 'PostgreSQL' },
+          message: 'Visitantes llega desde Internet y PostgreSQL es una base de datos: no debe quedar expuesta.',
+          suggestion: 'Pon una API en medio: Visitantes → API → PostgreSQL.',
+        },
+      ]);
+    });
+
+    it('has nothing to say about the reference architecture, the templates and the blueprints', () => {
+      expect(advisories(CLOUD_NODES, CLOUD_LINKS)).toEqual([]);
+      for (const preset of [...STUDIO_PRESETS, ...DATA_BLUEPRINTS]) {
+        const { nodes, links } = preset.build();
+        expect(advisories(nodes, links)).withContext(preset.id).toEqual([]);
+      }
+    });
   });
 });
