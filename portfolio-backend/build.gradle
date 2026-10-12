@@ -85,6 +85,8 @@ dependencies {
 
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     implementation 'io.github.resilience4j:resilience4j-circuitbreaker:2.2.0'
+    // Feature flags: API estándar de OpenFeature; el proveedor es propio (PostgreSQL + caché Redis)
+    implementation 'dev.openfeature:sdk:1.23.0'
     // Generación del CV en PDF (adaptador OpenPdfCvRenderer)
     implementation 'com.github.librepdf:openpdf:1.3.43'
     // CV maquetado: plantilla HTML+CSS a PDF sin navegador (StyledCvPdfWriter); el segundo dibuja los SVG

@@ -13,6 +13,7 @@ api/api.ts
 api/appliedAIRAG.service.ts
 api/architectureStudio.service.ts
 api/authRBAC.service.ts
+api/featureFlags.service.ts
 api/profile.service.ts
 api/publicCatalogShowcases.service.ts
 api/recruiterRadarIngress.service.ts
@@ -41,6 +42,10 @@ model/article.ts
 model/articleRequest.ts
 model/careerMilestone.ts
 model/cloudCatalogItem.ts
+model/featureFlag.ts
+model/featureFlagAuditEntry.ts
+model/featureFlagDetail.ts
+model/featureFlagUpdate.ts
 model/fieldError.ts
 model/ingressTrackingRequest.ts
 model/models.ts

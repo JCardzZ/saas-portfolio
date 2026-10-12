@@ -1,4 +1,5 @@
 import { AIQueryResponse, Article, CareerMilestone, Project, Technology } from '../api';
+import { FeatureFlagKey } from '../flags/feature-flags';
 
 /** Datos del modo demo. Nada de esto sale de la base de datos ni del motor de IA. */
 export const MOCK_TECHNOLOGIES: Technology[] = [
@@ -214,3 +215,12 @@ export function mockRagAnswer(prompt: string): AIQueryResponse {
   }
   return ARCHITECTURE_ANSWER;
 }
+
+/** Descripción de cada flag, como la da el backend (`FeatureFlagDomain`). */
+export const MOCK_FLAG_DESCRIPTIONS: Record<FeatureFlagKey, string> = {
+  'studio.smart-rules': 'Lienzo responsivo y conexiones inteligentes en el Estudio de arquitectura',
+  'cloud.oracle': 'Oracle Cloud como cuarta nube del Estudio',
+  'studio.system-design': 'Diseño de sistemas completos: vistas de aplicación e infraestructura',
+  'studio.system-templates': 'Plantillas de sistemas completos',
+  'mcp.section': 'Servidor MCP y la sección «Usa mi plataforma desde tu IA»',
+};

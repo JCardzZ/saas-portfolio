@@ -1,0 +1,95 @@
+<div class="space-y-6">
+  <div>
+    <h1 class="text-2xl font-semibold">Feature flags</h1>
+    <p class="mt-1 text-sm text-slate-600">
+      Lo nuevo se integra apagado y se enciende aquí, sin desplegar. Un endpoint de una función apagada responde 404.
+    </p>
+  </div>
+
+  @if (demo) {
+    <p class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="note">
+      Modo demo: no hay servidor que guarde el cambio. Lo que enciendas aquí vale solo en este navegador y se aplica al recargar la página.
+    </p>
+  }
+
+  @if (error(); as message) {
+    <app-alert [message]="message" />
+  }
+
+  <div class="card overflow-x-auto p-0">
+    <table class="min-w-full divide-y divide-slate-200">
+      <thead class="bg-slate-50">
+        <tr>
+          <th scope="col" class="table-header">Flag</th>
+          <th scope="col" class="table-header">Qué enciende</th>
+          <th scope="col" class="table-header">Último cambio</th>
+          <th scope="col" class="table-header">Estado</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        @for (flag of flags(); track flag.key) {
+          <tr>
+            <td class="table-cell font-mono text-xs text-slate-900">{{ flag.key }}</td>
+            <td class="table-cell">{{ flag.description }}</td>
+            <td class="table-cell">
+              @if (flag.updatedAt) {
+                {{ flag.updatedAt | date: 'd MMM y, HH:mm' }} · {{ flag.updatedBy }}
+              } @else {
+                <span class="text-slate-500">Sin cambios</span>
+              }
+            </td>
+            <td class="table-cell">
+              <button
+                type="button"
+                role="switch"
+                class="inline-flex min-w-[7.5rem] items-center justify-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium"
+                [class]="flag.enabled ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-300 bg-white text-slate-700'"
+                [attr.aria-checked]="flag.enabled"
+                [attr.aria-label]="flag.key"
+                [disabled]="saving() === flag.key"
+                (click)="toggle(flag)"
+              >
+                <span class="h-2 w-2 rounded-full" [class]="flag.enabled ? 'bg-emerald-600' : 'bg-slate-400'" aria-hidden="true"></span>
+                {{ flag.enabled ? 'Encendida' : 'Apagada' }}
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td class="table-cell text-center text-slate-500" colspan="4">{{ loading() ? 'Cargando…' : 'No hay flags.' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <section class="space-y-3" aria-labelledby="flag-audit-title">
+    <h2 id="flag-audit-title" class="text-base font-semibold">Auditoría</h2>
+    <div class="card overflow-x-auto p-0">
+      <table class="min-w-full divide-y divide-slate-200">
+        <thead class="bg-slate-50">
+          <tr>
+            <th scope="col" class="table-header">Cuándo</th>
+            <th scope="col" class="table-header">Flag</th>
+            <th scope="col" class="table-header">Cambio</th>
+            <th scope="col" class="table-header">Quién</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          @for (entry of audit(); track entry.changedAt + entry.key) {
+            <tr>
+              <td class="table-cell">{{ entry.changedAt | date: 'd MMM y, HH:mm:ss' }}</td>
+              <td class="table-cell font-mono text-xs">{{ entry.key }}</td>
+              <td class="table-cell">{{ entry.previous ? 'Encendida' : 'Apagada' }} → {{ entry.enabled ? 'Encendida' : 'Apagada' }}</td>
+              <td class="table-cell">{{ entry.actor }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td class="table-cell text-center text-slate-500" colspan="4">{{ loading() ? 'Cargando…' : 'Nadie ha cambiado una flag todavía.' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
