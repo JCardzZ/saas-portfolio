@@ -53,7 +53,7 @@ export type CloudFamily = 'aws' | 'gcp' | 'azure';
 export type TechIconKey =
   | 'java' | 'spring' | 'angular' | 'postgresql' | 'redis' | 'gemini' | 'docker' | 'cloudflare' | 'jwt'
   | 'github' | 'githubActions' | 'cloudflarePages' | 'caddy'
-  | 'neon' | 'upstash' | 'tailwind' | 'terraform' | 'aws' | 'gcp' | 'azure' | 'kubernetes'
+  | 'neon' | 'upstash' | 'tailwind' | 'terraform' | 'aws' | 'gcp' | 'azure' | 'oci' | 'kubernetes'
   | 'kafka' | 'rabbitmq' | 'vault' | 'elasticsearch'
   | 'mongodb' | 'cassandra' | 'prometheus' | 'grafana' | 'datadog' | 'opentelemetry'
   | 'gcpPubSub' | 'gcpStorage' | 'bigquery' | 'firebase'
@@ -94,6 +94,8 @@ export const TECH_ICONS: Record<TechIconKey, TechIcon> = {
   gemini: neutral('Google Gemini'),
   docker: icon(siDocker),
   cloudflare: neutral('Cloudflare'),
+  // La guía de marca de Oracle no se pudo leer (403): sin logo, nombre en texto (docs/brand-usage.md).
+  oci: neutral('Oracle Cloud Infrastructure'),
   jwt: icon(siJsonwebtokens),
   github: icon(siGithub),
   githubActions: icon(siGithubactions, 'GitHub Actions'),

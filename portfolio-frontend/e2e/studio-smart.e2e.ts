@@ -159,3 +159,30 @@ test.describe('conexiones inteligentes del Estudio (studio.smart-rules)', () => 
     await warnings.screenshot({ path: join('e2e-screens', testInfo.project.name, 'hito-2-avisos.png') });
   });
 });
+
+test.describe('Oracle Cloud en el Estudio (cloud.oracle)', () => {
+  const CLOUDS = 'app-cloud-infra [role="radiogroup"][aria-label="Proveedor de nube"] [role="radio"]';
+
+  test('con la flag apagada solo se ofrecen las tres nubes de siempre', async ({ page }) => {
+    await openStudio(page, {});
+
+    await expect(page.locator(CLOUDS)).toHaveText(['AWS', 'GCP', 'Azure']);
+  });
+
+  test('con la flag encendida el diagrama se traduce a OCI, sin logos de otra nube y sin cifras inventadas', async ({ page }, testInfo) => {
+    await openStudio(page, { 'cloud.oracle': true });
+    await capture(page, testInfo, 'hito-3-oci-antes');
+
+    await page.locator(CLOUDS, { hasText: 'OCI' }).click();
+
+    await expect(page.locator(`${CANVAS} text.node-service`, { hasText: 'OCI Database with PostgreSQL' })).toBeVisible();
+    await expect(page.locator(`${CANVAS} text.node-service`, { hasText: 'RDS PostgreSQL' })).toHaveCount(0);
+    const foreign = await page.locator(`${CANVAS} image.node-icon`).evaluateAll((images) =>
+      images.map((image) => image.getAttribute('href') ?? '').filter((href) => /cloud-icons\/(aws|gcp|azure)\//.test(href)));
+    expect(foreign, 'ningún icono de arquitectura de otra nube').toEqual([]);
+    await expect(page.locator(`${CANVAS} [data-testid="node-cost"]`, { hasText: 'sin estimación' }).first()).toBeVisible();
+    const scroll = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+    expect(scroll.scroll, 'la página no se desplaza en horizontal').toBeLessThanOrEqual(scroll.client + 1);
+    await capture(page, testInfo, 'hito-3-oci-despues');
+  });
+});

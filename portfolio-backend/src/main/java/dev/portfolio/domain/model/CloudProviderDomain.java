@@ -8,7 +8,9 @@ import java.util.Arrays;
 public enum CloudProviderDomain {
     AWS("aws", "AWS", "VPC", "aws_vpc", "us-east-1"),
     GCP("gcp", "GCP", "VPC", "google_compute_network", "us-central1"),
-    AZURE("azure", "Azure", "VNet", "azurerm_virtual_network", "eastus");
+    AZURE("azure", "Azure", "VNet", "azurerm_virtual_network", "eastus"),
+    /** Oracle Cloud Infrastructure. Solo se admite con la flag {@code cloud.oracle} encendida. */
+    OCI("oci", "OCI", "VCN", "oci_core_vcn", "us-ashburn-1");
 
     private final String code;
     private final String displayName;

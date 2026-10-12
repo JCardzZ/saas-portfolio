@@ -1,4 +1,4 @@
-import { CLOUD_PROVIDERS, CloudLink, CloudNode, CloudProviderId, forProvider } from './cloud-topology.data';
+import { CLOUD_PROVIDERS, CloudLink, CloudNode, CloudProviderId, forProvider, resourceFor } from './cloud-topology.data';
 
 /** Origen de cada proveedor de Terraform, según el prefijo del tipo de recurso. */
 const PROVIDER_SOURCES: Record<string, string> = {
@@ -6,6 +6,7 @@ const PROVIDER_SOURCES: Record<string, string> = {
   google: 'hashicorp/google',
   azurerm: 'hashicorp/azurerm',
   azuread: 'hashicorp/azuread',
+  oci: 'oracle/oci',
   cloudflare: 'cloudflare/cloudflare',
   helm: 'hashicorp/helm',
   vault: 'hashicorp/vault',
@@ -33,7 +34,13 @@ const CLOUD_PROVIDER_BLOCK: Record<CloudProviderId, string[]> = {
   aws: ['provider "aws" {', '  region = var.region', '}'],
   gcp: ['provider "google" {', '  project = var.project', '  region  = var.region', '}'],
   azure: ['provider "azurerm" {', '  features {}', '}'],
+  oci: ['provider "oci" {', '  region = var.region', '}'],
 };
+
+/** Piezas con recurso de Terraform en otras nubes pero no en la elegida: se avisa, no se omiten. */
+function withoutResource(nodes: CloudNode[], provider: CloudProviderId): CloudNode[] {
+  return nodes.filter((node) => node.terraform && !resourceFor(node.terraform, provider));
+}
 
 interface Resource {
   node: CloudNode;
@@ -53,8 +60,10 @@ export function resourceName(node: CloudNode): string {
  */
 export function generateMainTf(nodes: CloudNode[], links: CloudLink[], provider: CloudProviderId): string {
   const cloud = CLOUD_PROVIDERS.find((candidate) => candidate.id === provider)!;
-  const resources: Resource[] = nodes.flatMap((node) =>
-    node.terraform ? [{ node, type: forProvider(node.terraform, provider), name: resourceName(node) }] : []);
+  const resources: Resource[] = nodes.flatMap((node) => {
+    const type = resourceFor(node.terraform, provider);
+    return type ? [{ node, type, name: resourceName(node) }] : [];
+  });
   const byId = new Map(resources.map((resource) => [resource.node.id, resource]));
 
   const prefixes = new Set([cloud.networkResource, ...resources.map((resource) => resource.type)].map(providerPrefix));
@@ -93,6 +102,13 @@ export function generateMainTf(nodes: CloudNode[], links: CloudLink[], provider:
   const unsupported = unsupportedTerraform(nodes, provider);
   if (unsupported.length) {
     lines.push('', ...unsupported.map((name) => `# ${name}: sin soporte de Terraform todavía`));
+  }
+  const missing = withoutResource(nodes, provider);
+  if (missing.length) {
+    // Sin nombre del servicio en esta nube, la pieza se nombra por lo que hace.
+    const label = (node: CloudNode) => node.name?.trim()
+      || (typeof node.service !== 'string' && !node.service[provider] ? (node.role.trim() || node.id) : forProvider(node.service, provider));
+    lines.push('', ...missing.map((node) => `# ${oneLine(label(node))}: sin recurso de Terraform equivalente en ${cloud.name}`));
   }
   const unmanaged = nodes.filter((node) => !node.terraform && !TERRAFORM_UNSUPPORTED_TYPES.includes(node.type))
     .map((node) => oneLine(forProvider(node.service, provider)));
@@ -142,7 +158,7 @@ function propertyLines(resource: Resource): string[] {
   ];
 }
 
-const DEFAULT_REGION: Record<CloudProviderId, string> = { aws: 'us-east-1', gcp: 'us-central1', azure: 'eastus' };
+const DEFAULT_REGION: Record<CloudProviderId, string> = { aws: 'us-east-1', gcp: 'us-central1', azure: 'eastus', oci: 'us-ashburn-1' };
 
 /**
  * `variables.tf` del proyecto: la región y, por cada recurso con propiedades, su capacidad y
@@ -161,7 +177,7 @@ export function generateVariablesTf(nodes: CloudNode[], provider: CloudProviderI
     ...(provider === 'gcp' ? ['', 'variable "project" {', '  type        = string', '  description = "Id del proyecto de Google Cloud"', '}'] : []),
   ];
 
-  for (const node of nodes.filter((candidate) => candidate.terraform)) {
+  for (const node of nodes.filter((candidate) => resourceFor(candidate.terraform, provider))) {
     const name = resourceName(node);
     const instance = node.props?.instance?.trim();
     if (instance) {

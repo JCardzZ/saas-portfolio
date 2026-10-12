@@ -57,6 +57,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -94,6 +95,9 @@ class ArchitectureStudioApiTest {
 
     @MockBean
     private TelemetryPort telemetryPort;
+
+    @MockBean
+    private dev.portfolio.application.port.in.FeatureFlagUseCase featureFlags;
 
     private static String adminToken() {
         return "Bearer " + Jwts.builder().subject("admin-ui").claim("roles", List.of("ROLE_ADMIN"))
@@ -243,6 +247,29 @@ class ArchitectureStudioApiTest {
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().string(HttpHeaders.RETRY_AFTER, "20"))
                 .andExpect(jsonPath("$.code").value("RATE_LIMIT_EXCEEDED"));
+    }
+
+    @Test
+    void oracleCloudOnlyExistsWhileItsFlagIsOn() throws Exception {
+        String oci = BODY.replace("\"cloudProvider\":\"gcp\"", "\"cloudProvider\":\"oci\"");
+        given(terraform.generate(eq(CloudProviderDomain.OCI), any(), any(), any()))
+                .willReturn(new TerraformBundleDomain("provider \"oci\" {}", "variable \"region\" {}"));
+
+        // Apagada: la misma respuesta que a una nube que no existe, en los tres caminos que la nombran.
+        mockMvc.perform(post("/public/architecture/generate-terraform").contentType(MediaType.APPLICATION_JSON).content(oci))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Nube no admitida: 'oci'. Valores: aws, gcp, azure")));
+        mockMvc.perform(post("/public/architecture/pricing").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cloudProvider\":\"oci\",\"services\":[\"vm\"]}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/admin/architecture/projects").header(HttpHeaders.AUTHORIZATION, adminToken())
+                        .contentType(MediaType.APPLICATION_JSON).content(oci))
+                .andExpect(status().isBadRequest());
+
+        given(featureFlags.enabled()).willReturn(java.util.Set.of(dev.portfolio.domain.model.FeatureFlagDomain.CLOUD_ORACLE));
+        mockMvc.perform(post("/public/architecture/generate-terraform").contentType(MediaType.APPLICATION_JSON).content(oci))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mainTf").value("provider \"oci\" {}"));
     }
 
     @Test

@@ -19,11 +19,11 @@ describe('data catalog', () => {
 
   it('offers the new cloud services with a name in each cloud', () => {
     const byType = (type: string) => ITEMS.find((item) => item.type === type)!;
-    expect(byType('cdc').service).toEqual({ aws: 'Database Migration Service', gcp: 'Datastream', azure: 'Data Factory (CDC)' });
-    expect(byType('event-stream').service).toEqual({ aws: 'Kinesis Data Streams', gcp: 'Pub/Sub', azure: 'Event Hubs' });
-    expect(byType('global-database').service).toEqual({ aws: 'Aurora Global Database', gcp: 'Cloud Spanner', azure: 'Azure SQL Database (failover groups)' });
+    expect(byType('cdc').service).toEqual({ aws: 'Database Migration Service', gcp: 'Datastream', azure: 'Data Factory (CDC)', oci: 'GoldenGate' });
+    expect(byType('event-stream').service).toEqual({ aws: 'Kinesis Data Streams', gcp: 'Pub/Sub', azure: 'Event Hubs', oci: 'Streaming' });
+    expect(byType('global-database').service).toEqual({ aws: 'Aurora Global Database', gcp: 'Cloud Spanner', azure: 'Azure SQL Database (failover groups)', oci: 'Autonomous AI Database (Data Guard entre regiones)' });
     // El Kafka gestionado sigue siendo otro servicio: no se ha fundido con el stream nativo.
-    expect(byType('streaming').service).toEqual({ aws: 'MSK (Kafka)', gcp: 'Managed Kafka', azure: 'Event Hubs' });
+    expect(byType('streaming').service).toEqual({ aws: 'MSK (Kafka)', gcp: 'Managed Kafka', azure: 'Event Hubs', oci: 'Streaming with Apache Kafka' });
     for (const type of ['kafka', 'debezium', 'goldengate', 'snowflake', 'databricks', 'tableau', 'powerbi', 'looker-studio']) {
       expect(typeof byType(type).service).withContext(type).toBe('string');
     }
@@ -31,9 +31,12 @@ describe('data catalog', () => {
 
   it('says where a cloud has no direct equivalent, with the trade-off', () => {
     const gaps = ITEMS.filter((item) => item.noDirectEquivalent).map((item) => [item.type, Object.keys(item.noDirectEquivalent!)]);
-    expect(gaps).toEqual([['global-database', ['azure']], ['cdc', ['azure']]]);
-    for (const item of ITEMS.filter((candidate) => candidate.noDirectEquivalent)) {
-      expect(item.noDirectEquivalent!.azure).toMatch(/^Sin equivalente directo: .{40,}/);
+    expect(gaps).toEqual([
+      ['app-platform', ['oci']], ['global-sql', ['oci']], ['global-database', ['azure', 'oci']], ['graph', ['oci']], ['wide-column', ['oci']],
+      ['sql-query', ['oci']], ['stream-processing', ['oci']], ['cdc', ['azure']], ['workflow', ['oci']],
+    ]);
+    for (const text of ITEMS.flatMap((item) => Object.values(item.noDirectEquivalent ?? {}))) {
+      expect(text).toMatch(/^Sin equivalente directo( en Terraform)?: .{40,}/);
     }
   });
 

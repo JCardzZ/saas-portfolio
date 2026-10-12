@@ -1,5 +1,5 @@
 import { CatalogCategory, CatalogItem } from './cloud-catalog.data';
-import { CostOverrides, NODE_COSTS } from './cloud-costs.data';
+import { CostOverrides, NODE_COSTS, localUsd } from './cloud-costs.data';
 import { CloudNode, CloudProviderId, forProvider } from './cloud-topology.data';
 
 export const COPILOT_MAX_PROMPT = 1000;
@@ -95,7 +95,7 @@ export function additionsCost(
       continue;
     }
     const local = NODE_COSTS[addition.code]?.usd ?? 0;
-    usd += overrides[addition.code]?.[provider] ?? (typeof local === 'number' ? local : local[provider]);
+    usd += overrides[addition.code]?.[provider] ?? localUsd(local, provider);
   }
   return { usd, unknown };
 }

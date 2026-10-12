@@ -94,7 +94,12 @@ export class CloudInfraComponent {
   private readonly pricing = inject(LivePricingService);
   private readonly iconPop = inject(IconPopService);
 
-  readonly providers = CLOUD_PROVIDERS;
+  /**
+   * Nubes que se ofrecen. Oracle Cloud solo con la flag `cloud.oracle` encendida, o si el
+   * proyecto abierto ya está en ella (uno guardado con la flag encendida se sigue viendo bien).
+   */
+  readonly providers = computed(() => CLOUD_PROVIDERS.filter((provider) =>
+    provider.id !== 'oci' || this.flags.isEnabled('cloud.oracle') || this.selectedId() === 'oci'));
   readonly scenarios = CHAOS_SCENARIOS;
   readonly icons = TECH_ICONS;
   /** Pantalla táctil: las asas del lienzo reciben una zona de toque mayor que su dibujo. */

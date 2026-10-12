@@ -11,6 +11,7 @@ import dev.portfolio.application.service.PricingService;
 import dev.portfolio.infrastructure.adapter.out.pricing.AwsPriceListAdapter;
 import dev.portfolio.infrastructure.adapter.out.pricing.AzureRetailPricesAdapter;
 import dev.portfolio.infrastructure.adapter.out.pricing.GcpPricingApiAdapter;
+import dev.portfolio.infrastructure.adapter.out.pricing.OciPriceListAdapter;
 import dev.portfolio.infrastructure.adapter.out.pricing.PricingProperties;
 import dev.portfolio.infrastructure.adapter.out.pricing.UnmappedServiceAdapter;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -40,6 +41,7 @@ public class PricingConfig {
     public static final String AZURE_PRICING_CIRCUIT_BREAKER = "azurePricing";
     public static final String AWS_PRICING_CIRCUIT_BREAKER = "awsPricing";
     public static final String GCP_PRICING_CIRCUIT_BREAKER = "gcpPricing";
+    public static final String OCI_PRICING_CIRCUIT_BREAKER = "ociPricing";
 
     @Bean
     public PricingUseCase pricingUseCase(RestClient.Builder builder, PricingProperties properties, CachePort cache,
@@ -54,6 +56,9 @@ public class PricingConfig {
         // Google Cloud exige clave y sus SKU se asignan por configuración: sin las dos cosas no hay nada que consultar.
         if (!properties.gcp().apiKey().isBlank() && !properties.gcp().skus().isEmpty()) {
             providers.add(gcp(builder, properties.gcp(), telemetry));
+        }
+        if (properties.oci().enabled()) {
+            providers.add(oci(builder, properties.oci(), telemetry));
         }
         providers.add(new UnmappedServiceAdapter(telemetry));
         PricingProviderPort cached = new CachedPricingServiceDecorator(
@@ -77,6 +82,11 @@ public class PricingConfig {
         RestClient restClient = restClient(builder, gcp.baseUrl(), gcp.connectTimeout(), gcp.readTimeout());
         return new GcpPricingApiAdapter(restClient, gcp.apiKey(), gcp.skus(), gcp.region(),
                 circuitBreaker(GCP_PRICING_CIRCUIT_BREAKER, gcp.circuitBreaker()), telemetry, Clock.systemUTC());
+    }
+
+    private static OciPriceListAdapter oci(RestClient.Builder builder, PricingProperties.Oci oci, TelemetryPort telemetry) {
+        RestClient restClient = restClient(builder, oci.baseUrl(), oci.connectTimeout(), oci.readTimeout());
+        return new OciPriceListAdapter(restClient, circuitBreaker(OCI_PRICING_CIRCUIT_BREAKER, oci.circuitBreaker()), telemetry, Clock.systemUTC());
     }
 
     private static RestClient restClient(RestClient.Builder builder, String baseUrl, Duration connectTimeout, Duration readTimeout) {

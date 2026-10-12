@@ -18,8 +18,19 @@ public record PricingProperties(
         @DefaultValue("30d") Duration lastKnownTtl,
         @DefaultValue Azure azure,
         @DefaultValue Aws aws,
-        @DefaultValue Gcp gcp
+        @DefaultValue Gcp gcp,
+        @DefaultValue Oci oci
 ) {
+    /** @param baseUrl dirección de la lista pública de precios de Oracle Cloud; no lleva clave */
+    public record Oci(
+            @DefaultValue("true") boolean enabled,
+            @DefaultValue("https://apexapps.oracle.com/pls/apex/cetools/api/v1/products/") String baseUrl,
+            @DefaultValue("3s") Duration connectTimeout,
+            @DefaultValue("6s") Duration readTimeout,
+            @DefaultValue CircuitBreaker circuitBreaker
+    ) {
+    }
+
     /**
      * @param baseUrl dirección de la API pública de precios de Azure; no lleva clave
      * @param region  región de Azure cuyas tarifas se consultan

@@ -71,3 +71,81 @@ AWS tiene Aurora Global Database y Google Cloud, Cloud Spanner. En Azure hay que
 - En Azure los dos caen en Event Hubs, que ofrece su API propia y un punto de conexión
   compatible con Kafka.
 
+## Oracle Cloud Infrastructure, cuarta nube (flag `cloud.oracle`)
+
+Revisión del 2026-10-11. La tabla vive en `portfolio-frontend/src/app/features/public/cloud/cloud-oracle.data.ts`.
+
+**Fuentes**
+
+- Nombres de los servicios: índice oficial de la documentación de OCI,
+  <https://docs.oracle.com/en-us/iaas/Content/home.htm>.
+- Recursos de Terraform: proveedor oficial `oracle/oci`, versión 9.9.0 (2026-10-08),
+  <https://github.com/oracle/terraform-provider-oci> (`website/docs/r/`). Todos los recursos de la tabla
+  existen en esa versión.
+- Cambio de nombre de Autonomous Database a Autonomous AI Database (14 de octubre de 2025):
+  <https://docs.oracle.com/en-us/iaas/releasenotes/autonomous-database-dedicated/adbd-service-rebranding.htm>.
+- Precios: lista pública de Oracle, sin clave,
+  `https://apexapps.oracle.com/pls/apex/cetools/api/v1/products/?partNumber=…&currencyCode=USD`.
+
+**Equivalencias directas**
+
+| Pieza | Servicio de OCI | Recurso de Terraform |
+|---|---|---|
+| Kubernetes | Kubernetes Engine (OKE) | `oci_containerengine_cluster` |
+| Máquinas virtuales | Compute | `oci_core_instance` |
+| Contenedores serverless | Container Instances | `oci_container_instances_container_instance` |
+| Funciones | Functions | `oci_functions_function` |
+| IA generativa | Generative AI Agents | `oci_generative_ai_agent_agent` |
+| PostgreSQL | OCI Database with PostgreSQL | `oci_psql_db_system` |
+| Redis | OCI Cache | `oci_redis_redis_cluster` |
+| NoSQL | NoSQL Database | `oci_nosql_table` |
+| Almacén de datos | Autonomous AI Lakehouse | `oci_database_autonomous_database` |
+| Kafka gestionado | Streaming with Apache Kafka | `oci_managed_kafka_kafka_cluster` |
+| Stream de eventos | Streaming | `oci_streaming_stream` |
+| Cola | Queue | `oci_queue_queue` |
+| Publicación y suscripción | Notifications | `oci_ons_notification_topic` |
+| CDC | GoldenGate | `oci_golden_gate_deployment` |
+| BI | Analytics Cloud | `oci_analytics_analytics_instance` |
+| API gateway | API Gateway | `oci_apigateway_gateway` |
+| WAF | Web Application Firewall | `oci_waf_web_app_firewall` |
+| DNS | DNS | `oci_dns_zone` |
+| Almacenamiento de objetos | Object Storage | `oci_objectstorage_bucket` |
+| Identidad | IAM (Identity Domains) | `oci_identity_domain` |
+| Secretos | Vault | `oci_vault_secret` |
+| Balanceador | Load Balancer | `oci_load_balancer_load_balancer` |
+| Monitorización | Monitoring | `oci_monitoring_alarm` |
+| Registro de imágenes | Container Registry | `oci_artifacts_container_repository` |
+| Red privada | VCN | `oci_core_vcn` |
+
+RabbitMQ no es un servicio de OCI: se despliega sobre Kubernetes (`helm_release`), como en Google
+Cloud y Azure.
+
+**Sin equivalente directo**
+
+| Pieza | Alternativa elegida | Trade-off | Respaldo |
+|---|---|---|---|
+| Plataforma de aplicaciones (`app-platform`) | Container Instances | El balanceador y el despliegue desde el código se montan aparte | El índice de servicios no incluye una plataforma como App Runner o App Service |
+| SQL distribuido (`global-sql`) | Globally Distributed Autonomous AI Database | El proveedor de Terraform no tiene un recurso propio: el esqueleto declara la base de datos autónoma | El servicio está en el índice; no hay recurso `globally_distributed` en `website/docs/r/` |
+| Base de datos global (`global-database`) | Autonomous AI Database con Autonomous Data Guard entre regiones | Es una réplica en espera para recuperación (RTO de unos 15 minutos, RPO de alrededor de 1 minuto), no lecturas locales en cada región | <https://docs.oracle.com/en-us/iaas/autonomous-database-serverless/doc/adg-about-cross-region--cross-tenancy.html> |
+| Grafos (`graph`) | Autonomous AI Database con Graph Studio | Se aprovisiona una base de datos relacional completa | El índice no incluye una base de datos de grafos gestionada; <https://docs.oracle.com/en/cloud/paas/autonomous-database/csgru/whats-new-graph-studio-autonomous-database.html> |
+| Columnas anchas (`wide-column`) | NoSQL Database | API propia: venir de Cassandra exige adaptar la aplicación | El índice no incluye un Cassandra gestionado |
+| SQL sobre el lago (`sql-query`) | Autonomous AI Lakehouse | Es una base de datos aprovisionada, facturada por ECPU y hora, no de pago por consulta | Lista de precios (`B95701`, «ECPU Per Hour»); anuncio del Lakehouse y Apache Iceberg |
+| Procesamiento de streams (`stream-processing`) | Data Flow | Es Apache Spark (microlotes con Structured Streaming), no Flink | El índice no incluye un Flink gestionado; <https://docs.oracle.com/en/learn/oci-data-flow-spark-kafka/index.html> |
+| Orquestación (`workflow`) | Integration | Plataforma de integración aprovisionada por instancia | El índice no incluye un orquestador de pasos sin servidor; lista Integration y Process Automation |
+
+**Precios**
+
+En OCI el Estudio no muestra ninguna cifra escrita a mano para un servicio de la nube: o llega su
+precio de la lista pública de Oracle, o el nodo dice «sin estimación» y no suma al total. Los
+números de parte consultados (`OciSkuCatalog`, comprobados el 2026-10-11): `B97384` (Compute
+Standard E5, OCPU/hora), `B96545` (OKE, clúster Enhanced/hora), `B99060` (Database with PostgreSQL,
+OCPU/hora), `B110500` (Streaming with Apache Kafka, OCPU/hora), `B92992` (GoldenGate, OCPU/hora),
+`B95701` (Autonomous AI Lakehouse, ECPU/hora) y `B89630` (Analytics Cloud Professional, OCPU/hora).
+Los productos con tramo gratuito o de pago por petición (Functions, Queue, Object Storage, Load
+Balancer…) no tienen «un» precio mensual y quedan sin estimación.
+
+**Sin confirmar**
+
+- La región por defecto del esqueleto (`us-ashburn-1`) no se contrastó con la lista oficial de regiones.
+- El panel de propiedades no sugiere formas de cómputo en OCI: sus nombres no se contrastaron.
+- Los términos de la auditoría en OCI (dominios de disponibilidad, emparejamiento de VCN) son genéricos a propósito.

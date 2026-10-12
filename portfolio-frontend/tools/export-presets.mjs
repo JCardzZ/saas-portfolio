@@ -70,12 +70,25 @@ const withUnsupported = (project) => ({
   ],
   links: [...project.links, { from: 'postgres', to: 'debezium-1', kind: 'CDC_STREAM' }, { from: 'cdc', to: 'snowflake-1', kind: 'CDC_STREAM' }],
 });
+const dropOci = (value) => {
+  if (!value || typeof value === 'string') {
+    return value;
+  }
+  const { oci, ...rest } = value;
+  return rest;
+};
+const withoutOracle = (project) => ({
+  ...project,
+  nodes: project.nodes.map((node, index) => (index % 2 === 0 ? { ...node, service: dropOci(node.service), terraform: dropOci(node.terraform) } : node)),
+});
 const cases = [
   ...TEMPLATES.filter((preset) => preset.id !== 'blank').map((preset) => [preset.id, preset.build()]),
-  ...['aws', 'gcp', 'azure'].map((provider) => [`properties-${provider}`, withProperties({ ...STUDIO_PRESETS[0].build(), provider })]),
+  ...['aws', 'gcp', 'azure', 'oci'].map((provider) => [`properties-${provider}`, withProperties({ ...STUDIO_PRESETS[0].build(), provider })]),
   ['blank', STUDIO_PRESETS.find((preset) => preset.id === 'blank').build()],
   // Servicios que el generador aún no cubre: cada uno deja su aviso, con o sin nombre propio.
-  ...['aws', 'azure'].map((provider) => [`unsupported-${provider}`, withUnsupported({ ...DATA_BLUEPRINTS[0].build(), provider })]),
+  ...['aws', 'azure', 'oci'].map((provider) => [`unsupported-${provider}`, withUnsupported({ ...DATA_BLUEPRINTS[0].build(), provider })]),
+  // Oracle Cloud con nodos de antes de la cuarta nube (sin nombre ni recurso en OCI): se avisa de cada uno.
+  ['legacy-oci', withoutOracle({ ...STUDIO_PRESETS[0].build(), provider: 'oci' })],
 ];
 for (const [name, project] of cases) {
   writeFileSync(join(golden, `${name}.json`), JSON.stringify({ cloudProvider: project.provider, nodes: project.nodes, connections: project.links }, null, 2) + '\n');

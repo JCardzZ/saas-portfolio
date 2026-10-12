@@ -40,12 +40,14 @@
       "service": {
         "aws": "Application LB",
         "gcp": "Cloud Load Balancing",
-        "azure": "Application Gateway"
+        "azure": "Application Gateway",
+        "oci": "Load Balancer"
       },
       "terraform": {
         "aws": "aws_lb",
         "gcp": "google_compute_global_forwarding_rule",
-        "azure": "azurerm_application_gateway"
+        "azure": "azurerm_application_gateway",
+        "oci": "oci_load_balancer_load_balancer"
       },
       "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
     },
@@ -65,12 +67,14 @@
       "service": {
         "aws": "ECS Fargate",
         "gcp": "Cloud Run",
-        "azure": "Container Apps"
+        "azure": "Container Apps",
+        "oci": "Container Instances"
       },
       "terraform": {
         "aws": "aws_ecs_service",
         "gcp": "google_cloud_run_v2_service",
-        "azure": "azurerm_container_app"
+        "azure": "azurerm_container_app",
+        "oci": "oci_container_instances_container_instance"
       },
       "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
     },
@@ -84,7 +88,8 @@
       "service": {
         "aws": "Aurora Global Database",
         "gcp": "Cloud Spanner",
-        "azure": "Azure SQL Database (failover groups)"
+        "azure": "Azure SQL Database (failover groups)",
+        "oci": "Autonomous AI Database (Data Guard entre regiones)"
       },
       "icon": {
         "default": "provider",
@@ -94,7 +99,8 @@
       "terraform": {
         "aws": "aws_rds_global_cluster",
         "gcp": "google_spanner_instance",
-        "azure": "azurerm_mssql_failover_group"
+        "azure": "azurerm_mssql_failover_group",
+        "oci": "oci_database_autonomous_database"
       },
       "why": "Una región atiende las escrituras y otra guarda una réplica lista para tomar el relevo si la primera cae.",
       "custom": true
@@ -109,7 +115,8 @@
       "service": {
         "aws": "ECS Fargate",
         "gcp": "Cloud Run",
-        "azure": "Container Apps"
+        "azure": "Container Apps",
+        "oci": "Container Instances"
       },
       "icon": {
         "default": "docker",
@@ -120,7 +127,8 @@
       "terraform": {
         "aws": "aws_ecs_service",
         "gcp": "google_cloud_run_v2_service",
-        "azure": "azurerm_container_app"
+        "azure": "azurerm_container_app",
+        "oci": "oci_container_instances_container_instance"
       },
       "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
       "custom": true
@@ -135,7 +143,8 @@
       "service": {
         "aws": "Aurora Global Database",
         "gcp": "Cloud Spanner",
-        "azure": "Azure SQL Database (failover groups)"
+        "azure": "Azure SQL Database (failover groups)",
+        "oci": "Autonomous AI Database (Data Guard entre regiones)"
       },
       "icon": {
         "default": "provider",
@@ -145,7 +154,8 @@
       "terraform": {
         "aws": "aws_rds_global_cluster",
         "gcp": "google_spanner_instance",
-        "azure": "azurerm_mssql_failover_group"
+        "azure": "azurerm_mssql_failover_group",
+        "oci": "oci_database_autonomous_database"
       },
       "why": "Una región atiende las escrituras y otra guarda una réplica lista para tomar el relevo si la primera cae.",
       "custom": true
@@ -165,12 +175,14 @@
       "service": {
         "aws": "Secrets Manager",
         "gcp": "Secret Manager",
-        "azure": "Key Vault"
+        "azure": "Key Vault",
+        "oci": "Vault"
       },
       "terraform": {
         "aws": "aws_secretsmanager_secret",
         "gcp": "google_secret_manager_secret",
-        "azure": "azurerm_key_vault"
+        "azure": "azurerm_key_vault",
+        "oci": "oci_vault_secret"
       },
       "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
     }

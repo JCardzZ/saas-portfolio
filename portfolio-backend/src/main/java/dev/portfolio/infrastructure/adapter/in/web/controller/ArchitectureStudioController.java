@@ -6,9 +6,11 @@ import dev.portfolio.application.port.in.PricingUseCase;
 import dev.portfolio.api.ArchitectureStudioApi;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase;
 import dev.portfolio.application.port.in.CloudCatalogUseCase;
+import dev.portfolio.application.port.in.FeatureFlagUseCase;
 import dev.portfolio.application.port.in.TerraformUseCase;
 import dev.portfolio.domain.model.ArchitectureProjectDomain;
 import dev.portfolio.domain.model.CloudProviderDomain;
+import dev.portfolio.infrastructure.adapter.in.web.flags.CloudProviders;
 import dev.portfolio.infrastructure.adapter.in.web.mapper.ArchitectureWebMapper;
 import dev.portfolio.model.ArchitectureProject;
 import dev.portfolio.model.ArchitectureProjectRequest;
@@ -18,6 +20,7 @@ import dev.portfolio.model.CloudCatalogItem;
 import dev.portfolio.model.TerraformBundle;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,6 +38,7 @@ public class ArchitectureStudioController implements ArchitectureStudioApi {
     private final PricingUseCase pricing;
     private final ArchitectureWebMapper mapper;
     private final HttpServletRequest request;
+    private final ObjectProvider<FeatureFlagUseCase> flags;
 
     @Override
     public ResponseEntity<List<ArchitectureProjectSummary>> publicArchitectureProjectsGet() {
@@ -68,13 +72,13 @@ public class ArchitectureStudioController implements ArchitectureStudioApi {
     @Override
     public ResponseEntity<TerraformBundle> publicArchitectureGenerateTerraformPost(ArchitectureTopology architectureTopology) {
         return ResponseEntity.ok(mapper.toDto(terraform.generate(
-                CloudProviderDomain.fromCode(architectureTopology.getCloudProvider().getValue()),
+                CloudProviders.resolve(architectureTopology.getCloudProvider().getValue(), flags),
                 architectureTopology.getNodes(), architectureTopology.getConnections(), request.getRemoteAddr())));
     }
 
     @Override
     public ResponseEntity<PricingResponse> publicArchitecturePricingPost(PricingRequest pricingRequest) {
-        CloudProviderDomain provider = CloudProviderDomain.fromCode(pricingRequest.getCloudProvider().getValue());
+        CloudProviderDomain provider = CloudProviders.resolve(pricingRequest.getCloudProvider().getValue(), flags);
         return ResponseEntity.ok(mapper.toDto(provider, pricing.quote(provider, pricingRequest.getServices(), request.getRemoteAddr())));
     }
 }

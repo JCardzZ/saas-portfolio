@@ -39,7 +39,8 @@
         "service": {
           "aws": "Amazon API Gateway",
           "gcp": "Apigee",
-          "azure": "API Management"
+          "azure": "API Management",
+          "oci": "API Gateway"
         },
         "icon": {
           "default": "provider",
@@ -50,7 +51,8 @@
         "terraform": {
           "aws": "aws_apigatewayv2_api",
           "gcp": "google_apigee_organization",
-          "azure": "azurerm_api_management"
+          "azure": "azurerm_api_management",
+          "oci": "oci_apigateway_gateway"
         },
         "why": "Puerta de entrada con cuotas, claves, versionado y portal de desarrolladores.",
         "custom": true,
@@ -68,7 +70,8 @@
         "service": {
           "aws": "EKS",
           "gcp": "GKE",
-          "azure": "AKS"
+          "azure": "AKS",
+          "oci": "Kubernetes Engine (OKE)"
         },
         "icon": {
           "default": "kubernetes",
@@ -79,7 +82,8 @@
         "terraform": {
           "aws": "aws_eks_cluster",
           "gcp": "google_container_cluster",
-          "azure": "azurerm_kubernetes_cluster"
+          "azure": "azurerm_kubernetes_cluster",
+          "oci": "oci_containerengine_cluster"
         },
         "why": "Orquestación de contenedores para varias réplicas y despliegues graduales.",
         "custom": true,
@@ -104,12 +108,14 @@
         "service": {
           "aws": "RDS PostgreSQL",
           "gcp": "Cloud SQL",
-          "azure": "PostgreSQL Flexible"
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
         },
         "terraform": {
           "aws": "aws_db_instance",
           "gcp": "google_sql_database_instance",
-          "azure": "azurerm_postgresql_flexible_server"
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
         },
         "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
       },
@@ -128,12 +134,14 @@
         "service": {
           "aws": "ElastiCache",
           "gcp": "Memorystore",
-          "azure": "Cache for Redis"
+          "azure": "Cache for Redis",
+          "oci": "OCI Cache"
         },
         "terraform": {
           "aws": "aws_elasticache_replication_group",
           "gcp": "google_redis_instance",
-          "azure": "azurerm_redis_cache"
+          "azure": "azurerm_redis_cache",
+          "oci": "oci_redis_redis_cluster"
         },
         "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
       },
@@ -147,7 +155,8 @@
         "service": {
           "aws": "Cognito",
           "gcp": "Identity Platform",
-          "azure": "Entra External ID"
+          "azure": "Entra External ID",
+          "oci": "IAM (Identity Domains)"
         },
         "icon": {
           "default": "provider",
@@ -157,7 +166,8 @@
         "terraform": {
           "aws": "aws_cognito_user_pool",
           "gcp": "google_identity_platform_config",
-          "azure": "azuread_application"
+          "azure": "azuread_application",
+          "oci": "oci_identity_domain"
         },
         "why": "Registro e inicio de sesión de usuarios finales.",
         "custom": true
@@ -177,12 +187,14 @@
         "service": {
           "aws": "Secrets Manager",
           "gcp": "Secret Manager",
-          "azure": "Key Vault"
+          "azure": "Key Vault",
+          "oci": "Vault"
         },
         "terraform": {
           "aws": "aws_secretsmanager_secret",
           "gcp": "google_secret_manager_secret",
-          "azure": "azurerm_key_vault"
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
         },
         "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
       },
@@ -201,12 +213,14 @@
         "service": {
           "aws": "CloudWatch",
           "gcp": "Cloud Monitoring",
-          "azure": "Azure Monitor"
+          "azure": "Azure Monitor",
+          "oci": "Monitoring"
         },
         "terraform": {
           "aws": "aws_cloudwatch_log_group",
           "gcp": "google_monitoring_alert_policy",
-          "azure": "azurerm_log_analytics_workspace"
+          "azure": "azurerm_log_analytics_workspace",
+          "oci": "oci_monitoring_alarm"
         },
         "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
       },
@@ -225,12 +239,14 @@
         "service": {
           "aws": "ECR",
           "gcp": "Artifact Registry",
-          "azure": "Container Registry"
+          "azure": "Container Registry",
+          "oci": "Container Registry"
         },
         "terraform": {
           "aws": "aws_ecr_repository",
           "gcp": "google_artifact_registry_repository",
-          "azure": "azurerm_container_registry"
+          "azure": "azurerm_container_registry",
+          "oci": "oci_artifacts_container_repository"
         },
         "why": "Guarda la imagen del backend que despliega la capa de cómputo."
       }
@@ -356,12 +372,14 @@
         "service": {
           "aws": "Application LB",
           "gcp": "Cloud Load Balancing",
-          "azure": "Application Gateway"
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
         },
         "terraform": {
           "aws": "aws_lb",
           "gcp": "google_compute_global_forwarding_rule",
-          "azure": "azurerm_application_gateway"
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
         },
         "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
       },
@@ -381,12 +399,14 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS.",
         "props": {
@@ -405,7 +425,8 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "icon": {
           "default": "docker",
@@ -416,7 +437,8 @@
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
         "custom": true,
@@ -432,7 +454,8 @@
         "service": {
           "aws": "Lambda",
           "gcp": "Cloud Functions",
-          "azure": "Functions"
+          "azure": "Functions",
+          "oci": "Functions"
         },
         "icon": {
           "default": "provider",
@@ -442,7 +465,8 @@
         "terraform": {
           "aws": "aws_lambda_function",
           "gcp": "google_cloudfunctions2_function",
-          "azure": "azurerm_linux_function_app"
+          "azure": "azurerm_linux_function_app",
+          "oci": "oci_functions_function"
         },
         "why": "Código que se ejecuta bajo demanda, sin servidor que mantener.",
         "custom": true
@@ -463,12 +487,14 @@
         "service": {
           "aws": "RDS PostgreSQL",
           "gcp": "Cloud SQL",
-          "azure": "PostgreSQL Flexible"
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
         },
         "terraform": {
           "aws": "aws_db_instance",
           "gcp": "google_sql_database_instance",
-          "azure": "azurerm_postgresql_flexible_server"
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
         },
         "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
       },
@@ -487,12 +513,14 @@
         "service": {
           "aws": "ElastiCache",
           "gcp": "Memorystore",
-          "azure": "Cache for Redis"
+          "azure": "Cache for Redis",
+          "oci": "OCI Cache"
         },
         "terraform": {
           "aws": "aws_elasticache_replication_group",
           "gcp": "google_redis_instance",
-          "azure": "azurerm_redis_cache"
+          "azure": "azurerm_redis_cache",
+          "oci": "oci_redis_redis_cluster"
         },
         "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
       },
@@ -511,12 +539,14 @@
         "service": {
           "aws": "Secrets Manager",
           "gcp": "Secret Manager",
-          "azure": "Key Vault"
+          "azure": "Key Vault",
+          "oci": "Vault"
         },
         "terraform": {
           "aws": "aws_secretsmanager_secret",
           "gcp": "google_secret_manager_secret",
-          "azure": "azurerm_key_vault"
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
         },
         "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
       },
@@ -535,12 +565,14 @@
         "service": {
           "aws": "CloudWatch",
           "gcp": "Cloud Monitoring",
-          "azure": "Azure Monitor"
+          "azure": "Azure Monitor",
+          "oci": "Monitoring"
         },
         "terraform": {
           "aws": "aws_cloudwatch_log_group",
           "gcp": "google_monitoring_alert_policy",
-          "azure": "azurerm_log_analytics_workspace"
+          "azure": "azurerm_log_analytics_workspace",
+          "oci": "oci_monitoring_alarm"
         },
         "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
       },
@@ -554,7 +586,8 @@
         "service": {
           "aws": "SQS",
           "gcp": "Pub/Sub",
-          "azure": "Service Bus"
+          "azure": "Service Bus",
+          "oci": "Queue"
         },
         "icon": {
           "default": "provider",
@@ -565,7 +598,8 @@
         "terraform": {
           "aws": "aws_sqs_queue",
           "gcp": "google_pubsub_subscription",
-          "azure": "azurerm_servicebus_queue"
+          "azure": "azurerm_servicebus_queue",
+          "oci": "oci_queue_queue"
         },
         "why": "Cola de trabajo para tareas en segundo plano, como la reindexación.",
         "custom": true
@@ -751,12 +785,14 @@
         "service": {
           "aws": "S3 + CloudFront",
           "gcp": "Cloud Storage + CDN",
-          "azure": "Storage + Front Door"
+          "azure": "Storage + Front Door",
+          "oci": "Object Storage"
         },
         "terraform": {
           "aws": "aws_cloudfront_distribution",
           "gcp": "google_storage_bucket",
-          "azure": "azurerm_cdn_frontdoor_profile"
+          "azure": "azurerm_cdn_frontdoor_profile",
+          "oci": "oci_objectstorage_bucket"
         },
         "why": "El build estático del frontend, servido desde almacenamiento de objetos."
       },
@@ -770,7 +806,8 @@
         "service": {
           "aws": "WAF",
           "gcp": "Cloud Armor",
-          "azure": "Web Application Firewall"
+          "azure": "Web Application Firewall",
+          "oci": "Web Application Firewall"
         },
         "icon": {
           "default": "provider",
@@ -781,7 +818,8 @@
         "terraform": {
           "aws": "aws_wafv2_web_acl",
           "gcp": "google_compute_security_policy",
-          "azure": "azurerm_web_application_firewall_policy"
+          "azure": "azurerm_web_application_firewall_policy",
+          "oci": "oci_waf_web_app_firewall"
         },
         "why": "Filtra tráfico malicioso antes de que llegue a la aplicación.",
         "custom": true
@@ -801,12 +839,14 @@
         "service": {
           "aws": "Application LB",
           "gcp": "Cloud Load Balancing",
-          "azure": "Application Gateway"
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
         },
         "terraform": {
           "aws": "aws_lb",
           "gcp": "google_compute_global_forwarding_rule",
-          "azure": "azurerm_application_gateway"
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
         },
         "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
       },
@@ -826,12 +866,14 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS.",
         "props": {
@@ -849,7 +891,8 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "icon": {
           "default": "docker",
@@ -860,7 +903,8 @@
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
         "custom": true
@@ -881,12 +925,14 @@
         "service": {
           "aws": "RDS PostgreSQL",
           "gcp": "Cloud SQL",
-          "azure": "PostgreSQL Flexible"
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
         },
         "terraform": {
           "aws": "aws_db_instance",
           "gcp": "google_sql_database_instance",
-          "azure": "azurerm_postgresql_flexible_server"
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
         },
         "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
       },
@@ -906,12 +952,14 @@
         "service": {
           "aws": "RDS PostgreSQL",
           "gcp": "Cloud SQL",
-          "azure": "PostgreSQL Flexible"
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
         },
         "terraform": {
           "aws": "aws_db_instance",
           "gcp": "google_sql_database_instance",
-          "azure": "azurerm_postgresql_flexible_server"
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
         },
         "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet.",
         "name": "RDS · réplica Multi-AZ",
@@ -932,12 +980,14 @@
         "service": {
           "aws": "ElastiCache",
           "gcp": "Memorystore",
-          "azure": "Cache for Redis"
+          "azure": "Cache for Redis",
+          "oci": "OCI Cache"
         },
         "terraform": {
           "aws": "aws_elasticache_replication_group",
           "gcp": "google_redis_instance",
-          "azure": "azurerm_redis_cache"
+          "azure": "azurerm_redis_cache",
+          "oci": "oci_redis_redis_cluster"
         },
         "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
       },
@@ -951,7 +1001,8 @@
         "service": {
           "aws": "SQS",
           "gcp": "Pub/Sub",
-          "azure": "Service Bus"
+          "azure": "Service Bus",
+          "oci": "Queue"
         },
         "icon": {
           "default": "provider",
@@ -962,7 +1013,8 @@
         "terraform": {
           "aws": "aws_sqs_queue",
           "gcp": "google_pubsub_subscription",
-          "azure": "azurerm_servicebus_queue"
+          "azure": "azurerm_servicebus_queue",
+          "oci": "oci_queue_queue"
         },
         "why": "Cola de trabajo para tareas en segundo plano, como la reindexación.",
         "custom": true
@@ -982,12 +1034,14 @@
         "service": {
           "aws": "CloudWatch",
           "gcp": "Cloud Monitoring",
-          "azure": "Azure Monitor"
+          "azure": "Azure Monitor",
+          "oci": "Monitoring"
         },
         "terraform": {
           "aws": "aws_cloudwatch_log_group",
           "gcp": "google_monitoring_alert_policy",
-          "azure": "azurerm_log_analytics_workspace"
+          "azure": "azurerm_log_analytics_workspace",
+          "oci": "oci_monitoring_alarm"
         },
         "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
       },
@@ -1006,12 +1060,14 @@
         "service": {
           "aws": "Secrets Manager",
           "gcp": "Secret Manager",
-          "azure": "Key Vault"
+          "azure": "Key Vault",
+          "oci": "Vault"
         },
         "terraform": {
           "aws": "aws_secretsmanager_secret",
           "gcp": "google_secret_manager_secret",
-          "azure": "azurerm_key_vault"
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
         },
         "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
       }
@@ -1157,12 +1213,14 @@
         "service": {
           "aws": "Application LB",
           "gcp": "Cloud Load Balancing",
-          "azure": "Application Gateway"
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
         },
         "terraform": {
           "aws": "aws_lb",
           "gcp": "google_compute_global_forwarding_rule",
-          "azure": "azurerm_application_gateway"
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
         },
         "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
       },
@@ -1182,12 +1240,14 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
       },
@@ -1201,7 +1261,8 @@
         "service": {
           "aws": "MSK (Kafka)",
           "gcp": "Managed Kafka",
-          "azure": "Event Hubs"
+          "azure": "Event Hubs",
+          "oci": "Streaming with Apache Kafka"
         },
         "icon": {
           "default": "kafka",
@@ -1211,7 +1272,8 @@
         "terraform": {
           "aws": "aws_msk_cluster",
           "gcp": "google_managed_kafka_cluster",
-          "azure": "azurerm_eventhub_namespace"
+          "azure": "azurerm_eventhub_namespace",
+          "oci": "oci_managed_kafka_kafka_cluster"
         },
         "why": "Bus de eventos para desacoplar productores y consumidores.",
         "custom": true
@@ -1226,7 +1288,8 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "icon": {
           "default": "docker",
@@ -1237,7 +1300,8 @@
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
         "custom": true
@@ -1252,7 +1316,8 @@
         "service": {
           "aws": "DynamoDB",
           "gcp": "Firestore (Datastore)",
-          "azure": "Cosmos DB"
+          "azure": "Cosmos DB",
+          "oci": "NoSQL Database"
         },
         "icon": {
           "default": "provider",
@@ -1263,7 +1328,8 @@
         "terraform": {
           "aws": "aws_dynamodb_table",
           "gcp": "google_firestore_database",
-          "azure": "azurerm_cosmosdb_account"
+          "azure": "azurerm_cosmosdb_account",
+          "oci": "oci_nosql_table"
         },
         "why": "Almacén clave-valor para datos de acceso muy frecuente.",
         "custom": true
@@ -1283,12 +1349,14 @@
         "service": {
           "aws": "Secrets Manager",
           "gcp": "Secret Manager",
-          "azure": "Key Vault"
+          "azure": "Key Vault",
+          "oci": "Vault"
         },
         "terraform": {
           "aws": "aws_secretsmanager_secret",
           "gcp": "google_secret_manager_secret",
-          "azure": "azurerm_key_vault"
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
         },
         "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
       },
@@ -1307,12 +1375,14 @@
         "service": {
           "aws": "CloudWatch",
           "gcp": "Cloud Monitoring",
-          "azure": "Azure Monitor"
+          "azure": "Azure Monitor",
+          "oci": "Monitoring"
         },
         "terraform": {
           "aws": "aws_cloudwatch_log_group",
           "gcp": "google_monitoring_alert_policy",
-          "azure": "azurerm_log_analytics_workspace"
+          "azure": "azurerm_log_analytics_workspace",
+          "oci": "oci_monitoring_alarm"
         },
         "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
       }
@@ -1439,12 +1509,14 @@
         "service": {
           "aws": "S3 + CloudFront",
           "gcp": "Cloud Storage + CDN",
-          "azure": "Storage + Front Door"
+          "azure": "Storage + Front Door",
+          "oci": "Object Storage"
         },
         "terraform": {
           "aws": "aws_cloudfront_distribution",
           "gcp": "google_storage_bucket",
-          "azure": "azurerm_cdn_frontdoor_profile"
+          "azure": "azurerm_cdn_frontdoor_profile",
+          "oci": "oci_objectstorage_bucket"
         },
         "why": "El build estático del frontend, servido desde almacenamiento de objetos."
       },
@@ -1463,12 +1535,14 @@
         "service": {
           "aws": "Application LB",
           "gcp": "Cloud Load Balancing",
-          "azure": "Application Gateway"
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
         },
         "terraform": {
           "aws": "aws_lb",
           "gcp": "google_compute_global_forwarding_rule",
-          "azure": "azurerm_application_gateway"
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
         },
         "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
       },
@@ -1488,12 +1562,14 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
       },
@@ -1507,7 +1583,8 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "icon": {
           "default": "docker",
@@ -1518,7 +1595,8 @@
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
         "custom": true
@@ -1533,7 +1611,8 @@
         "service": {
           "aws": "MSK (Kafka)",
           "gcp": "Managed Kafka",
-          "azure": "Event Hubs"
+          "azure": "Event Hubs",
+          "oci": "Streaming with Apache Kafka"
         },
         "icon": {
           "default": "kafka",
@@ -1543,7 +1622,8 @@
         "terraform": {
           "aws": "aws_msk_cluster",
           "gcp": "google_managed_kafka_cluster",
-          "azure": "azurerm_eventhub_namespace"
+          "azure": "azurerm_eventhub_namespace",
+          "oci": "oci_managed_kafka_kafka_cluster"
         },
         "why": "Bus de eventos para desacoplar productores y consumidores.",
         "custom": true
@@ -1558,7 +1638,8 @@
         "service": {
           "aws": "Aurora PostgreSQL",
           "gcp": "AlloyDB",
-          "azure": "Azure Database for PostgreSQL (Elastic Clusters)"
+          "azure": "Azure Database for PostgreSQL (Elastic Clusters)",
+          "oci": "OCI Database with PostgreSQL"
         },
         "icon": {
           "default": "postgresql",
@@ -1569,7 +1650,8 @@
         "terraform": {
           "aws": "aws_rds_cluster",
           "gcp": "google_alloydb_cluster",
-          "azure": "azurerm_postgresql_flexible_server"
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
         },
         "why": "Compatible con PostgreSQL, con almacenamiento distribuido y réplicas de lectura rápidas.",
         "custom": true
@@ -1602,12 +1684,14 @@
         "service": {
           "aws": "ElastiCache",
           "gcp": "Memorystore",
-          "azure": "Cache for Redis"
+          "azure": "Cache for Redis",
+          "oci": "OCI Cache"
         },
         "terraform": {
           "aws": "aws_elasticache_replication_group",
           "gcp": "google_redis_instance",
-          "azure": "azurerm_redis_cache"
+          "azure": "azurerm_redis_cache",
+          "oci": "oci_redis_redis_cluster"
         },
         "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
       },
@@ -1621,7 +1705,8 @@
         "service": {
           "aws": "Aurora PostgreSQL",
           "gcp": "AlloyDB",
-          "azure": "Azure Database for PostgreSQL (Elastic Clusters)"
+          "azure": "Azure Database for PostgreSQL (Elastic Clusters)",
+          "oci": "OCI Database with PostgreSQL"
         },
         "icon": {
           "default": "postgresql",
@@ -1632,7 +1717,8 @@
         "terraform": {
           "aws": "aws_rds_cluster",
           "gcp": "google_alloydb_cluster",
-          "azure": "azurerm_postgresql_flexible_server"
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
         },
         "why": "Compatible con PostgreSQL, con almacenamiento distribuido y réplicas de lectura rápidas.",
         "custom": true
@@ -1652,12 +1738,14 @@
         "service": {
           "aws": "Secrets Manager",
           "gcp": "Secret Manager",
-          "azure": "Key Vault"
+          "azure": "Key Vault",
+          "oci": "Vault"
         },
         "terraform": {
           "aws": "aws_secretsmanager_secret",
           "gcp": "google_secret_manager_secret",
-          "azure": "azurerm_key_vault"
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
         },
         "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
       },
@@ -1676,12 +1764,14 @@
         "service": {
           "aws": "CloudWatch",
           "gcp": "Cloud Monitoring",
-          "azure": "Azure Monitor"
+          "azure": "Azure Monitor",
+          "oci": "Monitoring"
         },
         "terraform": {
           "aws": "aws_cloudwatch_log_group",
           "gcp": "google_monitoring_alert_policy",
-          "azure": "azurerm_log_analytics_workspace"
+          "azure": "azurerm_log_analytics_workspace",
+          "oci": "oci_monitoring_alarm"
         },
         "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
       }
@@ -1840,12 +1930,14 @@
         "service": {
           "aws": "S3 + CloudFront",
           "gcp": "Cloud Storage + CDN",
-          "azure": "Storage + Front Door"
+          "azure": "Storage + Front Door",
+          "oci": "Object Storage"
         },
         "terraform": {
           "aws": "aws_cloudfront_distribution",
           "gcp": "google_storage_bucket",
-          "azure": "azurerm_cdn_frontdoor_profile"
+          "azure": "azurerm_cdn_frontdoor_profile",
+          "oci": "oci_objectstorage_bucket"
         },
         "why": "El build estático del frontend, servido desde almacenamiento de objetos."
       },
@@ -1859,7 +1951,8 @@
         "service": {
           "aws": "Amazon API Gateway",
           "gcp": "Apigee",
-          "azure": "API Management"
+          "azure": "API Management",
+          "oci": "API Gateway"
         },
         "icon": {
           "default": "provider",
@@ -1870,7 +1963,8 @@
         "terraform": {
           "aws": "aws_apigatewayv2_api",
           "gcp": "google_apigee_organization",
-          "azure": "azurerm_api_management"
+          "azure": "azurerm_api_management",
+          "oci": "oci_apigateway_gateway"
         },
         "why": "Puerta de entrada con cuotas, claves, versionado y portal de desarrolladores.",
         "custom": true
@@ -1891,12 +1985,14 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
       },
@@ -1910,7 +2006,8 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "icon": {
           "default": "docker",
@@ -1921,7 +2018,8 @@
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
         "custom": true
@@ -1941,12 +2039,14 @@
         "service": {
           "aws": "ElastiCache",
           "gcp": "Memorystore",
-          "azure": "Cache for Redis"
+          "azure": "Cache for Redis",
+          "oci": "OCI Cache"
         },
         "terraform": {
           "aws": "aws_elasticache_replication_group",
           "gcp": "google_redis_instance",
-          "azure": "azurerm_redis_cache"
+          "azure": "azurerm_redis_cache",
+          "oci": "oci_redis_redis_cluster"
         },
         "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
       },
@@ -1966,12 +2066,14 @@
         "service": {
           "aws": "RDS PostgreSQL",
           "gcp": "Cloud SQL",
-          "azure": "PostgreSQL Flexible"
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
         },
         "terraform": {
           "aws": "aws_db_instance",
           "gcp": "google_sql_database_instance",
-          "azure": "azurerm_postgresql_flexible_server"
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
         },
         "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
       },
@@ -1985,7 +2087,8 @@
         "service": {
           "aws": "Cognito",
           "gcp": "Identity Platform",
-          "azure": "Entra External ID"
+          "azure": "Entra External ID",
+          "oci": "IAM (Identity Domains)"
         },
         "icon": {
           "default": "provider",
@@ -1995,7 +2098,8 @@
         "terraform": {
           "aws": "aws_cognito_user_pool",
           "gcp": "google_identity_platform_config",
-          "azure": "azuread_application"
+          "azure": "azuread_application",
+          "oci": "oci_identity_domain"
         },
         "why": "Registro e inicio de sesión de usuarios finales.",
         "custom": true
@@ -2010,7 +2114,8 @@
         "service": {
           "aws": "SQS",
           "gcp": "Pub/Sub",
-          "azure": "Service Bus"
+          "azure": "Service Bus",
+          "oci": "Queue"
         },
         "icon": {
           "default": "provider",
@@ -2021,7 +2126,8 @@
         "terraform": {
           "aws": "aws_sqs_queue",
           "gcp": "google_pubsub_subscription",
-          "azure": "azurerm_servicebus_queue"
+          "azure": "azurerm_servicebus_queue",
+          "oci": "oci_queue_queue"
         },
         "why": "Cola de trabajo para tareas en segundo plano, como la reindexación.",
         "custom": true
@@ -2041,12 +2147,14 @@
         "service": {
           "aws": "Secrets Manager",
           "gcp": "Secret Manager",
-          "azure": "Key Vault"
+          "azure": "Key Vault",
+          "oci": "Vault"
         },
         "terraform": {
           "aws": "aws_secretsmanager_secret",
           "gcp": "google_secret_manager_secret",
-          "azure": "azurerm_key_vault"
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
         },
         "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
       },
@@ -2065,12 +2173,14 @@
         "service": {
           "aws": "CloudWatch",
           "gcp": "Cloud Monitoring",
-          "azure": "Azure Monitor"
+          "azure": "Azure Monitor",
+          "oci": "Monitoring"
         },
         "terraform": {
           "aws": "aws_cloudwatch_log_group",
           "gcp": "google_monitoring_alert_policy",
-          "azure": "azurerm_log_analytics_workspace"
+          "azure": "azurerm_log_analytics_workspace",
+          "oci": "oci_monitoring_alarm"
         },
         "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
       }
@@ -2207,7 +2317,8 @@
         "service": {
           "aws": "WAF",
           "gcp": "Cloud Armor",
-          "azure": "Web Application Firewall"
+          "azure": "Web Application Firewall",
+          "oci": "Web Application Firewall"
         },
         "icon": {
           "default": "provider",
@@ -2218,7 +2329,8 @@
         "terraform": {
           "aws": "aws_wafv2_web_acl",
           "gcp": "google_compute_security_policy",
-          "azure": "azurerm_web_application_firewall_policy"
+          "azure": "azurerm_web_application_firewall_policy",
+          "oci": "oci_waf_web_app_firewall"
         },
         "why": "Filtra tráfico malicioso antes de que llegue a la aplicación.",
         "custom": true
@@ -2233,7 +2345,8 @@
         "service": {
           "aws": "Amazon API Gateway",
           "gcp": "Apigee",
-          "azure": "API Management"
+          "azure": "API Management",
+          "oci": "API Gateway"
         },
         "icon": {
           "default": "provider",
@@ -2244,7 +2357,8 @@
         "terraform": {
           "aws": "aws_apigatewayv2_api",
           "gcp": "google_apigee_organization",
-          "azure": "azurerm_api_management"
+          "azure": "azurerm_api_management",
+          "oci": "oci_apigateway_gateway"
         },
         "why": "Puerta de entrada con cuotas, claves, versionado y portal de desarrolladores.",
         "custom": true
@@ -2265,12 +2379,14 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
       },
@@ -2284,7 +2400,8 @@
         "service": {
           "aws": "MSK (Kafka)",
           "gcp": "Managed Kafka",
-          "azure": "Event Hubs"
+          "azure": "Event Hubs",
+          "oci": "Streaming with Apache Kafka"
         },
         "icon": {
           "default": "kafka",
@@ -2294,7 +2411,8 @@
         "terraform": {
           "aws": "aws_msk_cluster",
           "gcp": "google_managed_kafka_cluster",
-          "azure": "azurerm_eventhub_namespace"
+          "azure": "azurerm_eventhub_namespace",
+          "oci": "oci_managed_kafka_kafka_cluster"
         },
         "why": "Bus de eventos para desacoplar productores y consumidores.",
         "custom": true
@@ -2309,7 +2427,8 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "icon": {
           "default": "docker",
@@ -2320,7 +2439,8 @@
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
         "custom": true
@@ -2340,12 +2460,14 @@
         "service": {
           "aws": "ElastiCache",
           "gcp": "Memorystore",
-          "azure": "Cache for Redis"
+          "azure": "Cache for Redis",
+          "oci": "OCI Cache"
         },
         "terraform": {
           "aws": "aws_elasticache_replication_group",
           "gcp": "google_redis_instance",
-          "azure": "azurerm_redis_cache"
+          "azure": "azurerm_redis_cache",
+          "oci": "oci_redis_redis_cluster"
         },
         "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
       },
@@ -2365,12 +2487,14 @@
         "service": {
           "aws": "RDS PostgreSQL",
           "gcp": "Cloud SQL",
-          "azure": "PostgreSQL Flexible"
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
         },
         "terraform": {
           "aws": "aws_db_instance",
           "gcp": "google_sql_database_instance",
-          "azure": "azurerm_postgresql_flexible_server"
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
         },
         "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
       },
@@ -2389,12 +2513,14 @@
         "service": {
           "aws": "CloudWatch",
           "gcp": "Cloud Monitoring",
-          "azure": "Azure Monitor"
+          "azure": "Azure Monitor",
+          "oci": "Monitoring"
         },
         "terraform": {
           "aws": "aws_cloudwatch_log_group",
           "gcp": "google_monitoring_alert_policy",
-          "azure": "azurerm_log_analytics_workspace"
+          "azure": "azurerm_log_analytics_workspace",
+          "oci": "oci_monitoring_alarm"
         },
         "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
       },
@@ -2555,12 +2681,14 @@
         "service": {
           "aws": "S3 + CloudFront",
           "gcp": "Cloud Storage + CDN",
-          "azure": "Storage + Front Door"
+          "azure": "Storage + Front Door",
+          "oci": "Object Storage"
         },
         "terraform": {
           "aws": "aws_cloudfront_distribution",
           "gcp": "google_storage_bucket",
-          "azure": "azurerm_cdn_frontdoor_profile"
+          "azure": "azurerm_cdn_frontdoor_profile",
+          "oci": "oci_objectstorage_bucket"
         },
         "why": "El build estático del frontend, servido desde almacenamiento de objetos."
       },
@@ -2579,12 +2707,14 @@
         "service": {
           "aws": "Application LB",
           "gcp": "Cloud Load Balancing",
-          "azure": "Application Gateway"
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
         },
         "terraform": {
           "aws": "aws_lb",
           "gcp": "google_compute_global_forwarding_rule",
-          "azure": "azurerm_application_gateway"
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
         },
         "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
       },
@@ -2604,12 +2734,14 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
       },
@@ -2623,7 +2755,8 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "icon": {
           "default": "docker",
@@ -2634,7 +2767,8 @@
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
         "custom": true
@@ -2654,12 +2788,14 @@
         "service": {
           "aws": "ElastiCache",
           "gcp": "Memorystore",
-          "azure": "Cache for Redis"
+          "azure": "Cache for Redis",
+          "oci": "OCI Cache"
         },
         "terraform": {
           "aws": "aws_elasticache_replication_group",
           "gcp": "google_redis_instance",
-          "azure": "azurerm_redis_cache"
+          "azure": "azurerm_redis_cache",
+          "oci": "oci_redis_redis_cluster"
         },
         "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
       },
@@ -2679,12 +2815,14 @@
         "service": {
           "aws": "RDS PostgreSQL",
           "gcp": "Cloud SQL",
-          "azure": "PostgreSQL Flexible"
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
         },
         "terraform": {
           "aws": "aws_db_instance",
           "gcp": "google_sql_database_instance",
-          "azure": "azurerm_postgresql_flexible_server"
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
         },
         "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
       },
@@ -2698,7 +2836,8 @@
         "service": {
           "aws": "Bedrock",
           "gcp": "Vertex AI",
-          "azure": "Azure OpenAI"
+          "azure": "Azure OpenAI",
+          "oci": "Generative AI Agents"
         },
         "icon": {
           "default": "provider",
@@ -2709,7 +2848,8 @@
         "terraform": {
           "aws": "aws_bedrockagent_agent",
           "gcp": "google_vertex_ai_endpoint",
-          "azure": "azurerm_cognitive_account"
+          "azure": "azurerm_cognitive_account",
+          "oci": "oci_generative_ai_agent_agent"
         },
         "why": "Modelos fundacionales dentro de la nube, con sus controles de red e identidad.",
         "custom": true
@@ -2724,7 +2864,8 @@
         "service": {
           "aws": "SQS",
           "gcp": "Pub/Sub",
-          "azure": "Service Bus"
+          "azure": "Service Bus",
+          "oci": "Queue"
         },
         "icon": {
           "default": "provider",
@@ -2735,7 +2876,8 @@
         "terraform": {
           "aws": "aws_sqs_queue",
           "gcp": "google_pubsub_subscription",
-          "azure": "azurerm_servicebus_queue"
+          "azure": "azurerm_servicebus_queue",
+          "oci": "oci_queue_queue"
         },
         "why": "Cola de trabajo para tareas en segundo plano, como la reindexación.",
         "custom": true
@@ -2750,7 +2892,8 @@
         "service": {
           "aws": "S3",
           "gcp": "Cloud Storage",
-          "azure": "Blob Storage"
+          "azure": "Blob Storage",
+          "oci": "Object Storage"
         },
         "icon": {
           "default": "provider",
@@ -2761,7 +2904,8 @@
         "terraform": {
           "aws": "aws_s3_bucket",
           "gcp": "google_storage_bucket",
-          "azure": "azurerm_storage_container"
+          "azure": "azurerm_storage_container",
+          "oci": "oci_objectstorage_bucket"
         },
         "why": "Archivos y copias de seguridad.",
         "custom": true
@@ -2781,12 +2925,14 @@
         "service": {
           "aws": "Secrets Manager",
           "gcp": "Secret Manager",
-          "azure": "Key Vault"
+          "azure": "Key Vault",
+          "oci": "Vault"
         },
         "terraform": {
           "aws": "aws_secretsmanager_secret",
           "gcp": "google_secret_manager_secret",
-          "azure": "azurerm_key_vault"
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
         },
         "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
       }
@@ -2936,12 +3082,14 @@
         "service": {
           "aws": "Application LB",
           "gcp": "Cloud Load Balancing",
-          "azure": "Application Gateway"
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
         },
         "terraform": {
           "aws": "aws_lb",
           "gcp": "google_compute_global_forwarding_rule",
-          "azure": "azurerm_application_gateway"
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
         },
         "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
       },
@@ -2961,12 +3109,14 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
       },
@@ -2986,12 +3136,14 @@
         "service": {
           "aws": "RDS PostgreSQL",
           "gcp": "Cloud SQL",
-          "azure": "PostgreSQL Flexible"
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
         },
         "terraform": {
           "aws": "aws_db_instance",
           "gcp": "google_sql_database_instance",
-          "azure": "azurerm_postgresql_flexible_server"
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
         },
         "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
       },
@@ -3005,13 +3157,15 @@
         "service": {
           "aws": "Database Migration Service",
           "gcp": "Datastream",
-          "azure": "Data Factory (CDC)"
+          "azure": "Data Factory (CDC)",
+          "oci": "GoldenGate"
         },
         "icon": "provider",
         "terraform": {
           "aws": "aws_dms_replication_task",
           "gcp": "google_datastream_stream",
-          "azure": "azurerm_data_factory"
+          "azure": "azurerm_data_factory",
+          "oci": "oci_golden_gate_deployment"
         },
         "why": "Lee el registro de transacciones de la base de datos y publica cada cambio, sin tocar la aplicación.",
         "custom": true
@@ -3026,7 +3180,8 @@
         "service": {
           "aws": "Redshift",
           "gcp": "BigQuery",
-          "azure": "Synapse Analytics"
+          "azure": "Synapse Analytics",
+          "oci": "Autonomous AI Lakehouse"
         },
         "icon": {
           "default": "provider",
@@ -3037,7 +3192,8 @@
         "terraform": {
           "aws": "aws_redshift_cluster",
           "gcp": "google_bigquery_dataset",
-          "azure": "azurerm_synapse_workspace"
+          "azure": "azurerm_synapse_workspace",
+          "oci": "oci_database_autonomous_database"
         },
         "why": "Consultas analíticas sobre grandes volúmenes de datos.",
         "custom": true
@@ -3057,12 +3213,14 @@
         "service": {
           "aws": "Secrets Manager",
           "gcp": "Secret Manager",
-          "azure": "Key Vault"
+          "azure": "Key Vault",
+          "oci": "Vault"
         },
         "terraform": {
           "aws": "aws_secretsmanager_secret",
           "gcp": "google_secret_manager_secret",
-          "azure": "azurerm_key_vault"
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
         },
         "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
       }
@@ -3188,12 +3346,14 @@
         "service": {
           "aws": "Application LB",
           "gcp": "Cloud Load Balancing",
-          "azure": "Application Gateway"
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
         },
         "terraform": {
           "aws": "aws_lb",
           "gcp": "google_compute_global_forwarding_rule",
-          "azure": "azurerm_application_gateway"
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
         },
         "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
       },
@@ -3213,12 +3373,14 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
       },
@@ -3232,7 +3394,8 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "icon": {
           "default": "docker",
@@ -3243,7 +3406,8 @@
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
         "custom": true
@@ -3264,12 +3428,14 @@
         "service": {
           "aws": "RDS PostgreSQL",
           "gcp": "Cloud SQL",
-          "azure": "PostgreSQL Flexible"
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
         },
         "terraform": {
           "aws": "aws_db_instance",
           "gcp": "google_sql_database_instance",
-          "azure": "azurerm_postgresql_flexible_server"
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
         },
         "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
       },
@@ -3283,7 +3449,8 @@
         "service": {
           "aws": "Kinesis Data Streams",
           "gcp": "Pub/Sub",
-          "azure": "Event Hubs"
+          "azure": "Event Hubs",
+          "oci": "Streaming"
         },
         "icon": {
           "default": "provider",
@@ -3293,7 +3460,8 @@
         "terraform": {
           "aws": "aws_kinesis_stream",
           "gcp": "google_pubsub_topic",
-          "azure": "azurerm_eventhub"
+          "azure": "azurerm_eventhub",
+          "oci": "oci_streaming_stream"
         },
         "why": "Ingesta de eventos del propio proveedor: sin clúster que dimensionar, a cambio de su API en lugar de la de Kafka.",
         "custom": true
@@ -3308,7 +3476,8 @@
         "service": {
           "aws": "Managed Flink",
           "gcp": "Dataflow",
-          "azure": "Stream Analytics"
+          "azure": "Stream Analytics",
+          "oci": "Data Flow"
         },
         "icon": {
           "default": "provider",
@@ -3319,7 +3488,8 @@
         "terraform": {
           "aws": "aws_kinesisanalyticsv2_application",
           "gcp": "google_dataflow_job",
-          "azure": "azurerm_stream_analytics_job"
+          "azure": "azurerm_stream_analytics_job",
+          "oci": "oci_dataflow_application"
         },
         "why": "Transforma y agrega eventos en vuelo, sin gestionar el clúster.",
         "custom": true
@@ -3334,7 +3504,8 @@
         "service": {
           "aws": "Redshift",
           "gcp": "BigQuery",
-          "azure": "Synapse Analytics"
+          "azure": "Synapse Analytics",
+          "oci": "Autonomous AI Lakehouse"
         },
         "icon": {
           "default": "provider",
@@ -3345,7 +3516,8 @@
         "terraform": {
           "aws": "aws_redshift_cluster",
           "gcp": "google_bigquery_dataset",
-          "azure": "azurerm_synapse_workspace"
+          "azure": "azurerm_synapse_workspace",
+          "oci": "oci_database_autonomous_database"
         },
         "why": "Consultas analíticas sobre grandes volúmenes de datos.",
         "custom": true
@@ -3360,13 +3532,15 @@
         "service": {
           "aws": "Amazon Quick Sight",
           "gcp": "Looker",
-          "azure": "Power BI Embedded"
+          "azure": "Power BI Embedded",
+          "oci": "Analytics Cloud"
         },
         "icon": "provider",
         "terraform": {
           "aws": "aws_quicksight_data_source",
           "gcp": "google_looker_instance",
-          "azure": "azurerm_powerbi_embedded"
+          "azure": "azurerm_powerbi_embedded",
+          "oci": "oci_analytics_analytics_instance"
         },
         "why": "Paneles sobre el almacén de datos, con el servicio de inteligencia de negocio de cada nube.",
         "custom": true
@@ -3386,12 +3560,14 @@
         "service": {
           "aws": "Secrets Manager",
           "gcp": "Secret Manager",
-          "azure": "Key Vault"
+          "azure": "Key Vault",
+          "oci": "Vault"
         },
         "terraform": {
           "aws": "aws_secretsmanager_secret",
           "gcp": "google_secret_manager_secret",
-          "azure": "azurerm_key_vault"
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
         },
         "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
       }
@@ -3540,12 +3716,14 @@
         "service": {
           "aws": "Application LB",
           "gcp": "Cloud Load Balancing",
-          "azure": "Application Gateway"
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
         },
         "terraform": {
           "aws": "aws_lb",
           "gcp": "google_compute_global_forwarding_rule",
-          "azure": "azurerm_application_gateway"
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
         },
         "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
       },
@@ -3565,12 +3743,14 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
       },
@@ -3584,7 +3764,8 @@
         "service": {
           "aws": "Aurora Global Database",
           "gcp": "Cloud Spanner",
-          "azure": "Azure SQL Database (failover groups)"
+          "azure": "Azure SQL Database (failover groups)",
+          "oci": "Autonomous AI Database (Data Guard entre regiones)"
         },
         "icon": {
           "default": "provider",
@@ -3594,7 +3775,8 @@
         "terraform": {
           "aws": "aws_rds_global_cluster",
           "gcp": "google_spanner_instance",
-          "azure": "azurerm_mssql_failover_group"
+          "azure": "azurerm_mssql_failover_group",
+          "oci": "oci_database_autonomous_database"
         },
         "why": "Una región atiende las escrituras y otra guarda una réplica lista para tomar el relevo si la primera cae.",
         "custom": true
@@ -3609,7 +3791,8 @@
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
-          "azure": "Container Apps"
+          "azure": "Container Apps",
+          "oci": "Container Instances"
         },
         "icon": {
           "default": "docker",
@@ -3620,7 +3803,8 @@
         "terraform": {
           "aws": "aws_ecs_service",
           "gcp": "google_cloud_run_v2_service",
-          "azure": "azurerm_container_app"
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
         },
         "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
         "custom": true
@@ -3635,7 +3819,8 @@
         "service": {
           "aws": "Aurora Global Database",
           "gcp": "Cloud Spanner",
-          "azure": "Azure SQL Database (failover groups)"
+          "azure": "Azure SQL Database (failover groups)",
+          "oci": "Autonomous AI Database (Data Guard entre regiones)"
         },
         "icon": {
           "default": "provider",
@@ -3645,7 +3830,8 @@
         "terraform": {
           "aws": "aws_rds_global_cluster",
           "gcp": "google_spanner_instance",
-          "azure": "azurerm_mssql_failover_group"
+          "azure": "azurerm_mssql_failover_group",
+          "oci": "oci_database_autonomous_database"
         },
         "why": "Una región atiende las escrituras y otra guarda una réplica lista para tomar el relevo si la primera cae.",
         "custom": true
@@ -3665,12 +3851,14 @@
         "service": {
           "aws": "Secrets Manager",
           "gcp": "Secret Manager",
-          "azure": "Key Vault"
+          "azure": "Key Vault",
+          "oci": "Vault"
         },
         "terraform": {
           "aws": "aws_secretsmanager_secret",
           "gcp": "google_secret_manager_secret",
-          "azure": "azurerm_key_vault"
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
         },
         "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
       }

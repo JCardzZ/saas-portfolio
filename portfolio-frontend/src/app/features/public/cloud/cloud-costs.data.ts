@@ -1,5 +1,5 @@
 import { CatalogCategory, SERVICE_CATALOG } from './cloud-catalog.data';
-import { CloudNode, CloudProviderId, PerProvider, forProvider } from './cloud-topology.data';
+import { BASE_PROVIDER_IDS, BaseProviderId, CloudNode, CloudProviderId, PerProvider, forProvider } from './cloud-topology.data';
 
 export type CostCategoryId = 'compute' | 'data' | 'messaging' | 'edge' | 'ops';
 
@@ -11,7 +11,16 @@ export const COST_CATEGORIES: { id: CostCategoryId; name: string }[] = [
   { id: 'ops', name: 'Observabilidad y seguridad' },
 ];
 
-type Usd = number | Record<CloudProviderId, number>;
+/**
+ * Una cifra igual en cualquier nube (productos de terceros) o una por nube. Para OCI no hay
+ * cifras escritas a mano: su precio solo sale de la lista pública de Oracle, a través del
+ * backend, y lo que no esté ahí queda «sin estimación».
+ */
+export type Usd = number | Record<BaseProviderId, number>;
+
+export function localUsd(usd: Usd, provider: CloudProviderId): number {
+  return typeof usd === 'number' ? usd : provider === 'oci' ? 0 : usd[provider];
+}
 
 /**
  * Coste mensual ORIENTATIVO en USD de cada tipo de nodo, para el tamaño más pequeño razonable
@@ -120,9 +129,12 @@ export type CostOverrides = Record<string, Partial<Record<CloudProviderId, numbe
 export function estimateCost(
   nodes: CloudNode[], provider: CloudProviderId, overrides: CostOverrides = {}, live: Readonly<Record<string, number>> = {},
 ): CostEstimate {
+  // Un servicio propio de la nube (con nombre distinto en cada una) no lleva en OCI ninguna cifra
+  // escrita a mano; un producto de terceros (Cloudflare, Datadog...) cuesta lo mismo en cualquiera.
+  const unpricedInOracle = (node: CloudNode) => provider === 'oci' && typeof node.service !== 'string' && (NODE_COSTS[node.type]?.usd ?? 0) !== 0;
   const items = nodes.flatMap((node) => {
     const cost = NODE_COSTS[node.type];
-    const local = !cost ? 0 : typeof cost.usd === 'number' ? cost.usd : cost.usd[provider];
+    const local = cost && !unpricedInOracle(node) ? localUsd(cost.usd, provider) : 0;
     const real = live[node.type];
     const usd = real ?? overrides[node.type]?.[provider] ?? local;
     // Un servicio sin cifra orientativa también cuenta si llega su precio real.
@@ -131,7 +143,9 @@ export function estimateCost(
       ? [{ category, nodeId: node.id, type: node.type, name: forProvider(node.service, provider), usd, ...(real !== undefined ? { live: true } : {}) }]
       : [];
   });
-  const unestimated = nodes.filter((node) => COST_UNKNOWN_TYPES.has(node.type) && live[node.type] === undefined && !((overrides[node.type]?.[provider] ?? 0) > 0))
+  // En OCI, además, todo servicio de la nube sin precio real.
+  const unknown = (node: CloudNode) => COST_UNKNOWN_TYPES.has(node.type) || unpricedInOracle(node);
+  const unestimated = nodes.filter((node) => unknown(node) && live[node.type] === undefined && !((overrides[node.type]?.[provider] ?? 0) > 0))
     .map((node) => ({ nodeId: node.id, name: node.name?.trim() || forProvider(node.service, provider) }));
   const categories = COST_CATEGORIES.map((category) => {
     const own = items.filter((item) => item.category === category.id).sort((a, b) => b.usd - a.usd);
@@ -169,7 +183,8 @@ export interface CatalogRow {
   isEnterprise: boolean;
 }
 
-const PROVIDER_IDS: CloudProviderId[] = ['aws', 'gcp', 'azure'];
+/** Nubes con filas en el catálogo del backend. OCI no las tiene: sus nombres salen de `cloud-oracle.data.ts`. */
+const PROVIDER_IDS: BaseProviderId[] = BASE_PROVIDER_IDS;
 
 /** El catálogo del estudio como filas: lo que se siembra en el backend y lo que simula el modo demo. */
 export function catalogRows(): CatalogRow[] {
@@ -177,7 +192,7 @@ export function catalogRows(): CatalogRow[] {
     const usd = NODE_COSTS[item.type]?.usd ?? 0;
     return {
       id: `${provider}:${item.type}`, provider, code: item.type, name: forProvider(item.service, provider), category: category.id,
-      defaultMonthlyCost: typeof usd === 'number' ? usd : usd[provider], isEnterprise: item.enterprise === true,
+      defaultMonthlyCost: localUsd(usd, provider), isEnterprise: item.enterprise === true,
     };
   })));
 }
@@ -190,7 +205,7 @@ export function catalogRows(): CatalogRow[] {
 export function mergeCatalog(local: CatalogCategory[], rows: CatalogRow[]): { catalog: CatalogCategory[]; costs: CostOverrides } {
   const byCode = new Map<string, Partial<Record<CloudProviderId, CatalogRow>>>();
   for (const row of rows) {
-    if (PROVIDER_IDS.includes(row.provider) && typeof row.name === 'string' && row.name.trim()) {
+    if (PROVIDER_IDS.includes(row.provider as BaseProviderId) && typeof row.name === 'string' && row.name.trim()) {
       byCode.set(row.code, { ...byCode.get(row.code), [row.provider]: row });
     }
   }
@@ -210,10 +225,11 @@ export function mergeCatalog(local: CatalogCategory[], rows: CatalogRow[]): { ca
       }
       const names = Object.fromEntries(PROVIDER_IDS.map((provider) =>
         [provider, served[provider]?.name.trim().slice(0, 60) ?? forProvider(item.service, provider)])) as PerProvider;
-      const sameEverywhere = names.aws === names.gcp && names.gcp === names.azure;
+      const oci = typeof item.service === 'string' ? undefined : item.service.oci;
+      const sameEverywhere = names.aws === names.gcp && names.gcp === names.azure && (oci === undefined || oci === names.aws);
       return {
         ...item,
-        service: sameEverywhere ? names.aws : names,
+        service: sameEverywhere ? names.aws : { ...names, ...(oci ? { oci } : {}) },
         enterprise: PROVIDER_IDS.some((provider) => served[provider]?.isEnterprise === true),
       };
     }),

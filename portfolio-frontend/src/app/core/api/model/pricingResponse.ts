@@ -11,6 +11,9 @@ import { PriceQuote } from './priceQuote';
 
 
 export interface PricingResponse { 
+    /**
+     * `oci` (Oracle Cloud Infrastructure) is only accepted while the `cloud.oracle` feature flag is on.
+     */
     cloudProvider: PricingResponse.CloudProviderEnum;
     currency: string;
     quotes: Array<PriceQuote>;
@@ -20,6 +23,7 @@ export namespace PricingResponse {
         Aws: 'aws',
         Gcp: 'gcp',
         Azure: 'azure',
+        Oci: 'oci',
     } as const;
     export type CloudProviderEnum = typeof CloudProviderEnum[keyof typeof CloudProviderEnum];
 }
