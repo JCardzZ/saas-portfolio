@@ -1,8 +1,19 @@
 import { TechIconKey } from '../../../shared/ui/tech-icons';
 import { SystemEventStep } from '../data/system-events.service';
+import { withOracle } from './cloud-oracle.data';
 
-export type CloudProviderId = 'aws' | 'gcp' | 'azure';
-export type PerProvider = Record<CloudProviderId, string>;
+/** Las tres nubes con las que nació el Estudio: toda pieza con nombre por nube lo tiene en las tres. */
+export type BaseProviderId = 'aws' | 'gcp' | 'azure';
+/** `oci` (Oracle Cloud Infrastructure) solo se ofrece con la flag `cloud.oracle` encendida. */
+export type CloudProviderId = BaseProviderId | 'oci';
+export const BASE_PROVIDER_IDS: BaseProviderId[] = ['aws', 'gcp', 'azure'];
+/**
+ * Valor distinto en cada nube. En OCI es opcional: las piezas del catálogo lo traen
+ * (`cloud-oracle.data.ts`), pero un nodo propio o de un proyecto antiguo puede no tenerlo.
+ */
+export type PerProvider = Record<BaseProviderId, string> & { oci?: string };
+/** Lo que se muestra de una pieza que no tiene nombre en OCI. */
+export const NO_OCI_EQUIVALENT = 'Sin equivalente en OCI';
 
 /**
  * Referencia a un logo: una tecnología concreta, `provider` (el de la nube elegida), o un
@@ -21,7 +32,12 @@ export function resolveIcon(ref: IconRef, provider: CloudProviderId): TechIconKe
 
 /** Valor de un campo que puede ser único o distinto en cada nube. */
 export function forProvider(value: string | PerProvider, provider: CloudProviderId): string {
-  return typeof value === 'string' ? value : value[provider];
+  return typeof value === 'string' ? value : (value[provider] ?? NO_OCI_EQUIVALENT);
+}
+
+/** Tipo de recurso de Terraform de una pieza en esa nube, o `null` si allí no se aprovisiona. */
+export function resourceFor(value: string | PerProvider | null, provider: CloudProviderId): string | null {
+  return !value ? null : typeof value === 'string' ? value : (value[provider] ?? null);
 }
 
 /**
@@ -101,6 +117,7 @@ export const CLOUD_PROVIDERS: CloudProvider[] = [
   { id: 'aws', name: 'AWS', boundary: 'AWS Cloud · región', network: 'VPC', networkResource: 'aws_vpc' },
   { id: 'gcp', name: 'GCP', boundary: 'Google Cloud · región', network: 'VPC', networkResource: 'google_compute_network' },
   { id: 'azure', name: 'Azure', boundary: 'Azure · región', network: 'VNet', networkResource: 'azurerm_virtual_network' },
+  { id: 'oci', name: 'OCI', boundary: 'Oracle Cloud · región', network: 'VCN', networkResource: 'oci_core_vcn' },
 ];
 
 /**
@@ -108,7 +125,7 @@ export const CLOUD_PROVIDERS: CloudProvider[] = [
  * pieza y en qué zona de red viviría. Es un mapa de despliegue, no un historial de proyectos;
  * hoy la plataforma está preparada para Neon (PostgreSQL) y Upstash (Redis).
  */
-export const CLOUD_NODES: CloudNode[] = [
+export const CLOUD_NODES: CloudNode[] = ([
   { id: 'users', type: 'users', x: 64, y: 250, zone: 'outside', role: 'Navegador', service: 'Visitantes', icon: null, terraform: null, why: 'Entran por HTTPS; nunca hablan directamente con la nube.' },
   { id: 'edge', type: 'edge', x: 196, y: 250, zone: 'outside', role: 'CDN · WAF · DNS', service: 'Cloudflare', icon: 'cloudflare', terraform: 'cloudflare_record', why: 'Borde común a las tres nubes: caché, protección y la IP real del visitante.' },
   {
@@ -161,7 +178,7 @@ export const CLOUD_NODES: CloudNode[] = [
   },
   { id: 'gemini', type: 'gemini', x: 556, y: 668, zone: 'external', role: 'Servicio externo', service: 'Gemini API', icon: 'gemini', terraform: null, why: 'Embeddings y respuestas del asistente; la API sale a Internet solo para esto.' },
   { id: 'cicd', type: 'cicd', x: 865, y: 668, zone: 'external', role: 'CI/CD', service: 'Terraform + Docker', icon: 'terraform', terraform: null, why: 'La infraestructura se define como código y la imagen se publica en el registro.' },
-];
+] as CloudNode[]).map(withOracle);
 
 /** Conexiones de partida. El trazado se calcula a partir de la posición de los nodos, que se pueden mover. */
 export const CLOUD_LINKS: CloudLink[] = [
@@ -212,5 +229,13 @@ export const PROVISIONING_LOG: Record<CloudProviderId, SystemEventStep[]> = {
     ['ok', 'Azure Container Apps Ready', 'contenedor Docker · 2 réplicas'],
     ['ok', 'Cloudflare Edge Cache 100%', 'Azure · origen Front Door'],
     ['ok', 'Terraform Apply', 'Azure · completado'],
+  ],
+  oci: [
+    ['info', 'Terraform Plan', 'OCI · 12 to add, 0 to change, 0 to destroy'],
+    ['ok', 'OCI VCN Ready', 'subred pública y subredes privadas'],
+    ['ok', 'OCI Database with PostgreSQL Ready', 'PostgreSQL gestionado'],
+    ['ok', 'OCI Container Instances Ready', 'contenedor Docker'],
+    ['ok', 'Cloudflare Edge Cache 100%', 'OCI · origen Object Storage'],
+    ['ok', 'Terraform Apply', 'OCI · completado'],
   ],
 };

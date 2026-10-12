@@ -25,6 +25,8 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
   aws: ['t3.medium', 'm5.large', 'db.m5.large', 'cache.t3.micro'],
   gcp: ['e2-medium', 'n2-standard-2', 'db-custom-2-7680'],
   azure: ['Standard_B2s', 'Standard_D4s_v5', 'GP_Standard_D2ds_v4'],
+  // Sin sugerencias: los nombres de las formas de OCI no se han contrastado con su documentación.
+  oci: [],
 };
 
 /** Panel de propiedades de un nodo del lienzo: nombre, zona de red, capacidad, puertos, entorno y conexiones. */

@@ -1,5 +1,8 @@
 package dev.portfolio.infrastructure.adapter.in.web.controller;
 
+import dev.portfolio.application.port.in.FeatureFlagUseCase;
+import dev.portfolio.infrastructure.adapter.in.web.flags.CloudProviders;
+import org.springframework.beans.factory.ObjectProvider;
 import dev.portfolio.application.port.in.ArchitectureCopilotUseCase;
 import dev.portfolio.domain.model.ArchitectureAdviceDomain;
 import dev.portfolio.domain.model.CloudProviderDomain;
@@ -32,6 +35,7 @@ public class AiRagController implements AppliedAiRagApi {
     private final TenantResolver tenantResolver;
     private final HttpServletRequest request;
     private final TaskExecutor taskExecutor;
+    private final ObjectProvider<FeatureFlagUseCase> flags;
 
     public AiRagController(RAGUseCase ragUseCase,
                            RAGIndexingUseCase ragIndexingUseCase,
@@ -39,7 +43,9 @@ public class AiRagController implements AppliedAiRagApi {
                            RagWebMapper mapper,
                            TenantResolver tenantResolver,
                            HttpServletRequest request,
-                           @Qualifier("applicationTaskExecutor") TaskExecutor taskExecutor) {
+                           @Qualifier("applicationTaskExecutor") TaskExecutor taskExecutor,
+                           ObjectProvider<FeatureFlagUseCase> flags) {
+        this.flags = flags;
         this.ragUseCase = ragUseCase;
         this.ragIndexingUseCase = ragIndexingUseCase;
         this.copilotUseCase = copilotUseCase;
@@ -58,7 +64,7 @@ public class AiRagController implements AppliedAiRagApi {
     @Override
     public ResponseEntity<ArchitectureCopilotResponse> aiArchitectureCopilotPost(ArchitectureCopilotRequest body) {
         ArchitectureAdviceDomain advice = copilotUseCase.advise(new ArchitectureCopilotUseCase.Question(
-                tenantResolver.currentTenantId(), body.getPrompt(), CloudProviderDomain.fromCode(body.getCloudProvider().getValue()),
+                tenantResolver.currentTenantId(), body.getPrompt(), CloudProviders.resolve(body.getCloudProvider().getValue(), flags),
                 body.getNodes(), body.getConnections()), request.getRemoteAddr());
         return ResponseEntity.ok(new ArchitectureCopilotResponse()
                 .answer(advice.answer())

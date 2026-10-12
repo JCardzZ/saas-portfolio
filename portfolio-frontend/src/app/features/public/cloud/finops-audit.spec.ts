@@ -88,9 +88,10 @@ describe('catalog served by the backend', () => {
     const { catalog, costs } = mergeCatalog(SERVICE_CATALOG, [...rows, { ...rows[0], id: 'aws:quantum', code: 'quantum', name: 'Braket' }]);
     const lambda = catalog.flatMap((category) => category.items).find((item) => item.type === 'functions')!;
 
-    expect(lambda.service).toEqual({ aws: 'AWS Lambda', gcp: 'Cloud Functions', azure: 'Functions' });
+    // El backend no tiene filas de Oracle Cloud: su nombre sigue siendo el del estudio.
+    expect(lambda.service).toEqual({ aws: 'AWS Lambda', gcp: 'Cloud Functions', azure: 'Functions', oci: 'Functions' });
     expect(lambda.enterprise).toBeTrue();
-    expect(lambda.terraform).toEqual({ aws: 'aws_lambda_function', gcp: 'google_cloudfunctions2_function', azure: 'azurerm_linux_function_app' });
+    expect(lambda.terraform).toEqual({ aws: 'aws_lambda_function', gcp: 'google_cloudfunctions2_function', azure: 'azurerm_linux_function_app', oci: 'oci_functions_function' });
     expect(costs['functions']).toEqual({ aws: 9.5, gcp: 2, azure: 2 });
     // Lo que el estudio no sabe dibujar no entra.
     expect(catalog.flatMap((category) => category.items).some((item) => item.type === 'quantum')).toBeFalse();
