@@ -67,13 +67,16 @@ export class TraceInspectorService {
   readonly viewportWidth = signal(typeof window === 'undefined' ? RIGHT_DOCK_FROM_PX : window.innerWidth);
   readonly viewportHeight = signal(typeof window === 'undefined' ? SHEET_BELOW_HEIGHT_PX : window.innerHeight);
 
+  /** Pantalla de móvil (estrecha o baja): el inspector es una hoja inferior y, cerrado, una barra. */
+  readonly narrow = computed(() => this.viewportWidth() < SHEET_BELOW_PX || this.viewportHeight() < SHEET_BELOW_HEIGHT_PX);
+
   /** Disposición efectiva según el modo elegido y el espacio disponible. */
   readonly layout = computed<InspectorLayout>(() => {
     const mode = this._mode();
     if (mode === 'pill') {
       return 'pill';
     }
-    if (this.viewportWidth() < SHEET_BELOW_PX || this.viewportHeight() < SHEET_BELOW_HEIGHT_PX) {
+    if (this.narrow()) {
       return 'sheet';
     }
     return mode === 'right' && this.viewportWidth() < RIGHT_DOCK_FROM_PX ? 'bottom' : mode;

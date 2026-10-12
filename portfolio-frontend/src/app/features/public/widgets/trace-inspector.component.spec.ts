@@ -11,6 +11,60 @@ describe('TraceInspectorComponent', () => {
   beforeEach(clearStorage);
   afterEach(clearStorage);
 
+  describe('demo notice with the inspector closed', () => {
+    const root = document.documentElement.style;
+    function closed(viewportWidth: number, viewportHeight = 900) {
+      const fixture = TestBed.createComponent(TraceInspectorComponent);
+      const inspector = TestBed.inject(TraceInspectorService);
+      inspector.viewportWidth.set(viewportWidth);
+      inspector.viewportHeight.set(viewportHeight);
+      inspector.close();
+      fixture.detectChanges();
+      return { fixture, element: fixture.nativeElement as HTMLElement };
+    }
+
+    it('is a segment of the inspector bar on a phone, docked at the bottom, and the page leaves it room', () => {
+      const { element } = closed(440);
+      const bar = element.querySelector<HTMLElement>('[data-demo-bar]')!;
+
+      expect(bar).not.toBeNull();
+      expect(element.querySelector('[data-demo-pill]')).toBeNull();
+      expect(bar.textContent).toContain('Inspector de traza');
+      expect(bar.querySelector('[data-testid="demo-notice"]')!.textContent).toContain('Modo demo');
+      // De lado a lado y pegada abajo, sobre la zona segura: no flota encima del contenido.
+      expect(bar.className).toContain('inset-x-0');
+      expect(bar.className).toContain('bottom-0');
+      expect(bar.className).toContain('pb-[env(safe-area-inset-bottom)]');
+      expect(root.getPropertyValue('--dock-bottom')).toContain('2.25rem');
+      expect(root.getPropertyValue('--dock-bottom')).toContain('safe-area-inset-bottom');
+      expect(root.getPropertyValue('--pill-space')).toBe('0px');
+    });
+
+    it('is also the bar on a phone held sideways', () => {
+      const { element } = closed(956, 440);
+      expect(element.querySelector('[data-demo-bar]')).not.toBeNull();
+    });
+
+    it('stays as the corner pill where there is room', () => {
+      const { element } = closed(1280);
+
+      expect(element.querySelector('[data-demo-bar]')).toBeNull();
+      expect(element.querySelector('[data-demo-pill]')).not.toBeNull();
+      expect(root.getPropertyValue('--dock-bottom')).toBe('0px');
+      expect(root.getPropertyValue('--pill-space')).not.toBe('0px');
+    });
+
+    it('gives the room back to the open inspector', () => {
+      const { fixture, element } = closed(440);
+      TestBed.inject(TraceInspectorService).select('redis');
+      fixture.detectChanges();
+
+      expect(element.querySelector('[data-demo-bar]')).toBeNull();
+      expect(element.querySelector('section')!.dataset['layout']).toBe('sheet');
+      expect(root.getPropertyValue('--dock-bottom')).not.toContain('2.25rem');
+    });
+  });
+
   describe('docking', () => {
     const root = document.documentElement.style;
     function open(viewportWidth = 1280) {
