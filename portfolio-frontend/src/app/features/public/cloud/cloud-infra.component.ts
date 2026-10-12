@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 
 import { IconPopService } from '../../../shared/ui/icon-pop.service';
+import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
 import { TechIconComponent } from '../../../shared/ui/tech-icon.component';
 import { TECH_ICONS, TechIcon, TechIconKey } from '../../../shared/ui/tech-icons';
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
@@ -32,6 +33,7 @@ import {
   FAULT_RECOVERY_MS, FaultKind, Faults, TRAFFIC_PROFILES, TrafficMode, backupOf, computeVitals, particlesPerWire, profileOf,
 } from './live-traffic';
 import { LivePricingService } from './live-pricing.service';
+import { StudioMobileCanvasComponent, MobileRow } from './studio-mobile-canvas.component';
 import { LiveVitalsComponent } from './live-vitals.component';
 import { NodePatch, NodePropertiesComponent } from './node-properties.component';
 import { History } from './studio-history';
@@ -77,10 +79,22 @@ interface Wire extends CloudLink {
  * de seguridad. Además estima el coste mensual, simula escenarios de fallo y audita la
  * topología. Trabaja sobre una copia en memoria; "Restablecer" vuelve al original.
  */
+/**
+ * Ancho mínimo del lienzo de trabajo; por debajo se muestra la vista vertical de solo lectura. Con
+ * ratón basta con 720 px (el lienzo se reduce y se sigue pudiendo editar). Con el dedo hace falta
+ * que quepa casi a tamaño real: reducido, ni se lee ni se acierta a tocar.
+ */
+const MIN_CANVAS_WIDTH = { mouse: 720, touch: 1088 };
+
+function minCanvasWidth(): number {
+  const touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  return touch ? MIN_CANVAS_WIDTH.touch : MIN_CANVAS_WIDTH.mouse;
+}
+
 @Component({
   selector: 'app-cloud-infra',
   standalone: true,
-  imports: [TechIconComponent, TheaterToggleComponent, ServiceCatalogComponent, CostBadgeComponent, AuditCardComponent, NodePropertiesComponent, ArchitectureCopilotComponent, LiveVitalsComponent],
+  imports: [TechIconComponent, TheaterToggleComponent, ServiceCatalogComponent, CostBadgeComponent, AuditCardComponent, NodePropertiesComponent, ArchitectureCopilotComponent, LiveVitalsComponent, ContainerWidthDirective, StudioMobileCanvasComponent],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   templateUrl: './cloud-infra.component.html',
@@ -293,6 +307,20 @@ export class CloudInfraComponent {
   readonly activeZone = computed(() => this.zones().find((zone) => zone.id === this.activeZoneId()) ?? null);
 
   private readonly canvas = viewChild<ElementRef<SVGSVGElement>>('canvas');
+  private readonly stageBox = viewChild(ContainerWidthDirective);
+  /** Sin ancho para el lienzo de trabajo, el diagrama se muestra de arriba abajo y de solo lectura. */
+  readonly compact = computed(() => this.stageBox()?.narrowerThan(minCanvasWidth()) ?? false);
+  /** Las piezas del proyecto para la vista estrecha: nombre, papel, zona de red y coste. */
+  readonly mobileRows = computed<MobileRow[]>(() => this.nodes().map((node) => {
+    const zone = zoneAt(this.zones(), node.x, node.y);
+    const price = this.nodeCosts().get(node.id);
+    return {
+      id: node.id, label: this.serviceOf(node), role: node.role, icon: this.iconOf(node),
+      meta: [zone ? this.zoneLabelOf(zone) : null, price?.label].filter(Boolean).join(' · '),
+      live: price?.live === true, state: this.chaosOf(node),
+    };
+  }));
+  readonly mobileLinks = computed(() => this.links().map((link): [string, string] => [link.from, link.to]));
   private nextCustomId = 1;
   private dragging: { id: string; dx: number; dy: number; recorded: boolean } | null = null;
   private zoneDrag: { id: string; mode: 'move' | ZoneCorner; x: number; y: number; origin: StudioZone; nodes: CloudNode[]; zones: StudioZone[]; recorded: boolean } | null = null;
@@ -347,6 +375,12 @@ export class CloudInfraComponent {
     });
     this.restore();
     this.studio.load();
+    // Al estrecharse (girar el móvil, acoplar el inspector) se sale de la edición: no hay lienzo donde editar.
+    effect(() => {
+      if (this.compact() && untracked(this.editing)) {
+        this.toggleEditing();
+      }
+    }, { allowSignalWrites: true });
     // Fuera de pantalla se detienen las partículas y el reloj de las métricas (clase `studio-paused`).
     if (typeof IntersectionObserver !== 'undefined') {
       const visibility = new IntersectionObserver(([entry]) => this.host.classList.toggle('studio-paused', !entry.isIntersecting));
@@ -448,6 +482,13 @@ export class CloudInfraComponent {
     this.selectedId.set(id);
     this.events.emitFromUser([...PROVISIONING_LOG[id], ...this.validationSteps()]);
     this.inspector.select(id);
+  }
+
+  pickMobile(pick: { id: string; event: Event }): void {
+    const node = this.nodes().find((candidate) => candidate.id === pick.id);
+    if (node) {
+      this.activate(node, pick.event);
+    }
   }
 
   toggleEditing(): void {

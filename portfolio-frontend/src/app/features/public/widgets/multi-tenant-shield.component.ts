@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 
+import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
 import { IconPopService } from '../../../shared/ui/icon-pop.service';
 import { TECH_ICONS } from '../../../shared/ui/tech-icons';
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
@@ -30,6 +31,35 @@ interface Hit extends StoredVector {
   leak: boolean;
 }
 
+interface Rect {
+  x: number;
+  y: number;
+  w: number;
+}
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+/** Todo lo que se dibuja, ya colocado para una de las dos disposiciones. */
+interface Geometry {
+  vertical: boolean;
+  width: number;
+  height: number;
+  table: Rect & { h: number };
+  caption: Rect;
+  /** Por tenant: su caja, la del filtro y el haz que las une con su consulta. */
+  lanes: Record<TenantId, { client: Rect; gate: Rect; beam: string }>;
+  /** Dónde se pinta un punto del espacio de vectores (los datos no cambian de coordenadas). */
+  at(point: Point): Point;
+}
+
+/** Lienzo de la disposición horizontal; con menos ancho, el esquema pasa a vertical. */
+const CANVAS = { width: 620, height: 248 };
+/** Región del espacio de vectores en las coordenadas de los datos. */
+const SPACE = { x: 404, y: 34, w: 184, h: 176 };
+
 const NEAREST = 3;
 const VECTOR_COUNT = 48;
 
@@ -46,7 +76,7 @@ const TENANTS: Tenant[] = [
 @Component({
   selector: 'app-multi-tenant-shield',
   standalone: true,
-  imports: [TheaterToggleComponent],
+  imports: [ContainerWidthDirective, TheaterToggleComponent],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   templateUrl: './multi-tenant-shield.component.html',
@@ -179,10 +209,12 @@ private readonly iconPop = inject(IconPopService);
   readonly leaks = computed(() => this.searches().reduce((total, search) => total + search.hits.filter((hit) => hit.leak).length, 0));
   readonly sqlTenant = computed(() => TENANTS.find((tenant) => tenant.id === this.focused()) ?? TENANTS[0]);
 
-  beam(tenant: Tenant): string {
-    const { x, y } = tenant.query;
-    return `M118 ${tenant.y} H190 M290 ${tenant.y} C340 ${tenant.y} ${x - 70} ${y} ${x} ${y}`;
-  }
+  private readonly box = viewChild(ContainerWidthDirective);
+  /** Geometría del esquema para el ancho que hay. */
+  readonly geo = computed<Geometry>(() => {
+    const box = this.box();
+    return box?.narrowerThan(CANVAS.width) ? vertical(box.width() || window.innerWidth - 80) : horizontal();
+  });
 
   isDimmed(tenant: TenantId): boolean {
     return this.focused() !== null && this.focused() !== tenant;
@@ -229,4 +261,50 @@ function generateVectors(): StoredVector[] {
     x: 404 + random() * 184,
     y: 34 + random() * 176,
   }));
+}
+
+/** Clientes a la izquierda, su filtro en medio y la tabla a la derecha. */
+function horizontal(): Geometry {
+  const lane = (tenant: Tenant): Geometry['lanes'][TenantId] => ({
+    client: { x: 14, y: tenant.y - 22, w: 104 },
+    gate: { x: 190, y: tenant.y - 16, w: 100 },
+    beam: `M118 ${tenant.y} H190 M290 ${tenant.y} C340 ${tenant.y} ${tenant.query.x - 70} ${tenant.query.y} ${tenant.query.x} ${tenant.query.y}`,
+  });
+  return {
+    vertical: false,
+    ...CANVAS,
+    table: { x: 388, y: 16, w: 216, h: 208 },
+    caption: { x: 388, y: 204, w: 216 },
+    lanes: { A: lane(TENANTS[0]), B: lane(TENANTS[1]) },
+    at: (point) => point,
+  };
+}
+
+/** Los dos clientes arriba, cada uno sobre su filtro, y la tabla debajo a todo el ancho. */
+function vertical(width: number): Geometry {
+  const column = (width - 12) / 2;
+  const table = { x: 1, y: 132, w: width - 2, h: 208 };
+  const at = (point: Point): Point => ({
+    x: table.x + 16 + ((point.x - SPACE.x) / SPACE.w) * (table.w - 32),
+    y: table.y + 16 + (point.y - SPACE.y),
+  });
+  const lane = (tenant: Tenant, index: number): Geometry['lanes'][TenantId] => {
+    const x = 1 + index * (column + 10);
+    const centre = x + column / 2;
+    const query = at(tenant.query);
+    return {
+      client: { x, y: 4, w: column },
+      gate: { x, y: 72, w: column },
+      beam: `M${centre} 48 V72 M${centre} 104 C${centre} 130 ${query.x} ${query.y - 44} ${query.x} ${query.y}`,
+    };
+  };
+  return {
+    vertical: true,
+    width,
+    height: table.y + table.h + 46,
+    table,
+    caption: { x: table.x, y: table.y + table.h, w: table.w },
+    lanes: { A: lane(TENANTS[0], 0), B: lane(TENANTS[1], 1) },
+    at,
+  };
 }

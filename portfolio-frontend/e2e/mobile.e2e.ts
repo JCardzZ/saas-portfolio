@@ -305,12 +305,20 @@ test.describe('página pública en móviles y tabletas', () => {
     await page.getByRole('button', { name: 'Cerrar el inspector de traza' }).first().tap();
     await expect(inspector).toBeHidden();
 
-    // Estudio en modo edición: aparece el catálogo de servicios.
+    // Estudio: con sitio para el lienzo de trabajo, en modo edición aparece el catálogo de servicios;
+    // en estrecho es de solo lectura y no hay botón de editar.
     const edit = page.getByRole('button', { name: 'Editar arquitectura' });
-    await edit.scrollIntoViewIfNeeded();
-    await edit.tap();
-    await expect(page.locator('app-service-catalog')).toBeVisible();
-    await check('estudio-en-edicion', 'app-cloud-infra');
+    if (await edit.count()) {
+      await edit.scrollIntoViewIfNeeded();
+      await edit.tap();
+      await expect(page.locator('app-service-catalog')).toBeVisible();
+      await check('estudio-en-edicion', 'app-cloud-infra');
+    } else {
+      const studio = page.locator('app-cloud-infra');
+      await studio.scrollIntoViewIfNeeded();
+      await expect(studio.locator('app-studio-mobile-canvas')).toBeVisible();
+      await check('estudio-solo-lectura', 'app-cloud-infra');
+    }
   });
 
   test('la paleta de comandos baja desde arriba, busca y lleva la pregunta al asistente', async ({ page }, testInfo) => {
@@ -386,10 +394,13 @@ test.describe('página pública en móviles y tabletas', () => {
 
     await card.getByRole('button', { name: 'Agregar al lienzo' }).click();
     const studio = page.locator('#cloud app-cloud-infra');
-    await expect(studio.locator('svg text.node-service', { hasText: 'Database Migration Service' })).toBeVisible();
+    // El diagrama que se ve: el lienzo de trabajo o, en estrecho, su vista vertical.
+    const canvas = (await studio.locator('app-studio-mobile-canvas').count())
+      ? studio.locator('app-studio-mobile-canvas') : studio.locator('svg[data-work-canvas]');
+    await expect(canvas.getByRole('button', { name: /^Database Migration Service/ })).toBeVisible();
     await expect(studio.locator('path.wire[data-kind="CDC_STREAM"]')).toHaveCount(2);
     // Lo que ya estaba no se duplica y nada arranca con avisos.
-    await expect(studio.locator('svg text.node-service', { hasText: 'Application LB' })).toHaveCount(1);
+    await expect(canvas.getByRole('button', { name: /^Application LB/ })).toHaveCount(1);
     await expect(studio.locator('[data-testid="graph-warnings"]')).toHaveCount(0);
     expect(await overflowing(page), 'tras cargar el patrón').toEqual([]);
   });

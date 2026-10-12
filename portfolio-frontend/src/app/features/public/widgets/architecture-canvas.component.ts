@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 
+import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
+import { verticalFlow } from '../../../shared/ui/vertical-flow';
 import { IconPopService } from '../../../shared/ui/icon-pop.service';
 import { TECH_ICONS, TechIcon, TechIconKey } from '../../../shared/ui/tech-icons';
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
@@ -42,8 +44,32 @@ interface ArchitectureEdge {
   duration: number;
 }
 
+/** Un nodo ya colocado: la misma pieza en la disposición horizontal o en la vertical. */
+interface PlacedNode {
+  node: ArchitectureNode;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  textX: number;
+  labelY: number;
+  roleY: number;
+  anchor: 'middle' | 'start';
+  icon: { x: number; y: number; size: number };
+}
+
+interface Scene {
+  compact: boolean;
+  width: number;
+  height: number;
+  nodes: PlacedNode[];
+  edges: ArchitectureEdge[];
+}
+
 const NODE_WIDTH = 136;
 const NODE_HEIGHT = 52;
+/** Lienzo de la disposición horizontal; con menos ancho que este, el diagrama pasa a vertical. */
+const CANVAS = { width: 600, height: 300 };
 
 const LEVELS: C4Level[] = [
   {
@@ -118,7 +144,7 @@ const LEVELS: C4Level[] = [
 @Component({
   selector: 'app-architecture-canvas',
   standalone: true,
-  imports: [TheaterToggleComponent],
+  imports: [ContainerWidthDirective, TheaterToggleComponent],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   template: `
@@ -126,7 +152,8 @@ const LEVELS: C4Level[] = [
     <div class="flex flex-wrap items-center justify-between gap-3 pr-10">
       <h3 class="text-title-2 text-ink-1">Arquitectura en vivo</h3>
 
-      <div class="ui-segmented" role="tablist" aria-label="Nivel del modelo C4" (keydown)="onTabKeydown($event)">
+      <!-- Cuatro niveles no caben en una fila estrecha: pasan a una rejilla de 2 × 2, todos a la vista. -->
+      <div class="ui-segmented" [class.ui-segmented-grid]="scene().compact" role="tablist" aria-label="Nivel del modelo C4" (keydown)="onTabKeydown($event)">
         @for (candidate of levels; track candidate.id) {
           <button
             type="button"
@@ -149,42 +176,43 @@ const LEVELS: C4Level[] = [
         <span class="font-medium text-ink-1">{{ level().title }}.</span> {{ level().description }}
       </p>
 
-      <div class="theater-stage mt-3 overflow-x-auto">
-        <svg viewBox="0 0 600 300" class="w-full min-w-[600px]" role="group" [attr.aria-label]="level().title">
+      <!-- Sin sitio para las columnas (600 px), el mismo grafo se dibuja de arriba abajo, a todo el ancho. -->
+      <div class="theater-stage mt-3" appContainerWidth>
+        <svg [attr.viewBox]="'0 0 ' + scene().width + ' ' + scene().height" class="block w-full" [attr.data-layout]="scene().compact ? 'vertical' : 'horizontal'" role="group" [attr.aria-label]="level().title">
           <!-- Cambiar de nivel recrea el grupo: los nodos entran escalonados en lugar de saltar. -->
           @for (current of [level()]; track current.id) {
             <g class="level">
-              @for (edge of edges(); track edge.from + edge.to) {
+              @for (edge of scene().edges; track edge.from + edge.to) {
                 <path class="edge" [class.edge-active]="isEdgeActive(edge)" [attr.d]="edge.path" />
                 <path class="pulse" [class.pulse-active]="isEdgeActive(edge)" [attr.d]="edge.path" pathLength="100" [style.animation-duration.s]="edge.duration" />
               }
 
-              @for (node of current.nodes; track node.id; let index = $index) {
+              @for (placed of scene().nodes; track placed.node.id; let index = $index) {
                 <g
                   class="node"
-                  [class.node-active]="node.id === activeId()"
-                  [class.node-pure]="node.tone === 'pure'"
-                  [class.node-framework]="node.tone === 'framework'"
+                  [class.node-active]="placed.node.id === activeId()"
+                  [class.node-pure]="placed.node.tone === 'pure'"
+                  [class.node-framework]="placed.node.tone === 'framework'"
                   [class.node-code]="current.id === 'code'"
                   [style.animation-delay.ms]="index * 55"
-                  [style.--brand]="iconOf(node)?.color"
+                  [style.--brand]="iconOf(placed.node)?.color"
                   tabindex="0"
                   role="button"
-                  [attr.aria-label]="node.label + ': ' + node.role"
-                  [attr.aria-pressed]="node.id === activeId()"
-                  (mouseenter)="activate(node); hoverPop(node, $event)"
+                  [attr.aria-label]="placed.node.label + ': ' + placed.node.role"
+                  [attr.aria-pressed]="placed.node.id === activeId()"
+                  (mouseenter)="activate(placed.node); hoverPop(placed.node, $event)"
                   (mouseleave)="hoverLeave($event)"
-                  (focus)="activate(node)"
-                  (click)="activate(node); pop(node, $event)"
+                  (focus)="activate(placed.node)"
+                  (click)="activate(placed.node); pop(placed.node, $event)"
                 >
-                  <rect [attr.x]="node.x - width() / 2" [attr.y]="node.y - halfHeight" [attr.width]="width()" [attr.height]="height" rx="8" />
-                  @if (iconOf(node); as icon) {
-                    <svg class="node-icon" [attr.x]="iconBox(node).x" [attr.y]="iconBox(node).y" [attr.width]="iconBox(node).size" [attr.height]="iconBox(node).size" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect [attr.x]="placed.x" [attr.y]="placed.y" [attr.width]="placed.w" [attr.height]="placed.h" rx="8" />
+                  @if (iconOf(placed.node); as icon) {
+                    <svg class="node-icon" [attr.x]="placed.icon.x" [attr.y]="placed.icon.y" [attr.width]="placed.icon.size" [attr.height]="placed.icon.size" viewBox="0 0 24 24" aria-hidden="true">
                       <path [attr.d]="icon.path" [attr.fill]="icon.color" />
                     </svg>
                   }
-                  <text class="node-label" [attr.x]="textX(node)" [attr.y]="node.y - 3" text-anchor="middle">{{ node.label }}</text>
-                  <text class="node-role" [attr.x]="textX(node)" [attr.y]="node.y + 14" text-anchor="middle">{{ node.role }}</text>
+                  <text class="node-label" [attr.x]="placed.textX" [attr.y]="placed.labelY" [attr.text-anchor]="placed.anchor">{{ placed.node.label }}</text>
+                  <text class="node-role" [attr.x]="placed.textX" [attr.y]="placed.roleY" [attr.text-anchor]="placed.anchor">{{ placed.node.role }}</text>
                 </g>
               }
             </g>
@@ -302,8 +330,6 @@ export class ArchitectureCanvasComponent {
   private readonly iconPop = inject(IconPopService);
 
   readonly levels = LEVELS;
-  readonly height = NODE_HEIGHT;
-  readonly halfHeight = NODE_HEIGHT / 2;
 
   private readonly levelId = signal('container');
   readonly level = computed(() => LEVELS.find((level) => level.id === this.levelId()) ?? LEVELS[1]);
@@ -315,14 +341,49 @@ export class ArchitectureCanvasComponent {
     () => this.level().nodes.find((node) => node.id === this.activeId()) ?? this.level().nodes[0],
   );
 
-  readonly edges = computed<ArchitectureEdge[]>(() => {
-    const nodes = new Map(this.level().nodes.map((node) => [node.id, node]));
-    return this.level().links.map(([from, to], index) => ({
-      from,
-      to,
-      path: connect(nodes.get(from)!, nodes.get(to)!, this.width()),
-      duration: 1.6 + (index % 4) * 0.35,
-    }));
+  private readonly box = viewChild(ContainerWidthDirective);
+
+  /** Nodos y conexiones ya colocados, para el ancho que hay: en columnas o de arriba abajo. */
+  readonly scene = computed<Scene>(() => {
+    const level = this.level();
+    const width = this.width();
+    const pulse = (index: number): number => 1.6 + (index % 4) * 0.35;
+    const box = this.box();
+    if (!box?.narrowerThan(CANVAS.width)) {
+      const nodes = new Map(level.nodes.map((node) => [node.id, node]));
+      const code = level.id === 'code';
+      return {
+        compact: false,
+        ...CANVAS,
+        nodes: level.nodes.map((node): PlacedNode => {
+          const left = node.x - width / 2;
+          return {
+            node, x: left, y: node.y - NODE_HEIGHT / 2, w: width, h: NODE_HEIGHT, anchor: 'middle',
+            // Con el logo a la izquierda, el texto se desplaza para seguir centrado en el hueco libre.
+            textX: node.icon && !code ? node.x + 10 : node.x, labelY: node.y - 3, roleY: node.y + 14,
+            // En el nivel de código el nombre del paquete ocupa todo el ancho: el logo baja a la línea del rol.
+            icon: code ? { x: left + 12, y: node.y + 4, size: 13 } : { x: left + 10, y: node.y - 16, size: 15 },
+          };
+        }),
+        edges: level.links.map(([from, to], index) => (
+          { from, to, path: connect(nodes.get(from)!, nodes.get(to)!, width), duration: pulse(index) })),
+      };
+    }
+    const flow = verticalFlow(level.nodes.map((node) => node.id), level.links, box.width() || window.innerWidth - 80, { nodeHeight: NODE_HEIGHT });
+    const byId = new Map(level.nodes.map((node) => [node.id, node]));
+    return {
+      compact: true,
+      width: flow.width,
+      height: flow.height,
+      nodes: flow.boxes.map((placed): PlacedNode => {
+        const node = byId.get(placed.id)!;
+        return {
+          node, ...placed, anchor: 'start', textX: placed.x + (node.icon ? 36 : 14), labelY: placed.y + 23, roleY: placed.y + 40,
+          icon: { x: placed.x + 12, y: placed.y + 18, size: 15 },
+        };
+      }),
+      edges: flow.edges.map((edge, index) => ({ ...edge, duration: pulse(index) })),
+    };
   });
 
   /** Al pulsar un nodo, su logo se desprende y flota en 3D por encima del diagrama. */
@@ -378,19 +439,6 @@ export class ArchitectureCanvasComponent {
 
   iconOf(node: ArchitectureNode): TechIcon | null {
     return node.icon ? TECH_ICONS[node.icon] : null;
-  }
-
-  /** En el nivel de código el nombre del paquete ocupa todo el ancho: el logo baja a la línea del rol. */
-  iconBox(node: ArchitectureNode): { x: number; y: number; size: number } {
-    const left = node.x - this.width() / 2;
-    return this.level().id === 'code'
-      ? { x: left + 12, y: node.y + 4, size: 13 }
-      : { x: left + 10, y: node.y - 16, size: 15 };
-  }
-
-  /** Con el logo a la izquierda, el texto se desplaza para seguir centrado en el hueco libre. */
-  textX(node: ArchitectureNode): number {
-    return node.icon && this.level().id !== 'code' ? node.x + 10 : node.x;
   }
 
   isEdgeActive(edge: ArchitectureEdge): boolean {

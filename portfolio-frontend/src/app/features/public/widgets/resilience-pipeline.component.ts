@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 
+import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
 import { IconPopService } from '../../../shared/ui/icon-pop.service';
 import { TECH_ICONS, TechIconKey } from '../../../shared/ui/tech-icons';
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
@@ -19,6 +20,119 @@ const CIRCUIT_OPEN_PROBLEM = `{
   "traceId": "3f1c9a52-8d4e-4b7a-9c61-2e5f0b7d4a18"
 }`;
 
+/** Etapas del recorrido, en el orden en que las atraviesa una petición. */
+const STAGES: readonly { id: string; label: string; role: string; tech: TechIconKey | null }[] = [
+  { id: 'request', label: 'Petición HTTP', role: 'visitante', tech: null },
+  { id: 'redis', label: 'Redis', role: 'timeout 2 s', tech: 'redis' },
+  { id: 'postgresql', label: 'PostgreSQL', role: 'fuente de verdad', tech: 'postgresql' },
+  { id: 'gemini', label: 'Gemini API', role: 'circuit breaker', tech: 'gemini' },
+];
+
+const STAGE = { w: 108, h: 48 };
+/** Lienzo de la disposición horizontal; con menos ancho, el recorrido pasa a vertical. */
+const CANVAS = { width: 620, height: 200 };
+
+interface PlacedStage {
+  id: string;
+  label: string;
+  role: string;
+  tech: TechIconKey | null;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  textX: number;
+}
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+/** Todo lo que se dibuja, ya colocado para una de las dos disposiciones. */
+interface Geometry {
+  vertical: boolean;
+  width: number;
+  height: number;
+  stages: PlacedStage[];
+  bypass: string;
+  bypassLabel: Point & { transform: string | null };
+  cache: string;
+  cacheLabel: Point;
+  miss: string;
+  missLabel: Point;
+  breakerIn: string;
+  breakerOut: string;
+  breaker: string;
+  breakerLabel: Point;
+  lever: { x1: number; y1: number; x2: number; y2: number };
+  labelAnchor: 'middle' | 'start';
+}
+
+function place(index: number, x: number, y: number, w: number): PlacedStage {
+  const stage = STAGES[index];
+  // Con el logo a la izquierda, el texto se centra en el hueco que queda.
+  return { ...stage, x, y, w, h: STAGE.h, textX: x + w / 2 + (stage.tech ? 9 : 0) };
+}
+
+/** El recorrido de izquierda a derecha, con el desvío fail-open por arriba. */
+function horizontal(): Geometry {
+  const y = 106;
+  const mid = y + STAGE.h / 2;
+  return {
+    vertical: false,
+    ...CANVAS,
+    stages: [10, 170, 338, 502].map((x, index) => place(index, x, y, STAGE.w)),
+    bypass: 'M64 106 C64 34 392 34 392 106',
+    bypassLabel: { x: 228, y: 40, transform: null },
+    cache: `M118 ${mid} H170`,
+    cacheLabel: { x: 144, y: 120 },
+    miss: `M278 ${mid} H338`,
+    missLabel: { x: 308, y: 120 },
+    breakerIn: `M446 ${mid} H462`,
+    breakerOut: `M486 ${mid} H502`,
+    breaker: `M446 ${mid} H502`,
+    breakerLabel: { x: 474, y: 160 },
+    lever: { x1: 462, y1: mid, x2: 486, y2: mid },
+    labelAnchor: 'middle',
+  };
+}
+
+/** El mismo recorrido de arriba abajo: etapas a todo el ancho y el desvío por un carril a la izquierda. */
+function vertical(width: number): Geometry {
+  const gutter = 36;
+  const gap = 40;
+  const w = Math.max(0, width - gutter - 12);
+  const stages = STAGES.map((_, index) => place(index, gutter, 12 + index * (STAGE.h + gap), w));
+  const [request, redis, postgresql, gemini] = stages;
+  const centre = gutter + w / 2;
+  const bottom = (stage: PlacedStage): number => stage.y + stage.h;
+  const lane = 12;
+  const from = request.y + STAGE.h / 2;
+  const to = postgresql.y + STAGE.h / 2;
+  const leverTop = bottom(postgresql) + 8;
+  const leverBottom = gemini.y - 8;
+  return {
+    vertical: true,
+    width,
+    height: bottom(gemini) + 12,
+    stages,
+    bypass: `M${gutter} ${from} H${lane + 8} Q${lane} ${from} ${lane} ${from + 8} V${to - 8} Q${lane} ${to} ${lane + 8} ${to} H${gutter}`,
+    // El rótulo acompaña al carril, girado.
+    bypassLabel: { x: lane + 16, y: (from + to) / 2, transform: `rotate(-90 ${lane + 16} ${(from + to) / 2})` },
+    cache: `M${centre} ${bottom(request)} V${redis.y}`,
+    cacheLabel: { x: centre + 10, y: bottom(request) + gap / 2 + 4 },
+    miss: `M${centre} ${bottom(redis)} V${postgresql.y}`,
+    missLabel: { x: centre + 10, y: bottom(redis) + gap / 2 + 4 },
+    breakerIn: `M${centre} ${bottom(postgresql)} V${leverTop}`,
+    breakerOut: `M${centre} ${leverBottom} V${gemini.y}`,
+    breaker: `M${centre} ${bottom(postgresql)} V${gemini.y}`,
+    breakerLabel: { x: centre + 18, y: bottom(postgresql) + gap / 2 + 4 },
+    lever: { x1: centre, y1: leverTop, x2: centre, y2: leverBottom },
+    labelAnchor: 'start',
+  };
+}
+
 /**
  * Recorrido de una petición por caché, base de datos y motor de IA, con dos interruptores
  * para ver qué hace el sistema cuando falla Redis o Gemini. Los fallos son simulados; el
@@ -27,7 +141,7 @@ const CIRCUIT_OPEN_PROBLEM = `{
 @Component({
   selector: 'app-resilience-pipeline',
   standalone: true,
-  imports: [TheaterToggleComponent],
+  imports: [ContainerWidthDirective, TheaterToggleComponent],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   templateUrl: './resilience-pipeline.component.html',
@@ -136,7 +250,6 @@ const CIRCUIT_OPEN_PROBLEM = `{
       stroke: var(--text-1);
       stroke-width: 2.5;
       stroke-linecap: round;
-      transform-origin: 462px 130px;
       transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.5s;
     }
     .lever-open {
@@ -149,6 +262,13 @@ const CIRCUIT_OPEN_PROBLEM = `{
 export class ResiliencePipelineComponent {
   private readonly events = inject(SystemEventsService);
   readonly inspector = inject(TraceInspectorService);
+
+  private readonly box = viewChild(ContainerWidthDirective);
+  /** Geometría del diagrama para el ancho que hay. */
+  readonly geo = computed<Geometry>(() => {
+    const box = this.box();
+    return box?.narrowerThan(CANVAS.width) ? vertical(box.width() || window.innerWidth - 80) : horizontal();
+  });
 
   readonly problem = CIRCUIT_OPEN_PROBLEM;
   readonly icons = TECH_ICONS;

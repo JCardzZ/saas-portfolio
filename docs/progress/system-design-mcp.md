@@ -6,7 +6,8 @@
 ## Estado
 
 - **Plan aprobado** el 2026-10-11, con las seis decisiones de abajo. Trabajo autónomo: solo parar si algo rompe producción, exige gastar dinero o cambia el alcance.
-- **Hito actual: 3 · Oracle Cloud**, terminado en local y con PR abierto. Los hitos 0, 1 y 2 están **integrados en `main`** (PR #22, #23 y #24).
+- **Hito actual: 4 · Diseño de sistemas** (sin empezar). Los hitos 0 a 3 están **integrados en `main`** (PR #22, #23, #24 y #25).
+- **El hito 3 no se ha desplegado todavía**: el PR #25 se integró antes de que terminara su CI, el check `📜 Breaking` falló en `main` y el CD se saltó. Producción sigue con el hito 2. Se despliega con la siguiente CI en verde de `main`.
 - `gh` tiene sesión desde el 2026-10-11 (cuenta JCardzZ): cada hito sale de `origin/main`, con su PR; con el CI gate en verde se integra y se sigue.
 - **Worktree**: `.claude/worktrees/system-design-mcp`.
 - `CLAUDE.md` no se versiona y no existe en el worktree: se actualiza el del checkout principal (`/Users/jcardzz/dev/saas/saas-portfolio/CLAUDE.md`).
@@ -18,7 +19,7 @@
 | 0 · Feature flags | `feat/feature-flags` | Integrado en `main` | #22 |
 | 1 · Lienzo responsivo | `feat/studio-responsive-canvas` | Integrado en `main` | #23 |
 | 2 · Conexiones inteligentes | `feat/studio-smart-connections` | Integrado en `main` | #24 |
-| 3 · Oracle Cloud | `feat/cloud-oracle` | PR abierto; verificado en local | ver GitHub |
+| 3 · Oracle Cloud | `feat/cloud-oracle` | Integrado en `main` con el gate en rojo (ver Estado) | #25 |
 | 4 · Diseño de sistemas | — | Sin empezar | — |
 | 5 · Plantillas de sistemas | — | Sin empezar | — |
 | 6 · MCP núcleo | — | Sin empezar | — |
@@ -91,6 +92,8 @@
 - **Hito 3 · con la flag apagada, `oci` es una nube desconocida para la API** (400 con el mensaje de siempre), no un 404: los endpoints ya existían y solo cambia un valor del enumerado.
 - **Hito 3 · un producto de terceros cuesta lo mismo en cualquier nube**: en OCI solo Cloudflare, Datadog y similares conservan su cifra orientativa.
 - **Hito 3 · los nombres largos de OCI se ajustan al ancho del nodo** (`textLength`), solo en OCI, para no cambiar el dibujo de las otras nubes.
+- **Añadir un valor a un enumerado de una respuesta hace fallar `📜 Breaking`** (oasdiff, `response-property-enum-value-added`), en el PR y en el push a `main`. Pasó con `oci` en `cloudProvider` (hito 3): el cambio es intencionado y va detrás de una flag, pero el check no lo sabe. En adelante el contrato solo crece con campos y esquemas nuevos; si hace falta otro valor en una respuesta, se decide con el autor antes de abrir el PR.
+- **Los PR se abren como borrador** y pasan a «listo» cuando el CI gate está en verde, para que no se integren a medias.
 
 ## Documentación oficial verificada (2026-10-11)
 
@@ -126,7 +129,7 @@
 
 ## Pendientes
 
-- CI gate del PR del hito 3 e integrarlo.
+- Dejar `main` en verde para que el CD despliegue el hito 3.
 - Hitos 4 a 8.
 
 ## Notas para `CLAUDE.md` (pendientes de copiar)

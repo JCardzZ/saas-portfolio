@@ -154,7 +154,10 @@
   <!-- Las dos acciones principales, a la derecha. -->
   <div class="ml-auto flex flex-wrap items-center gap-2">
     <button type="button" class="ui-btn-secondary" [attr.aria-expanded]="copilotOpen()" (click)="toggleCopilot()">Co-piloto IA</button>
-    <button type="button" class="ui-btn-primary" [attr.aria-pressed]="editing()" (click)="toggleEditing()">{{ editing() ? 'Listo' : 'Editar arquitectura' }}</button>
+    <!-- Editar necesita el lienzo de trabajo: en estrecho el diagrama es de solo lectura. -->
+    @if (!compact()) {
+      <button type="button" class="ui-btn-primary" [attr.aria-pressed]="editing()" (click)="toggleEditing()">{{ editing() ? 'Listo' : 'Editar arquitectura' }}</button>
+    }
   </div>
 
   @if (modified()) {
@@ -276,12 +279,18 @@
     <app-service-catalog class="block h-72 animate-slide-up lg:h-auto lg:max-h-[34rem]" [provider]="selectedId()" [catalog]="catalog()" [fromServer]="catalogFromServer()" (picked)="add($event)" />
   }
 
-  <div class="relative min-w-0">
-  <div class="theater-stage min-w-0 overflow-x-auto">
+  <div class="relative min-w-0" appContainerWidth>
+  @if (compact()) {
+    <!-- Sin sitio para el lienzo de trabajo: las mismas piezas y conexiones, de arriba abajo y de solo lectura. -->
+    <app-studio-mobile-canvas [rows]="mobileRows()" [links]="mobileLinks()" [activeId]="activeId()" (picked)="pickMobile($event)" />
+  }
+  <!-- El lienzo de trabajo sigue en el documento, oculto, para que exportar funcione igual. -->
+  <div class="theater-stage min-w-0" [class.hidden]="compact()">
     <svg
       #canvas
+      data-work-canvas
       [attr.viewBox]="viewBox()"
-      class="w-full min-w-[720px]"
+      class="block w-full"
       [class.canvas-fitted]="fitted()"
       [class.canvas-editing]="editing()"
       role="group"
@@ -496,9 +505,12 @@
   </div>
 
   <!-- Con la vista ajustada el diagrama se ve entero: los dos paneles bajan debajo del lienzo en vez de flotar encima. -->
-  <app-live-vitals [class]="fitted() ? 'mt-2 block w-fit max-w-full' : 'absolute left-2 top-2 z-10 max-w-[calc(100%-1rem)]'" [vitals]="vitals()" (beat)="onBeat()" />
+  <!-- En estrecho también: métricas y FinOps van en una fila bajo el diagrama, nunca encima. -->
+  <div [class]="fitted() || compact() ? 'mt-2 flex flex-wrap items-start gap-2' : 'contents'" data-testid="studio-panels">
+  <app-live-vitals [class]="fitted() || compact() ? 'block min-w-0 max-w-full flex-1 basis-56' : 'absolute left-2 top-2 z-10 max-w-[calc(100%-1rem)]'" [vitals]="vitals()" (beat)="onBeat()" />
 
-  <app-cost-badge [class]="fitted() ? 'mt-2 block w-fit max-w-full' : 'absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)]'" [estimate]="cost()" [providerName]="selected().name" [pricingState]="pricingState()" />
+  <app-cost-badge [class]="fitted() || compact() ? 'block w-fit max-w-full' : 'absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)]'" [estimate]="cost()" [providerName]="selected().name" [pricingState]="pricingState()" />
+  </div>
 
   @if (editing() && propertiesNode(); as node) {
     <app-node-properties

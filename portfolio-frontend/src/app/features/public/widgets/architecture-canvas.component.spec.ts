@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
+import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
 import { SystemEventsService } from '../data/system-events.service';
 import { ArchitectureCanvasComponent } from './architecture-canvas.component';
 
@@ -64,7 +65,7 @@ describe('ArchitectureCanvasComponent', () => {
       'infrastructure.adapter', 'infrastructure.config', 'application.port', 'application.service', 'domain',
     ]);
     // Todas las cadenas de imports terminan en domain y ninguna sale de él.
-    const edges = fixture.componentInstance.edges();
+    const edges = fixture.componentInstance.scene().edges;
     expect(edges.some((edge) => edge.from === 'domain')).toBeFalse();
     expect(edges.filter((edge) => edge.to === 'domain').length).toBe(2);
 
@@ -106,5 +107,61 @@ describe('ArchitectureCanvasComponent', () => {
     fixture.detectChanges();
 
     expect(tab(element, 'Componentes').getAttribute('aria-selected')).toBe('true');
+  });
+});
+
+describe('ArchitectureCanvasComponent (narrow container)', () => {
+  for (const width of [222, 342, 560]) {
+    it(`draws every C4 level top to bottom inside ${width} px, with readable text`, () => {
+      ContainerWidthDirective.fixedWidth = width;
+      const fixture = TestBed.createComponent(ArchitectureCanvasComponent);
+      fixture.detectChanges();
+      const element = fixture.nativeElement as HTMLElement;
+      const svg = element.querySelector<SVGSVGElement>('svg[data-layout]')!;
+
+      for (const level of ['Contexto', 'Contenedores', 'Componentes', 'Código']) {
+        Array.from(element.querySelectorAll<HTMLButtonElement>('[role="tab"]')).find((tab) => tab.textContent?.includes(level))!.click();
+        fixture.detectChanges();
+
+        expect(svg.dataset['layout']).toBe('vertical');
+        expect(svg.getAttribute('viewBox')).toMatch(new RegExp(`^0 0 ${width} \\d+$`));
+        const rects = Array.from(element.querySelectorAll<SVGRectElement>('g.node > rect'));
+        expect(rects.length).withContext(level).toBeGreaterThan(2);
+        let previousBottom = 0;
+        for (const rect of rects) {
+          const [x, y, w, h] = ['x', 'y', 'width', 'height'].map((name) => Number(rect.getAttribute(name)));
+          expect(x).toBeGreaterThanOrEqual(0);
+          expect(x + w).withContext(`${level}: el nodo cabe en el ancho`).toBeLessThanOrEqual(width);
+          expect(w).withContext(`${level}: nodo a todo el ancho`).toBeGreaterThan(width * 0.75);
+          expect(y).withContext(`${level}: uno debajo de otro`).toBeGreaterThanOrEqual(previousBottom);
+          previousBottom = y + h;
+        }
+        // El texto va alineado a la izquierda, dentro de su nodo.
+        for (const label of Array.from(element.querySelectorAll<SVGTextElement>('.node-label'))) {
+          expect(label.getAttribute('text-anchor')).toBe('start');
+        }
+      }
+    });
+  }
+
+  it('lays the four level tabs in a grid so none is cut or hidden', () => {
+    ContainerWidthDirective.fixedWidth = 240;
+    const fixture = TestBed.createComponent(ArchitectureCanvasComponent);
+    fixture.detectChanges();
+
+    const tablist = (fixture.nativeElement as HTMLElement).querySelector('[role="tablist"]')!;
+    expect(tablist.classList).toContain('ui-segmented-grid');
+    expect(tablist.querySelectorAll('[role="tab"]').length).toBe(4);
+  });
+
+  it('keeps the columns when there is room for them', () => {
+    ContainerWidthDirective.fixedWidth = 640;
+    const fixture = TestBed.createComponent(ArchitectureCanvasComponent);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector<SVGSVGElement>('svg[data-layout]')!.dataset['layout']).toBe('horizontal');
+    expect(element.querySelector('svg[data-layout]')!.getAttribute('viewBox')).toBe('0 0 600 300');
+    expect(element.querySelector('[role="tablist"]')!.classList).not.toContain('ui-segmented-grid');
   });
 });
