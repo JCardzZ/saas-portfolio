@@ -111,6 +111,14 @@
           <span class="block text-caption font-normal text-ink-2">Recoloca los nodos por capas, en la rejilla</span>
         </button>
       </li>
+      @if (smartRules()) {
+        <li>
+          <button type="button" class="project-item" [attr.aria-pressed]="fitted()" (click)="fitted.set(!fitted()); menu.set(null)">
+            {{ fitted() ? 'Ver el lienzo completo' : 'Ajustar a pantalla' }}
+            <span class="block text-caption font-normal text-ink-2">{{ fitted() ? 'Vuelve al tamaño de trabajo' : 'El diagrama entero, sin desplazar' }}</span>
+          </button>
+        </li>
+      }
     </ul>
   </div>
 
@@ -266,8 +274,9 @@
   <div class="theater-stage min-w-0 overflow-x-auto">
     <svg
       #canvas
-      [attr.viewBox]="viewBox"
+      [attr.viewBox]="viewBox()"
       class="w-full min-w-[720px]"
+      [class.canvas-fitted]="fitted()"
       [class.canvas-editing]="editing()"
       role="group"
       [style.--provider]="providerColor()"
@@ -477,9 +486,10 @@
     </svg>
   </div>
 
-  <app-live-vitals class="absolute left-2 top-2 z-10 max-w-[calc(100%-1rem)]" [vitals]="vitals()" (beat)="onBeat()" />
+  <!-- Con la vista ajustada el diagrama se ve entero: los dos paneles bajan debajo del lienzo en vez de flotar encima. -->
+  <app-live-vitals [class]="fitted() ? 'mt-2 block w-fit max-w-full' : 'absolute left-2 top-2 z-10 max-w-[calc(100%-1rem)]'" [vitals]="vitals()" (beat)="onBeat()" />
 
-  <app-cost-badge class="absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)]" [estimate]="cost()" [providerName]="selected().name" [pricingState]="pricingState()" />
+  <app-cost-badge [class]="fitted() ? 'mt-2 block w-fit max-w-full' : 'absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)]'" [estimate]="cost()" [providerName]="selected().name" [pricingState]="pricingState()" />
 
   @if (editing() && propertiesNode(); as node) {
     <app-node-properties

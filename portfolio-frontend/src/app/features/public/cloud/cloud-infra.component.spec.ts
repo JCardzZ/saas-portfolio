@@ -12,7 +12,10 @@ import { TraceInspectorService } from '../data/trace-inspector.service';
 import { ArchitectureStudioService as ArchitectureStudio } from './architecture-studio.service';
 import { PriceQuote, PricingRequest } from '../../../core/api';
 import { resetRuntimeConfig, runtimeConfig } from '../../../core/config/runtime-config';
+import { OpenFeature } from '@openfeature/web-sdk';
+import { PlatformFlagsProvider } from '../../../core/flags/feature-flags';
 import { CloudInfraComponent, GRAPH_DIFF_DEBOUNCE_MS } from './cloud-infra.component';
+import { directNodes, fits, settled } from './zone-layout';
 import { DATA_BLUEPRINTS } from './data-blueprints';
 import { CLOUD_NODES } from './cloud-topology.data';
 
@@ -959,6 +962,97 @@ describe('CloudInfraComponent', () => {
         // Ni más pequeña que el mínimo ni más allá del borde inferior del lienzo.
         expect(added().w).toBe(90);
         expect(added().y + added().h).toBe(716);
+      });
+
+      const openView = (fixture: { detectChanges(): void }, element: HTMLElement) => {
+        element.querySelector<HTMLButtonElement>('[aria-controls="menu-view"]')!.click();
+        fixture.detectChanges();
+      };
+
+      it('does not offer to fit the diagram to the screen while studio.smart-rules is off', () => {
+        const { fixture, element } = create();
+        openView(fixture, element);
+
+        expect(element.querySelector('#menu-view')!.textContent).toContain('Auto-ordenar');
+        expect(element.querySelector('#menu-view')!.textContent).not.toContain('Ajustar a pantalla');
+      });
+
+      describe('with studio.smart-rules on (responsive canvas)', () => {
+        beforeEach(async () => {
+          await OpenFeature.setProviderAndWait(new PlatformFlagsProvider(() => Promise.resolve({ 'studio.smart-rules': true })));
+        });
+
+        afterEach(async () => {
+          await OpenFeature.clearProviders();
+        });
+
+        it('stops a subnet at the size of its nodes and keeps them inside, apart', () => {
+          const { fixture, element, component } = edit();
+          const subnet = () => component.zones().find((candidate) => candidate.id === 'subnet-data')!;
+          const inside = () => directNodes(subnet(), component.nodes(), component.zones());
+          const count = inside().length;
+          expect(count).toBe(2);
+
+          // Mayús+flecha arriba encoge el recuadro desde su esquina inferior derecha.
+          for (let step = 0; step < 60; step++) {
+            grip(element, 'Subred privada · datos').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', shiftKey: true }));
+            fixture.detectChanges();
+          }
+
+          expect(inside().length).toBe(count);
+          expect(fits(count, subnet().w, subnet().h)).toBeTrue();
+          expect(settled(inside(), subnet())).toBeTrue();
+          // Sin la flag habría bajado hasta los 90 del mínimo, con los nodos fuera.
+          expect(subnet().h).toBeGreaterThan(90);
+        });
+
+        it('reflows the nodes into more columns when the subnet gets wider and shorter', () => {
+          const { fixture, element, component } = edit();
+          const subnet = () => component.zones().find((candidate) => candidate.id === 'subnet-data')!;
+          const inside = () => directNodes(subnet(), component.nodes(), component.zones());
+          // Sin la columna de servicios gestionados, que quedaría debajo del recuadro al ensancharlo.
+          component.nodes.update((nodes) => nodes.filter((candidate) => candidate.zone !== 'managed'));
+          fixture.detectChanges();
+          const before = inside().map((candidate) => [candidate.id, candidate.x, candidate.y]);
+          expect(before.length).toBe(2);
+          const press = (init: KeyboardEventInit, times: number) => {
+            for (let step = 0; step < times; step++) {
+              grip(element, 'Subred privada · datos').dispatchEvent(new KeyboardEvent('keydown', init));
+              // La plantilla le pasa el recuadro al manejador: hay que repintar entre pulsaciones.
+              fixture.detectChanges();
+            }
+          };
+
+          press({ key: 'ArrowRight', shiftKey: true }, 12);
+          // Más ancha y con sitio: nadie se mueve.
+          expect(inside().map((candidate) => [candidate.id, candidate.x, candidate.y])).toEqual(before);
+
+          press({ key: 'ArrowUp', shiftKey: true }, 60);
+          expect(new Set(inside().map((candidate) => candidate.x)).size).toBeGreaterThan(1);
+          expect(settled(inside(), subnet())).toBeTrue();
+          // Los nodos no cambian de zona de red por reacomodarse.
+          expect(inside().every((candidate) => candidate.zone === 'data')).toBeTrue();
+        });
+
+        it('fits the diagram to the screen and back from the View menu', () => {
+          const { fixture, element } = create();
+          const canvas = diagram(element);
+          expect(canvas.getAttribute('viewBox')).toBe('0 0 1110 716');
+
+          openView(fixture, element);
+          menuItem(element, 'Ajustar a pantalla').click();
+          fixture.detectChanges();
+          const [x, y, width, height] = canvas.getAttribute('viewBox')!.split(' ').map(Number);
+          expect(canvas.classList).toContain('canvas-fitted');
+          expect([x >= 0, y >= 0, x + width <= 1110, y + height <= 716]).toEqual([true, true, true, true]);
+          expect(height).toBeLessThan(716);
+
+          openView(fixture, element);
+          menuItem(element, 'Ver el lienzo completo').click();
+          fixture.detectChanges();
+          expect(canvas.getAttribute('viewBox')).toBe('0 0 1110 716');
+          expect(canvas.classList).not.toContain('canvas-fitted');
+        });
       });
     });
 

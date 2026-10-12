@@ -6,7 +6,8 @@
 ## Estado
 
 - **Plan aprobado** el 2026-10-11, con las seis decisiones de abajo. Trabajo autónomo: solo parar si algo rompe producción, exige gastar dinero o cambia el alcance.
-- **Hito actual: 0 · Feature flags**, rama `feat/feature-flags`. Código y tests terminados en local; **pendiente de push, PR y CI**.
+- **Hito actual: 2 · Conexiones inteligentes** (sin empezar). Los hitos 0 y 1 están terminados y subidos, **sin PR**: `gh` no tiene sesión en esta máquina (ver Bloqueos).
+- Las ramas van apiladas: `feat/feature-flags` → `feat/studio-responsive-canvas`. Cuando haya `gh`: PR del hito 0 contra `main`, esperar al gate, integrar, y seguir con el siguiente.
 - **Worktree**: `.claude/worktrees/system-design-mcp`.
 - `CLAUDE.md` no se versiona y no existe en el worktree: se actualiza el del checkout principal (`/Users/jcardzz/dev/saas/saas-portfolio/CLAUDE.md`).
 
@@ -14,8 +15,8 @@
 
 | Hito | Rama | Estado | PR |
 | - | - | - | - |
-| 0 · Feature flags | `feat/feature-flags` | Hecho en local | pendiente |
-| 1 · Lienzo responsivo | — | Sin empezar | — |
+| 0 · Feature flags | `feat/feature-flags` | Subida; verificada en local | pendiente (sin `gh`) |
+| 1 · Lienzo responsivo | `feat/studio-responsive-canvas` (sobre la del hito 0) | Subida; verificada en local | pendiente (sin `gh`) |
 | 2 · Conexiones inteligentes | — | Sin empezar | — |
 | 3 · Oracle Cloud | — | Sin empezar | — |
 | 4 · Diseño de sistemas | — | Sin empezar | — |
@@ -31,6 +32,14 @@
 - Frontend: `core/flags` (`@openfeature/web-sdk` 1.10.0 con proveedor propio, `FlagService`), carga en `main.ts`, endpoints en el modo demo, página `/admin/features`.
 - Verificado en local: `./gradlew test` (unitarios + ArchUnit), `./gradlew integrationTest` (7 tests, con Docker), 413 tests del frontend, `npm run build` (460 kB de 500), `npm run test:tools`, Spectral sin errores.
 - Sin verificar: Lighthouse y Playwright (los ejecuta la CI); el hito no cambia nada visible del sitio público.
+
+## Hito 1 · qué se hizo
+
+- `zone-layout.ts` (puro, con tests): cuánto cabe en un recuadro, `resizeToContent` (no baja del tamaño de sus nodos ni de los recuadros que contiene; la esquina opuesta no se mueve), `reflow` (solo reordena lo que ha quedado fuera o encima de otro) y `contentBounds` (vista ajustada).
+- `CloudInfraComponent`: con `studio.smart-rules` encendida, redimensionar una zona (ratón o Mayús+flechas) usa lo anterior; menú **Ver → Ajustar a pantalla** (y vuelta). Con la vista ajustada, los paneles de métricas y FinOps bajan debajo del lienzo.
+- Sin cambio de esquema del proyecto. Con la flag apagada no cambia nada (hay tests de las dos ramas).
+- Playwright: `e2e/studio-smart.e2e.ts` en todos los perfiles, con capturas antes/después (`e2e-screens/<perfil>/hito-1-*.png`).
+- Verificado en local: 438 tests del frontend, build (460 kB), `test:tools`, Playwright en `desktop-1440-chromium`, `tablet-820-chromium` e `iphone-390-chromium`. **WebKit sin ejecutar.**
 
 ## Decisiones del autor (2026-10-11)
 
@@ -52,6 +61,10 @@
 - **Frontend sin `@openfeature/angular-sdk`**: basta el SDK web con una señal propia; menos peso en el bundle inicial.
 - **Modo demo**: lo que se enciende en `/admin/features` se guarda en `localStorage` (`demo-feature-flags`), solo en ese navegador. Sirve para probar lo nuevo con `ng serve` y para Playwright. Fuera del modo demo no se lee.
 - **Ramas apiladas** mientras un PR espera a la CI: el hito siguiente parte de la rama del anterior.
+- **Hito 1 · la rejilla del reacomodo es la de auto-ordenar** (columnas cada 140, filas cada 90): las dos funciones dejan el mismo dibujo.
+- **Hito 1 · un nodo que sigue entero dentro y sin solaparse no se mueve** al redimensionar; solo se reordena cuando hace falta. Durante un arrastre se parte siempre de la posición inicial, así que al volver atrás todo vuelve a su sitio.
+- **Hito 1 · «Ajustar a pantalla»** ciñe el `viewBox` al contenido y quita el ancho mínimo de 720 px; es una vista de conjunto que el visitante pide, y en ella los nodos pueden medir menos de 44 px en un móvil (igual que en «Ajustar a pantalla» del pipeline).
+- **«En móvil el editor en solo lectura»** se entiende como alcance de las pruebas: en móviles y tabletas Playwright comprueba la lectura de lo nuevo, y la edición se prueba en escritorio. No se ha quitado la edición en móvil, que ya existía (regla de no cambiar lo existente).
 
 ## Documentación oficial verificada (2026-10-11)
 
@@ -103,3 +116,10 @@ La sesión está aislada en el worktree y no puede escribir en el `CLAUDE.md` de
 - **Modo demo**: no se pide nada a la API; valen los del build más lo que se encienda en `/admin/features`, que se guarda solo en ese navegador (`localStorage`, clave `demo-feature-flags`) y se aplica del todo al recargar. Playwright enciende flags con `addInitScript` sobre esa clave. Fuera del modo demo esa clave no se lee.
 - **Bundle inicial: 460 kB** de 500 (el SDK de OpenFeature son ~27 kB). Lo nuevo va en trozos bajo demanda.
 - `integrationTest` **ya se ha ejecutado en local** (2026-10-11, con Docker en marcha): 7 tests en verde.
+
+### LIENZO RESPONSIVO (hito 1, flag `studio.smart-rules`)
+- `features/public/cloud/zone-layout.ts`: al redimensionar una zona con la flag encendida, el recuadro no baja del tamaño de su contenido (`resizeToContent`: sus nodos directos en rejilla y las zonas que contiene) y los nodos que quedarían fuera o solapados se reacomodan (`reflow`). **La rejilla es la de `auto-layout.ts`** (140 × 90, primera fila a 68): si cambia una, cambia la otra. Un nodo «directo» es el que no está en una zona más pequeña de dentro (`directNodes`).
+- **Ninguna plantilla puede empezar con una zona más pequeña que lo que contiene** (test en `zone-layout.spec.ts`).
+- **Ver → Ajustar a pantalla** (`fitted`): `viewBox` ceñido al contenido (`contentBounds`), clase `.canvas-fitted` (sin el `min-w` de 720 px, alto máximo 70dvh) y los paneles de métricas y FinOps debajo del lienzo.
+- En un test del componente, **entre dos pulsaciones de teclado sobre una zona hay que llamar a `fixture.detectChanges()`**: la plantilla le pasa la zona al manejador.
+- Playwright: `e2e/studio-smart.e2e.ts` corre en todos los perfiles (lista `FLAGGED` de `playwright.config.ts`); enciende la flag con `addInitScript` sobre `demo-feature-flags`. Lo nuevo detrás de una flag añade ahí su spec.
