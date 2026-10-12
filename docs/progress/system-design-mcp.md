@@ -6,8 +6,7 @@
 ## Estado
 
 - **Plan aprobado** el 2026-10-11, con las seis decisiones de abajo. Trabajo autónomo: solo parar si algo rompe producción, exige gastar dinero o cambia el alcance.
-- **Hito actual: 4 · Diseño de sistemas** (sin empezar). Los hitos 0 a 3 están **integrados en `main`** (PR #22, #23, #24 y #25).
-- **El hito 3 no se ha desplegado todavía**: el PR #25 se integró antes de que terminara su CI, el check `📜 Breaking` falló en `main` y el CD se saltó. Producción sigue con el hito 2. Se despliega con la siguiente CI en verde de `main`.
+- **Hito actual: 4 · Diseño de sistemas**, terminado en local y con PR abierto. Los hitos 0 a 3 están **integrados en `main`** (PR #22, #23, #24 y #25) y **desplegados** (el 3 salió con el PR #26, tras quedar `main` en rojo por el check `📜 Breaking`).
 - `gh` tiene sesión desde el 2026-10-11 (cuenta JCardzZ): cada hito sale de `origin/main`, con su PR; con el CI gate en verde se integra y se sigue.
 - **Worktree**: `.claude/worktrees/system-design-mcp`.
 - `CLAUDE.md` no se versiona y no existe en el worktree: se actualiza el del checkout principal (`/Users/jcardzz/dev/saas/saas-portfolio/CLAUDE.md`).
@@ -20,7 +19,7 @@
 | 1 · Lienzo responsivo | `feat/studio-responsive-canvas` | Integrado en `main` | #23 |
 | 2 · Conexiones inteligentes | `feat/studio-smart-connections` | Integrado en `main` | #24 |
 | 3 · Oracle Cloud | `feat/cloud-oracle` | Integrado en `main` con el gate en rojo (ver Estado) | #25 |
-| 4 · Diseño de sistemas | — | Sin empezar | — |
+| 4 · Diseño de sistemas | `feat/system-design` | PR abierto; verificado en local | ver GitHub |
 | 5 · Plantillas de sistemas | — | Sin empezar | — |
 | 6 · MCP núcleo | — | Sin empezar | — |
 | 7 · MCP calidad y observabilidad | — | Sin empezar | — |
@@ -60,6 +59,18 @@
 - Marca: sin logo de Oracle (su guía respondió 403); aro neutro y nombre en texto. `docs/brand-usage.md`.
 - Verificado en local: `./gradlew test`, 495 tests del frontend, build (466 kB), Spectral, Playwright en escritorio, tablet y móvil (Chromium). **Sin ejecutar en local: `integrationTest`, WebKit y Lighthouse.**
 
+## Hito 4 · qué se hizo
+
+- **Un proyecto, dos vistas.** Con `studio.system-design` encendida, el Estudio gana una pestaña «Aplicación» junto a «Infraestructura» (el lienzo de siempre). El diseño de sistema va dentro del proyecto (`StudioProject.system`): choices, deployments y nfr.
+- **Catálogo curado como datos** (`system/system-catalog.data.ts` → `architecture/system-design.json`): 9 categorías (cliente, backend, estilo de API, autenticación, base de datos, caché, colas, BFF, push) con 3 o 4 opciones; cada opción dice en qué tipos de nodo de infraestructura se puede desplegar.
+- **«Se despliega en»** validado por reglas: solo se ofrecen los nodos válidos, y si el nodo desaparece o deja de ser válido sale un error (`deployment-missing`, `deployment-invalid`); lo que falta por desplegar, un aviso.
+- **Requisitos no funcionales como entrada** (usuarios, RPS, latencia p95, disponibilidad, presupuesto, PCI y salud): validación de rangos y 15 reglas en datos que avisan con qué hacer.
+- **Dos evaluadores, un resultado**: `system/system-design.ts` (navegador, al momento) y `SystemDesignRules` (backend). Diez casos exportados (`architecture/system-cases.json`) que el backend tiene que evaluar texto por texto igual.
+- **Salidas** (solo backend, `SystemDesignService` + `SystemDesignGenerator`): `main.tf` y `variables.tf` (el generador de siempre), `openapi.yaml` (REST) o `service.proto` (gRPC), `docker-compose.yml` y `README.md`. Para GraphQL y eventos no se genera contrato.
+- **API** (etiqueta `System Design`, detrás de la flag: 404 si está apagada): `GET /public/architecture/system-design/catalog`, `POST …/evaluate` y `POST …/generate`. `ArchitectureProject` y su petición ganan `system` (opcional); migración `V8` (`system_json`).
+- **Esquema del proyecto: versión 3**, con migración 2 → 3. El fixture v2 (`e2e/fixtures/studio-project-v2-exposed-database.json`) sigue abriendo.
+- Verificado en local: `./gradlew test`, 536 tests del frontend, build (470 kB de 500) y Spectral. **Sin verificar en local: los escenarios Playwright nuevos (`hito-4-*`; la máquina estaba saturada y no terminaron), `integrationTest` (incluye la migración V8), WebKit y Lighthouse.** Los corre la CI del PR.
+
 ## Decisiones del autor (2026-10-11)
 
 1. Servidor MCP con el SDK oficial `mcp-core` 2.0.1 y transporte Servlet, sirviendo 2025-11-25, detrás de una capa propia para migrar a 2026-07-28 cuando el SDK la publique.
@@ -94,6 +105,13 @@
 - **Hito 3 · los nombres largos de OCI se ajustan al ancho del nodo** (`textLength`), solo en OCI, para no cambiar el dibujo de las otras nubes.
 - **Añadir un valor a un enumerado de una respuesta hace fallar `📜 Breaking`** (oasdiff, `response-property-enum-value-added`), en el PR y en el push a `main`. Pasó con `oci` en `cloudProvider` (hito 3): el cambio es intencionado y va detrás de una flag, pero el check no lo sabe. En adelante el contrato solo crece con campos y esquemas nuevos; si hace falta otro valor en una respuesta, se decide con el autor antes de abrir el PR.
 - **Los PR se abren como borrador** y pasan a «listo» cuando el CI gate está en verde, para que no se integren a medias.
+- **Hito 4 · la vista de Aplicación es un tablero de elecciones, no un segundo lienzo libre**: una opción por categoría, con el camino de la petición dibujado a partir de ellas. Cumple «un solo modelo con dos vistas» sin duplicar el editor de grafos.
+- **Hito 4 · los archivos los genera solo el backend.** No hay un segundo generador en el navegador: en modo demo el botón dice que no está disponible, no inventa nada. Las comprobaciones sí van en los dos lados (el navegador las necesita al momento).
+- **Hito 4 · el presupuesto se compara con el coste que estima quien llama** (`estimatedMonthlyCostUsd`); sin él, la regla no se evalúa. El backend no recalcula el coste del lienzo.
+- **Hito 4 · imágenes del `docker-compose.yml`** comprobadas en Docker Hub el 2026-10-11: `postgres:17`, `mongo:8`, `redis:8`, `rabbitmq:4-management`, `apache/kafka:4.2.2`. Lo que solo existe gestionado (clave-valor, pub/sub, identidad) deja un comentario, no un contenedor.
+- **Hito 4 · el contrato nuevo no usa enumerados cerrados** (`severity`, `kind`, `language`, `cloudProvider` son texto con su descripción), para que crecer no vuelva a romper `📜 Breaking`.
+- **Hito 4 · el diseño de sistemas comparte el cupo del generador de Terraform** (`rateLimitProperties.terraform()`), con su propia clave (`system-design:<ip>`).
+- **Hito 4 · en el móvil la vista de Aplicación es de solo lectura** (por debajo de 640 px), como pediste para lo nuevo.
 
 ## Documentación oficial verificada (2026-10-11)
 
@@ -129,8 +147,9 @@
 
 ## Pendientes
 
-- Dejar `main` en verde para que el CD despliegue el hito 3.
-- Hitos 4 a 8.
+- CI gate del PR del hito 4 e integrarlo.
+- Hitos 5 a 8.
+- Sin confirmar del hito 4: el `.proto` generado no se ha pasado por `protoc` (no hay compilador en la CI); el OpenAPI sí se analiza como YAML en los tests, pero no se ha pasado por un validador de OpenAPI.
 
 ## Notas para `CLAUDE.md` (pendientes de copiar)
 
@@ -167,3 +186,12 @@ La sesión está aislada en el worktree y no puede escribir en el `CLAUDE.md` de
 - **En OCI no hay cifras de coste escritas a mano** para servicios de la nube: solo el precio de la lista pública de Oracle (`OciPriceListAdapter` + `OciSkuCatalog`, tabla cerrada de números de parte; `PRICING_OCI_ENABLED`, `PRICING_OCI_BASE_URL`). OCI tampoco entra en la comparación de costes de la auditoría ni tiene filas en `catalog.json`.
 - **Flag**: frontend, `providers()` del lienzo; backend, `CloudProviders.resolve(code, flags)` en los controladores y el mapper que reciben una nube (con la flag apagada: 400 «Nube no admitida», igual que una nube desconocida).
 - **Sin logo de Oracle** (`TECH_ICONS.oci` es el aro neutro). Un diagrama en OCI no pinta iconos de AWS, Azure ni Google Cloud.
+
+### DISEÑO DE SISTEMAS (hito 4, flag `studio.system-design`)
+- **Un proyecto, dos vistas.** `StudioProject.system` (opcional) es lo que va encima del lienzo: `choices` (categoría → opción), `deployments` (categoría → id de nodo) y `nfr`. El lienzo es la vista de Infraestructura; `SystemDesignComponent` (`features/public/cloud/system/`), la de Aplicación. `PROJECT_VERSION = 3`; un v2 abre igual (migración 2 → 3).
+- **El catálogo y las reglas son datos**: `system/system-catalog.data.ts` (`SYSTEM_CATALOG`, `NFR_INPUTS`, `NFR_RULES`) → `npm run export:presets` → `architecture/system-design.json`. Añadir una opción o una regla es añadir una entrada; hay tests que fallan si una opción se despliega en un tipo de nodo que no existe.
+- **Dos evaluadores que deben dar lo mismo**: `system/system-design.ts` (`evaluateSystem`) y `domain/model/system/SystemDesignRules.evaluate`. Los casos de `system/system-cases.ts` se exportan con su resultado a `src/test/resources/architecture/system-cases.json` y `SystemDesignRulesTest` los compara texto por texto. **Al tocar un mensaje o una regla: `npm run export:presets` y los dos tests.** Los números van sin separadores (`plain`).
+- **Los archivos los genera solo el backend** (`SystemDesignService.generate` → `TerraformGenerator` + `SystemDesignGenerator`): `main.tf`, `variables.tf`, `openapi.yaml` o `service.proto`, `docker-compose.yml`, `README.md`. Nada de lo que escribe quien llama llega a los archivos salvo los nombres de nodo, escapados en el README. No guarda ni aplica nada.
+- **Endpoints** (etiqueta `System Design`, en `FeatureGateConfig.GATES`: 404 con la flag apagada): `GET /public/architecture/system-design/catalog`, `POST …/evaluate`, `POST …/generate`. `SystemDesignUseCase` es lo que usará la herramienta MCP `disenar_sistema`.
+- **Persistencia**: columna `system_json` (migración `V8`), `ArchitectureProjectDomain.system` (nullable; hay un constructor sin él). Al guardar se valida contra el catálogo (`SystemDesignRules.validated`): una categoría u opción desconocida es un 400.
+- En el modo demo no se simula la generación (404 del mock): el panel lo dice. **Bundle inicial: 470 kB** de 500.

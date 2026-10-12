@@ -28,6 +28,7 @@ tags:
   - name: Profile
   - name: Architecture Studio
   - name: Feature Flags
+  - name: System Design
 
 paths:
   /auth/token:
@@ -752,6 +753,83 @@ paths:
         '429':
           $ref: '#/components/responses/RateLimitError'
 
+  /public/architecture/system-design/catalog:
+    get:
+      tags: [System Design]
+      summary: Catalog of the Application view and the non-functional requirements
+      description: >
+        What can be chosen for each part of a system (client, backend, API style, authentication,
+        database, cache, queues, BFF and push) and on which infrastructure pieces each choice can be
+        deployed, plus the non-functional requirements that can be asked of it. Behind the
+        `studio.system-design` feature flag: while it is off this path answers 404.
+      responses:
+        '200':
+          description: The catalog.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemDesignCatalog'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /public/architecture/system-design/evaluate:
+    post:
+      tags: [System Design]
+      summary: Check a system design against its deployment rules and non-functional requirements
+      description: >
+        Stateless: nothing is stored. Says, piece by piece, what is deployed where it cannot run and
+        what the design is missing for the requirements asked of it, with what to do about each.
+        Rate limited per client address. Behind the `studio.system-design` feature flag (404 while off).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SystemDesignRequest'
+      responses:
+        '200':
+          description: The findings; empty when there is nothing to say.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemDesignEvaluation'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /public/architecture/system-design/generate:
+    post:
+      tags: [System Design]
+      summary: Generate the starting files of a system design
+      description: >
+        Stateless: nothing is stored and nothing is applied. Returns the Terraform skeleton of the
+        infrastructure, an initial API contract (OpenAPI for REST, `.proto` for gRPC; none for
+        GraphQL or events), a `docker-compose.yml` for local development and a README. They are
+        starting points to be completed, not something to deploy as is. Rate limited per client
+        address. Behind the `studio.system-design` feature flag (404 while off).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SystemDesignRequest'
+      responses:
+        '200':
+          description: The generated files and the findings of the design.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemDesignBundle'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
   /public/architecture/pricing:
     post:
       tags: [Architecture Studio]
@@ -1211,6 +1289,8 @@ components:
             nodes: { type: array, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
             connections: { type: array, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
             zones: { type: array, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+            system:
+              $ref: '#/components/schemas/SystemDesign'
             diagnostics:
               type: array
               description: >-
@@ -1241,6 +1321,141 @@ components:
         nodes: { type: array, maxItems: 60, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
         connections: { type: array, maxItems: 200, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
         zones: { type: array, maxItems: 24, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+        system:
+          $ref: '#/components/schemas/SystemDesign'
+
+    SystemDesign:
+      description: >-
+        What runs on top of the infrastructure of a project: the choice made in each category of the
+        Application view, the infrastructure node each piece is deployed on and the non-functional
+        requirements asked of the system. Optional: a project without it is only infrastructure.
+      type: object
+      required: [choices, deployments, nfr]
+      properties:
+        choices:
+          type: object
+          description: "Category id → option id, both from the system design catalog."
+          maxProperties: 16
+          additionalProperties: { type: string, maxLength: 48 }
+          example: { client: web-spa, backend: spring-boot, api: rest, auth: jwt-own, database: postgresql }
+        deployments:
+          type: object
+          description: "Category id → id of the infrastructure node that piece is deployed on."
+          maxProperties: 16
+          additionalProperties: { type: string, maxLength: 48 }
+          example: { backend: api, database: postgres }
+        nfr:
+          $ref: '#/components/schemas/NonFunctionalRequirements'
+
+    NonFunctionalRequirements:
+      type: object
+      properties:
+        users: { type: number, description: "Monthly active users.", example: 50000 }
+        rps: { type: number, description: "Requests per second at peak.", example: 800 }
+        latencyMs: { type: number, description: "Target p95 latency, in milliseconds.", example: 150 }
+        availability: { type: number, description: "Target availability, in percent: 99, 99.9, 99.95 or 99.99.", example: 99.9 }
+        budgetUsd: { type: number, description: "Monthly cloud budget, in USD.", example: 500 }
+        compliance:
+          type: array
+          maxItems: 4
+          items: { type: string, maxLength: 16 }
+          description: "Regulations that apply: `pci` (card payments), `health` (health data)."
+
+    SystemDesignRequest:
+      type: object
+      required: [cloudProvider, nodes, connections, system]
+      properties:
+        cloudProvider: { type: string, maxLength: 16, description: "aws, gcp, azure or, while its flag is on, oci.", example: aws }
+        nodes: { type: array, maxItems: 60, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+        connections: { type: array, maxItems: 200, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+        system:
+          $ref: '#/components/schemas/SystemDesign'
+        estimatedMonthlyCostUsd:
+          type: number
+          minimum: 0
+          description: "Monthly cost estimate of the infrastructure, if the caller has one. Without it the budget is not judged."
+
+    SystemDesignFinding:
+      type: object
+      required: [rule, kind, severity, message]
+      properties:
+        rule: { type: string, example: "rps-cache" }
+        kind: { type: string, description: "input (what was asked is not valid), deployment or nfr.", example: "nfr" }
+        severity: { type: string, description: "error or warning.", example: "warning" }
+        category: { type: string, description: "Category of the Application view it refers to.", example: "cache" }
+        nodeId: { type: string, description: "Infrastructure node it refers to." }
+        message: { type: string, example: "Con 800 peticiones por segundo y sin caché, todas las lecturas llegan a la base de datos." }
+        suggestion: { type: string, example: "Elige una caché: Redis para datos por usuario, el borde para lo que es igual para todos." }
+
+    SystemDesignEvaluation:
+      type: object
+      required: [findings]
+      properties:
+        findings: { type: array, items: { $ref: '#/components/schemas/SystemDesignFinding' } }
+
+    SystemDesignFile:
+      type: object
+      required: [path, language, content]
+      properties:
+        path: { type: string, example: "openapi.yaml" }
+        language: { type: string, description: "hcl, yaml, protobuf or markdown.", example: "yaml" }
+        content: { type: string }
+
+    SystemDesignBundle:
+      type: object
+      required: [files, findings]
+      properties:
+        files: { type: array, items: { $ref: '#/components/schemas/SystemDesignFile' } }
+        findings: { type: array, items: { $ref: '#/components/schemas/SystemDesignFinding' } }
+
+    SystemDesignCatalog:
+      type: object
+      required: [categories, requirements, compliance]
+      properties:
+        categories: { type: array, items: { $ref: '#/components/schemas/SystemDesignCategory' } }
+        requirements: { type: array, items: { $ref: '#/components/schemas/SystemDesignRequirement' } }
+        compliance: { type: array, items: { $ref: '#/components/schemas/SystemDesignComplianceOption' } }
+
+    SystemDesignCategory:
+      type: object
+      required: [id, name, question, optional, options]
+      properties:
+        id: { type: string, example: "database" }
+        name: { type: string, example: "Base de datos" }
+        question: { type: string, example: "¿Dónde viven los datos?" }
+        optional: { type: boolean, description: "An optional category may be left without a choice." }
+        options: { type: array, items: { $ref: '#/components/schemas/SystemDesignOption' } }
+
+    SystemDesignOption:
+      type: object
+      required: [id, name, summary, deploysOn]
+      properties:
+        id: { type: string, example: "postgresql" }
+        name: { type: string, example: "Relacional · PostgreSQL" }
+        summary: { type: string }
+        deploysOn: { type: array, items: { type: string }, description: "Infrastructure node types this choice can be deployed on; empty if it is not deployed in the cloud." }
+        notDeployed: { type: string, description: "Why it is not deployed, when it is not." }
+        contract: { type: string, description: "Contract generated for this API style: openapi or proto." }
+
+    SystemDesignRequirement:
+      type: object
+      required: [field, name, unit, min, max]
+      properties:
+        field: { type: string, example: "rps" }
+        name: { type: string, example: "Peticiones por segundo en el pico" }
+        unit: { type: string, example: "req/s" }
+        min: { type: number }
+        max: { type: number }
+        choices: { type: array, items: { type: number }, description: "Allowed values, when it is not a free number." }
+        help: { type: string }
+
+    SystemDesignComplianceOption:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, example: "pci" }
+        name: { type: string, example: "Pagos con tarjeta (PCI DSS)" }
+        help: { type: string }
 
     ArchitectureTopology:
       type: object

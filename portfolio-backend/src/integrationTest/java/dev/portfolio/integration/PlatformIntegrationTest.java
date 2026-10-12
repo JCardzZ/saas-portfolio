@@ -97,7 +97,7 @@ class PlatformIntegrationTest {
         Integer vectorExtension = jdbc.queryForObject(
                 "SELECT count(*) FROM pg_extension WHERE extname = 'vector'", Integer.class);
 
-        assertThat(applied).isGreaterThanOrEqualTo(7);
+        assertThat(applied).isGreaterThanOrEqualTo(8);
         assertThat(vectorExtension).isEqualTo(1);
     }
 

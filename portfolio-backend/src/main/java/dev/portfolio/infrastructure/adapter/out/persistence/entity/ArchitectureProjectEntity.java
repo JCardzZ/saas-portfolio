@@ -42,6 +42,10 @@ public class ArchitectureProjectEntity {
     @Column(name = "zones_json", nullable = false, columnDefinition = "TEXT")
     private String zonesJson;
 
+    /** Diseño de sistema del proyecto, como JSON; {@code null} si solo es infraestructura. */
+    @Column(name = "system_json", columnDefinition = "TEXT")
+    private String systemJson;
+
     @Column(name = "is_preset", nullable = false)
     private boolean preset;
 

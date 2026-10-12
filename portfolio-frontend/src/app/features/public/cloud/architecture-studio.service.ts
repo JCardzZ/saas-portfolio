@@ -112,6 +112,7 @@ export class ArchitectureStudioService {
       nodes: project.nodes as unknown as { [key: string]: unknown }[],
       connections: project.links as unknown as { [key: string]: unknown }[],
       zones: project.zones as unknown as { [key: string]: unknown }[],
+      ...(project.system ? { system: project.system } : {}),
     };
     const call = id ? this.api.adminArchitectureProjectsIdPut(id, request) : this.api.adminArchitectureProjectsPost(request);
     return call.pipe(tap(() => this.loadProjects()));
@@ -131,7 +132,7 @@ export class ArchitectureStudioService {
 function toStudioProject(project: ArchitectureProject): StudioProject {
   const parsed = parseProject(JSON.stringify({
     format: PROJECT_FORMAT, version: PROJECT_VERSION, provider: project.cloudProvider,
-    nodes: project.nodes, links: project.connections, zones: project.zones,
+    nodes: project.nodes, links: project.connections, zones: project.zones, system: project.system,
   }));
   if (!parsed.ok) {
     throw new Error(parsed.error);

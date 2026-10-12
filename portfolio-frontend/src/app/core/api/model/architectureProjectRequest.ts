@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { SystemDesign } from './systemDesign';
 
 
 export interface ArchitectureProjectRequest { 
@@ -19,6 +20,7 @@ export interface ArchitectureProjectRequest {
     nodes: Array<{ [key: string]: any; }>;
     connections: Array<{ [key: string]: any; }>;
     zones: Array<{ [key: string]: any; }>;
+    system?: SystemDesign;
 }
 export namespace ArchitectureProjectRequest {
     export const CloudProviderEnum = {

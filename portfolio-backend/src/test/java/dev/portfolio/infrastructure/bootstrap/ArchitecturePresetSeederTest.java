@@ -1,6 +1,7 @@
 package dev.portfolio.infrastructure.bootstrap;
 
 import dev.portfolio.testsupport.GraphRulesFixture;
+import dev.portfolio.testsupport.SystemDesignFixture;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase;
 import dev.portfolio.application.service.ArchitectureProjectService;
@@ -21,7 +22,7 @@ import static org.mockito.Mockito.mock;
 class ArchitecturePresetSeederTest {
 
     private final InMemoryRepository repository = new InMemoryRepository();
-    private final ArchitectureProjectService service = new ArchitectureProjectService(repository, GraphRulesFixture.load(), flag -> false);
+    private final ArchitectureProjectService service = new ArchitectureProjectService(repository, GraphRulesFixture.load(), flag -> false, SystemDesignFixture.rules());
     private final ArchitecturePresetSeeder seeder = new ArchitecturePresetSeeder(service, new ObjectMapper());
 
     @Test

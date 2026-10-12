@@ -30,6 +30,7 @@ import java.util.Locale;
 public class ArchitectureWebMapper {
 
     private final ObjectProvider<FeatureFlagUseCase> flags;
+    private final SystemDesignWebMapper systemMapper = new SystemDesignWebMapper();
 
     public ArchitectureWebMapper(ObjectProvider<FeatureFlagUseCase> flags) {
         this.flags = flags;
@@ -72,13 +73,14 @@ public class ArchitectureWebMapper {
         dto.setNodes(project.nodes());
         dto.setConnections(project.connections());
         dto.setZones(project.zones());
+        dto.setSystem(systemMapper.toDto(project.system()));
         return dto;
     }
 
     public Draft toDraft(ArchitectureProjectRequest request) {
         return new Draft(request.getTitle(), request.getDescription(),
                 request.getCloudProvider() == null ? null : CloudProviders.resolve(request.getCloudProvider().getValue(), flags),
-                request.getNodes(), request.getConnections(), request.getZones());
+                request.getNodes(), request.getConnections(), request.getZones(), systemMapper.toDomain(request.getSystem()));
     }
 
     public List<CloudCatalogItem> toCatalog(List<CloudCatalogItemDomain> items) {

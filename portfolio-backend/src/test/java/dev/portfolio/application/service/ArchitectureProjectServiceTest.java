@@ -1,6 +1,7 @@
 package dev.portfolio.application.service;
 
 import dev.portfolio.testsupport.GraphRulesFixture;
+import dev.portfolio.testsupport.SystemDesignFixture;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase.Draft;
 import dev.portfolio.application.port.out.ArchitectureProjectRepositoryPort;
 import dev.portfolio.domain.exception.InvalidRequestException;
@@ -9,6 +10,7 @@ import dev.portfolio.domain.model.ArchitectureProjectDomain;
 import dev.portfolio.domain.model.CloudProviderDomain;
 import dev.portfolio.domain.model.FeatureFlagDomain;
 import dev.portfolio.domain.model.GraphDiagnosticDomain;
+import dev.portfolio.domain.model.system.SystemDesignDomain;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -53,7 +55,7 @@ public class ArchitectureProjectServiceTest {
     private static final List<Map<String, Object>> LINKS = List.of(Map.of("from", "api", "to", "api"));
 
     private final InMemoryRepository repository = new InMemoryRepository();
-    private final ArchitectureProjectService service = new ArchitectureProjectService(repository, GraphRulesFixture.load(), flag -> false);
+    private final ArchitectureProjectService service = new ArchitectureProjectService(repository, GraphRulesFixture.load(), flag -> false, SystemDesignFixture.rules());
 
     private static Draft draft(String title) {
         return new Draft(title, "  Una descripción  ", CloudProviderDomain.AZURE, NODES, LINKS, List.of());
@@ -157,7 +159,7 @@ public class ArchitectureProjectServiceTest {
                 Map.of("id", "postgres", "type", "postgres", "zone", "public", "service", "RDS PostgreSQL"));
         List<Map<String, Object>> links = List.of(Map.of("from", "users", "to", "postgres"));
         ArchitectureProjectService on = new ArchitectureProjectService(repository, GraphRulesFixture.load(),
-                flag -> flag == FeatureFlagDomain.STUDIO_SMART_RULES);
+                flag -> flag == FeatureFlagDomain.STUDIO_SMART_RULES, SystemDesignFixture.rules());
 
         assertThat(service.diagnose(nodes, links)).isEmpty();
         assertThat(on.diagnose(nodes, links)).extracting(GraphDiagnosticDomain::rule).containsExactly("exposure", "placement");
@@ -165,5 +167,33 @@ public class ArchitectureProjectServiceTest {
 
         // Los avisos no impiden guardar: un proyecto así ya se podía guardar antes.
         assertThat(on.create(new Draft("Expuesta", null, CloudProviderDomain.AWS, nodes, links, List.of())).nodes()).hasSize(2);
+    }
+
+    @Test
+    void savesTheSystemDesignOfAProjectOnceCheckedAgainstTheCatalog() {
+        SystemDesignDomain system = new SystemDesignDomain(
+                Map.of("client", "mobile-native", "backend", "go", "api", "grpc", "auth", "jwt-own", "database", "postgresql"),
+                Map.of("backend", "api", "client", "api"), new SystemDesignDomain.NonFunctional(null, 500.0, null, null, null, List.of("health")));
+
+        ArchitectureProjectDomain saved = service.create(new Draft("Con sistema", null, CloudProviderDomain.AWS, NODES, LINKS, List.of(), system));
+
+        assertThat(saved.system().choices()).containsEntry("api", "grpc");
+        // Una app móvil no se despliega en la nube: no se guarda dónde.
+        assertThat(saved.system().deployments()).containsExactly(Map.entry("backend", "api"));
+        assertThat(service.findById(saved.id()).system().nfr().compliance()).containsExactly("health");
+
+        // Un proyecto sin diseño sigue siendo solo infraestructura.
+        assertThat(service.create(draft("Solo infraestructura")).system()).isNull();
+        // Y al actualizarlo sin diseño, deja de tenerlo.
+        assertThat(service.update(saved.id(), draft("Sin sistema")).system()).isNull();
+    }
+
+    @Test
+    void refusesToSaveASystemDesignThatNamesSomethingOutsideTheCatalog() {
+        SystemDesignDomain unknown = new SystemDesignDomain(Map.of("backend", "cobol"), Map.of(), null);
+
+        assertThatThrownBy(() -> service.create(new Draft("Raro", null, CloudProviderDomain.AWS, NODES, LINKS, List.of(), unknown)))
+                .isInstanceOf(InvalidRequestException.class).hasMessageStartingWith("Opción desconocida en «Backend»");
+        assertThat(service.findAll()).isEmpty();
     }
 }

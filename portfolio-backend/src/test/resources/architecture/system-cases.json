@@ -1,0 +1,1084 @@
+[
+  {
+    "name": "default-undeployed",
+    "design": {
+      "choices": {
+        "client": "web-spa",
+        "backend": "spring-boot",
+        "api": "rest",
+        "auth": "jwt-own",
+        "database": "postgresql"
+      },
+      "deployments": {},
+      "nfr": {
+        "compliance": []
+      }
+    },
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "service": "Visitantes"
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "service": "Cloudflare"
+      },
+      {
+        "id": "static",
+        "type": "static",
+        "service": "S3 + CloudFront"
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "service": "Application LB"
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "service": "ECS Fargate"
+      },
+      {
+        "id": "postgres",
+        "type": "postgres",
+        "service": "RDS PostgreSQL"
+      },
+      {
+        "id": "redis",
+        "type": "redis",
+        "service": "ElastiCache"
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "service": "Secrets Manager"
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "service": "CloudWatch"
+      },
+      {
+        "id": "registry",
+        "type": "registry",
+        "service": "ECR"
+      },
+      {
+        "id": "gemini",
+        "type": "gemini",
+        "service": "Gemini API"
+      },
+      {
+        "id": "cicd",
+        "type": "cicd",
+        "service": "Terraform + Docker"
+      }
+    ],
+    "costUsd": 138,
+    "findings": [
+      {
+        "rule": "deployment-pending",
+        "kind": "deployment",
+        "severity": "warning",
+        "category": "client",
+        "message": "Web · SPA (Angular, React) todavía no se despliega en ninguna pieza de la infraestructura.",
+        "suggestion": "Despliégalo en S3 + CloudFront."
+      },
+      {
+        "rule": "deployment-pending",
+        "kind": "deployment",
+        "severity": "warning",
+        "category": "backend",
+        "message": "Java · Spring Boot todavía no se despliega en ninguna pieza de la infraestructura.",
+        "suggestion": "Despliégalo en ECS Fargate."
+      },
+      {
+        "rule": "deployment-pending",
+        "kind": "deployment",
+        "severity": "warning",
+        "category": "database",
+        "message": "Relacional · PostgreSQL todavía no se despliega en ninguna pieza de la infraestructura.",
+        "suggestion": "Despliégalo en RDS PostgreSQL."
+      }
+    ]
+  },
+  {
+    "name": "deployed-without-requirements",
+    "design": {
+      "choices": {
+        "client": "web-spa",
+        "backend": "spring-boot",
+        "api": "rest",
+        "auth": "jwt-own",
+        "database": "postgresql"
+      },
+      "deployments": {
+        "client": "static",
+        "backend": "api",
+        "database": "postgres"
+      },
+      "nfr": {
+        "compliance": []
+      }
+    },
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "service": "Visitantes"
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "service": "Cloudflare"
+      },
+      {
+        "id": "static",
+        "type": "static",
+        "service": "S3 + CloudFront"
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "service": "Application LB"
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "service": "ECS Fargate"
+      },
+      {
+        "id": "postgres",
+        "type": "postgres",
+        "service": "RDS PostgreSQL"
+      },
+      {
+        "id": "redis",
+        "type": "redis",
+        "service": "ElastiCache"
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "service": "Secrets Manager"
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "service": "CloudWatch"
+      },
+      {
+        "id": "registry",
+        "type": "registry",
+        "service": "ECR"
+      },
+      {
+        "id": "gemini",
+        "type": "gemini",
+        "service": "Gemini API"
+      },
+      {
+        "id": "cicd",
+        "type": "cicd",
+        "service": "Terraform + Docker"
+      }
+    ],
+    "costUsd": 138,
+    "findings": []
+  },
+  {
+    "name": "invalid-and-missing-deployments",
+    "design": {
+      "choices": {
+        "client": "web-spa",
+        "backend": "spring-boot",
+        "api": "rest",
+        "auth": "jwt-own",
+        "database": "postgresql"
+      },
+      "deployments": {
+        "client": "static",
+        "backend": "postgres",
+        "database": "ya-no-existe"
+      },
+      "nfr": {
+        "compliance": []
+      }
+    },
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "service": "Visitantes"
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "service": "Cloudflare"
+      },
+      {
+        "id": "static",
+        "type": "static",
+        "service": "S3 + CloudFront"
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "service": "Application LB"
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "service": "ECS Fargate"
+      },
+      {
+        "id": "postgres",
+        "type": "postgres",
+        "service": "RDS PostgreSQL"
+      },
+      {
+        "id": "redis",
+        "type": "redis",
+        "service": "ElastiCache"
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "service": "Secrets Manager"
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "service": "CloudWatch"
+      },
+      {
+        "id": "registry",
+        "type": "registry",
+        "service": "ECR"
+      },
+      {
+        "id": "gemini",
+        "type": "gemini",
+        "service": "Gemini API"
+      },
+      {
+        "id": "cicd",
+        "type": "cicd",
+        "service": "Terraform + Docker"
+      }
+    ],
+    "costUsd": 138,
+    "findings": [
+      {
+        "rule": "deployment-invalid",
+        "kind": "deployment",
+        "severity": "error",
+        "category": "backend",
+        "nodeId": "postgres",
+        "message": "Java · Spring Boot no se puede desplegar en RDS PostgreSQL.",
+        "suggestion": "Despliégalo en ECS Fargate."
+      },
+      {
+        "rule": "deployment-missing",
+        "kind": "deployment",
+        "severity": "error",
+        "category": "database",
+        "message": "Relacional · PostgreSQL se desplegaba en una pieza que ya no está en la infraestructura.",
+        "suggestion": "Despliégalo en RDS PostgreSQL."
+      }
+    ]
+  },
+  {
+    "name": "nothing-to-deploy-on",
+    "design": {
+      "choices": {
+        "client": "mobile-cross",
+        "backend": "spring-boot",
+        "api": "rest",
+        "auth": "jwt-own",
+        "database": "document",
+        "push": "websocket"
+      },
+      "deployments": {},
+      "nfr": {
+        "compliance": []
+      }
+    },
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "service": "Visitantes"
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "service": "Cloudflare"
+      },
+      {
+        "id": "static",
+        "type": "static",
+        "service": "S3 + CloudFront"
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "service": "Application LB"
+      },
+      {
+        "id": "postgres",
+        "type": "postgres",
+        "service": "RDS PostgreSQL"
+      },
+      {
+        "id": "redis",
+        "type": "redis",
+        "service": "ElastiCache"
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "service": "Secrets Manager"
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "service": "CloudWatch"
+      },
+      {
+        "id": "registry",
+        "type": "registry",
+        "service": "ECR"
+      },
+      {
+        "id": "gemini",
+        "type": "gemini",
+        "service": "Gemini API"
+      },
+      {
+        "id": "cicd",
+        "type": "cicd",
+        "service": "Terraform + Docker"
+      }
+    ],
+    "costUsd": null,
+    "findings": [
+      {
+        "rule": "deployment-pending",
+        "kind": "deployment",
+        "severity": "warning",
+        "category": "backend",
+        "message": "Java · Spring Boot todavía no se despliega en ninguna pieza de la infraestructura.",
+        "suggestion": "Añade a la infraestructura una pieza donde desplegarlo."
+      },
+      {
+        "rule": "deployment-pending",
+        "kind": "deployment",
+        "severity": "warning",
+        "category": "database",
+        "message": "Documentos · MongoDB todavía no se despliega en ninguna pieza de la infraestructura.",
+        "suggestion": "Añade a la infraestructura una pieza donde desplegarlo."
+      },
+      {
+        "rule": "deployment-pending",
+        "kind": "deployment",
+        "severity": "warning",
+        "category": "push",
+        "message": "WebSocket todavía no se despliega en ninguna pieza de la infraestructura.",
+        "suggestion": "Añade a la infraestructura una pieza donde desplegarlo."
+      }
+    ]
+  },
+  {
+    "name": "demanding-requirements-on-the-reference",
+    "design": {
+      "choices": {
+        "client": "web-spa",
+        "backend": "spring-boot",
+        "api": "rest",
+        "auth": "jwt-own",
+        "database": "postgresql"
+      },
+      "deployments": {
+        "client": "static",
+        "backend": "api",
+        "database": "postgres"
+      },
+      "nfr": {
+        "users": 500000,
+        "rps": 3000,
+        "latencyMs": 80,
+        "availability": 99.99,
+        "budgetUsd": 100,
+        "compliance": [
+          "pci",
+          "health"
+        ]
+      }
+    },
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "service": "Visitantes"
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "service": "ECS Fargate"
+      },
+      {
+        "id": "postgres",
+        "type": "postgres",
+        "service": "RDS PostgreSQL"
+      },
+      {
+        "id": "redis",
+        "type": "redis",
+        "service": "ElastiCache"
+      },
+      {
+        "id": "registry",
+        "type": "registry",
+        "service": "ECR"
+      },
+      {
+        "id": "gemini",
+        "type": "gemini",
+        "service": "Gemini API"
+      },
+      {
+        "id": "cicd",
+        "type": "cicd",
+        "service": "Terraform + Docker"
+      }
+    ],
+    "costUsd": 138.4,
+    "findings": [
+      {
+        "rule": "deployment-missing",
+        "kind": "deployment",
+        "severity": "error",
+        "category": "client",
+        "message": "Web · SPA (Angular, React) se desplegaba en una pieza que ya no está en la infraestructura.",
+        "suggestion": "Añade a la infraestructura una pieza donde desplegarlo."
+      },
+      {
+        "rule": "rps-cache",
+        "kind": "nfr",
+        "severity": "warning",
+        "category": "cache",
+        "message": "Con 3000 peticiones por segundo y sin caché, todas las lecturas llegan a la base de datos.",
+        "suggestion": "Elige una caché: Redis para datos por usuario, el borde para lo que es igual para todos."
+      },
+      {
+        "rule": "rps-async",
+        "kind": "nfr",
+        "severity": "warning",
+        "category": "queue",
+        "message": "A 3000 peticiones por segundo, el trabajo lento hecho dentro de la petición agota el backend en los picos.",
+        "suggestion": "Saca ese trabajo a una cola o a un stream de eventos."
+      },
+      {
+        "rule": "latency-cache",
+        "kind": "nfr",
+        "severity": "warning",
+        "category": "cache",
+        "message": "Una p95 de 80 ms deja poco margen para consultar la base de datos en cada petición.",
+        "suggestion": "Elige una caché para las lecturas más frecuentes."
+      },
+      {
+        "rule": "latency-edge",
+        "kind": "nfr",
+        "severity": "warning",
+        "message": "Con una p95 de 80 ms, la distancia entre el usuario y la región cuenta.",
+        "suggestion": "Sirve lo estático desde una CDN, cerca del usuario."
+      },
+      {
+        "rule": "availability-database",
+        "kind": "nfr",
+        "severity": "warning",
+        "message": "Una disponibilidad del 99.99 % no se sostiene con una sola instancia de base de datos.",
+        "suggestion": "Añade una réplica en espera en otra zona."
+      },
+      {
+        "rule": "availability-entry",
+        "kind": "nfr",
+        "severity": "warning",
+        "message": "Para el 99.99 % hacen falta varias réplicas del backend y algo que reparta el tráfico entre ellas.",
+        "suggestion": "Pon un balanceador o un API gateway delante del backend."
+      },
+      {
+        "rule": "availability-multi-region",
+        "kind": "nfr",
+        "severity": "warning",
+        "message": "El 99.99 % son menos de 53 minutos de caída al año: la caída de una región entera ya no cabe.",
+        "suggestion": "Lleva los datos a una base de datos con réplica en otra región."
+      },
+      {
+        "rule": "users-observability",
+        "kind": "nfr",
+        "severity": "warning",
+        "message": "Con 500000 usuarios, un fallo que no se mide se descubre por las quejas.",
+        "suggestion": "Añade monitorización con métricas y alertas."
+      },
+      {
+        "rule": "pci-waf",
+        "kind": "nfr",
+        "severity": "warning",
+        "message": "Un sistema que trata datos de tarjetas expuesto a Internet necesita filtrar el tráfico malicioso.",
+        "suggestion": "Añade un cortafuegos de aplicación (WAF) delante."
+      },
+      {
+        "rule": "pci-secrets",
+        "kind": "nfr",
+        "severity": "warning",
+        "message": "Las claves con las que se cifran los datos de tarjetas no pueden vivir en la configuración.",
+        "suggestion": "Guárdalas en un gestor de secretos, con rotación."
+      },
+      {
+        "rule": "pci-audit",
+        "kind": "nfr",
+        "severity": "warning",
+        "message": "Hay que poder reconstruir quién accedió a los datos de tarjetas y cuándo.",
+        "suggestion": "Añade monitorización y conserva los registros de acceso."
+      },
+      {
+        "rule": "health-secrets",
+        "kind": "nfr",
+        "severity": "warning",
+        "message": "Los datos de salud se cifran, y sus claves no pueden vivir en la configuración.",
+        "suggestion": "Guárdalas en un gestor de secretos."
+      },
+      {
+        "rule": "health-identity",
+        "kind": "nfr",
+        "severity": "warning",
+        "category": "auth",
+        "message": "El acceso a datos de salud exige identificar a cada persona y poder retirarle el acceso.",
+        "suggestion": "Usa un proveedor de identidad gestionado, con segundo factor."
+      },
+      {
+        "rule": "budget",
+        "kind": "nfr",
+        "severity": "warning",
+        "message": "El coste estimado (≈ $138 al mes) supera el presupuesto de $100.",
+        "suggestion": "Quita piezas, elige tamaños menores o sube el presupuesto."
+      }
+    ]
+  },
+  {
+    "name": "demanding-requirements-met",
+    "design": {
+      "choices": {
+        "client": "web-spa",
+        "backend": "go",
+        "api": "grpc",
+        "auth": "oidc-managed",
+        "database": "postgresql",
+        "cache": "redis",
+        "queue": "stream",
+        "bff": "gateway",
+        "push": "sse"
+      },
+      "deployments": {
+        "client": "static",
+        "backend": "api",
+        "auth": "identity",
+        "database": "global",
+        "cache": "redis",
+        "queue": "kafka",
+        "bff": "gateway",
+        "push": "api"
+      },
+      "nfr": {
+        "users": 500000,
+        "rps": 3000,
+        "latencyMs": 80,
+        "availability": 99.99,
+        "budgetUsd": 5000,
+        "compliance": [
+          "pci",
+          "health"
+        ]
+      }
+    },
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "service": "Visitantes"
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "service": "Cloudflare"
+      },
+      {
+        "id": "static",
+        "type": "static",
+        "service": "S3 + CloudFront"
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "service": "Application LB"
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "service": "ECS Fargate"
+      },
+      {
+        "id": "postgres",
+        "type": "postgres",
+        "service": "RDS PostgreSQL"
+      },
+      {
+        "id": "redis",
+        "type": "redis",
+        "service": "ElastiCache"
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "service": "Secrets Manager"
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "service": "CloudWatch"
+      },
+      {
+        "id": "registry",
+        "type": "registry",
+        "service": "ECR"
+      },
+      {
+        "id": "gemini",
+        "type": "gemini",
+        "service": "Gemini API"
+      },
+      {
+        "id": "cicd",
+        "type": "cicd",
+        "service": "Terraform + Docker"
+      },
+      {
+        "id": "identity",
+        "type": "identity",
+        "service": "Cognito"
+      },
+      {
+        "id": "global",
+        "type": "global-database",
+        "service": "Aurora Global Database"
+      },
+      {
+        "id": "kafka",
+        "type": "streaming",
+        "service": "MSK (Kafka)"
+      },
+      {
+        "id": "gateway",
+        "type": "api-gateway",
+        "service": "Amazon API Gateway"
+      },
+      {
+        "id": "waf",
+        "type": "waf",
+        "service": "WAF"
+      }
+    ],
+    "costUsd": 1210,
+    "findings": []
+  },
+  {
+    "name": "one-database-replicated-or-not",
+    "design": {
+      "choices": {
+        "client": "web-spa",
+        "backend": "spring-boot",
+        "api": "rest",
+        "auth": "jwt-own",
+        "database": "postgresql"
+      },
+      "deployments": {
+        "client": "static",
+        "backend": "api",
+        "database": "postgres"
+      },
+      "nfr": {
+        "availability": 99.9,
+        "compliance": []
+      }
+    },
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "service": "Visitantes"
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "service": "Cloudflare"
+      },
+      {
+        "id": "static",
+        "type": "static",
+        "service": "S3 + CloudFront"
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "service": "Application LB"
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "service": "ECS Fargate"
+      },
+      {
+        "id": "postgres",
+        "type": "postgres",
+        "service": "RDS PostgreSQL"
+      },
+      {
+        "id": "redis",
+        "type": "redis",
+        "service": "ElastiCache"
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "service": "Secrets Manager"
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "service": "CloudWatch"
+      },
+      {
+        "id": "registry",
+        "type": "registry",
+        "service": "ECR"
+      },
+      {
+        "id": "gemini",
+        "type": "gemini",
+        "service": "Gemini API"
+      },
+      {
+        "id": "cicd",
+        "type": "cicd",
+        "service": "Terraform + Docker"
+      },
+      {
+        "id": "postgres-standby",
+        "type": "postgres",
+        "service": "RDS · réplica"
+      }
+    ],
+    "costUsd": null,
+    "findings": []
+  },
+  {
+    "name": "requirements-out-of-range",
+    "design": {
+      "choices": {
+        "client": "web-spa",
+        "backend": "spring-boot",
+        "api": "rest",
+        "auth": "jwt-own",
+        "database": "postgresql"
+      },
+      "deployments": {
+        "client": "static",
+        "backend": "api",
+        "database": "postgres"
+      },
+      "nfr": {
+        "users": 2000000000,
+        "rps": 0,
+        "latencyMs": 250,
+        "availability": 97,
+        "budgetUsd": 0.5,
+        "compliance": []
+      }
+    },
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "service": "Visitantes"
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "service": "Cloudflare"
+      },
+      {
+        "id": "static",
+        "type": "static",
+        "service": "S3 + CloudFront"
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "service": "Application LB"
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "service": "ECS Fargate"
+      },
+      {
+        "id": "postgres",
+        "type": "postgres",
+        "service": "RDS PostgreSQL"
+      },
+      {
+        "id": "redis",
+        "type": "redis",
+        "service": "ElastiCache"
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "service": "Secrets Manager"
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "service": "CloudWatch"
+      },
+      {
+        "id": "registry",
+        "type": "registry",
+        "service": "ECR"
+      },
+      {
+        "id": "gemini",
+        "type": "gemini",
+        "service": "Gemini API"
+      },
+      {
+        "id": "cicd",
+        "type": "cicd",
+        "service": "Terraform + Docker"
+      }
+    ],
+    "costUsd": 138,
+    "findings": [
+      {
+        "rule": "nfr-range",
+        "kind": "input",
+        "severity": "error",
+        "message": "Usuarios activos al mes: tiene que estar entre 1 y 1000000000."
+      },
+      {
+        "rule": "nfr-range",
+        "kind": "input",
+        "severity": "error",
+        "message": "Peticiones por segundo en el pico: tiene que estar entre 1 y 1000000."
+      },
+      {
+        "rule": "nfr-range",
+        "kind": "input",
+        "severity": "error",
+        "message": "Disponibilidad objetivo: elige uno de estos valores: 99, 99.9, 99.95, 99.99."
+      },
+      {
+        "rule": "nfr-range",
+        "kind": "input",
+        "severity": "error",
+        "message": "Presupuesto mensual: tiene que estar entre 1 y 10000000."
+      }
+    ]
+  },
+  {
+    "name": "session-needs-a-shared-store",
+    "design": {
+      "choices": {
+        "client": "web-spa",
+        "backend": "spring-boot",
+        "api": "rest",
+        "auth": "session",
+        "database": "postgresql",
+        "cache": "cdn"
+      },
+      "deployments": {
+        "client": "static",
+        "backend": "api",
+        "database": "postgres",
+        "auth": "redis",
+        "cache": "postgres"
+      },
+      "nfr": {
+        "compliance": []
+      }
+    },
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "service": "Visitantes"
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "service": "Cloudflare"
+      },
+      {
+        "id": "static",
+        "type": "static",
+        "service": "S3 + CloudFront"
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "service": "Application LB"
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "service": "ECS Fargate"
+      },
+      {
+        "id": "postgres",
+        "type": "postgres",
+        "service": "RDS PostgreSQL"
+      },
+      {
+        "id": "redis",
+        "type": "redis",
+        "service": "ElastiCache"
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "service": "Secrets Manager"
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "service": "CloudWatch"
+      },
+      {
+        "id": "registry",
+        "type": "registry",
+        "service": "ECR"
+      },
+      {
+        "id": "gemini",
+        "type": "gemini",
+        "service": "Gemini API"
+      },
+      {
+        "id": "cicd",
+        "type": "cicd",
+        "service": "Terraform + Docker"
+      }
+    ],
+    "costUsd": 99.5,
+    "findings": [
+      {
+        "rule": "deployment-invalid",
+        "kind": "deployment",
+        "severity": "error",
+        "category": "cache",
+        "nodeId": "postgres",
+        "message": "Caché en el borde (CDN) no se puede desplegar en RDS PostgreSQL.",
+        "suggestion": "Despliégalo en Cloudflare o S3 + CloudFront."
+      }
+    ]
+  },
+  {
+    "name": "budget-without-an-estimate",
+    "design": {
+      "choices": {
+        "client": "web-spa",
+        "backend": "spring-boot",
+        "api": "rest",
+        "auth": "jwt-own",
+        "database": "postgresql"
+      },
+      "deployments": {
+        "client": "static",
+        "backend": "api",
+        "database": "postgres"
+      },
+      "nfr": {
+        "budgetUsd": 10,
+        "compliance": []
+      }
+    },
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "service": "Visitantes"
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "service": "Cloudflare"
+      },
+      {
+        "id": "static",
+        "type": "static",
+        "service": "S3 + CloudFront"
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "service": "Application LB"
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "service": "ECS Fargate"
+      },
+      {
+        "id": "postgres",
+        "type": "postgres",
+        "service": "RDS PostgreSQL"
+      },
+      {
+        "id": "redis",
+        "type": "redis",
+        "service": "ElastiCache"
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "service": "Secrets Manager"
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "service": "CloudWatch"
+      },
+      {
+        "id": "registry",
+        "type": "registry",
+        "service": "ECR"
+      },
+      {
+        "id": "gemini",
+        "type": "gemini",
+        "service": "Gemini API"
+      },
+      {
+        "id": "cicd",
+        "type": "cicd",
+        "service": "Terraform + Docker"
+      }
+    ],
+    "costUsd": null,
+    "findings": []
+  }
+]
