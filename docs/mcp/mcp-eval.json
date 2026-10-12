@@ -1,0 +1,198 @@
+{
+  "generatedAt" : "2026-10-12T13:59:21.961820Z",
+  "model" : "simulado (determinista)",
+  "simulated" : true,
+  "total" : 27,
+  "passed" : 27,
+  "toolCalls" : 30,
+  "tasks" : [ {
+    "id" : "T01",
+    "area" : "plantillas",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 5,
+    "failures" : [ ]
+  }, {
+    "id" : "T02",
+    "area" : "plantillas",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 2,
+    "failures" : [ ]
+  }, {
+    "id" : "T03",
+    "area" : "plantillas",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 2,
+    "failures" : [ ]
+  }, {
+    "id" : "T04",
+    "area" : "validación",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 2,
+    "failures" : [ ]
+  }, {
+    "id" : "T05",
+    "area" : "validación",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 2,
+    "failures" : [ ]
+  }, {
+    "id" : "T06",
+    "area" : "validación",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 1,
+    "failures" : [ ]
+  }, {
+    "id" : "T07",
+    "area" : "validación",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 1,
+    "failures" : [ ]
+  }, {
+    "id" : "T08",
+    "area" : "validación",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 2,
+    "failures" : [ ]
+  }, {
+    "id" : "T09",
+    "area" : "terraform",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 3,
+    "failures" : [ ]
+  }, {
+    "id" : "T10",
+    "area" : "terraform",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 2,
+    "failures" : [ ]
+  }, {
+    "id" : "T11",
+    "area" : "terraform",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 2,
+    "failures" : [ ]
+  }, {
+    "id" : "T12",
+    "area" : "terraform",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 2,
+    "failures" : [ ]
+  }, {
+    "id" : "T13",
+    "area" : "seguridad",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 2,
+    "failures" : [ ]
+  }, {
+    "id" : "T14",
+    "area" : "costes",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 3,
+    "failures" : [ ]
+  }, {
+    "id" : "T15",
+    "area" : "costes",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 2,
+    "failures" : [ ]
+  }, {
+    "id" : "T16",
+    "area" : "costes",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 2,
+    "failures" : [ ]
+  }, {
+    "id" : "T17",
+    "area" : "portafolio",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 1,
+    "failures" : [ ]
+  }, {
+    "id" : "T18",
+    "area" : "portafolio",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 1,
+    "failures" : [ ]
+  }, {
+    "id" : "T19",
+    "area" : "diseño",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 3,
+    "failures" : [ ]
+  }, {
+    "id" : "T20",
+    "area" : "diseño",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 4,
+    "failures" : [ ]
+  }, {
+    "id" : "T21",
+    "area" : "diseño",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 3,
+    "failures" : [ ]
+  }, {
+    "id" : "T22",
+    "area" : "diseño",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 1,
+    "failures" : [ ]
+  }, {
+    "id" : "T23",
+    "area" : "varios pasos",
+    "passed" : true,
+    "calls" : 2,
+    "latencyMs" : 3,
+    "failures" : [ ]
+  }, {
+    "id" : "T24",
+    "area" : "varios pasos",
+    "passed" : true,
+    "calls" : 2,
+    "latencyMs" : 5,
+    "failures" : [ ]
+  }, {
+    "id" : "T25",
+    "area" : "varios pasos",
+    "passed" : true,
+    "calls" : 2,
+    "latencyMs" : 4,
+    "failures" : [ ]
+  }, {
+    "id" : "T26",
+    "area" : "errores",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 4,
+    "failures" : [ ]
+  }, {
+    "id" : "T27",
+    "area" : "seguridad",
+    "passed" : true,
+    "calls" : 1,
+    "latencyMs" : 2,
+    "failures" : [ ]
+  } ]
+}

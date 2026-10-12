@@ -1,0 +1,13 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.jcardzz/portfolio-platform",
+  "title": "Plataforma de arquitectura del portafolio",
+  "description": "Valida arquitecturas, genera esqueletos de Terraform, cotiza y diseña sistemas. No guarda nada.",
+  "version": "1.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.example.com/v1/mcp"
+    }
+  ]
+}

@@ -10,8 +10,18 @@ import java.time.Duration;
 @FunctionalInterface
 public interface McpObserver {
 
-    McpObserver NONE = (tool, outcome, latency) -> { };
+    McpObserver NONE = call -> { };
 
-    /** @param outcome {@code ok}, {@code invalid_input}, {@code rate_limited} o {@code error} */
-    void toolCalled(String tool, String outcome, Duration latency);
+    void toolCalled(ToolCall call);
+
+    /**
+     * @param outcome   {@code ok}, {@code invalid_input}, {@code rate_limited} o {@code error}
+     * @param sessionId sesión MCP de la llamada; identifica una conexión, no a una persona
+     */
+    record ToolCall(String tool, String outcome, Duration latency, String sessionId) {
+
+        public boolean failed() {
+            return !"ok".equals(outcome);
+        }
+    }
 }

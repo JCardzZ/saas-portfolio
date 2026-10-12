@@ -1560,7 +1560,7 @@ components:
         timestamp: { type: string, format: date-time }
         eventType:
           type: string
-          enum: [CACHE_HIT, CACHE_MISS, VECTOR_SEARCH, RAG_QUERY, JWT_VERIFIED, PRICING_REQUEST, PRICING_CACHED, PRICING_UNESTIMATED, PRICING_FALLBACK]
+          enum: [CACHE_HIT, CACHE_MISS, VECTOR_SEARCH, RAG_QUERY, JWT_VERIFIED, PRICING_REQUEST, PRICING_CACHED, PRICING_UNESTIMATED, PRICING_FALLBACK, MCP_TOOL_CALL]
         details: { type: string, example: "5 fragmentos · 12 ms" }
         traceId: { type: string, example: "3f1c9a52-8d4e-4b7a-9c61-2e5f0b7d4a18" }
 

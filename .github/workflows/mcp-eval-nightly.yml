@@ -1,0 +1,85 @@
+# EVALUACIÓN NOCTURNA DEL SERVIDOR MCP CON UN MODELO REAL
+#
+# DESACTIVADA. Las mismas tareas que evalúa cada PR con un modelo simulado (McpEvalTest), resueltas
+# aquí por un modelo real (Gemini). Cuesta dinero, así que no corre hasta que el autor lo decida:
+#
+#   1. Crea el secret GEMINI_API_KEY en el repositorio.
+#   2. Crea la variable de repositorio MCP_EVAL_NIGHTLY con el valor `true`.
+#
+# Sin las dos cosas, el job se omite (o, lanzado a mano sin el secret, termina con un aviso y sin
+# llamar a nadie). Para volver a apagarla basta borrar la variable.
+#
+# Gasto acotado en el propio test: como mucho 25 tareas y 8 llamadas al modelo por tarea (200).
+# Las tareas son sintéticas: no llevan datos de ninguna persona ni de ninguna empresa.
+#
+# El adaptador del modelo (GeminiEvalModel) no se ha ejecutado nunca contra Gemini: está escrito
+# contra el SDK oficial y compila, pero la primera ejecución puede necesitar ajustes.
+name: MCP eval (nightly)
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mcp-eval-nightly
+  cancel-in-progress: true
+
+jobs:
+  eval:
+    name: 🧪 Evaluación con modelo real
+    # La variable es el interruptor: sin ella, ni el cron ni un lanzamiento a mano hacen nada.
+    if: ${{ vars.MCP_EVAL_NIGHTLY == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - name: ¿Hay clave?
+        id: key
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "::warning::Falta el secret GEMINI_API_KEY: la evaluación no se ejecuta."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.key.outputs.present == 'true'
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        if: steps.key.outputs.present == 'true'
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Evaluación
+        if: steps.key.outputs.present == 'true'
+        working-directory: portfolio-backend
+        env:
+          MCP_EVAL_REAL: 'true'
+          MCP_EVAL_MODEL: ${{ vars.MCP_EVAL_MODEL || 'gemini-3.5-flash-lite' }}
+        run: ./gradlew test --no-daemon --tests "*McpRealModelEvalTest"
+      - name: Resumen
+        if: always() && steps.key.outputs.present == 'true'
+        run: |
+          REPORT=portfolio-backend/build/reports/mcp-eval/mcp-eval-real.json
+          {
+            echo "### Evaluación del servidor MCP con un modelo real"
+            echo ""
+            if [ -f "$REPORT" ]; then
+              python3 -c "import json,sys; r=json.load(open(sys.argv[1])); print(f\"**{r['passed']} de {r['total']}** tareas resueltas con \`{r['model']}\` · {r['toolCalls']} llamadas a herramientas · {r['generatedAt']}\"); print(); [print(f\"- {t['id']} ({t['area']}): {'; '.join(t['failures'])}\") for t in r['tasks'] if not t['passed']]" "$REPORT"
+            else
+              echo "No se generó el informe."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Informe
+        if: always() && steps.key.outputs.present == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mcp-eval-real
+          path: portfolio-backend/build/reports/mcp-eval/mcp-eval-real.json
+          retention-days: 30
+          if-no-files-found: warn

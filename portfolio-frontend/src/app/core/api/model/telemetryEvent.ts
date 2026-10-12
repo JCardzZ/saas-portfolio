@@ -26,6 +26,7 @@ export namespace TelemetryEvent {
         PricingCached: 'PRICING_CACHED',
         PricingUnestimated: 'PRICING_UNESTIMATED',
         PricingFallback: 'PRICING_FALLBACK',
+        McpToolCall: 'MCP_TOOL_CALL',
     } as const;
     export type EventTypeEnum = typeof EventTypeEnum[keyof typeof EventTypeEnum];
 }

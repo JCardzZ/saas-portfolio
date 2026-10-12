@@ -93,7 +93,53 @@ El HCL que se genera se comprueba en proceso antes de responder (`HclSyntax`). L
 los casos de referencia por el analizador real de Terraform (`terraform fmt`); no por
 `terraform validate`, que no puede aceptar un esqueleto sin los argumentos de cada recurso.
 
+## Observabilidad
+
+De cada llamada a una herramienta se observa lo mismo por tres caminos: **qué herramienta, cómo
+acabó y cuánto tardó**. Nunca los argumentos ni el resultado (`McpToolTelemetry`).
+
+- **Métricas (Micrometer)**: `mcp.server.operation.duration` (histograma, con `mcp.method.name`,
+  `gen_ai.tool.name` y `error.type`) y `mcp.tool.calls` (contador por herramienta y resultado).
+  La aplicación no lleva Actuator: viven en un registro en memoria, del que lee el estado público.
+- **Traza (API de OpenTelemetry)**: un span `tools/call <herramienta>` de tipo SERVER con
+  `mcp.method.name`, `gen_ai.tool.name`, `gen_ai.operation.name = execute_tool`,
+  `mcp.protocol.version`, `mcp.session.id` y, si la herramienta responde con error,
+  `error.type = tool_error`. Son las
+  [convenciones semánticas de OpenTelemetry para MCP](https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/mcp.md),
+  que están en estado «Development»: los nombres pueden cambiar. Solo se usa la API: **sin un SDK
+  o el agente de OpenTelemetry configurado, las trazas no se exportan a ningún sitio.**
+- **Evento anónimo** `MCP_TOOL_CALL` por el canal de telemetría (SSE) de la plataforma:
+  `tool=… outcome=… latencyMs=…`.
+
+## Evaluaciones
+
+27 tareas sintéticas (`portfolio-backend/src/test/resources/mcp/eval-tasks.json`), sin datos de
+ninguna persona ni de ninguna empresa. Un modelo recibe la tarea y las herramientas, las usa con
+un cliente MCP real, y se comprueba qué llamó, qué no debía llamar y qué contienen los resultados.
+
+- **En cada PR**: un modelo simulado y determinista sigue el plan guardado de cada tarea
+  (`McpEvalTest`). Tiene que pasar entero. El resultado queda en `mcp-eval.json` (aquí al lado; se
+  regenera con `MCP_EVAL_UPDATE=true ./gradlew test --tests "*McpEvalTest"`).
+- **De noche, con un modelo real** (`McpRealModelEvalTest`, Gemini con el SDK oficial de Google
+  GenAI): como mucho 25 tareas y 8 llamadas al modelo por tarea. **Está desactivada**: el workflow
+  `mcp-eval-nightly.yml` solo corre si existen el secret `GEMINI_API_KEY` y la variable de
+  repositorio `MCP_EVAL_NIGHTLY=true`. **El adaptador del modelo no se ha ejecutado nunca contra
+  Gemini**: compila contra el SDK, pero la primera ejecución puede necesitar ajustes.
+
+## Registro oficial de MCP
+
+`server.json` (aquí al lado) está preparado con el esquema 2025-12-11 del registro, como servidor
+remoto `streamable-http`. **No está publicado.** Antes de publicarlo:
+
+- Sustituir `https://api.example.com/v1/mcp` por la dirección real de la API.
+- El nombre `io.github.jcardzz/portfolio-platform` exige demostrar la propiedad del espacio de
+  nombres al publicar (inicio de sesión con GitHub en la herramienta del registro).
+- El repositorio es privado, así que el archivo no lleva `repository`.
+
 ## Sin hacer todavía
 
-- No está publicado en el registro oficial de MCP.
-- No hay interfaz interactiva dentro del cliente (MCP Apps).
+- **Interfaz interactiva dentro del cliente (MCP Apps).** Es una extensión oficial del protocolo
+  (`io.modelcontextprotocol/ui`), no parte de la especificación base, y no se ha comprobado que el
+  SDK de Java 2.0.1 la soporte. Queda como siguiente paso: el candidato natural es mostrar el
+  diagrama resultante de `disenar_sistema`.
+- Exportar las trazas: hace falta un colector de OpenTelemetry, que la plataforma no tiene.

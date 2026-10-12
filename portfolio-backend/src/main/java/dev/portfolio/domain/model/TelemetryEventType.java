@@ -13,5 +13,7 @@ public enum TelemetryEventType {
     /** Un servicio no tiene precio público: queda sin estimación. */
     PRICING_UNESTIMATED,
     /** El proveedor no respondió: se sirve la última tarifa conocida o ninguna. */
-    PRICING_FALLBACK
+    PRICING_FALLBACK,
+    /** Se ha llamado a una herramienta del servidor MCP. Solo cuenta cuál, cómo acabó y cuánto tardó. */
+    MCP_TOOL_CALL
 }

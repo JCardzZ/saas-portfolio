@@ -22,7 +22,7 @@
 | 4 · Diseño de sistemas | `feat/system-design` | PR abierto; verificado en local | ver GitHub |
 | 5 · Plantillas de sistemas | `feat/system-templates` (sobre la del hito 4) | Terminado en local; PR cuando se integre el hito 4 | — |
 | 6 · MCP núcleo | `feat/mcp-server` (sobre la del hito 5) | Terminado en local; PR cuando se integren los hitos 4 y 5 | — |
-| 7 · MCP calidad y observabilidad | — | Sin empezar | — |
+| 7 · MCP calidad y observabilidad | `feat/mcp-observability` (sobre la del hito 6) | Terminado en local; PR cuando se integre el hito 6 | — |
 | 8 · Sección web | — | Sin empezar | — |
 
 ## Hito 0 · qué se hizo
@@ -95,6 +95,16 @@
 - Documentación: `docs/mcp/README.md`.
 - Verificado en local: `./gradlew test` completo. **Sin verificar en local: `integrationTest`** (Docker respondió «502 Bad response from Docker engine» al crear contenedores) **y el paso de `terraform fmt` de la CI** (no hay Terraform instalado en esta máquina).
 
+## Hito 7 · qué se hizo
+
+- **Evaluaciones**: 27 tareas sintéticas (`src/test/resources/mcp/eval-tasks.json`) y un arnés (`McpEval`) con el modelo como pieza intercambiable. En cada PR, `McpEvalTest` las resuelve con un modelo simulado y determinista contra el servidor real (cliente MCP real): 27 de 27. El resultado va a `build/reports/mcp-eval/mcp-eval.json` (artefacto y resumen de la CI) y a `docs/mcp/mcp-eval.json` (el que enseñará la web).
+- **Nocturna con modelo real**: `McpRealModelEvalTest` + `GeminiEvalModel` (SDK oficial `com.google.genai:google-genai` 1.76.0, solo en tests), con tope de 25 tareas × 8 llamadas. Workflow `mcp-eval-nightly.yml` **desactivado**: necesita el secret `GEMINI_API_KEY` y la variable `MCP_EVAL_NIGHTLY=true`.
+- **Observabilidad** (`McpToolTelemetry`): métricas Micrometer (`mcp.server.operation.duration`, `mcp.tool.calls`), traza con la API de OpenTelemetry siguiendo las convenciones de MCP/GenAI, y evento anónimo `MCP_TOOL_CALL` por el SSE de telemetría. Un test comprueba que no viaja contenido.
+- **Registro de MCP**: `docs/mcp/server.json` preparado y validado contra el esquema 2025-12-11. Sin publicar.
+- **MCP Apps**: documentado como siguiente paso (es una extensión, no la especificación base).
+- CI: el job de tests del backend publica el informe de evaluación y, desde el hito 6, pasa los casos golden por el analizador de Terraform.
+- Verificado en local: `./gradlew test` completo. **Sin verificar: la evaluación con modelo real (nunca ejecutada), la exportación de trazas (no hay colector) y `integrationTest`.**
+
 ## Decisiones del autor (2026-10-11)
 
 1. Servidor MCP con el SDK oficial `mcp-core` 2.0.1 y transporte Servlet, sirviendo 2025-11-25, detrás de una capa propia para migrar a 2026-07-28 cuando el SDK la publique.
@@ -146,6 +156,11 @@
 - **Hito 6 · `listar_plantillas` respeta `studio.system-templates`**: con esa flag apagada no lista los sistemas de ejemplo; `disenar_sistema` sí los usa siempre.
 - **Hito 6 · el origen de una llamada es `getRemoteAddr()`**, como en el resto de límites de la plataforma. Detrás de un proxy sin cabeceras reenviadas, todos los clientes compartirían cupo: a revisar con la configuración del VPS antes de encender la flag.
 - **Hito 6 · se usó `git push --force-with-lease` una vez** sobre `feat/system-templates` (rama propia, sin PR) al reordenarla sobre la del hito 4 corregida. Va contra la regla de no forzar: en adelante las ramas apiladas se ponen al día con `merge`.
+- **Hito 7 · el modelo real se llama con el SDK oficial de Google GenAI, no con REST a mano**: la página oficial de function calling describe ahora la Interactions API y no muestra la forma de la respuesta; el SDK (leído de su jar) sí da una API comprobable al compilar. **A confirmar por el autor** cuando cree el secret: la primera ejecución nocturna dirá si hay que ajustar algo.
+- **Hito 7 · el workflow nocturno tiene `schedule`, pero un interruptor doble** (variable `MCP_EVAL_NIGHTLY` + secret): sin los dos, el job se omite. Aparecerá cada noche como «omitido» en Actions.
+- **Hito 7 · solo la API de OpenTelemetry, sin SDK ni exportador**: la plataforma no tiene colector. Con el agente de Java o un SDK configurado, los spans salen sin tocar código.
+- **Hito 7 · las métricas viven en un `SimpleMeterRegistry`** (no hay Actuator): se pierden al reiniciar. Bastan para la p95 que enseñará la web.
+- **Hito 7 · el modelo simulado sigue un plan guardado por tarea**: no «decide» nada. Lo que evalúa en cada PR es que el servidor siga resolviendo las tareas; lo que evalúa si un modelo sabe usar las herramientas es la nocturna.
 
 ## Documentación oficial verificada (2026-10-11)
 
@@ -182,7 +197,8 @@
 ## Pendientes
 
 - CI gate del PR del hito 4 (#27) e integrarlo; después, los PR de los hitos 5 y 6.
-- Hitos 7 (evaluaciones, observabilidad, registro) y 8 (sección web).
+- Hito 8 (sección web «Usa mi plataforma desde tu IA»).
+- **Del autor**: crear el secret `GEMINI_API_KEY` y la variable `MCP_EVAL_NIGHTLY=true` para encender la evaluación nocturna; decidir si se publica en el registro de MCP (y con qué dirección).
 - Antes de encender `mcp.section` en producción: comprobar que el backend ve la dirección real del cliente detrás de Caddy.
 - Sin confirmar del hito 4: el `.proto` generado no se ha pasado por `protoc` (no hay compilador en la CI); el OpenAPI sí se analiza como YAML en los tests, pero no se ha pasado por un validador de OpenAPI.
 
@@ -246,3 +262,11 @@ La sesión está aislada en el worktree y no puede escribir en el `CLAUDE.md` de
 - **Errores**: `ToolInputException` e `InvalidRequestException` vuelven como resultado con `isError` y un texto que dice qué corregir; cualquier otra excepción se registra y a quien llama le llega un mensaje genérico.
 - Límites: `security.rate-limit.mcp` y `mcp-global` (`MCP_RATE_LIMIT_*`, `MCP_GLOBAL_LIMIT_*`).
 - `HclSyntax` (dominio) comprueba todo HCL generado antes de devolverlo; `ArchitecturePresetSeeder.seed()` es público para poder sembrar en los tests del servidor.
+
+### MCP · CALIDAD Y OBSERVABILIDAD (hito 7)
+- **Evaluaciones**: `src/test/java/.../mcp/eval/` (`McpEval`, `McpEvalTest`, `McpRealModelEvalTest`, `GeminiEvalModel`) y `src/test/resources/mcp/eval-tasks.json`. Una tarea tiene enunciado, plan (lo que hace el modelo simulado) y lo que se espera (`tools`, `forbiddenTools`, `resultContains`, `resultExcludes`, `error`). Los diagramas se nombran (`"$graph": "reference"`, `{{graph:reference}}`) y están en `McpEval.GRAPHS`. **Al cambiar un texto que devuelve una herramienta, puede fallar una tarea**: es lo que se quiere.
+- `docs/mcp/mcp-eval.json` es el resultado que enseña la web; se regenera con `MCP_EVAL_UPDATE=true ./gradlew test --tests "*McpEvalTest"`.
+- `testsupport/McpTestServer`: el servidor MCP en un Tomcat embebido con casos de uso reales y precios e IA simulados y deterministas. Úsalo para cualquier prueba nueva con cliente real.
+- **Observabilidad**: `infrastructure/observability/McpToolTelemetry` implementa `McpObserver` (está fuera del paquete `mcp` porque usa un puerto de salida). Solo herramienta, resultado y latencia. Atributos según las convenciones de OpenTelemetry para MCP (estado «Development»).
+- Dependencias nuevas: `micrometer-core`, `opentelemetry-api` (versiones del BOM de Boot), y en tests `opentelemetry-sdk-testing` y `google-genai`.
+- Workflow `mcp-eval-nightly.yml`: desactivado hasta que existan el secret `GEMINI_API_KEY` y la variable `MCP_EVAL_NIGHTLY=true`.

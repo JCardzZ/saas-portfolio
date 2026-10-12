@@ -101,7 +101,7 @@ class McpServerEndToEndTest {
                 PortfolioTools.all(projects, new TerraformService(limiter, generous), pricing, rag, systemDesign),
                 PortfolioCatalog.resources(cloudCatalog, systemDesign, portfolio), PortfolioCatalog.prompts(),
                 new McpAccessService(limiter, new RateLimitPolicy(25, Duration.ofMinutes(1)), new RateLimitPolicy(1000, Duration.ofHours(24))),
-                (tool, outcome, latency) -> observed.add(tool + ":" + outcome));
+                call -> observed.add(call.tool() + ":" + call.outcome()));
 
         tomcat = new Tomcat();
         tomcat.setBaseDir(Files.createTempDirectory("mcp-e2e").toString());

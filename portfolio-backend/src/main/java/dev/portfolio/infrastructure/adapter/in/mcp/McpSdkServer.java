@@ -131,7 +131,7 @@ public final class McpSdkServer implements AutoCloseable {
             log.error("La herramienta MCP {} falló", tool.name(), e);
             return failure("La herramienta no pudo completar la petición. Vuelve a intentarlo más tarde.");
         } finally {
-            observer.toolCalled(tool.name(), outcome, Duration.ofNanos(System.nanoTime() - started));
+            observer.toolCalled(new McpObserver.ToolCall(tool.name(), outcome, Duration.ofNanos(System.nanoTime() - started), exchange.sessionId()));
         }
     }
 
