@@ -2072,6 +2072,83 @@ describe('CloudInfraComponent', () => {
     });
   });
 
+  describe('system templates (studio.system-templates)', () => {
+    const openTemplates = (fixture: { detectChanges(): void }, element: HTMLElement) => {
+      element.querySelector<HTMLButtonElement>('[aria-controls="menu-presets"]')!.click();
+      fixture.detectChanges();
+      return Array.from(element.querySelectorAll<HTMLButtonElement>('#menu-presets [data-testid="system-template"]'));
+    };
+
+    it('are not offered while the flag is off', () => {
+      const { fixture, element } = create();
+
+      expect(openTemplates(fixture, element)).toEqual([]);
+      expect(element.querySelector('#menu-presets')!.textContent).not.toContain('Sistemas completos');
+    });
+
+    describe('with the flag on', () => {
+      async function flags(values: Record<string, boolean>) {
+        await OpenFeature.setProviderAndWait(new PlatformFlagsProvider(() => Promise.resolve(values)));
+      }
+      afterEach(async () => {
+        await OpenFeature.clearProviders();
+      });
+
+      it('lists the six systems, each labelled as fictional, with its decisions, requirements and estimated cost', async () => {
+        await flags({ 'studio.system-templates': true });
+        const { fixture, element } = create();
+
+        const items = openTemplates(fixture, element);
+
+        expect(items.length).toBe(6);
+        for (const item of items) {
+          expect(item.querySelector('.ui-badge')!.textContent!.trim()).toBe('Ejemplo ficticio');
+          expect(item.textContent).toMatch(/≈ \$[\d,]+\/mes \(orientativo\)/);
+        }
+        expect(items[0].textContent).toContain('Billetera digital');
+        expect(items[0].textContent).toContain('Fintech');
+        expect(items[0].textContent).toContain('200.000 usuarios · 600 req/s · p95 300 ms · 99,95 % · PCI DSS');
+        expect(items[0].textContent).toContain('Todo entra por un API gateway con WAF');
+        expect(items[2].textContent).toContain('datos de salud');
+      });
+
+      it('loads both views of a system in one undoable step', async () => {
+        await flags({ 'studio.system-templates': true, 'studio.system-design': true });
+        const { fixture, element, component } = create();
+        const before = component.nodes().length;
+
+        openTemplates(fixture, element)[3].click();
+        fixture.detectChanges();
+
+        expect(component.selectedId()).toBe('aws');
+        expect(component.project().system!.choices).toEqual(jasmine.objectContaining({ api: 'grpc', database: 'key-value', bff: 'bff' }));
+        expect(component.nodes().some((candidate) => candidate.type === 'kubernetes')).toBeTrue();
+        // Con el diseño de sistemas encendido, se abre por la vista de Aplicación, sin nada que corregir.
+        expect(element.querySelector('app-system-design')).not.toBeNull();
+        expect(element.querySelector('app-system-design [data-rule]')).toBeNull();
+        expect(element.querySelector('app-system-design')!.textContent).toContain('Sin avisos');
+
+        component.undo();
+        fixture.detectChanges();
+        expect(component.nodes().length).toBe(before);
+        expect(component.project().system).toBeUndefined();
+      });
+
+      it('still loads the infrastructure when the system design view is off', async () => {
+        await flags({ 'studio.system-templates': true });
+        const { fixture, element, component } = create();
+
+        openTemplates(fixture, element)[0].click();
+        fixture.detectChanges();
+
+        expect(element.querySelector('app-system-design')).toBeNull();
+        expect(services(element)).toEqual(jasmine.arrayContaining(['WAF', 'Amazon API Gateway']));
+        expect(component.project().system).toBeDefined();
+        expect(element.querySelector('[data-testid="graph-warnings"]')).toBeNull();
+      });
+    });
+  });
+
   describe('data patterns', () => {
     const data = (element: HTMLElement) => Array.from(element.querySelectorAll('path.wire[data-kind]')).map((wire) => wire.getAttribute('data-kind'));
     const warnings = (element: HTMLElement) =>

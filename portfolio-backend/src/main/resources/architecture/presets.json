@@ -3952,5 +3952,2566 @@
         "label": "Región secundaria"
       }
     ]
+  },
+  {
+    "id": "system-fintech",
+    "title": "Billetera digital",
+    "description": "App móvil de pagos entre personas: API gateway con WAF, backend en contenedores, PostgreSQL con réplica y una cola para lo asíncrono. Ejemplo ficticio: ilustra un tipo de sistema; no describe el de ninguna empresa.",
+    "cloudProvider": "aws",
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "x": 64,
+        "y": 250,
+        "zone": "outside",
+        "role": "Navegador",
+        "service": "Visitantes",
+        "icon": null,
+        "terraform": null,
+        "why": "Entran por HTTPS; nunca hablan directamente con la nube."
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "x": 196,
+        "y": 250,
+        "zone": "outside",
+        "role": "CDN · WAF · DNS",
+        "service": "Cloudflare",
+        "icon": "cloudflare",
+        "terraform": "cloudflare_record",
+        "why": "Borde común a las tres nubes: caché, protección y la IP real del visitante."
+      },
+      {
+        "id": "waf",
+        "type": "waf",
+        "x": 402,
+        "y": 250,
+        "zone": "public",
+        "role": "Cortafuegos de aplicación",
+        "service": {
+          "aws": "WAF",
+          "gcp": "Cloud Armor",
+          "azure": "Web Application Firewall",
+          "oci": "Web Application Firewall"
+        },
+        "icon": {
+          "default": "provider",
+          "aws": "awsWaf",
+          "gcp": "gcpArmor",
+          "azure": "azWaf"
+        },
+        "terraform": {
+          "aws": "aws_wafv2_web_acl",
+          "gcp": "google_compute_security_policy",
+          "azure": "azurerm_web_application_firewall_policy",
+          "oci": "oci_waf_web_app_firewall"
+        },
+        "why": "Filtra tráfico malicioso antes de que llegue a la aplicación.",
+        "custom": true
+      },
+      {
+        "id": "gateway",
+        "type": "api-gateway",
+        "x": 402,
+        "y": 430,
+        "zone": "public",
+        "role": "Entrada de las APIs",
+        "service": {
+          "aws": "Amazon API Gateway",
+          "gcp": "Apigee",
+          "azure": "API Management",
+          "oci": "API Gateway"
+        },
+        "icon": {
+          "default": "provider",
+          "aws": "awsApiGateway",
+          "gcp": "gcpApigee",
+          "azure": "azApiManagement"
+        },
+        "terraform": {
+          "aws": "aws_apigatewayv2_api",
+          "gcp": "google_apigee_organization",
+          "azure": "azurerm_api_management",
+          "oci": "oci_apigateway_gateway"
+        },
+        "why": "Puerta de entrada con cuotas, claves, versionado y portal de desarrolladores.",
+        "custom": true
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "x": 402,
+        "y": 340,
+        "zone": "public",
+        "role": "Balanceador",
+        "icon": {
+          "default": "provider",
+          "aws": "awsElb",
+          "azure": "azAppGateway"
+        },
+        "service": {
+          "aws": "Application LB",
+          "gcp": "Cloud Load Balancing",
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
+        },
+        "terraform": {
+          "aws": "aws_lb",
+          "gcp": "google_compute_global_forwarding_rule",
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
+        },
+        "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "x": 556,
+        "y": 250,
+        "zone": "compute",
+        "role": "API de pagos",
+        "icon": {
+          "default": "docker",
+          "aws": "awsFargate",
+          "gcp": "gcpCloudRun",
+          "azure": "azContainerApps"
+        },
+        "service": {
+          "aws": "ECS Fargate",
+          "gcp": "Cloud Run",
+          "azure": "Container Apps",
+          "oci": "Container Instances"
+        },
+        "terraform": {
+          "aws": "aws_ecs_service",
+          "gcp": "google_cloud_run_v2_service",
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
+        },
+        "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
+      },
+      {
+        "id": "postgres",
+        "type": "postgres",
+        "x": 710,
+        "y": 250,
+        "zone": "data",
+        "role": "Movimientos y saldos",
+        "icon": {
+          "default": "postgresql",
+          "aws": "awsRds",
+          "gcp": "gcpCloudSql",
+          "azure": "azPostgresql"
+        },
+        "service": {
+          "aws": "RDS PostgreSQL",
+          "gcp": "Cloud SQL",
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
+        },
+        "terraform": {
+          "aws": "aws_db_instance",
+          "gcp": "google_sql_database_instance",
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
+        },
+        "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
+      },
+      {
+        "id": "postgres-standby",
+        "type": "postgres",
+        "x": 710,
+        "y": 430,
+        "zone": "data",
+        "role": "Réplica en otra zona",
+        "icon": {
+          "default": "postgresql",
+          "aws": "awsRds",
+          "gcp": "gcpCloudSql",
+          "azure": "azPostgresql"
+        },
+        "service": {
+          "aws": "RDS PostgreSQL",
+          "gcp": "Cloud SQL",
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
+        },
+        "terraform": {
+          "aws": "aws_db_instance",
+          "gcp": "google_sql_database_instance",
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
+        },
+        "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet.",
+        "custom": true
+      },
+      {
+        "id": "redis",
+        "type": "redis",
+        "x": 710,
+        "y": 340,
+        "zone": "data",
+        "role": "Límites y sesiones",
+        "icon": {
+          "default": "redis",
+          "aws": "awsElastiCache",
+          "azure": "azRedis"
+        },
+        "service": {
+          "aws": "ElastiCache",
+          "gcp": "Memorystore",
+          "azure": "Cache for Redis",
+          "oci": "OCI Cache"
+        },
+        "terraform": {
+          "aws": "aws_elasticache_replication_group",
+          "gcp": "google_redis_instance",
+          "azure": "azurerm_redis_cache",
+          "oci": "oci_redis_redis_cluster"
+        },
+        "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
+      },
+      {
+        "id": "queue",
+        "type": "queue",
+        "x": 865,
+        "y": 215,
+        "zone": "managed",
+        "role": "Avisos y conciliación",
+        "service": {
+          "aws": "SQS",
+          "gcp": "Pub/Sub",
+          "azure": "Service Bus",
+          "oci": "Queue"
+        },
+        "icon": {
+          "default": "provider",
+          "gcp": "gcpPubSub",
+          "aws": "awsSqs",
+          "azure": "azServiceBus"
+        },
+        "terraform": {
+          "aws": "aws_sqs_queue",
+          "gcp": "google_pubsub_subscription",
+          "azure": "azurerm_servicebus_queue",
+          "oci": "oci_queue_queue"
+        },
+        "why": "Cola de trabajo para tareas en segundo plano, como la reindexación.",
+        "custom": true
+      },
+      {
+        "id": "push",
+        "type": "pubsub",
+        "x": 865,
+        "y": 300,
+        "zone": "managed",
+        "role": "Notificaciones push",
+        "service": {
+          "aws": "SNS",
+          "gcp": "Pub/Sub",
+          "azure": "Event Grid",
+          "oci": "Notifications"
+        },
+        "icon": {
+          "default": "provider",
+          "gcp": "gcpPubSub",
+          "aws": "awsSns",
+          "azure": "azEventGrid"
+        },
+        "terraform": {
+          "aws": "aws_sns_topic",
+          "gcp": "google_pubsub_topic",
+          "azure": "azurerm_eventgrid_topic",
+          "oci": "oci_ons_notification_topic"
+        },
+        "why": "Un evento, muchos suscriptores.",
+        "custom": true
+      },
+      {
+        "id": "identity",
+        "type": "identity",
+        "x": 865,
+        "y": 385,
+        "zone": "managed",
+        "role": "Inicio de sesión",
+        "service": {
+          "aws": "Cognito",
+          "gcp": "Identity Platform",
+          "azure": "Entra External ID",
+          "oci": "IAM (Identity Domains)"
+        },
+        "icon": {
+          "default": "provider",
+          "aws": "awsCognito",
+          "azure": "azExternalId"
+        },
+        "terraform": {
+          "aws": "aws_cognito_user_pool",
+          "gcp": "google_identity_platform_config",
+          "azure": "azuread_application",
+          "oci": "oci_identity_domain"
+        },
+        "why": "Registro e inicio de sesión de usuarios finales.",
+        "custom": true
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "x": 865,
+        "y": 470,
+        "zone": "managed",
+        "role": "Secretos",
+        "icon": {
+          "default": "provider",
+          "aws": "awsSecretsManager",
+          "azure": "azKeyVault"
+        },
+        "service": {
+          "aws": "Secrets Manager",
+          "gcp": "Secret Manager",
+          "azure": "Key Vault",
+          "oci": "Vault"
+        },
+        "terraform": {
+          "aws": "aws_secretsmanager_secret",
+          "gcp": "google_secret_manager_secret",
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
+        },
+        "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "x": 865,
+        "y": 555,
+        "zone": "managed",
+        "role": "Logs y métricas",
+        "icon": {
+          "default": "provider",
+          "aws": "awsCloudWatch",
+          "azure": "azMonitor"
+        },
+        "service": {
+          "aws": "CloudWatch",
+          "gcp": "Cloud Monitoring",
+          "azure": "Azure Monitor",
+          "oci": "Monitoring"
+        },
+        "terraform": {
+          "aws": "aws_cloudwatch_log_group",
+          "gcp": "google_monitoring_alert_policy",
+          "azure": "azurerm_log_analytics_workspace",
+          "oci": "oci_monitoring_alarm"
+        },
+        "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
+      }
+    ],
+    "connections": [
+      {
+        "from": "users",
+        "to": "edge"
+      },
+      {
+        "from": "edge",
+        "to": "waf"
+      },
+      {
+        "from": "waf",
+        "to": "gateway"
+      },
+      {
+        "from": "gateway",
+        "to": "lb"
+      },
+      {
+        "from": "lb",
+        "to": "api"
+      },
+      {
+        "from": "api",
+        "to": "postgres"
+      },
+      {
+        "from": "postgres",
+        "to": "postgres-standby",
+        "kind": "REPLICATION"
+      },
+      {
+        "from": "api",
+        "to": "redis"
+      },
+      {
+        "from": "api",
+        "to": "queue",
+        "kind": "EVENT_BUS"
+      },
+      {
+        "from": "api",
+        "to": "push",
+        "kind": "EVENT_BUS"
+      },
+      {
+        "from": "api",
+        "to": "identity"
+      },
+      {
+        "from": "api",
+        "to": "secrets"
+      },
+      {
+        "from": "api",
+        "to": "observability"
+      }
+    ],
+    "zones": [
+      {
+        "id": "cloud",
+        "kind": "cloud",
+        "role": null,
+        "x": 290,
+        "y": 30,
+        "w": 800,
+        "h": 586
+      },
+      {
+        "id": "network",
+        "kind": "vpc",
+        "role": null,
+        "x": 320,
+        "y": 150,
+        "w": 472,
+        "h": 450
+      },
+      {
+        "id": "subnet-public",
+        "kind": "public",
+        "role": "public",
+        "x": 332,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      },
+      {
+        "id": "subnet-app",
+        "kind": "private",
+        "role": "compute",
+        "x": 486,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      },
+      {
+        "id": "subnet-data",
+        "kind": "private",
+        "role": "data",
+        "x": 640,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      }
+    ],
+    "system": {
+      "choices": {
+        "client": "mobile-cross",
+        "backend": "spring-boot",
+        "api": "rest",
+        "auth": "oidc-managed",
+        "database": "postgresql",
+        "cache": "redis",
+        "queue": "queue",
+        "bff": "gateway",
+        "push": "push-service"
+      },
+      "deployments": {
+        "backend": "api",
+        "auth": "identity",
+        "database": "postgres",
+        "cache": "redis",
+        "queue": "queue",
+        "bff": "gateway",
+        "push": "push"
+      },
+      "nfr": {
+        "users": 200000,
+        "rps": 600,
+        "latencyMs": 300,
+        "availability": 99.95,
+        "budgetUsd": 400,
+        "compliance": [
+          "pci"
+        ]
+      }
+    }
+  },
+  {
+    "id": "system-ecommerce",
+    "title": "Tienda en línea",
+    "description": "Tienda en línea con el catálogo renderizado en el servidor y servido desde el borde, búsqueda aparte y pedidos en PostgreSQL con réplica. Ejemplo ficticio: ilustra un tipo de sistema; no describe el de ninguna empresa.",
+    "cloudProvider": "gcp",
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "x": 64,
+        "y": 250,
+        "zone": "outside",
+        "role": "Navegador",
+        "service": "Visitantes",
+        "icon": null,
+        "terraform": null,
+        "why": "Entran por HTTPS; nunca hablan directamente con la nube."
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "x": 196,
+        "y": 250,
+        "zone": "outside",
+        "role": "CDN · WAF · DNS",
+        "service": "Cloudflare",
+        "icon": "cloudflare",
+        "terraform": "cloudflare_record",
+        "why": "Borde común a las tres nubes: caché, protección y la IP real del visitante."
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "x": 402,
+        "y": 250,
+        "zone": "public",
+        "role": "Balanceador",
+        "icon": {
+          "default": "provider",
+          "aws": "awsElb",
+          "azure": "azAppGateway"
+        },
+        "service": {
+          "aws": "Application LB",
+          "gcp": "Cloud Load Balancing",
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
+        },
+        "terraform": {
+          "aws": "aws_lb",
+          "gcp": "google_compute_global_forwarding_rule",
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
+        },
+        "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
+      },
+      {
+        "id": "web",
+        "type": "containers",
+        "x": 556,
+        "y": 250,
+        "zone": "compute",
+        "role": "Web con render en servidor",
+        "service": {
+          "aws": "ECS Fargate",
+          "gcp": "Cloud Run",
+          "azure": "Container Apps",
+          "oci": "Container Instances"
+        },
+        "icon": {
+          "default": "docker",
+          "aws": "awsFargate",
+          "gcp": "gcpCloudRun",
+          "azure": "azContainerApps"
+        },
+        "terraform": {
+          "aws": "aws_ecs_service",
+          "gcp": "google_cloud_run_v2_service",
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
+        },
+        "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
+        "custom": true
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "x": 556,
+        "y": 340,
+        "zone": "compute",
+        "role": "API de pedidos",
+        "icon": {
+          "default": "docker",
+          "aws": "awsFargate",
+          "gcp": "gcpCloudRun",
+          "azure": "azContainerApps"
+        },
+        "service": {
+          "aws": "ECS Fargate",
+          "gcp": "Cloud Run",
+          "azure": "Container Apps",
+          "oci": "Container Instances"
+        },
+        "terraform": {
+          "aws": "aws_ecs_service",
+          "gcp": "google_cloud_run_v2_service",
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
+        },
+        "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
+      },
+      {
+        "id": "postgres",
+        "type": "postgres",
+        "x": 710,
+        "y": 250,
+        "zone": "data",
+        "role": "Pedidos y clientes",
+        "icon": {
+          "default": "postgresql",
+          "aws": "awsRds",
+          "gcp": "gcpCloudSql",
+          "azure": "azPostgresql"
+        },
+        "service": {
+          "aws": "RDS PostgreSQL",
+          "gcp": "Cloud SQL",
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
+        },
+        "terraform": {
+          "aws": "aws_db_instance",
+          "gcp": "google_sql_database_instance",
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
+        },
+        "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
+      },
+      {
+        "id": "postgres-standby",
+        "type": "postgres",
+        "x": 710,
+        "y": 340,
+        "zone": "data",
+        "role": "Réplica en otra zona",
+        "icon": {
+          "default": "postgresql",
+          "aws": "awsRds",
+          "gcp": "gcpCloudSql",
+          "azure": "azPostgresql"
+        },
+        "service": {
+          "aws": "RDS PostgreSQL",
+          "gcp": "Cloud SQL",
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
+        },
+        "terraform": {
+          "aws": "aws_db_instance",
+          "gcp": "google_sql_database_instance",
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
+        },
+        "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet.",
+        "custom": true
+      },
+      {
+        "id": "search",
+        "type": "search",
+        "x": 710,
+        "y": 430,
+        "zone": "data",
+        "role": "Búsqueda del catálogo",
+        "service": "Elasticsearch",
+        "icon": "elasticsearch",
+        "terraform": "elasticstack_elasticsearch_index",
+        "why": "Búsqueda de texto completo y análisis de logs.",
+        "custom": true
+      },
+      {
+        "id": "queue",
+        "type": "queue",
+        "x": 865,
+        "y": 300,
+        "zone": "managed",
+        "role": "Stock y correo",
+        "service": {
+          "aws": "SQS",
+          "gcp": "Pub/Sub",
+          "azure": "Service Bus",
+          "oci": "Queue"
+        },
+        "icon": {
+          "default": "provider",
+          "gcp": "gcpPubSub",
+          "aws": "awsSqs",
+          "azure": "azServiceBus"
+        },
+        "terraform": {
+          "aws": "aws_sqs_queue",
+          "gcp": "google_pubsub_subscription",
+          "azure": "azurerm_servicebus_queue",
+          "oci": "oci_queue_queue"
+        },
+        "why": "Cola de trabajo para tareas en segundo plano, como la reindexación.",
+        "custom": true
+      },
+      {
+        "id": "identity",
+        "type": "identity",
+        "x": 865,
+        "y": 385,
+        "zone": "managed",
+        "role": "Cuentas de cliente",
+        "service": {
+          "aws": "Cognito",
+          "gcp": "Identity Platform",
+          "azure": "Entra External ID",
+          "oci": "IAM (Identity Domains)"
+        },
+        "icon": {
+          "default": "provider",
+          "aws": "awsCognito",
+          "azure": "azExternalId"
+        },
+        "terraform": {
+          "aws": "aws_cognito_user_pool",
+          "gcp": "google_identity_platform_config",
+          "azure": "azuread_application",
+          "oci": "oci_identity_domain"
+        },
+        "why": "Registro e inicio de sesión de usuarios finales.",
+        "custom": true
+      },
+      {
+        "id": "bucket",
+        "type": "bucket",
+        "x": 865,
+        "y": 215,
+        "zone": "managed",
+        "role": "Imágenes de producto",
+        "service": {
+          "aws": "S3",
+          "gcp": "Cloud Storage",
+          "azure": "Blob Storage",
+          "oci": "Object Storage"
+        },
+        "icon": {
+          "default": "provider",
+          "gcp": "gcpStorage",
+          "aws": "awsS3",
+          "azure": "azStorage"
+        },
+        "terraform": {
+          "aws": "aws_s3_bucket",
+          "gcp": "google_storage_bucket",
+          "azure": "azurerm_storage_container",
+          "oci": "oci_objectstorage_bucket"
+        },
+        "why": "Archivos y copias de seguridad.",
+        "custom": true
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "x": 865,
+        "y": 470,
+        "zone": "managed",
+        "role": "Secretos",
+        "icon": {
+          "default": "provider",
+          "aws": "awsSecretsManager",
+          "azure": "azKeyVault"
+        },
+        "service": {
+          "aws": "Secrets Manager",
+          "gcp": "Secret Manager",
+          "azure": "Key Vault",
+          "oci": "Vault"
+        },
+        "terraform": {
+          "aws": "aws_secretsmanager_secret",
+          "gcp": "google_secret_manager_secret",
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
+        },
+        "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "x": 865,
+        "y": 555,
+        "zone": "managed",
+        "role": "Logs y métricas",
+        "icon": {
+          "default": "provider",
+          "aws": "awsCloudWatch",
+          "azure": "azMonitor"
+        },
+        "service": {
+          "aws": "CloudWatch",
+          "gcp": "Cloud Monitoring",
+          "azure": "Azure Monitor",
+          "oci": "Monitoring"
+        },
+        "terraform": {
+          "aws": "aws_cloudwatch_log_group",
+          "gcp": "google_monitoring_alert_policy",
+          "azure": "azurerm_log_analytics_workspace",
+          "oci": "oci_monitoring_alarm"
+        },
+        "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
+      }
+    ],
+    "connections": [
+      {
+        "from": "users",
+        "to": "edge"
+      },
+      {
+        "from": "edge",
+        "to": "lb"
+      },
+      {
+        "from": "lb",
+        "to": "web"
+      },
+      {
+        "from": "web",
+        "to": "api"
+      },
+      {
+        "from": "api",
+        "to": "postgres"
+      },
+      {
+        "from": "postgres",
+        "to": "postgres-standby",
+        "kind": "REPLICATION"
+      },
+      {
+        "from": "api",
+        "to": "search"
+      },
+      {
+        "from": "api",
+        "to": "queue",
+        "kind": "EVENT_BUS"
+      },
+      {
+        "from": "api",
+        "to": "identity"
+      },
+      {
+        "from": "web",
+        "to": "bucket"
+      },
+      {
+        "from": "api",
+        "to": "secrets"
+      },
+      {
+        "from": "api",
+        "to": "observability"
+      }
+    ],
+    "zones": [
+      {
+        "id": "cloud",
+        "kind": "cloud",
+        "role": null,
+        "x": 290,
+        "y": 30,
+        "w": 800,
+        "h": 586
+      },
+      {
+        "id": "network",
+        "kind": "vpc",
+        "role": null,
+        "x": 320,
+        "y": 150,
+        "w": 472,
+        "h": 450
+      },
+      {
+        "id": "subnet-public",
+        "kind": "public",
+        "role": "public",
+        "x": 332,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      },
+      {
+        "id": "subnet-app",
+        "kind": "private",
+        "role": "compute",
+        "x": 486,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      },
+      {
+        "id": "subnet-data",
+        "kind": "private",
+        "role": "data",
+        "x": 640,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      }
+    ],
+    "system": {
+      "choices": {
+        "client": "web-ssr",
+        "backend": "node",
+        "api": "rest",
+        "auth": "oidc-managed",
+        "database": "postgresql",
+        "cache": "cdn",
+        "queue": "queue"
+      },
+      "deployments": {
+        "client": "web",
+        "backend": "api",
+        "auth": "identity",
+        "database": "postgres",
+        "cache": "edge",
+        "queue": "queue"
+      },
+      "nfr": {
+        "users": 500000,
+        "rps": 1500,
+        "latencyMs": 200,
+        "availability": 99.9,
+        "budgetUsd": 400,
+        "compliance": []
+      }
+    }
+  },
+  {
+    "id": "system-telemedicine",
+    "title": "Consulta médica en línea",
+    "description": "Citas y videoconsulta: web estática, backend en contenedores con WebSocket, PostgreSQL con réplica e identidad gestionada. Ejemplo ficticio: ilustra un tipo de sistema; no describe el de ninguna empresa.",
+    "cloudProvider": "azure",
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "x": 64,
+        "y": 250,
+        "zone": "outside",
+        "role": "Navegador",
+        "service": "Visitantes",
+        "icon": null,
+        "terraform": null,
+        "why": "Entran por HTTPS; nunca hablan directamente con la nube."
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "x": 196,
+        "y": 250,
+        "zone": "outside",
+        "role": "CDN · WAF · DNS",
+        "service": "Cloudflare",
+        "icon": "cloudflare",
+        "terraform": "cloudflare_record",
+        "why": "Borde común a las tres nubes: caché, protección y la IP real del visitante."
+      },
+      {
+        "id": "static",
+        "type": "static",
+        "x": 402,
+        "y": 95,
+        "zone": "global",
+        "role": "Frontend Angular",
+        "icon": {
+          "default": "provider",
+          "gcp": "gcpStorage",
+          "aws": "awsCloudFront",
+          "azure": "azFrontDoor"
+        },
+        "service": {
+          "aws": "S3 + CloudFront",
+          "gcp": "Cloud Storage + CDN",
+          "azure": "Storage + Front Door",
+          "oci": "Object Storage"
+        },
+        "terraform": {
+          "aws": "aws_cloudfront_distribution",
+          "gcp": "google_storage_bucket",
+          "azure": "azurerm_cdn_frontdoor_profile",
+          "oci": "oci_objectstorage_bucket"
+        },
+        "why": "El build estático del frontend, servido desde almacenamiento de objetos."
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "x": 402,
+        "y": 250,
+        "zone": "public",
+        "role": "Balanceador",
+        "icon": {
+          "default": "provider",
+          "aws": "awsElb",
+          "azure": "azAppGateway"
+        },
+        "service": {
+          "aws": "Application LB",
+          "gcp": "Cloud Load Balancing",
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
+        },
+        "terraform": {
+          "aws": "aws_lb",
+          "gcp": "google_compute_global_forwarding_rule",
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
+        },
+        "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "x": 556,
+        "y": 250,
+        "zone": "compute",
+        "role": "API de citas y salas",
+        "icon": {
+          "default": "docker",
+          "aws": "awsFargate",
+          "gcp": "gcpCloudRun",
+          "azure": "azContainerApps"
+        },
+        "service": {
+          "aws": "ECS Fargate",
+          "gcp": "Cloud Run",
+          "azure": "Container Apps",
+          "oci": "Container Instances"
+        },
+        "terraform": {
+          "aws": "aws_ecs_service",
+          "gcp": "google_cloud_run_v2_service",
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
+        },
+        "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
+      },
+      {
+        "id": "postgres",
+        "type": "postgres",
+        "x": 710,
+        "y": 250,
+        "zone": "data",
+        "role": "Historiales y citas",
+        "icon": {
+          "default": "postgresql",
+          "aws": "awsRds",
+          "gcp": "gcpCloudSql",
+          "azure": "azPostgresql"
+        },
+        "service": {
+          "aws": "RDS PostgreSQL",
+          "gcp": "Cloud SQL",
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
+        },
+        "terraform": {
+          "aws": "aws_db_instance",
+          "gcp": "google_sql_database_instance",
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
+        },
+        "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet."
+      },
+      {
+        "id": "postgres-standby",
+        "type": "postgres",
+        "x": 710,
+        "y": 340,
+        "zone": "data",
+        "role": "Réplica en otra zona",
+        "icon": {
+          "default": "postgresql",
+          "aws": "awsRds",
+          "gcp": "gcpCloudSql",
+          "azure": "azPostgresql"
+        },
+        "service": {
+          "aws": "RDS PostgreSQL",
+          "gcp": "Cloud SQL",
+          "azure": "PostgreSQL Flexible",
+          "oci": "OCI Database with PostgreSQL"
+        },
+        "terraform": {
+          "aws": "aws_db_instance",
+          "gcp": "google_sql_database_instance",
+          "azure": "azurerm_postgresql_flexible_server",
+          "oci": "oci_psql_db_system"
+        },
+        "why": "Datos del CMS y el índice vectorial del asistente, sin acceso desde Internet.",
+        "custom": true
+      },
+      {
+        "id": "queue",
+        "type": "queue",
+        "x": 865,
+        "y": 215,
+        "zone": "managed",
+        "role": "Recordatorios",
+        "service": {
+          "aws": "SQS",
+          "gcp": "Pub/Sub",
+          "azure": "Service Bus",
+          "oci": "Queue"
+        },
+        "icon": {
+          "default": "provider",
+          "gcp": "gcpPubSub",
+          "aws": "awsSqs",
+          "azure": "azServiceBus"
+        },
+        "terraform": {
+          "aws": "aws_sqs_queue",
+          "gcp": "google_pubsub_subscription",
+          "azure": "azurerm_servicebus_queue",
+          "oci": "oci_queue_queue"
+        },
+        "why": "Cola de trabajo para tareas en segundo plano, como la reindexación.",
+        "custom": true
+      },
+      {
+        "id": "identity",
+        "type": "identity",
+        "x": 865,
+        "y": 300,
+        "zone": "managed",
+        "role": "Pacientes y médicos",
+        "service": {
+          "aws": "Cognito",
+          "gcp": "Identity Platform",
+          "azure": "Entra External ID",
+          "oci": "IAM (Identity Domains)"
+        },
+        "icon": {
+          "default": "provider",
+          "aws": "awsCognito",
+          "azure": "azExternalId"
+        },
+        "terraform": {
+          "aws": "aws_cognito_user_pool",
+          "gcp": "google_identity_platform_config",
+          "azure": "azuread_application",
+          "oci": "oci_identity_domain"
+        },
+        "why": "Registro e inicio de sesión de usuarios finales.",
+        "custom": true
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "x": 865,
+        "y": 385,
+        "zone": "managed",
+        "role": "Secretos",
+        "icon": {
+          "default": "provider",
+          "aws": "awsSecretsManager",
+          "azure": "azKeyVault"
+        },
+        "service": {
+          "aws": "Secrets Manager",
+          "gcp": "Secret Manager",
+          "azure": "Key Vault",
+          "oci": "Vault"
+        },
+        "terraform": {
+          "aws": "aws_secretsmanager_secret",
+          "gcp": "google_secret_manager_secret",
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
+        },
+        "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "x": 865,
+        "y": 470,
+        "zone": "managed",
+        "role": "Logs y métricas",
+        "icon": {
+          "default": "provider",
+          "aws": "awsCloudWatch",
+          "azure": "azMonitor"
+        },
+        "service": {
+          "aws": "CloudWatch",
+          "gcp": "Cloud Monitoring",
+          "azure": "Azure Monitor",
+          "oci": "Monitoring"
+        },
+        "terraform": {
+          "aws": "aws_cloudwatch_log_group",
+          "gcp": "google_monitoring_alert_policy",
+          "azure": "azurerm_log_analytics_workspace",
+          "oci": "oci_monitoring_alarm"
+        },
+        "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
+      }
+    ],
+    "connections": [
+      {
+        "from": "users",
+        "to": "edge"
+      },
+      {
+        "from": "edge",
+        "to": "lb"
+      },
+      {
+        "from": "lb",
+        "to": "api"
+      },
+      {
+        "from": "edge",
+        "to": "static"
+      },
+      {
+        "from": "api",
+        "to": "postgres"
+      },
+      {
+        "from": "postgres",
+        "to": "postgres-standby",
+        "kind": "REPLICATION"
+      },
+      {
+        "from": "api",
+        "to": "queue",
+        "kind": "EVENT_BUS"
+      },
+      {
+        "from": "api",
+        "to": "identity"
+      },
+      {
+        "from": "api",
+        "to": "secrets"
+      },
+      {
+        "from": "api",
+        "to": "observability"
+      }
+    ],
+    "zones": [
+      {
+        "id": "cloud",
+        "kind": "cloud",
+        "role": null,
+        "x": 290,
+        "y": 30,
+        "w": 800,
+        "h": 586
+      },
+      {
+        "id": "network",
+        "kind": "vpc",
+        "role": null,
+        "x": 320,
+        "y": 150,
+        "w": 472,
+        "h": 450
+      },
+      {
+        "id": "subnet-public",
+        "kind": "public",
+        "role": "public",
+        "x": 332,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      },
+      {
+        "id": "subnet-app",
+        "kind": "private",
+        "role": "compute",
+        "x": 486,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      },
+      {
+        "id": "subnet-data",
+        "kind": "private",
+        "role": "data",
+        "x": 640,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      }
+    ],
+    "system": {
+      "choices": {
+        "client": "web-spa",
+        "backend": "spring-boot",
+        "api": "rest",
+        "auth": "oidc-managed",
+        "database": "postgresql",
+        "queue": "queue",
+        "push": "websocket"
+      },
+      "deployments": {
+        "client": "static",
+        "backend": "api",
+        "auth": "identity",
+        "database": "postgres",
+        "queue": "queue",
+        "push": "api"
+      },
+      "nfr": {
+        "users": 50000,
+        "rps": 200,
+        "latencyMs": 300,
+        "availability": 99.9,
+        "budgetUsd": 300,
+        "compliance": [
+          "health"
+        ]
+      }
+    }
+  },
+  {
+    "id": "system-mobility",
+    "title": "Viajes compartidos",
+    "description": "App de viajes compartidos: BFF y backend en Kubernetes, stream de posiciones, base de datos clave-valor y Redis para el estado en vivo. Ejemplo ficticio: ilustra un tipo de sistema; no describe el de ninguna empresa.",
+    "cloudProvider": "aws",
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "x": 64,
+        "y": 250,
+        "zone": "outside",
+        "role": "Navegador",
+        "service": "Visitantes",
+        "icon": null,
+        "terraform": null,
+        "why": "Entran por HTTPS; nunca hablan directamente con la nube."
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "x": 196,
+        "y": 250,
+        "zone": "outside",
+        "role": "CDN · WAF · DNS",
+        "service": "Cloudflare",
+        "icon": "cloudflare",
+        "terraform": "cloudflare_record",
+        "why": "Borde común a las tres nubes: caché, protección y la IP real del visitante."
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "x": 402,
+        "y": 250,
+        "zone": "public",
+        "role": "Balanceador",
+        "icon": {
+          "default": "provider",
+          "aws": "awsElb",
+          "azure": "azAppGateway"
+        },
+        "service": {
+          "aws": "Application LB",
+          "gcp": "Cloud Load Balancing",
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
+        },
+        "terraform": {
+          "aws": "aws_lb",
+          "gcp": "google_compute_global_forwarding_rule",
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
+        },
+        "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
+      },
+      {
+        "id": "bff",
+        "type": "containers",
+        "x": 556,
+        "y": 250,
+        "zone": "compute",
+        "role": "BFF de la app",
+        "service": {
+          "aws": "ECS Fargate",
+          "gcp": "Cloud Run",
+          "azure": "Container Apps",
+          "oci": "Container Instances"
+        },
+        "icon": {
+          "default": "docker",
+          "aws": "awsFargate",
+          "gcp": "gcpCloudRun",
+          "azure": "azContainerApps"
+        },
+        "terraform": {
+          "aws": "aws_ecs_service",
+          "gcp": "google_cloud_run_v2_service",
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
+        },
+        "why": "Contenedores Docker que escalan solos, sin gestionar nodos.",
+        "custom": true
+      },
+      {
+        "id": "cluster",
+        "type": "kubernetes",
+        "x": 556,
+        "y": 340,
+        "zone": "compute",
+        "role": "Viajes y emparejamiento",
+        "service": {
+          "aws": "EKS",
+          "gcp": "GKE",
+          "azure": "AKS",
+          "oci": "Kubernetes Engine (OKE)"
+        },
+        "icon": {
+          "default": "kubernetes",
+          "aws": "awsEks",
+          "gcp": "gcpGke",
+          "azure": "azAks"
+        },
+        "terraform": {
+          "aws": "aws_eks_cluster",
+          "gcp": "google_container_cluster",
+          "azure": "azurerm_kubernetes_cluster",
+          "oci": "oci_containerengine_cluster"
+        },
+        "why": "Orquestación de contenedores para varias réplicas y despliegues graduales.",
+        "custom": true
+      },
+      {
+        "id": "trips",
+        "type": "nosql",
+        "x": 710,
+        "y": 250,
+        "zone": "data",
+        "role": "Viajes y conductores",
+        "service": {
+          "aws": "DynamoDB",
+          "gcp": "Firestore (Datastore)",
+          "azure": "Cosmos DB",
+          "oci": "NoSQL Database"
+        },
+        "icon": {
+          "default": "provider",
+          "gcp": "firebase",
+          "aws": "awsDynamoDb",
+          "azure": "azCosmosDb"
+        },
+        "terraform": {
+          "aws": "aws_dynamodb_table",
+          "gcp": "google_firestore_database",
+          "azure": "azurerm_cosmosdb_account",
+          "oci": "oci_nosql_table"
+        },
+        "why": "Almacén clave-valor para datos de acceso muy frecuente.",
+        "custom": true
+      },
+      {
+        "id": "redis",
+        "type": "redis",
+        "x": 710,
+        "y": 340,
+        "zone": "data",
+        "role": "Estado en vivo",
+        "icon": {
+          "default": "redis",
+          "aws": "awsElastiCache",
+          "azure": "azRedis"
+        },
+        "service": {
+          "aws": "ElastiCache",
+          "gcp": "Memorystore",
+          "azure": "Cache for Redis",
+          "oci": "OCI Cache"
+        },
+        "terraform": {
+          "aws": "aws_elasticache_replication_group",
+          "gcp": "google_redis_instance",
+          "azure": "azurerm_redis_cache",
+          "oci": "oci_redis_redis_cluster"
+        },
+        "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
+      },
+      {
+        "id": "positions",
+        "type": "streaming",
+        "x": 556,
+        "y": 250,
+        "zone": "compute",
+        "role": "Posiciones",
+        "service": {
+          "aws": "MSK (Kafka)",
+          "gcp": "Managed Kafka",
+          "azure": "Event Hubs",
+          "oci": "Streaming with Apache Kafka"
+        },
+        "icon": {
+          "default": "kafka",
+          "aws": "awsMsk",
+          "azure": "azEventHubs"
+        },
+        "terraform": {
+          "aws": "aws_msk_cluster",
+          "gcp": "google_managed_kafka_cluster",
+          "azure": "azurerm_eventhub_namespace",
+          "oci": "oci_managed_kafka_kafka_cluster"
+        },
+        "why": "Bus de eventos para desacoplar productores y consumidores.",
+        "custom": true
+      },
+      {
+        "id": "push",
+        "type": "pubsub",
+        "x": 865,
+        "y": 215,
+        "zone": "managed",
+        "role": "Notificaciones push",
+        "service": {
+          "aws": "SNS",
+          "gcp": "Pub/Sub",
+          "azure": "Event Grid",
+          "oci": "Notifications"
+        },
+        "icon": {
+          "default": "provider",
+          "gcp": "gcpPubSub",
+          "aws": "awsSns",
+          "azure": "azEventGrid"
+        },
+        "terraform": {
+          "aws": "aws_sns_topic",
+          "gcp": "google_pubsub_topic",
+          "azure": "azurerm_eventgrid_topic",
+          "oci": "oci_ons_notification_topic"
+        },
+        "why": "Un evento, muchos suscriptores.",
+        "custom": true
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "x": 865,
+        "y": 300,
+        "zone": "managed",
+        "role": "Secretos",
+        "icon": {
+          "default": "provider",
+          "aws": "awsSecretsManager",
+          "azure": "azKeyVault"
+        },
+        "service": {
+          "aws": "Secrets Manager",
+          "gcp": "Secret Manager",
+          "azure": "Key Vault",
+          "oci": "Vault"
+        },
+        "terraform": {
+          "aws": "aws_secretsmanager_secret",
+          "gcp": "google_secret_manager_secret",
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
+        },
+        "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "x": 865,
+        "y": 385,
+        "zone": "managed",
+        "role": "Logs y métricas",
+        "icon": {
+          "default": "provider",
+          "aws": "awsCloudWatch",
+          "azure": "azMonitor"
+        },
+        "service": {
+          "aws": "CloudWatch",
+          "gcp": "Cloud Monitoring",
+          "azure": "Azure Monitor",
+          "oci": "Monitoring"
+        },
+        "terraform": {
+          "aws": "aws_cloudwatch_log_group",
+          "gcp": "google_monitoring_alert_policy",
+          "azure": "azurerm_log_analytics_workspace",
+          "oci": "oci_monitoring_alarm"
+        },
+        "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
+      }
+    ],
+    "connections": [
+      {
+        "from": "users",
+        "to": "edge"
+      },
+      {
+        "from": "edge",
+        "to": "lb"
+      },
+      {
+        "from": "lb",
+        "to": "bff"
+      },
+      {
+        "from": "bff",
+        "to": "cluster"
+      },
+      {
+        "from": "cluster",
+        "to": "trips"
+      },
+      {
+        "from": "cluster",
+        "to": "redis"
+      },
+      {
+        "from": "cluster",
+        "to": "positions",
+        "kind": "EVENT_BUS"
+      },
+      {
+        "from": "cluster",
+        "to": "push",
+        "kind": "EVENT_BUS"
+      },
+      {
+        "from": "cluster",
+        "to": "secrets"
+      },
+      {
+        "from": "cluster",
+        "to": "observability"
+      }
+    ],
+    "zones": [
+      {
+        "id": "cloud",
+        "kind": "cloud",
+        "role": null,
+        "x": 290,
+        "y": 30,
+        "w": 800,
+        "h": 586
+      },
+      {
+        "id": "network",
+        "kind": "vpc",
+        "role": null,
+        "x": 320,
+        "y": 150,
+        "w": 472,
+        "h": 450
+      },
+      {
+        "id": "subnet-public",
+        "kind": "public",
+        "role": "public",
+        "x": 332,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      },
+      {
+        "id": "subnet-app",
+        "kind": "private",
+        "role": "compute",
+        "x": 486,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      },
+      {
+        "id": "subnet-data",
+        "kind": "private",
+        "role": "data",
+        "x": 640,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      }
+    ],
+    "system": {
+      "choices": {
+        "client": "mobile-native",
+        "backend": "go",
+        "api": "grpc",
+        "auth": "jwt-own",
+        "database": "key-value",
+        "cache": "redis",
+        "queue": "stream",
+        "bff": "bff",
+        "push": "push-service"
+      },
+      "deployments": {
+        "backend": "cluster",
+        "database": "trips",
+        "cache": "redis",
+        "queue": "positions",
+        "bff": "bff",
+        "push": "push"
+      },
+      "nfr": {
+        "users": 1000000,
+        "rps": 5000,
+        "latencyMs": 100,
+        "availability": 99.95,
+        "budgetUsd": 600,
+        "compliance": []
+      }
+    }
+  },
+  {
+    "id": "system-education",
+    "title": "Aula virtual",
+    "description": "Aula virtual: web estática servida desde el borde, API GraphQL en contenedores, MongoDB para los cursos y avisos por publicación y suscripción. Ejemplo ficticio: ilustra un tipo de sistema; no describe el de ninguna empresa.",
+    "cloudProvider": "gcp",
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "x": 64,
+        "y": 250,
+        "zone": "outside",
+        "role": "Navegador",
+        "service": "Visitantes",
+        "icon": null,
+        "terraform": null,
+        "why": "Entran por HTTPS; nunca hablan directamente con la nube."
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "x": 196,
+        "y": 250,
+        "zone": "outside",
+        "role": "CDN · WAF · DNS",
+        "service": "Cloudflare",
+        "icon": "cloudflare",
+        "terraform": "cloudflare_record",
+        "why": "Borde común a las tres nubes: caché, protección y la IP real del visitante."
+      },
+      {
+        "id": "static",
+        "type": "static",
+        "x": 402,
+        "y": 95,
+        "zone": "global",
+        "role": "Frontend Angular",
+        "icon": {
+          "default": "provider",
+          "gcp": "gcpStorage",
+          "aws": "awsCloudFront",
+          "azure": "azFrontDoor"
+        },
+        "service": {
+          "aws": "S3 + CloudFront",
+          "gcp": "Cloud Storage + CDN",
+          "azure": "Storage + Front Door",
+          "oci": "Object Storage"
+        },
+        "terraform": {
+          "aws": "aws_cloudfront_distribution",
+          "gcp": "google_storage_bucket",
+          "azure": "azurerm_cdn_frontdoor_profile",
+          "oci": "oci_objectstorage_bucket"
+        },
+        "why": "El build estático del frontend, servido desde almacenamiento de objetos."
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "x": 402,
+        "y": 250,
+        "zone": "public",
+        "role": "Balanceador",
+        "icon": {
+          "default": "provider",
+          "aws": "awsElb",
+          "azure": "azAppGateway"
+        },
+        "service": {
+          "aws": "Application LB",
+          "gcp": "Cloud Load Balancing",
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
+        },
+        "terraform": {
+          "aws": "aws_lb",
+          "gcp": "google_compute_global_forwarding_rule",
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
+        },
+        "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "x": 556,
+        "y": 250,
+        "zone": "compute",
+        "role": "API GraphQL",
+        "icon": {
+          "default": "docker",
+          "aws": "awsFargate",
+          "gcp": "gcpCloudRun",
+          "azure": "azContainerApps"
+        },
+        "service": {
+          "aws": "ECS Fargate",
+          "gcp": "Cloud Run",
+          "azure": "Container Apps",
+          "oci": "Container Instances"
+        },
+        "terraform": {
+          "aws": "aws_ecs_service",
+          "gcp": "google_cloud_run_v2_service",
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
+        },
+        "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
+      },
+      {
+        "id": "courses",
+        "type": "mongodb",
+        "x": 710,
+        "y": 250,
+        "zone": "external",
+        "role": "Cursos y entregas",
+        "service": "MongoDB Atlas",
+        "icon": "mongodb",
+        "terraform": "mongodbatlas_advanced_cluster",
+        "why": "Documentos JSON con esquema flexible; servicio externo, el mismo en cualquier nube.",
+        "custom": true
+      },
+      {
+        "id": "notices",
+        "type": "pubsub",
+        "x": 865,
+        "y": 215,
+        "zone": "managed",
+        "role": "Avisos",
+        "service": {
+          "aws": "SNS",
+          "gcp": "Pub/Sub",
+          "azure": "Event Grid",
+          "oci": "Notifications"
+        },
+        "icon": {
+          "default": "provider",
+          "gcp": "gcpPubSub",
+          "aws": "awsSns",
+          "azure": "azEventGrid"
+        },
+        "terraform": {
+          "aws": "aws_sns_topic",
+          "gcp": "google_pubsub_topic",
+          "azure": "azurerm_eventgrid_topic",
+          "oci": "oci_ons_notification_topic"
+        },
+        "why": "Un evento, muchos suscriptores.",
+        "custom": true
+      },
+      {
+        "id": "identity",
+        "type": "identity",
+        "x": 865,
+        "y": 300,
+        "zone": "managed",
+        "role": "Alumnos y docentes",
+        "service": {
+          "aws": "Cognito",
+          "gcp": "Identity Platform",
+          "azure": "Entra External ID",
+          "oci": "IAM (Identity Domains)"
+        },
+        "icon": {
+          "default": "provider",
+          "aws": "awsCognito",
+          "azure": "azExternalId"
+        },
+        "terraform": {
+          "aws": "aws_cognito_user_pool",
+          "gcp": "google_identity_platform_config",
+          "azure": "azuread_application",
+          "oci": "oci_identity_domain"
+        },
+        "why": "Registro e inicio de sesión de usuarios finales.",
+        "custom": true
+      },
+      {
+        "id": "bucket",
+        "type": "bucket",
+        "x": 865,
+        "y": 385,
+        "zone": "managed",
+        "role": "Material y entregas",
+        "service": {
+          "aws": "S3",
+          "gcp": "Cloud Storage",
+          "azure": "Blob Storage",
+          "oci": "Object Storage"
+        },
+        "icon": {
+          "default": "provider",
+          "gcp": "gcpStorage",
+          "aws": "awsS3",
+          "azure": "azStorage"
+        },
+        "terraform": {
+          "aws": "aws_s3_bucket",
+          "gcp": "google_storage_bucket",
+          "azure": "azurerm_storage_container",
+          "oci": "oci_objectstorage_bucket"
+        },
+        "why": "Archivos y copias de seguridad.",
+        "custom": true
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "x": 865,
+        "y": 470,
+        "zone": "managed",
+        "role": "Secretos",
+        "icon": {
+          "default": "provider",
+          "aws": "awsSecretsManager",
+          "azure": "azKeyVault"
+        },
+        "service": {
+          "aws": "Secrets Manager",
+          "gcp": "Secret Manager",
+          "azure": "Key Vault",
+          "oci": "Vault"
+        },
+        "terraform": {
+          "aws": "aws_secretsmanager_secret",
+          "gcp": "google_secret_manager_secret",
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
+        },
+        "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "x": 865,
+        "y": 555,
+        "zone": "managed",
+        "role": "Logs y métricas",
+        "icon": {
+          "default": "provider",
+          "aws": "awsCloudWatch",
+          "azure": "azMonitor"
+        },
+        "service": {
+          "aws": "CloudWatch",
+          "gcp": "Cloud Monitoring",
+          "azure": "Azure Monitor",
+          "oci": "Monitoring"
+        },
+        "terraform": {
+          "aws": "aws_cloudwatch_log_group",
+          "gcp": "google_monitoring_alert_policy",
+          "azure": "azurerm_log_analytics_workspace",
+          "oci": "oci_monitoring_alarm"
+        },
+        "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
+      }
+    ],
+    "connections": [
+      {
+        "from": "users",
+        "to": "edge"
+      },
+      {
+        "from": "edge",
+        "to": "lb"
+      },
+      {
+        "from": "lb",
+        "to": "api"
+      },
+      {
+        "from": "edge",
+        "to": "static"
+      },
+      {
+        "from": "api",
+        "to": "courses"
+      },
+      {
+        "from": "api",
+        "to": "notices",
+        "kind": "EVENT_BUS"
+      },
+      {
+        "from": "api",
+        "to": "identity"
+      },
+      {
+        "from": "api",
+        "to": "bucket"
+      },
+      {
+        "from": "api",
+        "to": "secrets"
+      },
+      {
+        "from": "api",
+        "to": "observability"
+      }
+    ],
+    "zones": [
+      {
+        "id": "cloud",
+        "kind": "cloud",
+        "role": null,
+        "x": 290,
+        "y": 30,
+        "w": 800,
+        "h": 586
+      },
+      {
+        "id": "network",
+        "kind": "vpc",
+        "role": null,
+        "x": 320,
+        "y": 150,
+        "w": 472,
+        "h": 450
+      },
+      {
+        "id": "subnet-public",
+        "kind": "public",
+        "role": "public",
+        "x": 332,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      },
+      {
+        "id": "subnet-app",
+        "kind": "private",
+        "role": "compute",
+        "x": 486,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      },
+      {
+        "id": "subnet-data",
+        "kind": "private",
+        "role": "data",
+        "x": 640,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      }
+    ],
+    "system": {
+      "choices": {
+        "client": "web-spa",
+        "backend": "node",
+        "api": "graphql",
+        "auth": "oidc-managed",
+        "database": "document",
+        "cache": "cdn",
+        "queue": "pubsub",
+        "push": "sse"
+      },
+      "deployments": {
+        "client": "static",
+        "backend": "api",
+        "auth": "identity",
+        "database": "courses",
+        "cache": "edge",
+        "queue": "notices",
+        "push": "api"
+      },
+      "nfr": {
+        "users": 80000,
+        "rps": 300,
+        "latencyMs": 400,
+        "availability": 99,
+        "budgetUsd": 300,
+        "compliance": []
+      }
+    }
+  },
+  {
+    "id": "system-iot",
+    "title": "Telemetría de sensores",
+    "description": "Telemetría de sensores: ingesta en funciones, stream de lecturas, procesamiento en vuelo hacia un almacén de datos y un panel web. Ejemplo ficticio: ilustra un tipo de sistema; no describe el de ninguna empresa.",
+    "cloudProvider": "azure",
+    "nodes": [
+      {
+        "id": "users",
+        "type": "users",
+        "x": 64,
+        "y": 250,
+        "zone": "outside",
+        "role": "Navegador",
+        "service": "Visitantes",
+        "icon": null,
+        "terraform": null,
+        "why": "Entran por HTTPS; nunca hablan directamente con la nube."
+      },
+      {
+        "id": "edge",
+        "type": "edge",
+        "x": 196,
+        "y": 250,
+        "zone": "outside",
+        "role": "CDN · WAF · DNS",
+        "service": "Cloudflare",
+        "icon": "cloudflare",
+        "terraform": "cloudflare_record",
+        "why": "Borde común a las tres nubes: caché, protección y la IP real del visitante."
+      },
+      {
+        "id": "static",
+        "type": "static",
+        "x": 402,
+        "y": 95,
+        "zone": "global",
+        "role": "Frontend Angular",
+        "icon": {
+          "default": "provider",
+          "gcp": "gcpStorage",
+          "aws": "awsCloudFront",
+          "azure": "azFrontDoor"
+        },
+        "service": {
+          "aws": "S3 + CloudFront",
+          "gcp": "Cloud Storage + CDN",
+          "azure": "Storage + Front Door",
+          "oci": "Object Storage"
+        },
+        "terraform": {
+          "aws": "aws_cloudfront_distribution",
+          "gcp": "google_storage_bucket",
+          "azure": "azurerm_cdn_frontdoor_profile",
+          "oci": "oci_objectstorage_bucket"
+        },
+        "why": "El build estático del frontend, servido desde almacenamiento de objetos."
+      },
+      {
+        "id": "lb",
+        "type": "lb",
+        "x": 402,
+        "y": 250,
+        "zone": "public",
+        "role": "Balanceador",
+        "icon": {
+          "default": "provider",
+          "aws": "awsElb",
+          "azure": "azAppGateway"
+        },
+        "service": {
+          "aws": "Application LB",
+          "gcp": "Cloud Load Balancing",
+          "azure": "Application Gateway",
+          "oci": "Load Balancer"
+        },
+        "terraform": {
+          "aws": "aws_lb",
+          "gcp": "google_compute_global_forwarding_rule",
+          "azure": "azurerm_application_gateway",
+          "oci": "oci_load_balancer_load_balancer"
+        },
+        "why": "Único punto de entrada a la red privada; termina TLS y reparte entre réplicas."
+      },
+      {
+        "id": "ingest",
+        "type": "functions",
+        "x": 556,
+        "y": 250,
+        "zone": "compute",
+        "role": "Ingesta de lecturas",
+        "service": {
+          "aws": "Lambda",
+          "gcp": "Cloud Functions",
+          "azure": "Functions",
+          "oci": "Functions"
+        },
+        "icon": {
+          "default": "provider",
+          "aws": "awsLambda",
+          "azure": "azFunctions"
+        },
+        "terraform": {
+          "aws": "aws_lambda_function",
+          "gcp": "google_cloudfunctions2_function",
+          "azure": "azurerm_linux_function_app",
+          "oci": "oci_functions_function"
+        },
+        "why": "Código que se ejecuta bajo demanda, sin servidor que mantener.",
+        "custom": true
+      },
+      {
+        "id": "api",
+        "type": "containers",
+        "x": 556,
+        "y": 340,
+        "zone": "compute",
+        "role": "API del panel",
+        "icon": {
+          "default": "docker",
+          "aws": "awsFargate",
+          "gcp": "gcpCloudRun",
+          "azure": "azContainerApps"
+        },
+        "service": {
+          "aws": "ECS Fargate",
+          "gcp": "Cloud Run",
+          "azure": "Container Apps",
+          "oci": "Container Instances"
+        },
+        "terraform": {
+          "aws": "aws_ecs_service",
+          "gcp": "google_cloud_run_v2_service",
+          "azure": "azurerm_container_app",
+          "oci": "oci_container_instances_container_instance"
+        },
+        "why": "La imagen Docker del backend, sin gestionar servidores. A mayor escala: EKS, GKE o AKS."
+      },
+      {
+        "id": "devices",
+        "type": "nosql",
+        "x": 710,
+        "y": 250,
+        "zone": "data",
+        "role": "Dispositivos y última lectura",
+        "service": {
+          "aws": "DynamoDB",
+          "gcp": "Firestore (Datastore)",
+          "azure": "Cosmos DB",
+          "oci": "NoSQL Database"
+        },
+        "icon": {
+          "default": "provider",
+          "gcp": "firebase",
+          "aws": "awsDynamoDb",
+          "azure": "azCosmosDb"
+        },
+        "terraform": {
+          "aws": "aws_dynamodb_table",
+          "gcp": "google_firestore_database",
+          "azure": "azurerm_cosmosdb_account",
+          "oci": "oci_nosql_table"
+        },
+        "why": "Almacén clave-valor para datos de acceso muy frecuente.",
+        "custom": true
+      },
+      {
+        "id": "redis",
+        "type": "redis",
+        "x": 710,
+        "y": 340,
+        "zone": "data",
+        "role": "Último estado",
+        "icon": {
+          "default": "redis",
+          "aws": "awsElastiCache",
+          "azure": "azRedis"
+        },
+        "service": {
+          "aws": "ElastiCache",
+          "gcp": "Memorystore",
+          "azure": "Cache for Redis",
+          "oci": "OCI Cache"
+        },
+        "terraform": {
+          "aws": "aws_elasticache_replication_group",
+          "gcp": "google_redis_instance",
+          "azure": "azurerm_redis_cache",
+          "oci": "oci_redis_redis_cluster"
+        },
+        "why": "Caché cache-aside y contadores de límites; si cae, la API sigue respondiendo."
+      },
+      {
+        "id": "readings",
+        "type": "event-stream",
+        "x": 865,
+        "y": 215,
+        "zone": "managed",
+        "role": "Lecturas",
+        "service": {
+          "aws": "Kinesis Data Streams",
+          "gcp": "Pub/Sub",
+          "azure": "Event Hubs",
+          "oci": "Streaming"
+        },
+        "icon": {
+          "default": "provider",
+          "gcp": "gcpPubSub",
+          "azure": "azEventHubs"
+        },
+        "terraform": {
+          "aws": "aws_kinesis_stream",
+          "gcp": "google_pubsub_topic",
+          "azure": "azurerm_eventhub",
+          "oci": "oci_streaming_stream"
+        },
+        "why": "Ingesta de eventos del propio proveedor: sin clúster que dimensionar, a cambio de su API en lugar de la de Kafka.",
+        "custom": true
+      },
+      {
+        "id": "aggregate",
+        "type": "stream-processing",
+        "x": 865,
+        "y": 300,
+        "zone": "managed",
+        "role": "Agregados por minuto",
+        "service": {
+          "aws": "Managed Flink",
+          "gcp": "Dataflow",
+          "azure": "Stream Analytics",
+          "oci": "Data Flow"
+        },
+        "icon": {
+          "default": "provider",
+          "aws": "awsFlink",
+          "gcp": "gcpDataflow",
+          "azure": "azStreamAnalytics"
+        },
+        "terraform": {
+          "aws": "aws_kinesisanalyticsv2_application",
+          "gcp": "google_dataflow_job",
+          "azure": "azurerm_stream_analytics_job",
+          "oci": "oci_dataflow_application"
+        },
+        "why": "Transforma y agrega eventos en vuelo, sin gestionar el clúster.",
+        "custom": true
+      },
+      {
+        "id": "history",
+        "type": "warehouse",
+        "x": 865,
+        "y": 555,
+        "zone": "managed",
+        "role": "Histórico",
+        "service": {
+          "aws": "Redshift",
+          "gcp": "BigQuery",
+          "azure": "Synapse Analytics",
+          "oci": "Autonomous AI Lakehouse"
+        },
+        "icon": {
+          "default": "provider",
+          "gcp": "bigquery",
+          "aws": "awsRedshift",
+          "azure": "azSynapse"
+        },
+        "terraform": {
+          "aws": "aws_redshift_cluster",
+          "gcp": "google_bigquery_dataset",
+          "azure": "azurerm_synapse_workspace",
+          "oci": "oci_database_autonomous_database"
+        },
+        "why": "Consultas analíticas sobre grandes volúmenes de datos.",
+        "custom": true
+      },
+      {
+        "id": "secrets",
+        "type": "secrets",
+        "x": 865,
+        "y": 385,
+        "zone": "managed",
+        "role": "Secretos",
+        "icon": {
+          "default": "provider",
+          "aws": "awsSecretsManager",
+          "azure": "azKeyVault"
+        },
+        "service": {
+          "aws": "Secrets Manager",
+          "gcp": "Secret Manager",
+          "azure": "Key Vault",
+          "oci": "Vault"
+        },
+        "terraform": {
+          "aws": "aws_secretsmanager_secret",
+          "gcp": "google_secret_manager_secret",
+          "azure": "azurerm_key_vault",
+          "oci": "oci_vault_secret"
+        },
+        "why": "JWT_SECRET, credenciales de base de datos y la clave de Gemini, fuera de la imagen."
+      },
+      {
+        "id": "observability",
+        "type": "native-monitoring",
+        "x": 865,
+        "y": 470,
+        "zone": "managed",
+        "role": "Logs y métricas",
+        "icon": {
+          "default": "provider",
+          "aws": "awsCloudWatch",
+          "azure": "azMonitor"
+        },
+        "service": {
+          "aws": "CloudWatch",
+          "gcp": "Cloud Monitoring",
+          "azure": "Azure Monitor",
+          "oci": "Monitoring"
+        },
+        "terraform": {
+          "aws": "aws_cloudwatch_log_group",
+          "gcp": "google_monitoring_alert_policy",
+          "azure": "azurerm_log_analytics_workspace",
+          "oci": "oci_monitoring_alarm"
+        },
+        "why": "Recoge los avisos de fail-open y las transiciones del circuit breaker."
+      }
+    ],
+    "connections": [
+      {
+        "from": "users",
+        "to": "edge"
+      },
+      {
+        "from": "edge",
+        "to": "lb"
+      },
+      {
+        "from": "lb",
+        "to": "api"
+      },
+      {
+        "from": "edge",
+        "to": "static"
+      },
+      {
+        "from": "lb",
+        "to": "ingest"
+      },
+      {
+        "from": "ingest",
+        "to": "readings",
+        "kind": "EVENT_BUS"
+      },
+      {
+        "from": "readings",
+        "to": "aggregate",
+        "kind": "EVENT_BUS"
+      },
+      {
+        "from": "aggregate",
+        "to": "history",
+        "kind": "ANALYTICS_SINK"
+      },
+      {
+        "from": "aggregate",
+        "to": "devices"
+      },
+      {
+        "from": "api",
+        "to": "devices"
+      },
+      {
+        "from": "api",
+        "to": "redis"
+      },
+      {
+        "from": "api",
+        "to": "secrets"
+      },
+      {
+        "from": "api",
+        "to": "observability"
+      }
+    ],
+    "zones": [
+      {
+        "id": "cloud",
+        "kind": "cloud",
+        "role": null,
+        "x": 290,
+        "y": 30,
+        "w": 800,
+        "h": 586
+      },
+      {
+        "id": "network",
+        "kind": "vpc",
+        "role": null,
+        "x": 320,
+        "y": 150,
+        "w": 472,
+        "h": 450
+      },
+      {
+        "id": "subnet-public",
+        "kind": "public",
+        "role": "public",
+        "x": 332,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      },
+      {
+        "id": "subnet-app",
+        "kind": "private",
+        "role": "compute",
+        "x": 486,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      },
+      {
+        "id": "subnet-data",
+        "kind": "private",
+        "role": "data",
+        "x": 640,
+        "y": 182,
+        "w": 140,
+        "h": 406
+      }
+    ],
+    "system": {
+      "choices": {
+        "client": "web-spa",
+        "backend": "go",
+        "api": "events",
+        "auth": "jwt-own",
+        "database": "key-value",
+        "cache": "redis",
+        "queue": "stream"
+      },
+      "deployments": {
+        "client": "static",
+        "backend": "ingest",
+        "database": "devices",
+        "cache": "redis",
+        "queue": "readings"
+      },
+      "nfr": {
+        "users": 5000,
+        "rps": 8000,
+        "latencyMs": 1000,
+        "availability": 99.9,
+        "budgetUsd": 600,
+        "compliance": []
+      }
+    }
   }
 ]

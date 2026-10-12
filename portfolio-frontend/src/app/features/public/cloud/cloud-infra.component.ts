@@ -37,6 +37,7 @@ import { NodePatch, NodePropertiesComponent } from './node-properties.component'
 import { History } from './studio-history';
 import { SystemDesignComponent } from './system/system-design.component';
 import { SystemDesign, defaultSystemDesign } from './system/system-design';
+import { FICTIONAL_LABEL, SYSTEM_TEMPLATES, SystemTemplate } from './system/system-templates';
 import {
   BASE_ZONES, PROJECT_EXTENSION, PROJECT_STORAGE_KEY, StudioProject, StudioZone, ZONE_KINDS, ZONE_MIN_SIZE,
   ZoneCorner, ZoneKind, nodeLabel, parseProject, referenceProject, resizeZone, roleAt, serializeProject, slotsIn, zoneAt, zoneLabel, zonesInside,
@@ -890,6 +891,53 @@ export class CloudInfraComponent {
   readonly systemNow = computed(() => this.system() ?? defaultSystemDesign());
   readonly systemLinks = computed(() => this.links());
   readonly systemCost = computed(() => (this.cost().total > 0 ? this.cost().total : null));
+
+  // ---------- Sistemas de ejemplo (flag studio.system-templates) ----------
+  readonly fictionalLabel = FICTIONAL_LABEL;
+  /** Los sistemas de ejemplo con lo que se cuenta de cada uno en la lista: requisitos y coste estimado. */
+  readonly systemTemplates = computed(() => (this.flags.isEnabled('studio.system-templates') ? SYSTEM_TEMPLATES : []).map((template) => {
+    const project = template.build();
+    const nfr = project.system!.nfr;
+    return {
+      template,
+      cloud: CLOUD_PROVIDERS.find((provider) => provider.id === project.provider)!.name,
+      requirements: [
+        `${nfr.users!.toLocaleString('es-ES')} usuarios`, `${nfr.rps!.toLocaleString('es-ES')} req/s`, `p95 ${nfr.latencyMs} ms`,
+        `${String(nfr.availability).replace('.', ',')} %`,
+        ...nfr.compliance.map((id) => (id === 'pci' ? 'PCI DSS' : 'datos de salud')),
+      ].join(' · '),
+      cost: formatUsd(estimateCost(project.nodes, project.provider).total),
+    };
+  }));
+
+  /**
+   * Ancho máximo del menú de plantillas para que no se salga de la ventana: el menú cuelga del
+   * botón «Proyecto», que en una pantalla estrecha no siempre queda pegado al borde izquierdo.
+   * Solo con los sistemas de ejemplo en la lista; sin ellos el menú se queda como estaba.
+   */
+  readonly presetsMaxWidth = computed(() => {
+    if (this.menu() !== 'presets' || !this.systemTemplates().length) {
+      return null;
+    }
+    const anchor = this.host.querySelector('[aria-controls="menu-project"]')?.parentElement;
+    const left = anchor?.getBoundingClientRect().left ?? 0;
+    return Math.max(240, document.documentElement.clientWidth - left - 12);
+  });
+
+  /** Carga un sistema de ejemplo: su infraestructura y su diseño, en un solo paso de deshacer. */
+  loadSystemTemplate(template: SystemTemplate): void {
+    this.menu.set(null);
+    this.projectError.set(null);
+    this.record();
+    this.apply(template.build());
+    this.modified.set(true);
+    this.cloudProject.set(null);
+    this.cloudTitle.set('');
+    if (this.systemDesign()) {
+      this.view.set('app');
+    }
+    this.events.emitFromUser([['info', 'Terraform', `sistema de ejemplo «${template.name}» v${template.version} cargado (${FICTIONAL_LABEL.toLowerCase()})`], ...this.validationSteps()]);
+  }
 
   onSystemChanged(design: SystemDesign): void {
     this.record();

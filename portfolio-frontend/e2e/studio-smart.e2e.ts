@@ -277,3 +277,49 @@ test.describe('diseño de sistemas en el Estudio (studio.system-design)', () => 
     await expect(page.locator(`${APP} fieldset[data-category="backend"] input[value="spring-boot"]`)).toBeChecked();
   });
 });
+
+test.describe('sistemas de ejemplo en el Estudio (studio.system-templates)', () => {
+  const TEMPLATES = 'app-cloud-infra #menu-presets [data-testid="system-template"]';
+  // Las plantillas están dentro del menú Proyecto.
+  async function openTemplates(page: Page): Promise<void> {
+    await page.locator('app-cloud-infra [aria-controls="menu-project"]').click();
+    await page.locator('app-cloud-infra [aria-controls="menu-presets"]').click();
+  }
+
+  test('con la flag apagada el menú de plantillas es el de siempre', async ({ page }) => {
+    await openStudio(page, {});
+    await openTemplates(page);
+
+    await expect(page.locator('app-cloud-infra #menu-presets')).toBeVisible();
+    await expect(page.locator(TEMPLATES)).toHaveCount(0);
+  });
+
+  test('los seis sistemas se ofrecen con la etiqueta «Ejemplo ficticio» y uno se carga con sus dos vistas', async ({ page }, testInfo) => {
+    await openStudio(page, { 'studio.system-templates': true, 'studio.system-design': true });
+    await openTemplates(page);
+
+    await expect(page.locator(TEMPLATES)).toHaveCount(6);
+    await expect(page.locator(`${TEMPLATES} .ui-badge`)).toHaveText(Array(6).fill('Ejemplo ficticio'));
+    const scroll = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+    expect(scroll.scroll, 'la página no se desplaza en horizontal').toBeLessThanOrEqual(scroll.client + 1);
+    const menuPath = join('e2e-screens', testInfo.project.name, 'hito-5-plantillas.png');
+    await page.locator('app-cloud-infra #menu-presets').screenshot({ path: menuPath, animations: 'disabled' });
+    await testInfo.attach('hito-5-plantillas', { path: menuPath, contentType: 'image/png' });
+
+    await page.locator(TEMPLATES, { hasText: 'Consulta médica en línea' }).click();
+
+    // Se abre por la vista de Aplicación, con todo desplegado y sin nada que corregir.
+    const app = page.locator('app-cloud-infra app-system-design');
+    await expect(app.locator('[data-testid="system-flow"]')).toContainText('Java · Spring Boot');
+    await expect(app.locator('[data-testid="system-findings"]')).toContainText('Sin avisos');
+    await expect(app.locator('[data-compliance="health"]')).toBeChecked();
+    const appPath = join('e2e-screens', testInfo.project.name, 'hito-5-sistema-aplicacion.png');
+    await app.screenshot({ path: appPath, animations: 'disabled' });
+    await testInfo.attach('hito-5-sistema-aplicacion', { path: appPath, contentType: 'image/png' });
+
+    // Y la misma plantilla trae su infraestructura, en Azure.
+    await page.locator('app-cloud-infra [role="tablist"][aria-label="Vista del proyecto"] [role="tab"]', { hasText: 'Infraestructura' }).click();
+    await expect(page.locator(`${CANVAS} text.node-service`, { hasText: 'PostgreSQL Flexible' }).first()).toBeVisible();
+    await capture(page, testInfo, 'hito-5-sistema-infraestructura');
+  });
+});
