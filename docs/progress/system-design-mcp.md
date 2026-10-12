@@ -5,26 +5,22 @@
 
 ## Estado
 
-**Detenido el 2026-10-12 por un bloqueo que exige gastar dinero: GitHub Actions dejó de arrancar trabajos.**
-El aviso de GitHub, en los trabajos `📦 Build front` e `📦 Imagen + Trivy` del PR #30: «The job was not
-started because recent account payments have failed or your spending limit needs to be increased».
-No se ha reintentado ni se ha tocado la facturación.
+**Terminado el 2026-10-12: los nueve hitos (0 a 8) están integrados en `main`, cada uno por su PR.**
+Todas las flags siguen apagadas.
 
 ### Resumen de cierre
 
-- **Integrados en `main`, cada uno con su CI gate en verde: hitos 0 a 6** (PR #22, #23, #24, #25 + #26, #27, #28 y #29).
-- **Sin integrar: hitos 7 (#30) y 8 (#31)**, los dos en borrador y terminados.
-  - #30: su único fallo real era el cliente de la API sin regenerar (`telemetryEvent.ts`); está corregido y `📜 Codegen` y `📜 Breaking` pasan. Los tests llegaron a pasar; lo que falló después fueron los trabajos que GitHub no arrancó.
-  - #31: tuvo el **CI gate en verde** antes de recibir ese mismo arreglo por `merge`; su ejecución nueva queda pendiente de que la CI vuelva a arrancar.
-- **Despliegue**: no se ha desplegado nada a mano. **Los hitos 5 y 6 están en `main` pero no desplegados**: las dos CI de `main` (la del #28 y la del #29) acabaron en rojo porque GitHub no arrancó sus últimos trabajos, y el CD se omitió las dos veces. En la del #28 pasaron todos los tests, el build y la imagen; solo faltó el gate. Lo último desplegado es el hito 4. Un reintento del #30 a las 15:00 UTC falló igual.
+- **Hitos integrados**: 0 (#22), 1 (#23), 2 (#24), 3 (#25, corregido con el #26), 4 (#27), 5 (#28), 6 (#29), 7 (#30) y 8 (#31). Todos con el CI gate en verde al integrarse, salvo el #25 (se integró antes de que acabara su CI y dejó `main` en rojo hasta el #26).
+- **Parada intermedia**: el 2026-10-12, hacia las 14:50 UTC, GitHub Actions dejó de arrancar trabajos («recent account payments have failed or your spending limit needs to be increased»). Hacia las 15:20 UTC volvió a funcionar sin que se tocara nada desde aquí. Las CI de `main` de los PR #28 y #29 quedaron en rojo por eso (ningún test falló) y su CD se omitió; la del #29 se relanzó.
+- **Despliegue**: no se ha desplegado nada a mano. El CD sale solo tras una CI verde en `main`. **Al cerrar este archivo no estaba comprobado que lo integrado desde el hito 5 estuviera desplegado**: hay que mirar que el último CD de `main` haya salido en verde (`gh run list --branch main --workflow CD`).
 - **No se ha publicado nada en el registro de MCP** y la evaluación nocturna sigue desactivada.
+- **Fallos de CI corregidos en el cierre**: el menú de plantillas se salía de la ventana en móviles anchos (hito 5); una aserción mal escapada en el test de integración (hito 6); el cliente de la API sin regenerar tras añadir `MCP_TOOL_CALL` (hito 7).
 
 ### Para retomar
 
-1. Resolver la facturación de GitHub Actions (el autor).
-2. Relanzar la CI de `main` del #29 (`gh run rerun 38265482313 --failed`) y comprobar que el CD sale.
-3. `gh pr checks 30`; con el gate en verde: `gh pr ready 30` y `gh pr merge 30 --merge`. Después lo mismo con el #31.
-4. Copiar las «Notas para `CLAUDE.md`» de este archivo al `CLAUDE.md` del checkout principal.
+1. Comprobar el último CD de `main`.
+2. Copiar las «Notas para `CLAUDE.md`» de este archivo al `CLAUDE.md` del checkout principal.
+3. Encender las flags una a una cuando se quiera enseñar cada parte; ver «Pendiente del autor» antes de `mcp.section`.
 
 ### Pendiente del autor
 
@@ -45,8 +41,8 @@ No se ha reintentado ni se ha tocado la facturación.
 | 4 · Diseño de sistemas | `feat/system-design` | Integrado en `main` | #27 |
 | 5 · Plantillas de sistemas | `feat/system-templates` | Integrado en `main` | #28 |
 | 6 · MCP núcleo | `feat/mcp-server` | Integrado en `main` | #29 |
-| 7 · MCP calidad y observabilidad | `feat/mcp-observability` | **PR en borrador, sin integrar**: la CI no arranca (ver Estado) | #30 |
-| 8 · Sección web | `feat/mcp-web-section` (sobre la del hito 7) | **PR en borrador, sin integrar**: va detrás del #30 | #31 |
+| 7 · MCP calidad y observabilidad | `feat/mcp-observability` | Integrado en `main` | #30 |
+| 8 · Sección web | `feat/mcp-web-section` | Integrado en `main` | #31 |
 
 ## Hito 0 · qué se hizo
 
