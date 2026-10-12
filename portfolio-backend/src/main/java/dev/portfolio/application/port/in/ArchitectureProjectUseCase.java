@@ -3,6 +3,7 @@ package dev.portfolio.application.port.in;
 import dev.portfolio.domain.model.ArchitectureProjectDomain;
 import dev.portfolio.domain.model.CloudProviderDomain;
 import dev.portfolio.domain.model.GraphDiagnosticDomain;
+import dev.portfolio.domain.model.system.SystemDesignDomain;
 
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,14 @@ public interface ArchitectureProjectUseCase {
      */
     List<GraphDiagnosticDomain> diagnose(List<Map<String, Object>> nodes, List<Map<String, Object>> connections);
 
+    /** @param system diseño de sistema del proyecto; {@code null} si solo es infraestructura */
     record Draft(String title, String description, CloudProviderDomain cloudProvider,
-                 List<Map<String, Object>> nodes, List<Map<String, Object>> connections, List<Map<String, Object>> zones) {
+                 List<Map<String, Object>> nodes, List<Map<String, Object>> connections, List<Map<String, Object>> zones,
+                 SystemDesignDomain system) {
+
+        public Draft(String title, String description, CloudProviderDomain cloudProvider,
+                     List<Map<String, Object>> nodes, List<Map<String, Object>> connections, List<Map<String, Object>> zones) {
+            this(title, description, cloudProvider, nodes, connections, zones, null);
+        }
     }
 }

@@ -243,7 +243,7 @@ test.describe('patrones de datos en el Estudio, en escritorio', () => {
     await expect(inspector.locator('[data-testid="graph-entry"]').first()).toContainText('+ nodo');
     await inspector.getByRole('button', { name: 'Ver JSON completo' }).click();
     await expect(inspector.locator('[data-testid="graph-json"]')).toContainText('"kind": "EVENT_BUS"');
-    await expect(inspector.locator('[data-testid="graph-json"]')).toContainText('"version": 2');
+    await expect(inspector.locator('[data-testid="graph-json"]')).toContainText('"version": 3');
   });
 
   test('una instancia duplicada y un servicio sin Terraform ni coste se avisan a la vista', async ({ page }, testInfo) => {

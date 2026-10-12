@@ -10,6 +10,8 @@ import dev.portfolio.domain.model.ArchitectureGraphRules;
 import dev.portfolio.domain.model.ArchitectureProjectDomain;
 import dev.portfolio.domain.model.FeatureFlagDomain;
 import dev.portfolio.domain.model.GraphDiagnosticDomain;
+import dev.portfolio.domain.model.system.SystemDesignDomain;
+import dev.portfolio.domain.model.system.SystemDesignRules;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,11 +25,14 @@ public class ArchitectureProjectService implements ArchitectureProjectUseCase {
     private final ArchitectureProjectRepositoryPort repository;
     private final ArchitectureGraphRules rules;
     private final FeatureFlags flags;
+    private final SystemDesignRules systemRules;
 
-    public ArchitectureProjectService(ArchitectureProjectRepositoryPort repository, ArchitectureGraphRules rules, FeatureFlags flags) {
+    public ArchitectureProjectService(ArchitectureProjectRepositoryPort repository, ArchitectureGraphRules rules, FeatureFlags flags,
+                                      SystemDesignRules systemRules) {
         this.repository = repository;
         this.rules = rules;
         this.flags = flags;
+        this.systemRules = systemRules;
     }
 
     @Override
@@ -86,7 +91,9 @@ public class ArchitectureProjectService implements ArchitectureProjectUseCase {
         ArchitectureGraph.validate(draft.nodes(), draft.connections(), draft.zones());
         // El editor solo avisa de estas reglas; lo que se guarda y se sirve a otros debe cumplirlas.
         rules.validate(draft.nodes(), draft.connections());
+        // El diseño de sistema, si viene, solo puede nombrar lo que hay en su catálogo.
+        SystemDesignDomain system = draft.system() == null ? null : systemRules.validated(draft.system());
         return new ArchitectureProjectDomain(id, title, description, draft.cloudProvider(),
-                draft.nodes(), draft.connections(), draft.zones(), preset, createdAt);
+                draft.nodes(), draft.connections(), draft.zones(), system, preset, createdAt);
     }
 }

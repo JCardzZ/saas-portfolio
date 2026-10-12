@@ -1,6 +1,7 @@
 import { TECH_ICONS } from '../../../shared/ui/tech-icons';
 import { CatalogItem, SERVICE_CATALOG } from './cloud-catalog.data';
 import { withOracle } from './cloud-oracle.data';
+import { SystemDesign, parseSystemDesign } from './system/system-design';
 import {
   BASE_PROVIDER_IDS, CANVAS_HEIGHT, CANVAS_WIDTH, CLOUD_LINKS, CLOUD_NODES, CLOUD_PROVIDERS, CloudLink, CloudNode, CloudProviderId, IconRef, LINK_KINDS, LinkKind,
   NODE_HEIGHT, PerProvider, ZoneId,
@@ -133,6 +134,8 @@ export interface StudioProject {
   nodes: CloudNode[];
   links: CloudLink[];
   zones: StudioZone[];
+  /** Diseño de sistema: lo que va encima de la infraestructura. Sin él, el proyecto es solo el lienzo. */
+  system?: SystemDesign;
 }
 
 export function referenceProject(): StudioProject {
@@ -404,9 +407,10 @@ export const SERVER_PRESET_IDS = [
 export const PROJECT_FORMAT = 'architecture-studio';
 /**
  * Versión del esquema del proyecto. 1: nodos, conexiones sin tipo y zonas. 2: las conexiones
- * pueden llevar `kind`. Un proyecto anterior se abre igual y se guarda ya en la versión actual.
+ * pueden llevar `kind`. 3: el proyecto puede llevar `system` (diseño de sistema). Un proyecto
+ * anterior se abre igual y se guarda ya en la versión actual.
  */
-export const PROJECT_VERSION = 2;
+export const PROJECT_VERSION = 3;
 export const PROJECT_EXTENSION = '.architecture.json';
 export const PROJECT_STORAGE_KEY = 'architecture-studio-project';
 
@@ -481,7 +485,11 @@ export function parseProject(text: string): ParsedProject {
         }]
       : []);
 
-  return { ok: true, project: { provider: raw['provider'] as CloudProviderId, nodes: parsedNodes, links: parsedLinks, zones: parsedZones } };
+  const system = parseSystemDesign(raw['system']);
+  return {
+    ok: true,
+    project: { provider: raw['provider'] as CloudProviderId, nodes: parsedNodes, links: parsedLinks, zones: parsedZones, ...(system ? { system } : {}) },
+  };
 }
 
 /**
@@ -520,6 +528,15 @@ const MIGRATIONS: { from: number; apply: (project: Record<string, unknown>) => R
           })
         : project['links'],
     }),
+  },
+  // 2 → 3: el proyecto gana `system`, que es opcional; en la versión 2 no existía, así que
+  // cualquier `system` que traiga un archivo de esa versión no es del estudio y se quita.
+  {
+    from: 2,
+    apply: (project) => {
+      const { system: _dropped, ...rest } = project;
+      return rest;
+    },
   },
 ];
 

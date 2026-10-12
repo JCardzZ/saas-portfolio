@@ -35,6 +35,8 @@ import { LivePricingService } from './live-pricing.service';
 import { LiveVitalsComponent } from './live-vitals.component';
 import { NodePatch, NodePropertiesComponent } from './node-properties.component';
 import { History } from './studio-history';
+import { SystemDesignComponent } from './system/system-design.component';
+import { SystemDesign, defaultSystemDesign } from './system/system-design';
 import {
   BASE_ZONES, PROJECT_EXTENSION, PROJECT_STORAGE_KEY, StudioProject, StudioZone, ZONE_KINDS, ZONE_MIN_SIZE,
   ZoneCorner, ZoneKind, nodeLabel, parseProject, referenceProject, resizeZone, roleAt, serializeProject, slotsIn, zoneAt, zoneLabel, zonesInside,
@@ -80,7 +82,7 @@ interface Wire extends CloudLink {
 @Component({
   selector: 'app-cloud-infra',
   standalone: true,
-  imports: [TechIconComponent, TheaterToggleComponent, ServiceCatalogComponent, CostBadgeComponent, AuditCardComponent, NodePropertiesComponent, ArchitectureCopilotComponent, LiveVitalsComponent],
+  imports: [SystemDesignComponent, TechIconComponent, TheaterToggleComponent, ServiceCatalogComponent, CostBadgeComponent, AuditCardComponent, NodePropertiesComponent, ArchitectureCopilotComponent, LiveVitalsComponent],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   templateUrl: './cloud-infra.component.html',
@@ -873,7 +875,26 @@ export class CloudInfraComponent {
 
   /** El proyecto tal como está ahora en el lienzo. */
   project(): StudioProject {
-    return { provider: this.selectedId(), nodes: this.nodes(), links: this.links(), zones: this.zones() };
+    const system = this.system();
+    return { provider: this.selectedId(), nodes: this.nodes(), links: this.links(), zones: this.zones(), ...(system ? { system } : {}) };
+  }
+
+  // ---------- Diseño de sistema (flag studio.system-design) ----------
+  readonly systemDesign = computed(() => this.flags.isEnabled('studio.system-design'));
+  /** Las dos vistas del mismo proyecto. La de Aplicación solo existe con la flag encendida. */
+  readonly view = signal<'infra' | 'app'>('infra');
+  readonly appView = computed(() => this.systemDesign() && this.view() === 'app');
+  /** Lo que va encima de la infraestructura; `null` mientras el proyecto sea solo el lienzo. */
+  readonly system = signal<SystemDesign | null>(null);
+  /** El diseño que se muestra: el del proyecto o, si aún no tiene, el de partida. */
+  readonly systemNow = computed(() => this.system() ?? defaultSystemDesign());
+  readonly systemLinks = computed(() => this.links());
+  readonly systemCost = computed(() => (this.cost().total > 0 ? this.cost().total : null));
+
+  onSystemChanged(design: SystemDesign): void {
+    this.record();
+    this.system.set(design);
+    this.modified.set(true);
   }
 
   /** Abre una plantilla o un proyecto guardado; los del backend se piden en ese momento. */
@@ -1369,6 +1390,7 @@ export class CloudInfraComponent {
     this.nodes.set(structuredClone(project.nodes));
     this.links.set(structuredClone(project.links));
     this.zones.set(structuredClone(project.zones));
+    this.system.set(project.system ? structuredClone(project.system) : null);
     this.activeId.set(project.nodes.some((node) => node.id === 'api') ? 'api' : (project.nodes[0]?.id ?? ''));
     this.propertiesId.set(null);
     this.activeZoneId.set(null);
