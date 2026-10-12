@@ -16,13 +16,13 @@ No se ha reintentado ni se ha tocado la facturación.
 - **Sin integrar: hitos 7 (#30) y 8 (#31)**, los dos en borrador y terminados.
   - #30: su único fallo real era el cliente de la API sin regenerar (`telemetryEvent.ts`); está corregido y `📜 Codegen` y `📜 Breaking` pasan. Los tests llegaron a pasar; lo que falló después fueron los trabajos que GitHub no arrancó.
   - #31: tuvo el **CI gate en verde** antes de recibir ese mismo arreglo por `merge`; su ejecución nueva queda pendiente de que la CI vuelva a arrancar.
-- **Despliegue**: no se ha desplegado nada a mano. El CD sale solo tras una CI verde en `main`; la del #28 seguía corriendo y la del #29 estaba en cola al detenerse, así que **no está comprobado que los hitos 5 y 6 estén desplegados**. Si la CI de `main` del #29 no arrancó por la facturación, hay que relanzarla.
+- **Despliegue**: no se ha desplegado nada a mano. **Los hitos 5 y 6 están en `main` pero no desplegados**: las dos CI de `main` (la del #28 y la del #29) acabaron en rojo porque GitHub no arrancó sus últimos trabajos, y el CD se omitió las dos veces. En la del #28 pasaron todos los tests, el build y la imagen; solo faltó el gate. Lo último desplegado es el hito 4. Un reintento del #30 a las 15:00 UTC falló igual.
 - **No se ha publicado nada en el registro de MCP** y la evaluación nocturna sigue desactivada.
 
 ### Para retomar
 
 1. Resolver la facturación de GitHub Actions (el autor).
-2. Relanzar la CI de `main` si quedó sin arrancar (`gh run rerun <id> --failed`) y comprobar el CD.
+2. Relanzar la CI de `main` del #29 (`gh run rerun 38265482313 --failed`) y comprobar que el CD sale.
 3. `gh pr checks 30`; con el gate en verde: `gh pr ready 30` y `gh pr merge 30 --merge`. Después lo mismo con el #31.
 4. Copiar las «Notas para `CLAUDE.md`» de este archivo al `CLAUDE.md` del checkout principal.
 
