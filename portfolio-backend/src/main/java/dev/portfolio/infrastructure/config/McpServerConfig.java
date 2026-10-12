@@ -9,6 +9,14 @@ import dev.portfolio.application.port.in.RAGUseCase;
 import dev.portfolio.application.port.in.SystemDesignUseCase;
 import dev.portfolio.application.port.in.TerraformUseCase;
 import dev.portfolio.application.port.out.FeatureFlags;
+import dev.portfolio.application.port.out.TelemetryPort;
+import dev.portfolio.infrastructure.observability.McpToolTelemetry;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import java.time.Clock;
 import dev.portfolio.domain.model.FeatureFlagDomain;
 import dev.portfolio.infrastructure.adapter.in.mcp.McpObserver;
 import dev.portfolio.infrastructure.adapter.in.mcp.McpSdkServer;
@@ -48,6 +56,22 @@ public class McpServerConfig {
                 PortfolioTools.all(projects, terraform, pricing, rag, systemDesign),
                 PortfolioCatalog.resources(cloudCatalog, systemDesign, portfolio), PortfolioCatalog.prompts(),
                 access, observer.getIfAvailable(() -> McpObserver.NONE));
+    }
+
+    /**
+     * Métricas, traza y evento de cada llamada a una herramienta. La traza usa el OpenTelemetry que
+     * haya configurado (un SDK o el agente de Java); sin ninguno, la API no exporta nada.
+     */
+    @Bean
+    public McpObserver mcpObserver(MeterRegistry meters, ObjectProvider<OpenTelemetry> openTelemetry, TelemetryPort telemetry) {
+        return new McpToolTelemetry(meters, openTelemetry.getIfAvailable(GlobalOpenTelemetry::get), telemetry, Clock.systemUTC());
+    }
+
+    /** La aplicación no lleva Actuator: las métricas viven en este registro en memoria, del que lee el estado público del servidor MCP. */
+    @Bean
+    @ConditionalOnMissingBean
+    public MeterRegistry meterRegistry() {
+        return new SimpleMeterRegistry();
     }
 
     @Bean

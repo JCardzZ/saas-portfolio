@@ -338,6 +338,8 @@ jobs:
         if: always()
         run: |
           python3 .github/scripts/junit-summary.py portfolio-backend/build/test-results/test "Backend · tests unitarios" >> "$GITHUB_STEP_SUMMARY"
+          # Evaluación del servidor MCP con el modelo simulado (McpEvalTest), que corre con los tests.
+          python3 .github/scripts/mcp-eval-summary.py portfolio-backend/build/reports/mcp-eval/mcp-eval.json >> "$GITHUB_STEP_SUMMARY"
           CSV=portfolio-backend/build/reports/jacoco/test/jacocoTestReport.csv
           if [ -f "$CSV" ]; then
             python3 .github/scripts/jacoco-summary.py "$CSV" coverage.json >> "$GITHUB_STEP_SUMMARY"
@@ -357,6 +359,7 @@ jobs:
         with:
           name: backend-unit-reports
           path: |
+            portfolio-backend/build/reports/mcp-eval
             portfolio-backend/build/reports/tests/test
             portfolio-backend/build/reports/jacoco/test
             coverage.json
