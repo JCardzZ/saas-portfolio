@@ -9,6 +9,7 @@
     "test": "ng test",
     "generate:api": "openapi-generator-cli generate -i ../portfolio-api-spec/saas-portfolio-v1.openapi.yaml -g typescript-angular -o src/app/core/api --additional-properties=ngVersion=18.0.0,supportsES6=true",
     "export:presets": "node tools/export-presets.mjs",
+    "export:e2e-fixtures": "node tools/export-e2e-fixtures.mjs",
     "e2e": "playwright test",
     "generate:delivery": "node tools/generate-delivery-data.mjs",
     "generate:search": "node tools/generate-search-index.mjs",

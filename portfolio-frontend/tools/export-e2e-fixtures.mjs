@@ -1,5 +1,5 @@
 // Escribe los proyectos de ejemplo que usan las pruebas e2e del Estudio, con el serializador
-// real (studio-project.ts). Ejecútalo si cambia el formato:  node tools/export-e2e-fixtures.mjs
+// real (studio-project.ts). Ejecútalo si cambia el formato:  npm run export:e2e-fixtures
 import { build } from 'esbuild';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
