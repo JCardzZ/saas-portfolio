@@ -14,6 +14,7 @@ api/appliedAIRAG.service.ts
 api/architectureStudio.service.ts
 api/authRBAC.service.ts
 api/featureFlags.service.ts
+api/mCP.service.ts
 api/profile.service.ts
 api/publicCatalogShowcases.service.ts
 api/recruiterRadarIngress.service.ts
@@ -50,6 +51,11 @@ model/featureFlagUpdate.ts
 model/fieldError.ts
 model/graphDiagnostic.ts
 model/ingressTrackingRequest.ts
+model/mcpStatus.ts
+model/mcpStatusLatency.ts
+model/mcpStatusLimits.ts
+model/mcpStatusServer.ts
+model/mcpToolInfo.ts
 model/models.ts
 model/nonFunctionalRequirements.ts
 model/priceQuote.ts

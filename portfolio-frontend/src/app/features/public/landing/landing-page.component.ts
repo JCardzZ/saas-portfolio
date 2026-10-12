@@ -25,6 +25,8 @@ import { TraceInspectorComponent } from '../widgets/trace-inspector.component';
 import { CvDownloadComponent, CvPickerComponent } from '../../../shared/ui/cv-download.component';
 import { TelemetryMonitorComponent } from '../widgets/telemetry-monitor.component';
 import { VectorMatrixComponent } from '../widgets/vector-matrix.component';
+import { FlagService } from '../../../core/flags/flag.service';
+import { McpSectionComponent } from '../mcp/mcp-section.component';
 import { HERO_ROLE_PLACEHOLDER } from './hero-content';
 
 @Component({
@@ -54,6 +56,7 @@ import { HERO_ROLE_PLACEHOLDER } from './hero-content';
     TraceInspectorComponent,
     TelemetryMonitorComponent,
     VectorMatrixComponent,
+    McpSectionComponent,
   ],
   providers: [CatalogStore],
   templateUrl: './landing-page.component.html',
@@ -61,6 +64,9 @@ import { HERO_ROLE_PLACEHOLDER } from './hero-content';
 })
 export class LandingPageComponent implements OnInit {
   readonly catalog = inject(CatalogStore);
+  private readonly flags = inject(FlagService);
+  /** La sección del servidor MCP solo existe con su flag encendida. */
+  readonly mcpSection = computed(() => this.flags.isEnabled('mcp.section'));
 
   // Un enlace a /#chat abre el asistente directamente.
   readonly chatOpen = signal(inject(ActivatedRoute).snapshot.fragment === 'chat');

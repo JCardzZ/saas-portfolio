@@ -106,6 +106,20 @@ class McpToolTelemetryTest {
     }
 
     @Test
+    void summarisesTheLatencyOfEveryCallForThePublicStatus() {
+        assertThat(telemetry.latency()).isEqualTo(new McpToolTelemetry.Latency(0, null, null));
+
+        for (int millis : new int[] {10, 20, 30, 40, 1000}) {
+            telemetry.toolCalled(new ToolCall(millis == 1000 ? "preguntar_portafolio" : "listar_plantillas", "ok", Duration.ofMillis(millis), "s"));
+        }
+
+        McpToolTelemetry.Latency latency = telemetry.latency();
+        assertThat(latency.calls()).isEqualTo(5);
+        assertThat(latency.p50Ms()).isBetween(20.0, 40.0);
+        assertThat(latency.p95Ms()).isGreaterThan(500.0);
+    }
+
+    @Test
     void neverBreaksTheCallItObserves() {
         TelemetryPort broken = new TelemetryPort() {
             @Override

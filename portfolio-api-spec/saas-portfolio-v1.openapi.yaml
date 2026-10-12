@@ -29,6 +29,7 @@ tags:
   - name: Architecture Studio
   - name: Feature Flags
   - name: System Design
+  - name: MCP
 
 paths:
   /auth/token:
@@ -830,6 +831,25 @@ paths:
         '429':
           $ref: '#/components/responses/RateLimitError'
 
+  /public/mcp/status:
+    get:
+      tags: [MCP]
+      summary: Status of the platform's MCP server
+      description: >
+        What the web shows about the MCP server at `/mcp`: whether it is serving, the tools it
+        publishes (the same list an MCP client gets from `tools/list`), its limits and the latency
+        it has measured since it started. No call content is ever exposed. Behind the `mcp.section`
+        feature flag: while it is off this path answers 404, like the MCP endpoint itself.
+      responses:
+        '200':
+          description: The status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpStatus'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
   /public/architecture/pricing:
     post:
       tags: [Architecture Studio]
@@ -1323,6 +1343,46 @@ components:
         zones: { type: array, maxItems: 24, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
         system:
           $ref: '#/components/schemas/SystemDesign'
+
+    McpStatus:
+      type: object
+      required: [online, endpoint, protocolVersion, server, tools, limits, latency]
+      properties:
+        online: { type: boolean }
+        endpoint: { type: string, description: "Path of the MCP endpoint, relative to the API base URL.", example: "/mcp" }
+        protocolVersion: { type: string, example: "2025-11-25" }
+        server:
+          type: object
+          required: [name, version]
+          properties:
+            name: { type: string, example: "portfolio-platform" }
+            version: { type: string, example: "1.0.0" }
+        tools: { type: array, items: { $ref: '#/components/schemas/McpToolInfo' } }
+        limits:
+          type: object
+          required: [perClient, windowSeconds, dailyTotal]
+          properties:
+            perClient: { type: integer, description: "Tool calls allowed per origin in `windowSeconds`.", example: 30 }
+            windowSeconds: { type: integer, example: 60 }
+            dailyTotal: { type: integer, description: "Tool calls allowed per day across every origin.", example: 2000 }
+        latency:
+          type: object
+          required: [calls]
+          description: Measured since the server started. Without calls there are no percentiles.
+          properties:
+            calls: { type: integer, example: 128 }
+            p50Ms: { type: number, example: 14.2 }
+            p95Ms: { type: number, example: 240.5 }
+
+    McpToolInfo:
+      type: object
+      required: [name, title, description, kind, version]
+      properties:
+        name: { type: string, example: "validar_arquitectura" }
+        title: { type: string, example: "Validar una arquitectura" }
+        description: { type: string }
+        kind: { type: string, description: "read (reads or checks) or generate (returns generated files). No tool writes.", example: "read" }
+        version: { type: string, example: "1.0.0" }
 
     SystemDesign:
       description: >-

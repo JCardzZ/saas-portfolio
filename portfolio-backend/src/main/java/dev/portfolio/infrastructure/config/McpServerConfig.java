@@ -63,7 +63,7 @@ public class McpServerConfig {
      * haya configurado (un SDK o el agente de Java); sin ninguno, la API no exporta nada.
      */
     @Bean
-    public McpObserver mcpObserver(MeterRegistry meters, ObjectProvider<OpenTelemetry> openTelemetry, TelemetryPort telemetry) {
+    public McpToolTelemetry mcpObserver(MeterRegistry meters, ObjectProvider<OpenTelemetry> openTelemetry, TelemetryPort telemetry) {
         return new McpToolTelemetry(meters, openTelemetry.getIfAvailable(GlobalOpenTelemetry::get), telemetry, Clock.systemUTC());
     }
 
