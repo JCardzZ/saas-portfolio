@@ -5,11 +5,34 @@
 
 ## Estado
 
-- **Plan aprobado** el 2026-10-11, con las seis decisiones de abajo. Trabajo autónomo: solo parar si algo rompe producción, exige gastar dinero o cambia el alcance.
-- **Hito actual: 4 · Diseño de sistemas**, terminado en local y con PR abierto. Los hitos 0 a 3 están **integrados en `main`** (PR #22, #23, #24 y #25) y **desplegados** (el 3 salió con el PR #26, tras quedar `main` en rojo por el check `📜 Breaking`).
-- `gh` tiene sesión desde el 2026-10-11 (cuenta JCardzZ): cada hito sale de `origin/main`, con su PR; con el CI gate en verde se integra y se sigue.
-- **Worktree**: `.claude/worktrees/system-design-mcp`.
-- `CLAUDE.md` no se versiona y no existe en el worktree: se actualiza el del checkout principal (`/Users/jcardzz/dev/saas/saas-portfolio/CLAUDE.md`).
+**Detenido el 2026-10-12 por un bloqueo que exige gastar dinero: GitHub Actions dejó de arrancar trabajos.**
+El aviso de GitHub, en los trabajos `📦 Build front` e `📦 Imagen + Trivy` del PR #30: «The job was not
+started because recent account payments have failed or your spending limit needs to be increased».
+No se ha reintentado ni se ha tocado la facturación.
+
+### Resumen de cierre
+
+- **Integrados en `main`, cada uno con su CI gate en verde: hitos 0 a 6** (PR #22, #23, #24, #25 + #26, #27, #28 y #29).
+- **Sin integrar: hitos 7 (#30) y 8 (#31)**, los dos en borrador y terminados.
+  - #30: su único fallo real era el cliente de la API sin regenerar (`telemetryEvent.ts`); está corregido y `📜 Codegen` y `📜 Breaking` pasan. Los tests llegaron a pasar; lo que falló después fueron los trabajos que GitHub no arrancó.
+  - #31: tuvo el **CI gate en verde** antes de recibir ese mismo arreglo por `merge`; su ejecución nueva queda pendiente de que la CI vuelva a arrancar.
+- **Despliegue**: no se ha desplegado nada a mano. El CD sale solo tras una CI verde en `main`; la del #28 seguía corriendo y la del #29 estaba en cola al detenerse, así que **no está comprobado que los hitos 5 y 6 estén desplegados**. Si la CI de `main` del #29 no arrancó por la facturación, hay que relanzarla.
+- **No se ha publicado nada en el registro de MCP** y la evaluación nocturna sigue desactivada.
+
+### Para retomar
+
+1. Resolver la facturación de GitHub Actions (el autor).
+2. Relanzar la CI de `main` si quedó sin arrancar (`gh run rerun <id> --failed`) y comprobar el CD.
+3. `gh pr checks 30`; con el gate en verde: `gh pr ready 30` y `gh pr merge 30 --merge`. Después lo mismo con el #31.
+4. Copiar las «Notas para `CLAUDE.md`» de este archivo al `CLAUDE.md` del checkout principal.
+
+### Pendiente del autor
+
+- Crear el secret `GEMINI_API_KEY` y la variable `MCP_EVAL_NIGHTLY=true` para encender la evaluación nocturna (el adaptador de Gemini no se ha ejecutado nunca).
+- Confirmar `terraform fmt` en la CI en lugar de `terraform validate` (se aparta de la decisión 2).
+- Antes de encender `mcp.section` en producción: comprobar que el backend ve la dirección real del cliente detrás de Caddy.
+- Poner la dirección real en `docs/mcp/server.json` y decidir si se publica en el registro.
+- Sin verificar en ningún sitio: la exportación de trazas a un colector real.
 
 ## Hitos
 
@@ -18,12 +41,12 @@
 | 0 · Feature flags | `feat/feature-flags` | Integrado en `main` | #22 |
 | 1 · Lienzo responsivo | `feat/studio-responsive-canvas` | Integrado en `main` | #23 |
 | 2 · Conexiones inteligentes | `feat/studio-smart-connections` | Integrado en `main` | #24 |
-| 3 · Oracle Cloud | `feat/cloud-oracle` | Integrado en `main` con el gate en rojo (ver Estado) | #25 |
-| 4 · Diseño de sistemas | `feat/system-design` | PR abierto; verificado en local | ver GitHub |
-| 5 · Plantillas de sistemas | `feat/system-templates` (sobre la del hito 4) | Terminado en local; PR cuando se integre el hito 4 | — |
-| 6 · MCP núcleo | `feat/mcp-server` (sobre la del hito 5) | Terminado en local; PR cuando se integren los hitos 4 y 5 | — |
-| 7 · MCP calidad y observabilidad | `feat/mcp-observability` (sobre la del hito 6) | Terminado en local; PR cuando se integre el hito 6 | — |
-| 8 · Sección web | `feat/mcp-web-section` (sobre la del hito 7) | Terminado en local; PR cuando se integre el hito 7 | — |
+| 3 · Oracle Cloud | `feat/cloud-oracle` | Integrado en `main` (con el gate en rojo; corregido con el #26) | #25, #26 |
+| 4 · Diseño de sistemas | `feat/system-design` | Integrado en `main` | #27 |
+| 5 · Plantillas de sistemas | `feat/system-templates` | Integrado en `main` | #28 |
+| 6 · MCP núcleo | `feat/mcp-server` | Integrado en `main` | #29 |
+| 7 · MCP calidad y observabilidad | `feat/mcp-observability` | **PR en borrador, sin integrar**: la CI no arranca (ver Estado) | #30 |
+| 8 · Sección web | `feat/mcp-web-section` (sobre la del hito 7) | **PR en borrador, sin integrar**: va detrás del #30 | #31 |
 
 ## Hito 0 · qué se hizo
 
