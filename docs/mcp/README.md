@@ -118,13 +118,33 @@ ninguna persona ni de ninguna empresa. Un modelo recibe la tarea y las herramien
 un cliente MCP real, y se comprueba qué llamó, qué no debía llamar y qué contienen los resultados.
 
 - **En cada PR**: un modelo simulado y determinista sigue el plan guardado de cada tarea
-  (`McpEvalTest`). Tiene que pasar entero. El resultado queda en `mcp-eval.json` (aquí al lado; se
-  regenera con `MCP_EVAL_UPDATE=true ./gradlew test --tests "*McpEvalTest"`).
+  (`McpEvalTest`). Tiene que pasar entero. El resultado que enseña la web está en
+  `portfolio-frontend/public/mcp/mcp-eval.json` (se regenera con
+  `MCP_EVAL_UPDATE=true ./gradlew test --tests "*McpEvalTest"`).
 - **De noche, con un modelo real** (`McpRealModelEvalTest`, Gemini con el SDK oficial de Google
   GenAI): como mucho 25 tareas y 8 llamadas al modelo por tarea. **Está desactivada**: el workflow
   `mcp-eval-nightly.yml` solo corre si existen el secret `GEMINI_API_KEY` y la variable de
   repositorio `MCP_EVAL_NIGHTLY=true`. **El adaptador del modelo no se ha ejecutado nunca contra
   Gemini**: compila contra el SDK, pero la primera ejecución puede necesitar ajustes.
+
+## En la web
+
+Con `mcp.section` encendida, la portada tiene la sección «Usa mi plataforma desde tu IA»
+(`features/public/mcp`):
+
+- **Conectar**: una pestaña por cliente con lo que documenta cada uno. Solo Cursor documenta un
+  enlace de instalación; en Claude Code, Claude Desktop y VS Code se copia la orden, la dirección
+  o la configuración.
+- **Herramientas**: la lista de `GET /public/mcp/status`, que es la que el servidor publica en
+  `tools/list`, con su clase («Lectura» o «Genera») y su versión.
+- **Estado**: en línea, p95 medida, límite por cliente y tope diario, del mismo endpoint; y las
+  llamadas que llegan por el canal de telemetría mientras la página está abierta.
+- **Probar sin instalar**: reproduce `public/mcp/session.json`, una sesión real grabada mensaje a
+  mensaje por `McpSessionRecordingTest` (`MCP_SESSION_UPDATE=true`).
+- **Evaluaciones**: el resultado de `public/mcp/mcp-eval.json`, con su fecha.
+
+En modo demo no hay servidor: las herramientas, el estado y la actividad salen de la grabación,
+con la etiqueta «Grabación». No se finge un servidor en línea.
 
 ## Registro oficial de MCP
 

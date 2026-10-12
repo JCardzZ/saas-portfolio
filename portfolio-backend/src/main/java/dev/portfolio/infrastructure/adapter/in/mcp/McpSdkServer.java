@@ -40,6 +40,7 @@ public final class McpSdkServer implements AutoCloseable {
     public static final String ENDPOINT = "/mcp";
     public static final String SERVER_NAME = "portfolio-platform";
     public static final String SERVER_VERSION = "1.0.0";
+    public static final String PROTOCOL_VERSION = "2025-11-25";
     /** Tamaño máximo de un mensaje del cliente. Un lienzo de 60 nodos con sus propiedades cabe de sobra. */
     static final int MAX_REQUEST_BYTES = 256 * 1024;
     private static final String CLIENT = "client";
@@ -55,11 +56,13 @@ public final class McpSdkServer implements AutoCloseable {
     private final ObjectMapper json = new ObjectMapper();
     private final McpAccessUseCase access;
     private final McpObserver observer;
+    private final List<McpTool> tools;
 
     public McpSdkServer(List<McpTool> tools, List<PortfolioCatalog.Resource> resources, List<PortfolioCatalog.Prompt> prompts,
                         McpAccessUseCase access, McpObserver observer) {
         this.access = access;
         this.observer = observer;
+        this.tools = List.copyOf(tools);
         this.transport = HttpServletStreamableServerTransportProvider.builder()
                 .jsonMapper(new JacksonMcpJsonMapper(new ObjectMapper()))
                 .mcpEndpoint(ENDPOINT)
@@ -76,6 +79,11 @@ public final class McpSdkServer implements AutoCloseable {
                 .resources(resources.stream().map(this::specification).toList())
                 .prompts(prompts.stream().map(McpSdkServer::specification).toList())
                 .build();
+    }
+
+    /** Las herramientas que publica, en el orden de {@code tools/list}. */
+    public List<McpTool> tools() {
+        return tools;
     }
 
     /** El servlet que atiende {@link #ENDPOINT}. */

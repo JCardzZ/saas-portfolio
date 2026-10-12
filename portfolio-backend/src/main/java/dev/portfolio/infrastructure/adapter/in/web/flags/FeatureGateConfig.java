@@ -19,7 +19,8 @@ import java.util.List;
 public class FeatureGateConfig implements WebMvcConfigurer {
 
     static final List<FeatureGate> GATES = List.of(
-            new FeatureGate(FeatureFlagDomain.STUDIO_SYSTEM_DESIGN, List.of("/public/architecture/system-design/**")));
+            new FeatureGate(FeatureFlagDomain.STUDIO_SYSTEM_DESIGN, List.of("/public/architecture/system-design/**")),
+            new FeatureGate(FeatureFlagDomain.MCP_SECTION, List.of("/public/mcp/**")));
 
     // Con ObjectProvider: los tests de una sola capa web cargan esta clase sin el proveedor de
     // flags. Sin proveedor, una ruta con flag queda cerrada (ver FeatureGateInterceptor).

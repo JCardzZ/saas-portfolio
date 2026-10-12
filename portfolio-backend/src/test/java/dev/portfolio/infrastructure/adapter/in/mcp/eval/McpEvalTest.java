@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * La evaluación del servidor MCP que corre en cada PR: las tareas, resueltas por el modelo
  * simulado, contra el servidor de verdad con un cliente MCP real. Es determinista, así que tiene
  * que pasar entera. Deja el resultado en {@code build/reports/mcp-eval/mcp-eval.json}; con
- * {@code MCP_EVAL_UPDATE=true}, también en {@code docs/mcp/mcp-eval.json}, que es el que enseña la web.
+ * {@code MCP_EVAL_UPDATE=true}, también en {@code portfolio-frontend/public/mcp/mcp-eval.json}, que es el que enseña la web.
  */
 class McpEvalTest {
 
@@ -50,7 +50,7 @@ class McpEvalTest {
         }
         McpEval.write(report, Path.of("build/reports/mcp-eval/mcp-eval.json"));
         if ("true".equals(System.getenv("MCP_EVAL_UPDATE"))) {
-            McpEval.write(report, Path.of("../docs/mcp/mcp-eval.json"));
+            McpEval.write(report, Path.of("../portfolio-frontend/public/mcp/mcp-eval.json"));
         }
 
         assertThat(report.tasks()).filteredOn(result -> !result.passed())

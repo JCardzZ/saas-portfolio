@@ -101,6 +101,11 @@ public final class McpTestServer implements AutoCloseable {
         baseUrl = "http://localhost:" + tomcat.getConnector().getLocalPort();
     }
 
+    /** Dirección completa del punto de conexión MCP. */
+    public String url() {
+        return baseUrl + "/v1" + McpSdkServer.ENDPOINT;
+    }
+
     /** Un cliente MCP ya inicializado, sin elicitation. */
     public McpSyncClient client() {
         McpSyncClient client = McpClient.sync(HttpClientStreamableHttpTransport.builder(baseUrl).endpoint("/v1" + McpSdkServer.ENDPOINT).build())

@@ -54,7 +54,7 @@ function project(profile: Profile, engine: Engine) {
 }
 
 /** Lo nuevo que vive detrás de una feature flag: se prueba en todos los perfiles, con la flag encendida. */
-const FLAGGED = ['**/studio-smart.e2e.ts'];
+const FLAGGED = ['**/studio-smart.e2e.ts', '**/mcp-section.e2e.ts'];
 
 export default defineConfig({
   testDir: './e2e',

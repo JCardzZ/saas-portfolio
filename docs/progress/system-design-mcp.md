@@ -23,7 +23,7 @@
 | 5 · Plantillas de sistemas | `feat/system-templates` (sobre la del hito 4) | Terminado en local; PR cuando se integre el hito 4 | — |
 | 6 · MCP núcleo | `feat/mcp-server` (sobre la del hito 5) | Terminado en local; PR cuando se integren los hitos 4 y 5 | — |
 | 7 · MCP calidad y observabilidad | `feat/mcp-observability` (sobre la del hito 6) | Terminado en local; PR cuando se integre el hito 6 | — |
-| 8 · Sección web | — | Sin empezar | — |
+| 8 · Sección web | `feat/mcp-web-section` (sobre la del hito 7) | Terminado en local; PR cuando se integre el hito 7 | — |
 
 ## Hito 0 · qué se hizo
 
@@ -100,10 +100,21 @@
 - **Evaluaciones**: 27 tareas sintéticas (`src/test/resources/mcp/eval-tasks.json`) y un arnés (`McpEval`) con el modelo como pieza intercambiable. En cada PR, `McpEvalTest` las resuelve con un modelo simulado y determinista contra el servidor real (cliente MCP real): 27 de 27. El resultado va a `build/reports/mcp-eval/mcp-eval.json` (artefacto y resumen de la CI) y a `docs/mcp/mcp-eval.json` (el que enseñará la web).
 - **Nocturna con modelo real**: `McpRealModelEvalTest` + `GeminiEvalModel` (SDK oficial `com.google.genai:google-genai` 1.76.0, solo en tests), con tope de 25 tareas × 8 llamadas. Workflow `mcp-eval-nightly.yml` **desactivado**: necesita el secret `GEMINI_API_KEY` y la variable `MCP_EVAL_NIGHTLY=true`.
 - **Observabilidad** (`McpToolTelemetry`): métricas Micrometer (`mcp.server.operation.duration`, `mcp.tool.calls`), traza con la API de OpenTelemetry siguiendo las convenciones de MCP/GenAI, y evento anónimo `MCP_TOOL_CALL` por el SSE de telemetría. Un test comprueba que no viaja contenido.
-- **Registro de MCP**: `docs/mcp/server.json` preparado y validado contra el esquema 2025-12-11. Sin publicar.
+- **Registro de MCP**: `docs/mcp/server.json` preparado y comprobado contra el esquema 2025-12-11 (campos obligatorios, propiedades conocidas, patrones y longitudes; no con un validador de JSON Schema). Sin publicar.
 - **MCP Apps**: documentado como siguiente paso (es una extensión, no la especificación base).
 - CI: el job de tests del backend publica el informe de evaluación y, desde el hito 6, pasa los casos golden por el analizador de Terraform.
 - Verificado en local: `./gradlew test` completo. **Sin verificar: la evaluación con modelo real (nunca ejecutada), la exportación de trazas (no hay colector) y `integrationTest`.**
+
+## Hito 8 · qué se hizo
+
+- **Sección «Usa mi plataforma desde tu IA»** en la portada (flag `mcp.section`), con el sobretítulo «Model Context Protocol». Se carga bajo demanda (trozo de 17 kB).
+- **Conectar**: pestañas Claude Code, Claude Desktop, Cursor y VS Code, cada una con lo que documenta su cliente. Enlace de instalación real solo en Cursor; en los demás, botón de copiar.
+- **Herramientas, estado y p95**: nuevo `GET /public/mcp/status` (detrás de la flag), con la misma lista que `tools/list`, los límites y la latencia medida por Micrometer.
+- **Actividad reciente**: los eventos `MCP_TOOL_CALL` del SSE de telemetría (herramienta, resultado y latencia).
+- **Probar sin instalar**: reproducción de una sesión MCP real, grabada mensaje a mensaje por un test del backend (`public/mcp/session.json`).
+- **Evaluaciones**: resultado y fecha desde `public/mcp/mcp-eval.json`.
+- **Modo demo**: sin servidor, todo lo anterior sale de la grabación con la etiqueta «Grabación».
+- Verificado en local: `./gradlew test`, 564 tests del frontend, build (472 kB de 500), Playwright en escritorio, tablet y móvil (Chromium), con capturas `hito-8-*`. **Sin ejecutar en local: `integrationTest`, WebKit y Lighthouse.**
 
 ## Decisiones del autor (2026-10-11)
 
@@ -161,6 +172,11 @@
 - **Hito 7 · solo la API de OpenTelemetry, sin SDK ni exportador**: la plataforma no tiene colector. Con el agente de Java o un SDK configurado, los spans salen sin tocar código.
 - **Hito 7 · las métricas viven en un `SimpleMeterRegistry`** (no hay Actuator): se pierden al reiniciar. Bastan para la p95 que enseñará la web.
 - **Hito 7 · el modelo simulado sigue un plan guardado por tarea**: no «decide» nada. Lo que evalúa en cada PR es que el servidor siga resolviendo las tareas; lo que evalúa si un modelo sabe usar las herramientas es la nocturna.
+- **Hito 8 · «Conectar en un clic» es un clic solo donde el cliente lo documenta** (Cursor). VS Code no documenta un enlace de instalación (comprobado el 2026-10-12): se copia el `mcp.json`. Claude Desktop no tiene enlace: se copia la dirección.
+- **Hito 8 · el catálogo de herramientas de la web sale de un endpoint REST**, no de hablar MCP desde el navegador: es la misma lista de objetos que el servidor publica en `tools/list`.
+- **Hito 8 · la sección no está en la barra de navegación**: `PAGE_SECTIONS` es una lista fija y un enlace a una sección apagada no llevaría a ningún sitio. Se llega bajando, o con `#mcp`.
+- **Hito 8 · el enlace a la documentación es texto** (`docs/mcp/README.md`): el repositorio es privado.
+- **Hito 8 · los datos de la sección (`session.json`, `mcp-eval.json`) los escriben tests del backend** en `portfolio-frontend/public/mcp/`; no se editan a mano.
 
 ## Documentación oficial verificada (2026-10-11)
 
@@ -197,7 +213,7 @@
 ## Pendientes
 
 - CI gate del PR del hito 4 (#27) e integrarlo; después, los PR de los hitos 5 y 6.
-- Hito 8 (sección web «Usa mi plataforma desde tu IA»).
+- Integrar los PR de los hitos 5 a 8, en orden, con su CI gate en verde.
 - **Del autor**: crear el secret `GEMINI_API_KEY` y la variable `MCP_EVAL_NIGHTLY=true` para encender la evaluación nocturna; decidir si se publica en el registro de MCP (y con qué dirección).
 - Antes de encender `mcp.section` en producción: comprobar que el backend ve la dirección real del cliente detrás de Caddy.
 - Sin confirmar del hito 4: el `.proto` generado no se ha pasado por `protoc` (no hay compilador en la CI); el OpenAPI sí se analiza como YAML en los tests, pero no se ha pasado por un validador de OpenAPI.
@@ -270,3 +286,12 @@ La sesión está aislada en el worktree y no puede escribir en el `CLAUDE.md` de
 - **Observabilidad**: `infrastructure/observability/McpToolTelemetry` implementa `McpObserver` (está fuera del paquete `mcp` porque usa un puerto de salida). Solo herramienta, resultado y latencia. Atributos según las convenciones de OpenTelemetry para MCP (estado «Development»).
 - Dependencias nuevas: `micrometer-core`, `opentelemetry-api` (versiones del BOM de Boot), y en tests `opentelemetry-sdk-testing` y `google-genai`.
 - Workflow `mcp-eval-nightly.yml`: desactivado hasta que existan el secret `GEMINI_API_KEY` y la variable `MCP_EVAL_NIGHTLY=true`.
+
+### SECCIÓN WEB DEL SERVIDOR MCP (hito 8, flag `mcp.section`)
+- `features/public/mcp/`: `McpSectionComponent` (en la portada, dentro de `@if (mcpSection())` y `@defer`) y `mcp-data.ts` (guías por cliente, lectura de la grabación y de las evaluaciones, actividad).
+- `GET /public/mcp/status` (`McpStatusController`, en `FeatureGateConfig.GATES`): herramientas (`McpSdkServer.tools()`), límites (`McpAccessUseCase.limits()`) y latencia (`McpToolTelemetry.latency()`). El cliente generado se llama `MCPService`.
+- **`public/mcp/session.json` y `public/mcp/mcp-eval.json` no se editan a mano**: los escriben `McpSessionRecordingTest` (`MCP_SESSION_UPDATE=true`) y `McpEvalTest` (`MCP_EVAL_UPDATE=true`). Si cambia una herramienta, regenéralos.
+- **En modo demo no se llama a la API ni se finge un servidor**: herramientas, estado y actividad salen de la grabación, con «Grabación».
+- El enlace `cursor://…` necesita `bypassSecurityTrustUrl`; `safe()` solo lo concede al esquema que construye la propia sección.
+- `SectionHeaderComponent` admite `overline` (opcional). Los eventos `MCP_TOOL_CALL` llegan a la consola con la etiqueta `MCP tool`.
+- Playwright: `e2e/mcp-section.e2e.ts`, en la lista `FLAGGED`. **Bundle inicial: 472 kB** de 500.

@@ -35,6 +35,8 @@ public class McpToolTelemetry implements McpObserver {
 
     public static final String DURATION = "mcp.server.operation.duration";
     public static final String CALLS = "mcp.tool.calls";
+    /** Todas las llamadas juntas, para dar una p95 del servidor entero. */
+    static final String ALL = "mcp.tool.latency";
     static final String TOOLS_CALL = "tools/call";
     /** Revisión del protocolo que sirve el servidor. */
     static final String PROTOCOL_VERSION = "2025-11-25";
@@ -81,8 +83,36 @@ public class McpToolTelemetry implements McpObserver {
                 .serviceLevelObjectives(java.util.Arrays.stream(BUCKETS).mapToObj(seconds -> Duration.ofNanos((long) (seconds * 1_000_000_000L))).toArray(Duration[]::new));
         timer.tag(ERROR_TYPE.getKey(), call.failed() ? errorType(call) : "none")
                 .register(meters).record(call.latency().toNanos(), TimeUnit.NANOSECONDS);
+        Timer.builder(ALL).description("Latencia de las llamadas a herramientas MCP, todas juntas")
+                .publishPercentiles(0.5, 0.95).register(meters).record(call.latency().toNanos(), TimeUnit.NANOSECONDS);
         Counter.builder(CALLS).description("Llamadas a herramientas MCP, por resultado")
                 .tag("tool", call.tool()).tag("outcome", call.outcome()).register(meters).increment();
+    }
+
+    /**
+     * Lo medido desde que arrancó el servidor.
+     *
+     * @param p50Ms mediana, en milisegundos; {@code null} si aún no ha habido llamadas
+     */
+    public record Latency(long calls, Double p50Ms, Double p95Ms) {
+    }
+
+    public Latency latency() {
+        Timer all = meters.find(ALL).timer();
+        if (all == null || all.count() == 0) {
+            return new Latency(0, null, null);
+        }
+        Double p50 = null;
+        Double p95 = null;
+        for (io.micrometer.core.instrument.distribution.ValueAtPercentile value : all.takeSnapshot().percentileValues()) {
+            double millis = Math.round(value.value(TimeUnit.MILLISECONDS) * 10) / 10.0;
+            if (value.percentile() == 0.5) {
+                p50 = millis;
+            } else if (value.percentile() == 0.95) {
+                p95 = millis;
+            }
+        }
+        return new Latency(all.count(), p50, p95);
     }
 
     private void trace(ToolCall call) {
