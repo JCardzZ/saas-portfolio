@@ -289,7 +289,7 @@ class PlatformIntegrationTest {
                             "nube", "aws", "region", "us-east-1", "usuarios", 200000, "presupuestoUsd", 500, "regulacion", List.of("pci"),
                             "stack", Map.of("backend", "spring-boot"))));
             assertThat(designed.isError()).as(designed.toString()).isFalse();
-            assertThat(designed.toString()).contains("Billetera digital").contains("openapi.yaml").contains("resource \\\"aws_");
+            assertThat(designed.toString()).contains("Billetera digital").contains("openapi.yaml").contains("resource \"aws_");
 
             // El recurso de proyectos sale de PostgreSQL por el mismo caso de uso que la API pública.
             assertThat(client.readResource(new io.modelcontextprotocol.spec.McpSchema.ReadResourceRequest("portfolio://catalogo/servicios")).contents()).isNotEmpty();
