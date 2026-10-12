@@ -87,7 +87,7 @@ interface Piece {
               @if (category.optional) {
                 <label class="flex cursor-pointer items-start gap-2 rounded-control px-1 py-1.5 hover:bg-surface-3">
                   <input type="radio" class="mt-1 accent-current" [name]="'system-' + category.id" value="" [checked]="!design().choices[category.id]" (change)="choose(category.id, null)" />
-                  <span class="text-sm font-medium text-ink-1">Sin {{ category.name.toLowerCase() }}</span>
+                  <span class="text-sm font-medium text-ink-1">{{ none(category) }}</span>
                 </label>
               }
             </div>
@@ -271,6 +271,11 @@ export class SystemDesignComponent {
   readonly openFile = computed(() => this.files().find((file) => file.path === this.opened()) ?? this.files()[0] ?? null);
   readonly openPath = computed(() => this.openFile()?.path ?? null);
   readonly copied = signal<string | null>(null);
+
+  /** «Sin caché», «Sin BFF»: las siglas no se pasan a minúsculas. */
+  none(category: SystemCategory): string {
+    return `Sin ${category.name === category.name.toUpperCase() ? category.name : category.name.toLowerCase()}`;
+  }
 
   optionOf(category: SystemCategoryId): SystemOption | null {
     return chosen(this.design(), category);

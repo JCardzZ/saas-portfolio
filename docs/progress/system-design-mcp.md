@@ -69,7 +69,7 @@
 - **Salidas** (solo backend, `SystemDesignService` + `SystemDesignGenerator`): `main.tf` y `variables.tf` (el generador de siempre), `openapi.yaml` (REST) o `service.proto` (gRPC), `docker-compose.yml` y `README.md`. Para GraphQL y eventos no se genera contrato.
 - **API** (etiqueta `System Design`, detrás de la flag: 404 si está apagada): `GET /public/architecture/system-design/catalog`, `POST …/evaluate` y `POST …/generate`. `ArchitectureProject` y su petición ganan `system` (opcional); migración `V8` (`system_json`).
 - **Esquema del proyecto: versión 3**, con migración 2 → 3. El fixture v2 (`e2e/fixtures/studio-project-v2-exposed-database.json`) sigue abriendo.
-- Verificado en local: `./gradlew test`, 536 tests del frontend, build (470 kB de 500) y Spectral. **Sin verificar en local: los escenarios Playwright nuevos (`hito-4-*`; la máquina estaba saturada y no terminaron), `integrationTest` (incluye la migración V8), WebKit y Lighthouse.** Los corre la CI del PR.
+- Verificado en local: `./gradlew test`, 536 tests del frontend, build (470 kB de 500), Spectral y los escenarios Playwright del hito en escritorio, tablet y móvil (Chromium). **Sin ejecutar en local: `integrationTest` (incluye la migración V8), WebKit y Lighthouse.** Los corre la CI del PR.
 
 ## Decisiones del autor (2026-10-11)
 
