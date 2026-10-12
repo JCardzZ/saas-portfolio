@@ -23,6 +23,7 @@ export * from './featureFlagAuditEntry';
 export * from './featureFlagDetail';
 export * from './featureFlagUpdate';
 export * from './fieldError';
+export * from './graphDiagnostic';
 export * from './ingressTrackingRequest';
 export * from './priceQuote';
 export * from './pricingRequest';

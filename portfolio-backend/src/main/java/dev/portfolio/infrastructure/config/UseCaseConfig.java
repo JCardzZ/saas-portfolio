@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.IOException;
 import org.springframework.core.io.ClassPathResource;
 import dev.portfolio.domain.model.ArchitectureGraphRules;
+import dev.portfolio.application.port.out.FeatureFlags;
+import org.springframework.beans.factory.ObjectProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.portfolio.application.port.in.ArchitectureCopilotUseCase;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase;
@@ -120,8 +122,13 @@ public class UseCaseConfig {
     }
 
     @Bean
-    public ArchitectureProjectUseCase architectureProjectUseCase(ArchitectureProjectRepositoryPort repository, ArchitectureGraphRules rules) {
-        return new ArchitectureProjectService(repository, rules);
+    public ArchitectureProjectUseCase architectureProjectUseCase(ArchitectureProjectRepositoryPort repository, ArchitectureGraphRules rules,
+                                                                 ObjectProvider<FeatureFlags> flags) {
+        // Sin proveedor de flags (un contexto parcial), todas cuentan como apagadas.
+        return new ArchitectureProjectService(repository, rules, flag -> {
+            FeatureFlags provider = flags.getIfAvailable();
+            return provider != null && provider.isEnabled(flag);
+        });
     }
 
     /**

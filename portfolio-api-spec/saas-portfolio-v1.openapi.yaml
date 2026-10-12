@@ -1211,6 +1211,25 @@ components:
             nodes: { type: array, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
             connections: { type: array, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
             zones: { type: array, items: { $ref: '#/components/schemas/ArchitectureGraphElement' } }
+            diagnostics:
+              type: array
+              description: >-
+                What the graph rules have to say about this project, node by node. Only present while the
+                `studio.smart-rules` feature flag is on. A saved project never carries errors (saving one is
+                rejected with 400); warnings do not prevent saving.
+              items: { $ref: '#/components/schemas/GraphDiagnostic' }
+
+    GraphDiagnostic:
+      type: object
+      required: [nodeId, rule, severity, message]
+      properties:
+        nodeId: { type: string, description: "Node the diagnostic is shown next to.", example: "postgres" }
+        rule: { type: string, enum: [connection, link-kind, max-instances, placement, exposure] }
+        severity: { type: string, enum: [error, warning] }
+        message: { type: string, example: "Riesgo de seguridad: RDS PostgreSQL está en una subred pública, alcanzable desde Internet." }
+        suggestion: { type: string, description: "What to do about it.", example: "Muévela a una subred privada y deja en la pública solo el balanceador o el API gateway." }
+        from: { type: string, description: "Source node of the connection that causes it, for connection rules." }
+        to: { type: string, description: "Target node of the connection that causes it, for connection rules." }
 
     ArchitectureProjectRequest:
       type: object

@@ -7,6 +7,7 @@ import dev.portfolio.api.ArchitectureStudioApi;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase;
 import dev.portfolio.application.port.in.CloudCatalogUseCase;
 import dev.portfolio.application.port.in.TerraformUseCase;
+import dev.portfolio.domain.model.ArchitectureProjectDomain;
 import dev.portfolio.domain.model.CloudProviderDomain;
 import dev.portfolio.infrastructure.adapter.in.web.mapper.ArchitectureWebMapper;
 import dev.portfolio.model.ArchitectureProject;
@@ -42,17 +43,21 @@ public class ArchitectureStudioController implements ArchitectureStudioApi {
 
     @Override
     public ResponseEntity<ArchitectureProject> publicArchitectureProjectsIdGet(String id) {
-        return ResponseEntity.ok(mapper.toDto(projects.findById(id)));
+        return ResponseEntity.ok(withDiagnostics(projects.findById(id)));
     }
 
     @Override
     public ResponseEntity<ArchitectureProject> adminArchitectureProjectsPost(ArchitectureProjectRequest architectureProjectRequest) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(projects.create(mapper.toDraft(architectureProjectRequest))));
+        return ResponseEntity.status(HttpStatus.CREATED).body(withDiagnostics(projects.create(mapper.toDraft(architectureProjectRequest))));
     }
 
     @Override
     public ResponseEntity<ArchitectureProject> adminArchitectureProjectsIdPut(String id, ArchitectureProjectRequest architectureProjectRequest) {
-        return ResponseEntity.ok(mapper.toDto(projects.update(id, mapper.toDraft(architectureProjectRequest))));
+        return ResponseEntity.ok(withDiagnostics(projects.update(id, mapper.toDraft(architectureProjectRequest))));
+    }
+
+    private ArchitectureProject withDiagnostics(ArchitectureProjectDomain project) {
+        return mapper.toDto(project, projects.diagnose(project.nodes(), project.connections()));
     }
 
     @Override

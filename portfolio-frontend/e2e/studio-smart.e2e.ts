@@ -1,5 +1,12 @@
 import { expect, Page, test, TestInfo } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+/**
+ * Proyecto guardado antes de las reglas inteligentes (formato v2): la base de datos, en la subred
+ * pública y conectada con los visitantes. Lo escribe `tools/export-e2e-fixtures.mjs`.
+ */
+const OLD_PROJECT: { nodes: unknown[] } = JSON.parse(readFileSync(join(__dirname, 'fixtures', 'studio-project-v2-exposed-database.json'), 'utf8'));
 
 /**
  * Lo que enciende la flag `studio.smart-rules` en el Estudio. Se prueba el build de producción
@@ -99,5 +106,56 @@ test.describe('lienzo responsivo del Estudio (studio.smart-rules)', () => {
     const apart = first.right <= second.left + 1 || second.right <= first.left + 1 || first.bottom <= second.top + 1 || second.bottom <= first.top + 1;
     expect(apart, 'los dos nodos no se pisan').toBe(true);
     await capture(page, testInfo, 'hito-1-redimensionar-despues');
+  });
+});
+
+test.describe('conexiones inteligentes del Estudio (studio.smart-rules)', () => {
+  test('al trazar una conexión resalta los destinos válidos, y una inválida no se crea y dice qué hacer', async ({ page }, testInfo) => {
+    test.skip(!isDesktop(testInfo), 'la edición se prueba en escritorio');
+    await openStudio(page, { 'studio.smart-rules': true });
+    await page.getByRole('button', { name: 'Editar arquitectura' }).click();
+    const wires = await page.locator(`${CANVAS} path.wire`).count();
+    await capture(page, testInfo, 'hito-2-conectar-antes');
+
+    await page.locator(`${CANVAS} g.node[data-node-id="users"]`).click();
+    await page.locator(`${CANVAS} g.connect`).press('Enter');
+    await expect(page.locator(`${CANVAS} g.node[data-node-id="api"]`)).toHaveClass(/node-target-ok/);
+    await expect(page.locator(`${CANVAS} g.node[data-node-id="postgres"]`)).toHaveClass(/node-target-no/);
+    await capture(page, testInfo, 'hito-2-conectar-destinos');
+
+    await page.locator(`${CANVAS} g.node[data-node-id="postgres"]`).click({ force: true });
+    const refusal = page.getByTestId('connection-refusal');
+    await expect(refusal).toContainText('Conexión no creada.');
+    await expect(refusal).toContainText('Pon una API en medio');
+    await expect(page.locator(`${CANVAS} path.wire`)).toHaveCount(wires);
+    await capture(page, testInfo, 'hito-2-conectar-despues');
+  });
+
+  test('con la flag apagada no se resalta ni se rechaza nada', async ({ page }, testInfo) => {
+    test.skip(!isDesktop(testInfo), 'la edición se prueba en escritorio');
+    await openStudio(page, {});
+    await page.getByRole('button', { name: 'Editar arquitectura' }).click();
+    const wires = await page.locator(`${CANVAS} path.wire`).count();
+
+    await page.locator(`${CANVAS} g.node[data-node-id="users"]`).click();
+    await page.locator(`${CANVAS} g.connect`).press('Enter');
+    await expect(page.locator(`${CANVAS} .node-target-ok, ${CANVAS} .node-target-no`)).toHaveCount(0);
+    await page.locator(`${CANVAS} g.node[data-node-id="postgres"]`).click({ force: true });
+    await expect(page.locator(`${CANVAS} path.wire`)).toHaveCount(wires + 1);
+    await expect(page.getByTestId('connection-refusal')).toHaveCount(0);
+  });
+
+  test('un proyecto antiguo con una base de datos expuesta abre igual y solo avisa, también en móvil', async ({ page }, testInfo) => {
+    await page.addInitScript((project) => localStorage.setItem('architecture-studio-project', project), JSON.stringify(OLD_PROJECT));
+    await openStudio(page, { 'studio.smart-rules': true });
+
+    await expect(page.locator(`${CANVAS} g.node`)).toHaveCount(OLD_PROJECT.nodes.length);
+    const warnings = page.getByTestId('graph-warnings');
+    await expect(warnings).toContainText('Riesgo de seguridad');
+    await expect(warnings).toContainText('Pon una API en medio');
+    const scroll = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+    expect(scroll.scroll, 'la página no se desplaza en horizontal').toBeLessThanOrEqual(scroll.client + 1);
+    await warnings.scrollIntoViewIfNeeded();
+    await warnings.screenshot({ path: join('e2e-screens', testInfo.project.name, 'hito-2-avisos.png') });
   });
 });

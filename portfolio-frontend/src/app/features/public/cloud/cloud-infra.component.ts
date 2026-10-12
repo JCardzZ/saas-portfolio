@@ -25,7 +25,7 @@ import { estimateCost, formatUsd } from './cloud-costs.data';
 import { telemetryFor } from './component-telemetry';
 import { CopilotAddition, catalogItem } from './copilot';
 import { CostBadgeComponent } from './cost-badge.component';
-import { RuleViolation, anchorFor, checkGraph, endpointOf, inferKind } from './graph-rules';
+import { ConnectionVerdict, RuleViolation, advisories, anchorFor, checkGraph, connectionVerdict, endpointOf, inferKind } from './graph-rules';
 import { BlueprintLoad, mergeBlueprint } from './data-blueprints';
 import { downloadBlob, rasterize, serializeDiagram } from './diagram-export';
 import {
@@ -170,7 +170,14 @@ export class CloudInfraComponent {
   /** Servicios del lienzo que el generador aún no cubre: se avisa, nunca se omiten en silencio. */
   readonly terraformGaps = computed(() => unsupportedTerraform(this.nodes(), this.selectedId()));
   /** Reglas del grafo incumplidas (conexión no permitida, instancias de más). Solo avisan. */
-  readonly violations = computed<RuleViolation[]>(() => checkGraph(this.nodes(), this.links(), (node) => this.serviceOf(node)));
+  readonly violations = computed<RuleViolation[]>(() => {
+    const nameOf = (node: CloudNode) => this.serviceOf(node);
+    return [
+      ...checkGraph(this.nodes(), this.links(), nameOf),
+      // Con las reglas inteligentes, además, los avisos de colocación y de exposición.
+      ...(this.smartRules() ? advisories(this.nodes(), this.links(), nameOf) : []),
+    ];
+  });
   readonly violationsByNode = computed(() => {
     const byNode = new Map<string, string[]>();
     for (const violation of this.violations()) {
@@ -292,6 +299,20 @@ export class CloudInfraComponent {
   /** Nodo desde el que se está trazando una conexión nueva. */
   readonly connectingFrom = signal<string | null>(null);
   readonly connectingNode = computed(() => this.nodes().find((node) => node.id === this.connectingFrom()) ?? null);
+  /**
+   * Con las reglas inteligentes, mientras se traza una conexión: qué nodos la admiten y cuáles no
+   * (y por qué). `null` si no se está conectando o la flag está apagada.
+   */
+  readonly connectionTargets = computed<Map<string, ConnectionVerdict> | null>(() => {
+    const source = this.connectingNode();
+    if (!source || !this.smartRules()) {
+      return null;
+    }
+    return new Map(this.nodes().filter((node) => node.id !== source.id)
+      .map((node) => [node.id, connectionVerdict(source, node, (named) => this.serviceOf(named))]));
+  });
+  /** Última conexión que no se creó por no admitirla las reglas: el motivo y qué hacer en su lugar. */
+  readonly connectionRefusal = signal<{ reason: string; suggestion: string } | null>(null);
   /** Extremo libre del cable mientras se arrastra, en coordenadas del lienzo. */
   readonly linkPreview = signal<{ x: number; y: number } | null>(null);
   private linkDragStart: { x: number; y: number } | null = null;
@@ -1048,6 +1069,7 @@ export class CloudInfraComponent {
   /** Empieza a trazar una conexión desde un nodo: arrastrando hasta el destino o pulsándolo después. */
   startConnection(node: CloudNode, event?: PointerEvent): void {
     this.connectingFrom.set(node.id);
+    this.connectionRefusal.set(null);
     this.propertiesId.set(null);
     if (event) {
       event.stopPropagation();
@@ -1094,6 +1116,16 @@ export class CloudInfraComponent {
     if (!source || !target || from === to || this.links().some((link) => link.from === from && link.to === to)) {
       return;
     }
+    if (this.smartRules()) {
+      const verdict = connectionVerdict(source, target, (node) => this.serviceOf(node));
+      if (!verdict.allowed) {
+        // No se crea: se explica por qué y qué hacer en su lugar.
+        this.connectionRefusal.set({ reason: verdict.reason, suggestion: verdict.suggestion });
+        this.events.emitFromUser([['warn', 'Graph Rule', `${verdict.reason} ${verdict.suggestion}`]], target.id);
+        return;
+      }
+    }
+    this.connectionRefusal.set(null);
     this.record();
     const kind = inferKind(source.type, target.type);
     this.links.update((links) => [...links, { from, to, ...(kind ? { kind } : {}) }]);

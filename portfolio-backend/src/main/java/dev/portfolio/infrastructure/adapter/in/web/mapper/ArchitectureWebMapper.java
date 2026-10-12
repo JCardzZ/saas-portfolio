@@ -8,16 +8,19 @@ import dev.portfolio.application.port.in.ArchitectureProjectUseCase.Draft;
 import dev.portfolio.domain.model.ArchitectureProjectDomain;
 import dev.portfolio.domain.model.CloudCatalogItemDomain;
 import dev.portfolio.domain.model.CloudProviderDomain;
+import dev.portfolio.domain.model.GraphDiagnosticDomain;
 import dev.portfolio.domain.model.TerraformBundleDomain;
 import dev.portfolio.model.ArchitectureProject;
 import dev.portfolio.model.ArchitectureProjectRequest;
 import dev.portfolio.model.ArchitectureProjectSummary;
 import dev.portfolio.model.CloudCatalogItem;
+import dev.portfolio.model.GraphDiagnostic;
 import dev.portfolio.model.TerraformBundle;
 import org.springframework.stereotype.Component;
 
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Locale;
 
 /** A mano y no con MapStruct: los enumerados de nube se generan uno por esquema y el grafo es JSON libre. */
 @Component
@@ -31,6 +34,22 @@ public class ArchitectureWebMapper {
                 .cloudProvider(ArchitectureProjectSummary.CloudProviderEnum.fromValue(project.cloudProvider().code()))
                 .isPreset(project.preset())
                 .createdAt(project.createdAt().atOffset(ZoneOffset.UTC))).toList();
+    }
+
+    /** Sin diagnósticos el campo no viaja: así responde la API mientras la flag esté apagada. */
+    public ArchitectureProject toDto(ArchitectureProjectDomain project, List<GraphDiagnosticDomain> diagnostics) {
+        ArchitectureProject dto = toDto(project);
+        if (!diagnostics.isEmpty()) {
+            dto.setDiagnostics(diagnostics.stream().map(diagnostic -> new GraphDiagnostic()
+                    .nodeId(diagnostic.nodeId())
+                    .rule(GraphDiagnostic.RuleEnum.fromValue(diagnostic.rule()))
+                    .severity(GraphDiagnostic.SeverityEnum.fromValue(diagnostic.severity().name().toLowerCase(Locale.ROOT)))
+                    .message(diagnostic.message())
+                    .suggestion(diagnostic.suggestion())
+                    .from(diagnostic.from())
+                    .to(diagnostic.to())).toList());
+        }
+        return dto;
     }
 
     public ArchitectureProject toDto(ArchitectureProjectDomain project) {

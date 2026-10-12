@@ -47,6 +47,7 @@ model/featureFlagAuditEntry.ts
 model/featureFlagDetail.ts
 model/featureFlagUpdate.ts
 model/fieldError.ts
+model/graphDiagnostic.ts
 model/ingressTrackingRequest.ts
 model/models.ts
 model/priceQuote.ts

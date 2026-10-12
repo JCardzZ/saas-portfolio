@@ -6,8 +6,8 @@
 ## Estado
 
 - **Plan aprobado** el 2026-10-11, con las seis decisiones de abajo. Trabajo autónomo: solo parar si algo rompe producción, exige gastar dinero o cambia el alcance.
-- **Hito actual: 2 · Conexiones inteligentes** (sin empezar). Los hitos 0 y 1 están terminados y subidos, **sin PR**: `gh` no tiene sesión en esta máquina (ver Bloqueos).
-- Las ramas van apiladas: `feat/feature-flags` → `feat/studio-responsive-canvas`. Cuando haya `gh`: PR del hito 0 contra `main`, esperar al gate, integrar, y seguir con el siguiente.
+- **Hito actual: 2 · Conexiones inteligentes**, terminado en local y con PR abierto. Los hitos 0 y 1 están **integrados en `main`** (PR #22 y #23, los abrió e integró el autor).
+- `gh` tiene sesión desde el 2026-10-11 (cuenta JCardzZ): cada hito sale de `origin/main`, con su PR; con el CI gate en verde se integra y se sigue.
 - **Worktree**: `.claude/worktrees/system-design-mcp`.
 - `CLAUDE.md` no se versiona y no existe en el worktree: se actualiza el del checkout principal (`/Users/jcardzz/dev/saas/saas-portfolio/CLAUDE.md`).
 
@@ -15,9 +15,9 @@
 
 | Hito | Rama | Estado | PR |
 | - | - | - | - |
-| 0 · Feature flags | `feat/feature-flags` | Subida; verificada en local | pendiente (sin `gh`) |
-| 1 · Lienzo responsivo | `feat/studio-responsive-canvas` (sobre la del hito 0) | Subida; verificada en local | pendiente (sin `gh`) |
-| 2 · Conexiones inteligentes | — | Sin empezar | — |
+| 0 · Feature flags | `feat/feature-flags` | Integrado en `main` | #22 |
+| 1 · Lienzo responsivo | `feat/studio-responsive-canvas` | Integrado en `main` | #23 |
+| 2 · Conexiones inteligentes | `feat/studio-smart-connections` | PR abierto; verificado en local | ver GitHub |
 | 3 · Oracle Cloud | — | Sin empezar | — |
 | 4 · Diseño de sistemas | — | Sin empezar | — |
 | 5 · Plantillas de sistemas | — | Sin empezar | — |
@@ -40,6 +40,14 @@
 - Sin cambio de esquema del proyecto. Con la flag apagada no cambia nada (hay tests de las dos ramas).
 - Playwright: `e2e/studio-smart.e2e.ts` en todos los perfiles, con capturas antes/después (`e2e-screens/<perfil>/hito-1-*.png`).
 - Verificado en local: 438 tests del frontend, build (460 kB), `test:tools`, Playwright en `desktop-1440-chromium`, `tablet-820-chromium` e `iphone-390-chromium`. **WebKit sin ejecutar.**
+
+## Hito 2 · qué se hizo
+
+- Reglas como datos en `graph-rules.ts` (se exportan a `architecture/graph-rules.json`): `advice` (por qué cada papel no recibe de cualquiera y qué hacer), `placement` (base de datos en subred pública) y `exposure` (conexión directa desde Internet a una base de datos: «Pon una API en medio»).
+- Lienzo, con `studio.smart-rules` encendida: al trazar una conexión se resaltan los destinos válidos y se atenúan los demás; una conexión inválida no se crea y se explica con su sugerencia (`role="alert"`); los avisos de colocación y exposición salen junto al nodo y bajo el lienzo.
+- Backend: `ArchitectureGraphRules.diagnostics` (los mismos datos), caso de uso `diagnose` (vacío con la flag apagada) y campo opcional `diagnostics` en `ArchitectureProject` (GET por id, POST y PUT). Guardar sigue rechazando solo lo que ya rechazaba.
+- Sin cambio de esquema del proyecto. Fixture de proyecto antiguo: `e2e/fixtures/studio-project-v2-exposed-database.json` (lo escribe `tools/export-e2e-fixtures.mjs`); abre igual con la flag apagada y encendida.
+- Verificado en local: `./gradlew test`, 479 tests del frontend, build (466 kB de 500), Spectral sin errores, Playwright en `desktop-1440-chromium`, `tablet-820-chromium` e `iphone-390-chromium`. **Sin ejecutar en local: `integrationTest`, WebKit y Lighthouse** (los corre la CI).
 
 ## Decisiones del autor (2026-10-11)
 
@@ -65,6 +73,10 @@
 - **Hito 1 · un nodo que sigue entero dentro y sin solaparse no se mueve** al redimensionar; solo se reordena cuando hace falta. Durante un arrastre se parte siempre de la posición inicial, así que al volver atrás todo vuelve a su sitio.
 - **Hito 1 · «Ajustar a pantalla»** ciñe el `viewBox` al contenido y quita el ancho mínimo de 720 px; es una vista de conjunto que el visitante pide, y en ella los nodos pueden medir menos de 44 px en un móvil (igual que en «Ajustar a pantalla» del pipeline).
 - **«En móvil el editor en solo lectura»** se entiende como alcance de las pruebas: en móviles y tabletas Playwright comprueba la lectura de lo nuevo, y la edición se prueba en escritorio. No se ha quitado la edición en móvil, que ya existía (regla de no cambiar lo existente).
+- **Hito 2 · las reglas nuevas avisan, no rechazan al guardar.** `placement` y `exposure` son avisos (`warning`) en el backend y en un proyecto ya guardado; solo impiden *trazar* una conexión nueva en el lienzo con la flag encendida. Así ningún proyecto guardado deja de abrir ni de guardarse.
+- **Hito 2 · con la flag apagada el lienzo sigue creando cualquier conexión** y avisando después, como antes.
+- **Hito 2 · el frontend no pinta los `diagnostics` del backend**: calcula los mismos con las mismas reglas. El campo queda para la API y para la herramienta `validar_arquitectura` del hito 6.
+- **Hito 2 · `UseCaseConfig` recibe `ObjectProvider<FeatureFlags>`**: en un contexto parcial sin proveedor (tests `@WebMvcTest` que importan la configuración) las flags cuentan como apagadas, sin tocar los tests existentes.
 
 ## Documentación oficial verificada (2026-10-11)
 
@@ -96,12 +108,12 @@
 
 ## Bloqueos
 
-- **`gh` sin sesión en esta máquina** (`gh auth status`: «You are not logged into any GitHub hosts», comprobado dos veces el 2026-10-11 tras el visto bueno). Sin ella no se puede abrir el PR, leer el CI gate ni integrar. Hace falta `gh auth login` en esta máquina.
+- Ninguno. (`gh` estuvo sin sesión hasta el 2026-10-11; resuelto con `gh auth login --web`.)
 
 ## Pendientes
 
-- Push de `feat/feature-flags`, PR y CI gate.
-- Hitos 1 a 8.
+- CI gate del PR del hito 2 e integrarlo.
+- Hitos 3 a 8.
 
 ## Notas para `CLAUDE.md` (pendientes de copiar)
 
@@ -123,3 +135,11 @@ La sesión está aislada en el worktree y no puede escribir en el `CLAUDE.md` de
 - **Ver → Ajustar a pantalla** (`fitted`): `viewBox` ceñido al contenido (`contentBounds`), clase `.canvas-fitted` (sin el `min-w` de 720 px, alto máximo 70dvh) y los paneles de métricas y FinOps debajo del lienzo.
 - En un test del componente, **entre dos pulsaciones de teclado sobre una zona hay que llamar a `fixture.detectChanges()`**: la plantilla le pasa la zona al manejador.
 - Playwright: `e2e/studio-smart.e2e.ts` corre en todos los perfiles (lista `FLAGGED` de `playwright.config.ts`); enciende la flag con `addInitScript` sobre `demo-feature-flags`. Lo nuevo detrás de una flag añade ahí su spec.
+
+### CONEXIONES INTELIGENTES (hito 2, flag `studio.smart-rules`)
+- `graph-rules.ts` gana tres bloques de **datos** que viajan en `architecture/graph-rules.json` (`npm run export:presets`): `advice` (por papel: por qué y qué hacer), `placement` (pieza × zona de red) y `exposure` (zona de origen × papel de destino). Los textos usan `{node}`, `{from}` y `{to}`; **frontend (`connectionVerdict`, `advisories`) y backend (`ArchitectureGraphRules.diagnostics`) deben dar el mismo texto**.
+- **Dos niveles**: `incoming`, `kinds` y `maxInstances` son errores (guardar los rechaza, como antes); `placement` y `exposure` son **avisos**: no impiden abrir ni guardar, solo impiden *trazar* una conexión nueva en el lienzo con la flag encendida. Una regla nueva que rechazase al guardar rompería proyectos guardados.
+- Lienzo: `connectionTargets` (clases `node-target-ok` / `node-target-no` mientras se traza) y `connectionRefusal` (aviso `role="alert"`, `data-testid="connection-refusal"`). El rechazo vive en `connect()`, así que vale también para el desplegable de propiedades.
+- API: `ArchitectureProject.diagnostics` (opcional; `GraphDiagnostic {nodeId, rule, severity, message, suggestion?, from?, to?}`), solo con la flag encendida. `ArchitectureProjectUseCase.diagnose(nodes, connections)` es lo que usará la herramienta MCP `validar_arquitectura`.
+- Proyectos de ejemplo para e2e: `node tools/export-e2e-fixtures.mjs` → `e2e/fixtures/`.
+- **Bundle inicial: 466 kB** de 500.

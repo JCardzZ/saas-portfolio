@@ -2,14 +2,18 @@ package dev.portfolio.application.service;
 
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase;
 import dev.portfolio.application.port.out.ArchitectureProjectRepositoryPort;
+import dev.portfolio.application.port.out.FeatureFlags;
 import dev.portfolio.domain.exception.InvalidRequestException;
 import dev.portfolio.domain.exception.ResourceNotFoundException;
 import dev.portfolio.domain.model.ArchitectureGraph;
 import dev.portfolio.domain.model.ArchitectureGraphRules;
 import dev.portfolio.domain.model.ArchitectureProjectDomain;
+import dev.portfolio.domain.model.FeatureFlagDomain;
+import dev.portfolio.domain.model.GraphDiagnosticDomain;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class ArchitectureProjectService implements ArchitectureProjectUseCase {
@@ -18,10 +22,20 @@ public class ArchitectureProjectService implements ArchitectureProjectUseCase {
 
     private final ArchitectureProjectRepositoryPort repository;
     private final ArchitectureGraphRules rules;
+    private final FeatureFlags flags;
 
-    public ArchitectureProjectService(ArchitectureProjectRepositoryPort repository, ArchitectureGraphRules rules) {
+    public ArchitectureProjectService(ArchitectureProjectRepositoryPort repository, ArchitectureGraphRules rules, FeatureFlags flags) {
         this.repository = repository;
         this.rules = rules;
+        this.flags = flags;
+    }
+
+    @Override
+    public List<GraphDiagnosticDomain> diagnose(List<Map<String, Object>> nodes, List<Map<String, Object>> connections) {
+        if (!flags.isEnabled(FeatureFlagDomain.STUDIO_SMART_RULES)) {
+            return List.of();
+        }
+        return rules.diagnostics(nodes == null ? List.of() : nodes, connections == null ? List.of() : connections);
     }
 
     @Override
