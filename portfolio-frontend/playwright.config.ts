@@ -66,6 +66,11 @@ function project(profile: Profile, engine: Engine) {
 
 /** Lo nuevo que vive detrás de una feature flag: se prueba en todos los perfiles, con la flag encendida. */
 const FLAGGED = ['**/studio-smart.e2e.ts'];
+/** Lo que cambia de forma entre el ratón y el dedo: se prueba en todos los perfiles. */
+const EVERYWHERE = ['**/service-card.e2e.ts'];
+
+/** Puerto del servidor de pruebas; `E2E_PORT` lo cambia para probar dos copias del repositorio a la vez. */
+const PORT = Number(process.env['E2E_PORT'] ?? 4310);
 
 export default defineConfig({
   testDir: './e2e',
@@ -81,19 +86,19 @@ export default defineConfig({
     ? [['list'], ['html', { open: 'never', outputFolder: 'e2e-report' }], ['json', { outputFile: 'e2e-results/results.json' }]]
     : [['list']],
   use: {
-    baseURL: 'http://localhost:4310',
+    baseURL: `http://localhost:${PORT}`,
     locale: 'es-ES',
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: 'node tools/serve-dist.mjs dist/portfolio-frontend/browser 4310',
-    url: 'http://localhost:4310',
+    command: `node tools/serve-dist.mjs dist/portfolio-frontend/browser ${PORT}`,
+    url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env['CI'],
   },
   projects: [
     // Móviles y tabletas: toda la batería de mobile.e2e.ts.
     ...PROFILES.flatMap((profile) => (['chromium', 'webkit'] as Engine[]).map((engine) => ({
-      ...project(profile, engine), testMatch: ['**/mobile.e2e.ts', ...FLAGGED],
+      ...project(profile, engine), testMatch: ['**/mobile.e2e.ts', ...FLAGGED, ...EVERYWHERE],
     }))),
     // Los diagramas, en cada ancho y orientación: nada recortado, texto legible, nada fijo encima.
     ...DIAGRAM_VIEWPORTS.flatMap((viewport) => (['chromium', 'webkit'] as Engine[]).map((engine) => ({
@@ -102,7 +107,7 @@ export default defineConfig({
     // Escritorio, con ratón: los diagramas en su disposición de columnas (desktop.e2e.ts).
     ...(['chromium', 'webkit'] as Engine[]).map((engine) => ({
       name: `desktop-1440-${engine}`,
-      testMatch: ['**/desktop.e2e.ts', ...FLAGGED],
+      testMatch: ['**/desktop.e2e.ts', ...FLAGGED, ...EVERYWHERE],
       use: { browserName: engine, viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 },
     })),
   ],
