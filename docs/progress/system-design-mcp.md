@@ -21,7 +21,7 @@
 | 3 · Oracle Cloud | `feat/cloud-oracle` | Integrado en `main` con el gate en rojo (ver Estado) | #25 |
 | 4 · Diseño de sistemas | `feat/system-design` | PR abierto; verificado en local | ver GitHub |
 | 5 · Plantillas de sistemas | `feat/system-templates` (sobre la del hito 4) | Terminado en local; PR cuando se integre el hito 4 | — |
-| 6 · MCP núcleo | — | Sin empezar | — |
+| 6 · MCP núcleo | `feat/mcp-server` (sobre la del hito 5) | Terminado en local; PR cuando se integren los hitos 4 y 5 | — |
 | 7 · MCP calidad y observabilidad | — | Sin empezar | — |
 | 8 · Sección web | — | Sin empezar | — |
 
@@ -81,6 +81,20 @@
 - Las pestañas de vista (hito 4) pasan a su propia fila, encima de la barra: en la misma fila desplazaban el menú de plantillas fuera de la pantalla en tablet.
 - Verificado en local: `./gradlew test`, 546 tests del frontend, build (470 kB), Playwright en escritorio, tablet y móvil (Chromium). **Sin ejecutar en local: `integrationTest`, WebKit y Lighthouse.**
 
+## Hito 6 · qué se hizo
+
+- **Servidor MCP en `/v1/mcp`** (flag `mcp.section`; apagada, 404): adaptador de entrada `infrastructure/adapter/in/mcp`, con el SDK oficial `mcp-core` 2.0.1 + `mcp-json-jackson2`, transporte Streamable HTTP sobre Servlet, revisión 2025-11-25.
+- **Capa propia**: las herramientas se describen con `McpTool` (sin tipos del SDK); **solo `McpSdkServer` conoce el SDK** (regla de ArchUnit). Migrar a 2026-07-28 es cambiar esa clase.
+- **Seis herramientas** sobre casos de uso existentes: `listar_plantillas`, `validar_arquitectura`, `generar_terraform` (texto + `main.tf` y `variables.tf` como recursos incrustados), `estimar_costos`, `preguntar_portafolio` y `disenar_sistema`. Tres recursos (`portfolio://catalogo/servicios`, `…/sistemas`, `portfolio://proyectos`) y dos prompts (`revision_de_arquitectura`, `arquitecto`).
+- **Elicitation**: `disenar_sistema` pregunta la nube, la región, los usuarios, el presupuesto, la regulación y el backend si faltan; si el cliente no la admite, devuelve un error que dice qué falta y qué valores valen.
+- **Seguridad**: ninguna herramienta escribe (regla de ArchUnit sobre los métodos de los casos de uso); entradas tratadas como datos; límite por origen (30/min) y tope diario global (2000) en Redis (`McpAccessService`); 256 KB por mensaje; errores internos sin detalle hacia fuera.
+- **Sintaxis HCL comprobada en cada respuesta** (`HclSyntax`, en `TerraformService`); en la CI, los casos golden pasan por el analizador real de Terraform.
+- **Versionado y contrato**: cada herramienta lleva `version` y `kind` en `_meta`; `McpToolContractTest` compara con `src/test/resources/mcp/tools-contract.json`.
+- **Pruebas con un cliente MCP real** (el del SDK): `McpServerEndToEndTest` (Tomcat embebido, context-path `/v1`, casos de uso reales, 12 escenarios) y un test nuevo en `PlatformIntegrationTest`.
+- Nuevo en la capa de aplicación: `ArchitectureProjectUseCase.validate` (sin flag), `SystemDesignUseCase.design` (parte del sistema de ejemplo más parecido) y `McpAccessUseCase`.
+- Documentación: `docs/mcp/README.md`.
+- Verificado en local: `./gradlew test` completo. **Sin verificar en local: `integrationTest`** (Docker respondió «502 Bad response from Docker engine» al crear contenedores) **y el paso de `terraform fmt` de la CI** (no hay Terraform instalado en esta máquina).
+
 ## Decisiones del autor (2026-10-11)
 
 1. Servidor MCP con el SDK oficial `mcp-core` 2.0.1 y transporte Servlet, sirviendo 2025-11-25, detrás de una capa propia para migrar a 2026-07-28 cuando el SDK la publique.
@@ -125,6 +139,13 @@
 - **Hito 5 · los sistemas de ejemplo se cargan desde el frontend** (`build()`), como los patrones de datos; el backend los siembra y los sirve por su API, que es de donde los leerá la herramienta MCP `listar_plantillas`.
 - **Hito 5 · el coste que se muestra se calcula al vuelo** con `estimateCost`, y el presupuesto de cada plantilla es un número redondo por encima: si alguien cambia una cifra orientativa y una plantilla se sale de presupuesto, el test falla.
 - **Hito 5 · al cargar un sistema con `studio.system-design` encendida se abre por la vista de Aplicación**; con ella apagada se carga solo la infraestructura (el diseño viaja en el proyecto, sin verse).
+- **Hito 6 · transporte con sesiones (Streamable), no el «stateless» del SDK**: sin sesión el servidor no puede preguntar al cliente (elicitation), que es un requisito.
+- **Hito 6 · `terraform fmt` en la CI en vez de `terraform validate`** (se aparta de la decisión 2 del autor, a confirmar): los esqueletos no llevan los argumentos de cada recurso, así que `validate` no puede pasar; `fmt` usa el analizador real de HCL y falla si un archivo no se puede analizar.
+- **Hito 6 · Oracle Cloud no se ofrece por MCP**: las herramientas admiten `aws`, `gcp` y `azure`. OCI sigue detrás de su flag en la web.
+- **Hito 6 · `disenar_sistema` no inventa una infraestructura**: parte de uno de los seis sistemas de ejemplo (el pedido, o el más parecido por elecciones y regulación) y le aplica lo que se pide. La región pedida se devuelve y se explica cómo ponerla en `variables.tf`; el generador sigue usando la región por defecto de la nube.
+- **Hito 6 · `listar_plantillas` respeta `studio.system-templates`**: con esa flag apagada no lista los sistemas de ejemplo; `disenar_sistema` sí los usa siempre.
+- **Hito 6 · el origen de una llamada es `getRemoteAddr()`**, como en el resto de límites de la plataforma. Detrás de un proxy sin cabeceras reenviadas, todos los clientes compartirían cupo: a revisar con la configuración del VPS antes de encender la flag.
+- **Hito 6 · se usó `git push --force-with-lease` una vez** sobre `feat/system-templates` (rama propia, sin PR) al reordenarla sobre la del hito 4 corregida. Va contra la regla de no forzar: en adelante las ramas apiladas se ponen al día con `merge`.
 
 ## Documentación oficial verificada (2026-10-11)
 
@@ -152,7 +173,7 @@
 - **VS Code, enlace de un clic** `vscode:mcp/install?<JSON codificado>` (hito 8).
 - **Proveedor Terraform de OCI**, nombres de los servicios de OCI y guía de marca de Oracle (hito 3).
 - **Convenciones semánticas de OpenTelemetry para MCP y GenAI** (hito 7).
-- **SDK Java**: elicitación y `structuredContent` en la 2.0.1, y convivencia del transporte Servlet con Tomcat 10.1 y Spring Security (hito 6).
+- ~~SDK Java: elicitación, `structuredContent` y transporte Servlet con Tomcat 10.1~~ **Confirmado el 2026-10-12** leyendo las clases del jar 2.0.1 y con `McpServerEndToEndTest` (cliente real, Tomcat embebido, context-path `/v1`). La convivencia con Spring Security solo la cubre la prueba de integración, que no se pudo ejecutar en local.
 
 ## Bloqueos
 
@@ -160,8 +181,9 @@
 
 ## Pendientes
 
-- CI gate del PR del hito 4 (#27) e integrarlo; después, PR del hito 5.
-- Hitos 6 a 8 (MCP).
+- CI gate del PR del hito 4 (#27) e integrarlo; después, los PR de los hitos 5 y 6.
+- Hitos 7 (evaluaciones, observabilidad, registro) y 8 (sección web).
+- Antes de encender `mcp.section` en producción: comprobar que el backend ve la dirección real del cliente detrás de Caddy.
 - Sin confirmar del hito 4: el `.proto` generado no se ha pasado por `protoc` (no hay compilador en la CI); el OpenAPI sí se analiza como YAML en los tests, pero no se ha pasado por un validador de OpenAPI.
 
 ## Notas para `CLAUDE.md` (pendientes de copiar)
@@ -215,3 +237,12 @@ La sesión está aislada en el worktree y no puede escribir en el `CLAUDE.md` de
 - Se listan en Proyecto → Plantillas → «Sistemas completos» (`systemTemplates()` en el lienzo); **no** en la lista general (`SYSTEM_TEMPLATE_IDS` se filtra en `ArchitectureStudioService`, como `BLUEPRINT_IDS`).
 - Backend: `ArchitectureProjectService.visible` oculta las plantillas con diseño de sistema mientras la flag esté apagada (lista y `findById`). El sembrado no depende de la flag.
 - Las pestañas «Infraestructura | Aplicación» van en su propia fila, encima de la barra del Estudio.
+
+### SERVIDOR MCP (hito 6, flag `mcp.section`)
+- **`/v1/mcp`**: servlet del SDK oficial (`io.modelcontextprotocol.sdk:mcp-core` y `mcp-json-jackson2` 2.0.1), registrado en `McpServerConfig` con un filtro propio para la flag (no es Spring MVC: `FeatureGateConfig` no lo cubre). `/mcp` está en `PUBLIC_ENDPOINTS`.
+- **Paquete `infrastructure/adapter/in/mcp`**: `McpTool` (contrato propio), `PortfolioTools` (las seis herramientas), `PortfolioCatalog` (recursos y prompts), `McpArguments` (lectura de argumentos con errores accionables), `McpObserver` (herramienta, resultado y latencia; nunca contenido) y **`McpSdkServer`, la única clase que importa `io.modelcontextprotocol`**.
+- **Tres reglas de ArchUnit**: el paquete solo usa puertos de entrada; no llama a ningún método de un caso de uso que escriba; solo `McpSdkServer` conoce el SDK. **Una herramienta nueva es un adaptador fino sobre un caso de uso**: si necesita lógica, va al caso de uso.
+- **Añadir o cambiar una herramienta**: súbele la versión y regenera el contrato (`MCP_CONTRACT_UPDATE=true ./gradlew test --tests "*McpToolContractTest"`, dos veces la primera: la primera escribe el archivo).
+- **Errores**: `ToolInputException` e `InvalidRequestException` vuelven como resultado con `isError` y un texto que dice qué corregir; cualquier otra excepción se registra y a quien llama le llega un mensaje genérico.
+- Límites: `security.rate-limit.mcp` y `mcp-global` (`MCP_RATE_LIMIT_*`, `MCP_GLOBAL_LIMIT_*`).
+- `HclSyntax` (dominio) comprueba todo HCL generado antes de devolverlo; `ArchitecturePresetSeeder.seed()` es público para poder sembrar en los tests del servidor.

@@ -1,18 +1,23 @@
 package dev.portfolio.application.service;
 
 import dev.portfolio.application.port.in.SystemDesignUseCase;
+import dev.portfolio.application.port.out.ArchitectureProjectRepositoryPort;
 import dev.portfolio.application.port.out.RateLimiterPort;
 import dev.portfolio.domain.exception.InvalidRequestException;
 import dev.portfolio.domain.exception.RateLimitExceededException;
 import dev.portfolio.domain.model.ArchitectureGraph;
+import dev.portfolio.domain.model.ArchitectureProjectDomain;
+import dev.portfolio.domain.model.CloudProviderDomain;
 import dev.portfolio.domain.model.RateLimitDecision;
 import dev.portfolio.domain.model.RateLimitPolicy;
 import dev.portfolio.domain.model.system.SystemDesignDomain;
 import dev.portfolio.domain.model.system.SystemDesignRules;
+import dev.portfolio.domain.model.system.SystemDesignRules.Category;
 import dev.portfolio.domain.model.system.SystemDesignRules.Option;
 import dev.portfolio.domain.model.system.SystemFindingDomain;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,8 +31,11 @@ public class SystemDesignService implements SystemDesignUseCase {
     private final SystemDesignRules rules;
     private final RateLimiterPort rateLimiter;
     private final RateLimitPolicy policy;
+    private final ArchitectureProjectRepositoryPort projects;
 
-    public SystemDesignService(SystemDesignRules rules, RateLimiterPort rateLimiter, RateLimitPolicy policy) {
+    public SystemDesignService(SystemDesignRules rules, RateLimiterPort rateLimiter, RateLimitPolicy policy,
+                               ArchitectureProjectRepositoryPort projects) {
+        this.projects = projects;
         this.rules = rules;
         this.rateLimiter = rateLimiter;
         this.policy = policy;
@@ -48,6 +56,10 @@ public class SystemDesignService implements SystemDesignUseCase {
     @Override
     public Bundle generate(Request request, String clientKey) {
         acquire(clientKey);
+        return bundle(request);
+    }
+
+    private Bundle bundle(Request request) {
         Request checked = checked(request);
         SystemDesignDomain design = checked.design();
         List<SystemFindingDomain> findings = rules.evaluate(design, checked.nodes(), checked.costUsd(), checked.provider());
@@ -66,6 +78,59 @@ public class SystemDesignService implements SystemDesignUseCase {
         files.add(new GeneratedFile("README.md", "markdown",
                 SystemDesignGenerator.readme(design, rules, checked.nodes(), checked.provider(), names, findings)));
         return new Bundle(List.copyOf(files), findings);
+    }
+
+    @Override
+    public Proposal design(Brief brief, String clientKey) {
+        acquire(clientKey);
+        // Los sistemas de ejemplo que trae la plataforma: plantillas con diseño de sistema.
+        List<ArchitectureProjectDomain> templates = projects.findAll().stream()
+                .filter(project -> project.preset() && project.system() != null).toList();
+        if (templates.isEmpty()) {
+            throw new InvalidRequestException("No hay sistemas de ejemplo de los que partir");
+        }
+        SystemDesignDomain asked = rules.validated(new SystemDesignDomain(brief.choices(), Map.of(), brief.nfr()));
+        ArchitectureProjectDomain base = brief.template() == null ? closest(templates, asked) : templates.stream()
+                .filter(template -> template.id().equals(brief.template())).findFirst()
+                .orElseThrow(() -> new InvalidRequestException("Sistema de ejemplo desconocido: '%s'. Valores: %s"
+                        .formatted(brief.template(), String.join(", ", templates.stream().map(ArchitectureProjectDomain::id).toList()))));
+
+        Map<String, String> choices = new LinkedHashMap<>(base.system().choices());
+        Map<String, String> deployments = new LinkedHashMap<>(base.system().deployments());
+        List<String> adjusted = new ArrayList<>();
+        for (Map.Entry<String, String> choice : asked.choices().entrySet()) {
+            if (choice.getValue().equals(choices.put(choice.getKey(), choice.getValue()))) {
+                continue;
+            }
+            // La elección cambia: su pieza se vuelve a desplegar en el primer nodo donde pueda correr.
+            deployments.remove(choice.getKey());
+            adjusted.add(choice.getKey());
+            Category category = rules.category(choice.getKey()).orElseThrow();
+            category.options().stream().filter(option -> option.id().equals(choice.getValue())).findFirst()
+                    .flatMap(option -> base.nodes().stream().filter(node -> option.deploysOn().contains(node.get("type"))).findFirst())
+                    .ifPresent(node -> deployments.put(choice.getKey(), String.valueOf(node.get("id"))));
+        }
+        CloudProviderDomain provider = brief.provider() == null ? base.cloudProvider() : brief.provider();
+        SystemDesignDomain design = rules.validated(new SystemDesignDomain(choices, deployments, asked.nfr()));
+        Request request = new Request(provider, base.nodes(), base.connections(), design, null);
+        return new Proposal(base.id(), base.title(), provider, base.nodes(), base.connections(), design, List.copyOf(adjusted), bundle(request));
+    }
+
+    /** El sistema de ejemplo con más elecciones en común con lo pedido; a igualdad, el primero. */
+    private static ArchitectureProjectDomain closest(List<ArchitectureProjectDomain> templates, SystemDesignDomain asked) {
+        ArchitectureProjectDomain best = templates.get(0);
+        long bestScore = -1;
+        for (ArchitectureProjectDomain template : templates) {
+            long score = asked.choices().entrySet().stream()
+                    .filter(choice -> choice.getValue().equals(template.system().choices().get(choice.getKey()))).count();
+            // Las regulaciones pesan: un sistema pensado para datos de tarjeta o de salud ya trae lo que piden.
+            score += 2 * asked.nfr().compliance().stream().filter(template.system().nfr().compliance()::contains).count();
+            if (score > bestScore) {
+                best = template;
+                bestScore = score;
+            }
+        }
+        return best;
     }
 
     @Override

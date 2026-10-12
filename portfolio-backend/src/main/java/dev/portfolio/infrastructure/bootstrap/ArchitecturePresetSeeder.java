@@ -44,7 +44,8 @@ public class ArchitecturePresetSeeder implements ApplicationRunner {
         }
     }
 
-    int seed() throws Exception {
+    /** Siembra (o pone al día) las plantillas. @return cuántas */
+    public int seed() throws Exception {
         List<Preset> presets;
         try (InputStream json = new ClassPathResource(PRESETS).getInputStream()) {
             presets = objectMapper.readValue(json, new TypeReference<>() {

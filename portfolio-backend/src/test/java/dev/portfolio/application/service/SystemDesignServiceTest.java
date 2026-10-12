@@ -40,7 +40,7 @@ class SystemDesignServiceTest {
     private static final List<Map<String, Object>> LINKS = List.of(Map.of("from", "api", "to", "postgres"));
 
     private final RateLimiterPort rateLimiter = mock(RateLimiterPort.class);
-    private final SystemDesignService service = new SystemDesignService(SystemDesignFixture.rules(), rateLimiter, POLICY);
+    private final SystemDesignService service = new SystemDesignService(SystemDesignFixture.rules(), rateLimiter, POLICY, new ArchitectureProjectServiceTest.InMemoryRepository());
 
     @BeforeEach
     void allow() {
