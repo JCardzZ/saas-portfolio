@@ -42,7 +42,7 @@
       }
     </ul>
     @if (menu() === 'presets') {
-      <ul id="menu-presets" class="project-menu max-h-[26rem] w-96 overflow-y-auto">
+      <ul id="menu-presets" class="project-menu max-h-[26rem] w-96 overflow-y-auto" [style.max-width.px]="presetsMaxWidth()">
         @if (systemTemplates().length) {
           <li class="px-2 pb-1 pt-1 text-xs font-medium uppercase tracking-wider text-ink-3" id="system-templates-title">Sistemas completos</li>
           @for (entry of systemTemplates(); track entry.template.id) {
