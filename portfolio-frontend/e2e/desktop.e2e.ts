@@ -264,3 +264,94 @@ test.describe('patrones de datos en el Estudio, en escritorio', () => {
     await capture(page, testInfo, 'app-cloud-infra', 'estudio-avisos-de-reglas');
   });
 });
+
+test.describe('paleta de comandos en escritorio', () => {
+  async function openPalette(page: Page): Promise<void> {
+    await page.route(/^https:\/\/api\.example\.com\//, (route) => route.abort());
+    await page.route(/^https:\/\/raw\.githubusercontent\.com\//, (route) => route.abort());
+    await page.goto('/');
+    await expect(page.locator('h1')).toBeVisible();
+    await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+    await page.keyboard.press('Control+k');
+    await expect(page.getByRole('dialog')).toBeVisible();
+  }
+
+  test('se abre con el atajo: píldora de búsqueda con los cuatro accesos a su derecha y las sugerencias debajo', async ({ page }, testInfo) => {
+    await openPalette(page);
+    const dialog = page.getByRole('dialog');
+    const field = dialog.getByRole('combobox');
+    await expect(field).toBeFocused();
+    await expect(dialog).toContainText('Sugerencias');
+    await page.waitForTimeout(450);
+
+    const pill = (await dialog.getByTestId('palette-search').boundingBox())!;
+    const actions = await dialog.locator('[data-action]').all();
+    expect(actions.length).toBe(4);
+    let previous = pill.x + pill.width;
+    for (const action of actions) {
+      const box = (await action.boundingBox())!;
+      expect(box.x, 'cada acceso va a la derecha del anterior').toBeGreaterThanOrEqual(previous);
+      expect(Math.abs(box.y + box.height / 2 - (pill.y + pill.height / 2)), 'alineado con la píldora').toBeLessThanOrEqual(2);
+      expect(Math.abs(box.width - box.height), 'circular').toBeLessThanOrEqual(1);
+      previous = box.x + box.width;
+    }
+    const path = join('e2e-screens', testInfo.project.name, 'paleta-sugerencias.png');
+    await page.screenshot({ path, animations: 'disabled' });
+    await testInfo.attach('paleta-sugerencias', { path, contentType: 'image/png' });
+  });
+
+  test('se recorre con las flechas y Enter lleva a la sección elegida', async ({ page }, testInfo) => {
+    await openPalette(page);
+    const dialog = page.getByRole('dialog');
+    const field = dialog.getByRole('combobox');
+
+    await field.fill('pipeline');
+    const options = dialog.getByRole('option');
+    await expect(options.first()).toHaveAttribute('aria-selected', 'true');
+    await expect(options.first()).toContainText('Entrega');
+    await expect(field).toHaveAttribute('aria-activedescendant', (await options.first().getAttribute('id'))!);
+    const path = join('e2e-screens', testInfo.project.name, 'paleta-resultados.png');
+    await page.screenshot({ path, animations: 'disabled' });
+    await testInfo.attach('paleta-resultados', { path, contentType: 'image/png' });
+
+    await page.keyboard.press('ArrowDown');
+    await expect(options.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('ArrowUp');
+    await expect(options.first()).toHaveAttribute('aria-selected', 'true');
+    await expect(field).toBeFocused();
+
+    await page.keyboard.press('Enter');
+    await expect(dialog).toBeHidden();
+    await expect.poll(async () => (await page.locator('#entrega').boundingBox())!.y, { message: 'la sección queda arriba' })
+      .toBeLessThan(200);
+  });
+
+  test('un acceso rápido limita la búsqueda y lo escrito se puede llevar al asistente', async ({ page }) => {
+    await openPalette(page);
+    const dialog = page.getByRole('dialog');
+
+    await page.keyboard.press('Control+2');
+    await expect(dialog.getByRole('button', { name: 'Proyectos', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(dialog.getByRole('listbox')).toContainText('Proyectos');
+
+    await dialog.getByRole('combobox').fill('¿Qué arquitectura usa el backend?');
+    const ask = dialog.getByTestId('palette-ask');
+    await expect(ask).toContainText('Preguntar a la IA: «¿Qué arquitectura usa el backend?»');
+    await ask.click();
+    await expect(dialog.locator('app-markdown').first()).toBeVisible({ timeout: 10_000 });
+    await expect(dialog.getByRole('button', { name: 'IA', exact: true })).toHaveAttribute('aria-pressed', 'true');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+  });
+
+  test('con movimiento reducido los accesos aparecen sin animación', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await openPalette(page);
+    await page.waitForTimeout(100);
+
+    const running = await page.getByRole('dialog').evaluate((dialog) =>
+      dialog.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running').length);
+    expect(running).toBe(0);
+  });
+});

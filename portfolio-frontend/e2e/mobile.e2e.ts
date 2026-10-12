@@ -313,6 +313,49 @@ test.describe('página pública en móviles y tabletas', () => {
     await check('estudio-en-edicion', 'app-cloud-infra');
   });
 
+  test('la paleta de comandos baja desde arriba, busca y lleva la pregunta al asistente', async ({ page }, testInfo) => {
+    await openLanding(page);
+    await page.getByRole('button', { name: 'Preguntar a la IA' }).first().tap();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await page.waitForTimeout(450);
+
+    const viewport = page.viewportSize()!;
+    const box = (await dialog.boundingBox())!;
+    if (viewport.width < 640) {
+      // Hoja pegada al borde superior y de lado a lado.
+      expect(box.y, 'la hoja empieza arriba').toBeLessThanOrEqual(1);
+      expect(box.width, 'la hoja ocupa el ancho').toBeGreaterThanOrEqual(viewport.width - 1);
+    }
+    expect(box.y + box.height, 'la paleta cabe en la pantalla').toBeLessThanOrEqual(viewport.height + 1);
+    const actions = dialog.locator('[data-action]');
+    await expect(actions).toHaveCount(4);
+    for (const action of await actions.all()) {
+      const size = (await action.boundingBox())!;
+      expect(Math.min(size.width, size.height), 'acceso rápido de 44 px').toBeGreaterThanOrEqual(44);
+    }
+    await capture(page, testInfo, 'paleta-sugerencias');
+
+    const field = dialog.getByRole('combobox');
+    await field.fill('tecnologias');
+    await expect(dialog.getByRole('option', { name: /Tecnologías/ }).first()).toBeVisible();
+    await capture(page, testInfo, 'paleta-resultados');
+    await expectNoHorizontalScroll(page, 'paleta-resultados');
+    for (const option of await dialog.getByRole('option').all()) {
+      expect((await option.boundingBox())!.height, 'resultado de 44 px de alto').toBeGreaterThanOrEqual(44);
+    }
+    const small = await smallTargets(page, '[role="dialog"]');
+    expect(small, `paleta: ${small.length} controles pequeños:\n${small.join('\n')}`).toEqual([]);
+
+    await field.fill('¿Qué arquitectura usa el backend?');
+    await dialog.getByTestId('palette-ask').tap();
+    await expect(dialog.locator('app-markdown').first()).toBeVisible({ timeout: 10_000 });
+    await capture(page, testInfo, 'paleta-respuesta');
+
+    await dialog.getByRole('button', { name: 'Cerrar' }).tap();
+    await expect(dialog).toBeHidden();
+  });
+
   test('la galería de patrones de datos cabe en la pantalla y carga un patrón preguntando antes', async ({ page }, testInfo) => {
     await openLanding(page);
     await loadEverything(page);

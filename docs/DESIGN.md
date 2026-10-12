@@ -305,6 +305,17 @@ Para la consola de eventos, el Inspector y las salidas de Terraform.
 - Evento nuevo: fundido de 120 ms, sin desplazamiento. Sin cursor parpadeante.
 - `role="log"` con `aria-live="polite"`; al pausar deja de anunciar. Vacía: una línea en `text-3` que dice qué aparecerá.
 
+### 9.9 Paleta de comandos (⌘K)
+
+Es el panel del asistente convertido en buscador: lo escrito busca en un índice local y siempre se puede llevar a la IA. Detrás de la función `ui.command-palette`.
+
+- **Caja de búsqueda**: píldora de 48 px con vidrio (flota sobre la página), borde `border-strong` (acento con el foco dentro), sombra de nivel 3, icono de búsqueda y `esc` visible; con el dedo, `esc` es un aspa.
+- **Accesos rápidos**: cuatro botones circulares de 44 px a la derecha de la píldora (Estudio, Proyectos, CV, IA), con iconos propios de trazo. Aparecen escalonados (opacidad + escala, 200 ms cada uno con 40 ms de separación, `ease-emphasized`); con `prefers-reduced-motion`, sin animación ni retardo. Activo = borde y trazo en el acento.
+- **Panel**: panel flotante (9.7). Sin texto, las sugerencias; al escribir, resultados agrupados (Secciones, Proyectos, Tecnologías, Plantillas, Artículos) con el activo en `surface-3`, y al final «Preguntar a la IA: «…»».
+- **Excepción a «píldora = estado»**: la caja y sus accesos son redondos porque forman una sola pieza flotante, distinta de los botones de la página. No se extiende a otros controles.
+- **Teclado**: ⌘K / Ctrl+K abre y cierra; flechas recorren los resultados sin sacar el foco del campo (`aria-activedescendant`); Intro abre; Esc cierra; ⌘ / Ctrl / Alt + 1–4 activan los accesos.
+- **Móvil** (menos de 640 px): hoja que baja desde arriba, de lado a lado, con los accesos en una fila bajo la caja; sin rótulos de atajos.
+
 ## 10. Accesibilidad (resumen de comprobación)
 
 - [ ] Contraste AA en cada par texto/superficie (tabla 2.3).
@@ -370,3 +381,4 @@ También revisados, sin adoptar nada concreto: vercel.com, resend.com, railway.c
 6. **Monoespaciada**: JetBrains Mono.
 7. **Aviso de modo demo**: segmento de la barra del Inspector de traza (sección 8.4).
 8. **Rol del hero**: marcador temporal hasta que cierre la revisión del CV.
+9. **Paleta de comandos** (2026-10-11): la caja de búsqueda en píldora y los accesos circulares son una excepción acotada a la regla 2 (sección 9.9).
