@@ -321,7 +321,14 @@
 }
 
 .hero-role {
-  font-size: clamp(1.125rem, 2.2vw, 1.75rem);
+  font-size: clamp(1.375rem, 4.2vw, 3.5rem);
+  line-height: 1;
+  text-wrap: balance;
+}
+/* La escena del hero se funde con la galaxia por abajo: sin corte ni línea al final. */
+.hero-canvas {
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
 }
 
 .hero-name {

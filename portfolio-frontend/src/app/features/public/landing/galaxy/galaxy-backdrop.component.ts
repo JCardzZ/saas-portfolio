@@ -14,7 +14,47 @@ import type { GalaxyPalette, GalaxyScene } from './galaxy-scene';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'pointer-events-none fixed inset-0 -z-10 block bg-canvas', 'aria-hidden': 'true' },
-  template: `<canvas #canvas class="block h-full w-full" [class.opacity-0]="!ready()" style="transition: opacity 1.2s ease"></canvas>`,
+  template: `
+    <canvas #canvas class="absolute inset-0 block h-full w-full" [class.opacity-0]="!ready()" style="transition: opacity 1.2s ease"></canvas>
+    <!--
+      Marca de agua: iconografía de desarrollo en trazo fino, repetida en mosaico como el fondo de un
+      chat. Muy tenue y quieta: animarla obligaría a recomponer una capa del tamaño de la pantalla.
+    -->
+    <svg class="doodles absolute inset-0 h-full w-full" aria-hidden="true">
+      <defs>
+        <pattern id="dev-doodles" width="240" height="240" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="var(--text-1)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <!-- </> -->
+            <path d="M22 30l-10 10 10 10M42 30l10 10-10 10M36 26l-8 28" />
+            <!-- { } -->
+            <path d="M150 18c-6 0-6 4-6 10s-2 8-6 8c4 0 6 2 6 8s0 10 6 10M168 18c6 0 6 4 6 10s2 8 6 8c-4 0-6 2-6 8s0 10-6 10" />
+            <!-- terminal >_ -->
+            <rect x="86" y="92" width="44" height="32" rx="5" /><path d="M94 102l7 6-7 6M106 116h12" />
+            <!-- base de datos -->
+            <ellipse cx="200" cy="104" rx="14" ry="5" /><path d="M186 104v20c0 3 6 5 14 5s14-2 14-5v-20M186 114c0 3 6 5 14 5s14-2 14-5" />
+            <!-- rama de git -->
+            <circle cx="30" cy="150" r="4" /><circle cx="30" cy="190" r="4" /><circle cx="54" cy="162" r="4" /><path d="M30 154v32M54 166c0 12-24 10-24 20" />
+            <!-- nube -->
+            <path d="M150 196h34a10 10 0 0 0 0-20 14 14 0 0 0-27-4 9 9 0 0 0-7 24z" />
+            <!-- engranaje -->
+            <circle cx="104" cy="200" r="7" /><path d="M104 186v5M104 209v5M90 200h5M113 200h5M94 190l4 4M110 206l4 4M94 210l4-4M110 194l4-4" />
+          </g>
+          <g fill="var(--text-1)" font-family="var(--font-mono)" font-size="14">
+            <text x="96" y="40">=&gt;</text>
+            <text x="20" y="98">#</text>
+            <text x="210" y="60">;</text>
+            <text x="200" y="226">λ</text>
+            <text x="64" y="236">$_</text>
+          </g>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#dev-doodles)" />
+    </svg>
+  `,
+  styles: `
+    .doodles { opacity: 0.045; }
+    :host-context([data-theme='light']) .doodles { opacity: 0.06; }
+  `,
 })
 export class GalaxyBackdropComponent {
   readonly ready = signal(false);

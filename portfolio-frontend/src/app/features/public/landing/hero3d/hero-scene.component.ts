@@ -41,11 +41,11 @@ const DRAG_THRESHOLD = 6;
     <!-- Sin WebGL no hay avatar: el nombre gigante se basta solo. -->
     @if (!failed()) {
       <div #frame class="relative h-full w-full">
-      <canvas #canvas class="pointer-events-none absolute inset-0 block h-full w-full" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
+      <canvas #canvas class="hero-canvas pointer-events-none absolute inset-0 block h-full w-full" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
       <!-- Zona pulsable: empieza bajo la barra fija para que esta no la tape. -->
       <button
         type="button"
-        class="absolute inset-x-0 bottom-0 top-[calc(4.5rem+env(safe-area-inset-top,0px))] block outline-none max-[399px]:top-[calc(7rem+env(safe-area-inset-top,0px))] focus-visible:shadow-[inset_0_0_0_2px_rgb(var(--c-accent-solid))]"
+        class="absolute inset-x-0 bottom-0 top-[calc(4.5rem+env(safe-area-inset-top,0px))] group block outline-none max-[399px]:top-[calc(7rem+env(safe-area-inset-top,0px))]"
         [class.cursor-grab]="open()"
         [class.cursor-pointer]="!open()"
         style="touch-action: pan-y"
@@ -59,8 +59,9 @@ const DRAG_THRESHOLD = 6;
         (keydown)="key($event)"
       >
         @if (ready()) {
+          <!-- El foco de teclado se ve en esta píldora, no como un marco alrededor de la escena. -->
           <span
-            class="pointer-events-none absolute bottom-[max(7rem,15dvh)] left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full border border-line-subtle bg-surface-1/80 px-3 py-1 font-mono text-mono-sm text-ink-2 backdrop-blur"
+            class="pointer-events-none absolute bottom-[max(7rem,15dvh)] left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full border border-line-subtle bg-surface-1/80 group-focus-visible:border-accent-solid group-focus-visible:ring-2 group-focus-visible:ring-accent-solid/40 px-3 py-1 font-mono text-mono-sm text-ink-2 backdrop-blur"
             aria-hidden="true"
           >{{ hint() }}</span>
         }
