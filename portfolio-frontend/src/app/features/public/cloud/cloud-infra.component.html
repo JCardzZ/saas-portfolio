@@ -240,7 +240,7 @@
       </div>
     }
     @if (connectingNode(); as source) {
-      <p class="flex items-center gap-2 rounded-full bg-accent-solid px-3 py-1 text-xs font-medium text-white" role="status">
+      <p class="flex items-center gap-2 rounded-full bg-accent-solid px-3 py-1 text-xs font-medium text-accent-on" role="status">
         Pulsa el nodo de destino para conectar «{{ serviceOf(source) }}»
         <button type="button" class="focus-ring rounded-control border border-line-control px-2 text-xs" (click)="cancelConnection()">Cancelar</button>
       </p>

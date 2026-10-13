@@ -102,11 +102,11 @@ const POINTS_PER_CLUSTER = 14;
   `,
   styles: `
     .point {
-      fill: rgb(255 255 255 / 0.22);
+      fill: rgb(var(--c-ink-1) / 0.22);
     }
     .match {
       fill: var(--accent-text);
-      filter: drop-shadow(0 0 6px rgb(111 168 255 / 0.9));
+      filter: drop-shadow(0 0 6px rgb(var(--c-accent-text) / 0.9));
       animation: pop 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
       transform-box: fill-box;
       transform-origin: center;
@@ -122,7 +122,7 @@ const POINTS_PER_CLUSTER = 14;
     }
     .query-halo {
       fill: none;
-      stroke: rgb(255 255 255 / 0.5);
+      stroke: rgb(var(--c-ink-1) / 0.5);
       stroke-width: 1;
       transform-box: fill-box;
       transform-origin: center;

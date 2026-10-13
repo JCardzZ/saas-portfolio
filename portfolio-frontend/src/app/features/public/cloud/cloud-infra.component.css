@@ -2,10 +2,10 @@
    el acento marca la selección y verde, ámbar y rojo solo el estado. */
 
 /* Zonas: se distinguen por el patrón de su borde y su rótulo, no por el color. */
-.zone { fill: rgb(14 15 18 / 0.5); stroke: var(--border-strong); stroke-width: 1; transition: stroke var(--duration-base); }
+.zone { fill: rgb(var(--c-surface-1) / 0.5); stroke: var(--border-strong); stroke-width: 1; transition: stroke var(--duration-base); }
 .zone-cloud { stroke-dasharray: 10 6; }
 .zone-network { stroke-dasharray: none; }
-.zone-public, .zone-private { stroke: var(--border-subtle); stroke-dasharray: none; fill: rgb(22 24 29 / 0.55); }
+.zone-public, .zone-private { stroke: var(--border-subtle); stroke-dasharray: none; fill: rgb(var(--c-surface-2) / 0.55); }
 .zone-label { fill: var(--text-2); font-size: 12px; font-weight: 500; letter-spacing: 0.04em; }
 .zone-sub { fill: var(--text-3); font-size: 12px; }
 

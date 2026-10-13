@@ -28,7 +28,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
     <div class="mt-5 flex items-center gap-4">
       <svg viewBox="0 0 80 80" class="h-20 w-20 shrink-0" role="img" [attr.aria-label]="'Cache hit ratio simulado: ' + hitRatio + ' %'">
-        <circle cx="40" cy="40" [attr.r]="ringRadius" fill="none" stroke="rgb(255 255 255 / 0.08)" stroke-width="6" />
+        <circle cx="40" cy="40" [attr.r]="ringRadius" fill="none" stroke="rgb(var(--c-ink-1) / 0.08)" stroke-width="6" />
         <circle
           class="ring"
           cx="40" cy="40" [attr.r]="ringRadius" fill="none" stroke="var(--status-ok)" stroke-width="6" stroke-linecap="round"
@@ -69,7 +69,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
   styles: `
     .ring {
       transition: stroke-dashoffset 1.6s cubic-bezier(0.16, 1, 0.3, 1);
-      filter: drop-shadow(0 0 6px rgb(52 211 153 / 0.6));
+      filter: drop-shadow(0 0 6px rgb(var(--c-status-ok) / 0.6));
     }
     .ring-value {
       fill: var(--text-1);
@@ -77,7 +77,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
       font-weight: 600;
     }
     .bar {
-      fill: rgb(255 255 255 / 0.22);
+      fill: rgb(var(--c-ink-1) / 0.22);
       transform-box: fill-box;
       transform-origin: bottom;
       transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), fill 0.6s;

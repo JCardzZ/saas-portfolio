@@ -26,7 +26,7 @@
 
   /* Lo que se ve antes de que Angular arranque; Angular lo sustituye al pintar la aplicación. */
   .boot-splash {
-    @apply fixed inset-0 m-0 flex items-center justify-center bg-black text-sm text-white/50;
+    @apply fixed inset-0 m-0 flex items-center justify-center bg-canvas text-sm text-ink-3;
   }
 }
 
@@ -118,6 +118,10 @@
       active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-disabled disabled:active:scale-100
       aria-disabled:cursor-not-allowed aria-disabled:text-ink-disabled;
   }
+  /* El icono de un botón no encoge: en un botón de icono estrecho se quedaba en 6 px de ancho. */
+  :where(.ui-btn, .ui-btn-primary, .ui-btn-secondary, .ui-btn-ghost, .ui-btn-danger) > svg {
+    flex-shrink: 0;
+  }
   .ui-btn-lg {
     @apply min-h-10 px-4;
   }
@@ -130,7 +134,7 @@
   }
   /* Una sola acción primaria por vista o por barra. */
   .ui-btn-primary {
-    @apply ui-btn bg-accent-solid text-white hover:bg-accent-solid-hover disabled:bg-surface-3 disabled:text-ink-disabled;
+    @apply ui-btn bg-accent-solid text-accent-on hover:bg-accent-solid-hover disabled:bg-surface-3 disabled:text-ink-disabled;
   }
   .ui-btn-secondary {
     @apply ui-btn border-line-strong bg-surface-2 text-ink-1 hover:bg-surface-3 disabled:hover:bg-surface-2;
@@ -261,7 +265,7 @@
   overscroll-behavior: contain;
   border-radius: 0;
   border-color: transparent;
-  background: rgb(9 9 11 / 0.82);
+  background: rgb(var(--c-canvas) / 0.82);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
   box-shadow: none;
@@ -293,10 +297,15 @@
   }
 }
 
-/* La vista pública es oscura: controles nativos y barras de scroll también. */
+/* Raíz de la vista pública: controles nativos y barras de scroll siguen a su tema (oscuro o claro).
+   La administración no la lleva y sigue clara. */
 .dark {
   color-scheme: dark;
 }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .dark { color-scheme: light; }
+}
+:root[data-theme='light'] .dark { color-scheme: light; }
 
 /* Markdown de las respuestas del asistente. Global porque el HTML se inyecta con [innerHTML]. */
 .markdown > * + * {
@@ -327,16 +336,16 @@
 }
 .markdown code {
   border-radius: 0.375rem;
-  background: rgb(255 255 255 / 0.12);
+  background: rgb(var(--c-ink-1) / 0.12);
   padding: 0.1em 0.35em;
   font-family: var(--font-mono);
   font-size: 0.88em;
 }
 .markdown pre {
   overflow-x: auto;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid rgb(var(--c-ink-1) / 0.1);
   border-radius: 0.875rem;
-  background: rgb(0 0 0 / 0.45);
+  background: rgb(var(--c-canvas) / 0.45);
   padding: 0.75em 0.9em;
 }
 .markdown pre code {
@@ -346,7 +355,7 @@
   line-height: 1.55;
 }
 .markdown blockquote {
-  border-left: 2px solid rgb(255 255 255 / 0.25);
+  border-left: 2px solid rgb(var(--c-ink-1) / 0.25);
   padding-left: 0.8em;
   color: var(--text-2);
 }
@@ -357,12 +366,12 @@
 }
 .markdown th,
 .markdown td {
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid rgb(var(--c-ink-1) / 0.12);
   padding: 0.3em 0.6em;
   text-align: left;
 }
 .markdown hr {
-  border-color: rgb(255 255 255 / 0.12);
+  border-color: rgb(var(--c-ink-1) / 0.12);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -422,11 +431,11 @@
 svg .zone.zone-region { stroke-dasharray: 2 5; }
 svg .zone.zone-selected { stroke: var(--accent-text) !important; stroke-width: 1.5; stroke-dasharray: none; }
 .zone-grip { fill: transparent; cursor: move; outline: none; touch-action: none; }
-.zone-grip:hover, .zone-grip:focus-visible { fill: rgb(255 255 255 / 0.08); }
+.zone-grip:hover, .zone-grip:focus-visible { fill: rgb(var(--c-ink-1) / 0.08); }
 .zone-grip:focus-visible { stroke: #fff; stroke-width: 1.5; }
-.zone-corner { fill: rgb(255 255 255 / 0.45); cursor: nwse-resize; touch-action: none; }
-.zone-corner:hover { fill: #fff; }
-svg .zone.zone-target { stroke: var(--accent-text); stroke-width: 1.5; stroke-dasharray: none; fill: rgb(111 168 255 / 0.08); }
+.zone-corner { fill: rgb(var(--c-ink-1) / 0.45); cursor: nwse-resize; touch-action: none; }
+.zone-corner:hover { fill: var(--text-1); }
+svg .zone.zone-target { stroke: var(--accent-text); stroke-width: 1.5; stroke-dasharray: none; fill: rgb(var(--c-accent-text) / 0.08); }
 .connect { cursor: crosshair; outline: none; touch-action: none; }
 .connect circle { fill: var(--accent-solid); transition: fill 0.2s; }
 .connect:hover circle, .connect:focus-visible circle, .connect[aria-pressed='true'] circle { fill: var(--accent-text); }

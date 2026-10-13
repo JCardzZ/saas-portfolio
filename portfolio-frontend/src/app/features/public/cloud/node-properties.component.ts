@@ -128,8 +128,8 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
       display: block;
       width: 100%;
       border-radius: 0.6rem;
-      border: 1px solid rgb(255 255 255 / 0.12);
-      background: rgb(0 0 0 / 0.5);
+      border: 1px solid rgb(var(--c-ink-1) / 0.12);
+      background: rgb(var(--c-canvas) / 0.5);
       padding: 0.35rem 0.55rem;
       color: var(--text-1);
       font-size: 0.75rem;

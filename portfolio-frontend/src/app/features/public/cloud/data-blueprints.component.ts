@@ -77,7 +77,7 @@ interface Card {
               <div class="mt-3 rounded-panel border border-line-strong bg-surface-2 p-3" role="group" [attr.aria-label]="'Cómo cargar ' + card.blueprint.name">
                 <p class="text-[13px] text-ink-1">El lienzo ya tiene contenido. ¿Qué hago con él?</p>
                 <div class="mt-2 flex flex-wrap gap-2">
-                  <button type="button" class="focus-ring rounded-control bg-white px-3 py-1.5 text-xs font-medium text-black" (click)="choose(card.blueprint, 'replace')">Reemplazar</button>
+                  <button type="button" class="focus-ring rounded-control bg-ink-1 px-3 py-1.5 text-xs font-medium text-canvas" (click)="choose(card.blueprint, 'replace')">Reemplazar</button>
                   <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1.5 text-xs text-ink-1 hover:bg-surface-3" (click)="choose(card.blueprint, 'add')">Agregar al lienzo</button>
                   <button type="button" class="focus-ring rounded-control px-3 py-1.5 text-xs text-ink-2 hover:text-ink-1" (click)="asking.set(null)">Cancelar</button>
                 </div>

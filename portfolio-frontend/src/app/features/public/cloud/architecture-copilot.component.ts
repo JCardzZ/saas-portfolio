@@ -47,7 +47,7 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
       <div #scroll class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3" aria-live="polite">
         @for (exchange of exchanges(); track exchange.id) {
           <article>
-            <p class="ml-8 rounded-panel rounded-br-mark bg-accent-solid px-3 py-1.5 text-xs text-white">{{ exchange.question }}</p>
+            <p class="ml-8 rounded-panel rounded-br-mark bg-accent-solid px-3 py-1.5 text-xs text-accent-on">{{ exchange.question }}</p>
             @if (exchange.pending) {
               <p class="mt-2 animate-pulse text-xs text-ink-2">Analizando el diagrama…</p>
             } @else if (exchange.error) {
@@ -93,7 +93,7 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
                     </ul>
                     <button
                       type="button"
-                      class="focus-ring mt-2 rounded-control bg-accent-solid px-3 py-1 text-xs font-medium text-white transition hover:bg-accent-solid-hover disabled:cursor-default disabled:bg-surface-3 disabled:text-ink-2"
+                      class="focus-ring mt-2 rounded-control bg-accent-solid px-3 py-1 text-xs font-medium text-accent-on transition hover:bg-accent-solid-hover disabled:cursor-default disabled:bg-surface-3 disabled:text-ink-2"
                       [disabled]="recommendation.applied !== null"
                       (click)="apply(exchange.id, recommendation)"
                     >
@@ -128,7 +128,7 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
           placeholder="¿Qué quieres mejorar de esta arquitectura?"
           (keydown.enter)="submit($event)"
         ></textarea>
-        <button type="submit" class="focus-ring rounded-control bg-accent-solid px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40" [disabled]="busy()">Preguntar</button>
+        <button type="submit" class="focus-ring rounded-control bg-accent-solid px-3 py-1.5 text-xs font-medium text-accent-on disabled:opacity-40" [disabled]="busy()">Preguntar</button>
       </form>
       <p class="border-t border-line-subtle px-4 py-2 text-xs leading-snug text-ink-3">
         Las recomendaciones las redacta un modelo y pueden equivocarse: revísalas. El coste sale del catálogo del estudio, no del modelo.

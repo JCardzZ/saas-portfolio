@@ -93,7 +93,7 @@ const REPLAY_STAGE_MS = 850;
     <div class="mt-4 flex flex-wrap items-center gap-3">
       <button
         type="button"
-        class="focus-ring rounded-control bg-accent-solid px-4 py-1.5 text-sm font-medium text-white transition duration-300 ease-spring hover:bg-accent-solid-hover disabled:opacity-40"
+        class="focus-ring rounded-control bg-accent-solid px-4 py-1.5 text-sm font-medium text-accent-on transition duration-300 ease-spring hover:bg-accent-solid-hover disabled:opacity-40"
         [disabled]="!run() || replaying()"
         (click)="replay()"
       >Reproducir última ejecución</button>

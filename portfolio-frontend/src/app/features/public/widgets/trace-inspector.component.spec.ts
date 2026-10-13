@@ -6,6 +6,13 @@ import { TraceInspectorService } from '../data/trace-inspector.service';
 import { ArchitectureCanvasComponent } from './architecture-canvas.component';
 import { TraceInspectorComponent } from './trace-inspector.component';
 
+/** El color de un token del tema activo, como lo devuelve getComputedStyle («rgb(r, g, b)»). */
+function tokenColor(name: string): string {
+  const hex = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return `rgb(${[1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16)).join(', ')})`;
+}
+
+
 describe('TraceInspectorComponent', () => {
   const clearStorage = () => ['trace-inspector-mode', 'trace-inspector-height'].forEach((key) => localStorage.removeItem(key));
   beforeEach(clearStorage);
@@ -204,7 +211,7 @@ describe('TraceInspectorComponent', () => {
         'Cerrar el inspector de traza', 'Minimizar a píldora', 'Maximizar el inspector',
       ]);
       const colours = () => lights.map((light) => getComputedStyle(light.querySelector('span')!).backgroundColor);
-      expect(colours()).toEqual(['rgb(58, 63, 74)', 'rgb(58, 63, 74)', 'rgb(58, 63, 74)']);
+      expect(colours()).toEqual(Array(3).fill(tokenColor('--border-strong')));
       // El color de cada uno (rojo, ámbar, verde) llega por CSS al pasar el cursor por la cabecera o con foco.
       expect(lights.map((light) => light.querySelector('span')!.className)).toEqual(['traffic-close', 'traffic-minimize', 'traffic-maximize']);
       expect(getComputedStyle(element.querySelector('h3')!).fontFamily).toContain('monospace');

@@ -119,7 +119,7 @@ export class CvDownloadComponent {
 
           <label class="mt-4 inline-flex min-h-[44px] cursor-pointer items-center gap-3 text-sm text-ink-1">
             <input type="checkbox" role="switch" class="peer sr-only" [checked]="picker.withPhoto()" (change)="picker.withPhoto.set($any($event.target).checked)" />
-            <span class="relative h-6 w-10 rounded-full bg-surface-3 transition peer-checked:bg-accent-solid peer-focus-visible:ring-2 peer-focus-visible:ring-white after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-4" aria-hidden="true"></span>
+            <span class="relative h-6 w-10 rounded-full bg-surface-3 transition peer-checked:bg-accent-solid peer-focus-visible:ring-2 peer-focus-visible:ring-accent-text after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-4" aria-hidden="true"></span>
             Incluir foto de perfil
             <span class="text-xs text-ink-3">{{ picker.withPhoto() ? 'algunos procesos piden el CV sin foto' : 'CV sin foto' }}</span>
           </label>
@@ -139,7 +139,7 @@ export class CvDownloadComponent {
                   </span>
                   <span class="mt-2.5 block text-sm font-medium text-ink-1">{{ option.label }}</span>
                   <span class="block text-xs text-ink-2">{{ option.hint }}</span>
-                  <span class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent-solid px-3 py-1 text-xs font-medium text-white transition group-hover:bg-accent-solid-hover">
+                  <span class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent-solid px-3 py-1 text-xs font-medium text-accent-on transition group-hover:bg-accent-solid-hover">
                     <svg viewBox="0 0 16 16" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M4.5 7 8 10.5 11.5 7M3 13.5h10" /></svg>
                     PDF
                   </span>

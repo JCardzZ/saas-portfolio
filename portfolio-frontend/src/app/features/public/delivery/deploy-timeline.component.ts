@@ -112,14 +112,14 @@ const SIMULATION_MS = 900;
     .entry:last-child { padding-bottom: 0; }
     /* La línea que une un despliegue con el anterior. */
     .entry:not(:last-child)::before {
-      content: ''; position: absolute; left: 3.5px; top: 14px; bottom: -4px; width: 1px; background: rgb(255 255 255 / 0.14);
+      content: ''; position: absolute; left: 3.5px; top: 14px; bottom: -4px; width: 1px; background: rgb(var(--c-ink-1) / 0.14);
     }
     .mark {
       flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 9999px;
       background: var(--bg-surface-2); box-shadow: inset 0 0 0 1px var(--text-3);
       transition: background-color 0.3s ease-out, box-shadow 0.3s ease-out, transform 0.3s ease-out;
     }
-    .entry.current .mark { background: var(--status-ok); box-shadow: 0 0 0 3px rgb(52 211 153 / 0.18); }
+    .entry.current .mark { background: var(--status-ok); box-shadow: 0 0 0 3px rgb(var(--c-status-ok) / 0.18); }
     .entry.simulated .mark { background: var(--status-warn); box-shadow: 0 0 0 3px rgb(245 185 74 / 0.2); transform: scale(1.15); }
     .entry:not(.current) { opacity: 0.72; }
     @media (prefers-reduced-motion: reduce) {

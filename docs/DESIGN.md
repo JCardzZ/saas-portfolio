@@ -19,6 +19,8 @@ Este sistema es propio. Las referencias revisadas (sección 12) se usaron para p
 
 Los valores son propios y están comprobados con la fórmula de contraste de WCAG 2.1 (`tools/lib/design-tokens.test.mjs` lo exige en la CI). La única fuente es `portfolio-frontend/design-tokens.js`: de ahí salen las utilidades de Tailwind y las variables CSS de `:root` (sección 11.1). **Ningún componente escribe un hex.**
 
+> **Actualización 2026-10-13: dos temas y acento lima.** `design-tokens.js` define `themes.dark` (negro, «terminal», inspirado en Modal) y `themes.light` (galería gris clara, inspirada en Twomuch Studio), con las mismas claves y el mismo acento lima (`accent.solid` #7FEE64, texto encima `accent.on`). El oscuro es el de siempre por defecto; el claro se aplica si lo pide el sistema o el visitante (botón de tema en la barra, `ThemeService`, `data-theme` en `<html>`). Las utilidades de Tailwind leen variables (`rgb(var(--c-…) / α)`), así que un componente no sabe en qué tema está. Las tablas de abajo describen la paleta anterior (azul); los valores vigentes son los de `design-tokens.js`, y el test de contraste comprueba los dos temas. La administración sigue clara y no usa estos tokens.
+
 ### 2.1 Neutros
 
 | Token | Valor | Uso |
@@ -394,3 +396,5 @@ También revisados, sin adoptar nada concreto: vercel.com, resend.com, railway.c
 7. **Aviso de modo demo**: segmento de la barra del Inspector de traza (sección 8.4).
 8. **Rol del hero**: marcador temporal hasta que cierre la revisión del CV.
 9. **Paleta de comandos** (2026-10-11): la caja de búsqueda en píldora y los accesos circulares son una excepción acotada a la regla 2 (sección 9.9).
+10. **Tema claro y oscuro, acento lima** (2026-10-13): sustituye a «el sitio público es solo oscuro». Mismo acento en los dos temas; en el claro el lima va solo como relleno con texto oscuro (como texto no da AA).
+11. **Hero en 3D** (2026-10-13): las capas reales de la plataforma como losas isométricas en CSS 3D (`HeroStackComponent`), sin WebGL ni librerías, decorativo y con su equivalente en texto; quieto con `prefers-reduced-motion`.

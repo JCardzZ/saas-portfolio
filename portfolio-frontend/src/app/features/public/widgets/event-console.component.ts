@@ -79,7 +79,7 @@ const AMBIENT: (() => SystemEventStep)[] = [
     .user-event {
       margin-left: -0.5rem;
       border-left: 2px solid var(--accent-text);
-      background: rgb(111 168 255 / 0.08);
+      background: rgb(var(--c-accent-text) / 0.08);
       padding-left: calc(0.5rem - 2px);
     }
   `,
