@@ -308,6 +308,18 @@
 :root[data-theme='light'] .dark { color-scheme: light; }
 
 /* Nombre del hero: un cartel de borde a borde. Escala con el ancho y nunca baja del titular normal. */
+/* Hero inmersivo: con el mazo de tecnologías abierto, el texto se retira y los botones se atenúan. */
+.hero :is(h1, p) {
+  transition: opacity var(--duration-slow) var(--ease-standard);
+}
+.hero-dimmed :is(h1, p) {
+  opacity: 0.1;
+}
+.hero-dimmed :is(a, button, app-cv-download) {
+  opacity: 0.5;
+  transition: opacity var(--duration-slow) var(--ease-standard);
+}
+
 .hero-name {
   /* «MANUEL CARDOZA» tiene que caber en una línea dentro de la columna (máx. 72 rem): 8,2vw. */
   font-size: clamp(2.5rem, 8.2vw, 7.4rem);

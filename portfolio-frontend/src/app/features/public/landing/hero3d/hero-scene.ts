@@ -5,7 +5,9 @@ import type * as THREE from 'three';
  * casco con visor de cristal negro, ojos de luz con el acento que siguen al cursor y parpadean,
  * antena, auriculares y un núcleo que late en el pecho—, iluminado con un entorno generado en el
  * propio navegador (sin texturas descargadas). Sostiene en las manos un mazo con las tecnologías
- * de la plataforma; al pulsarlo, las fichas salen volando y giran a su alrededor (`toggleStack`).
+ * de la plataforma y de las nubes; al pulsarlo, las fichas salen volando a un globo que ocupa la
+ * pantalla (`activate`), con las de detrás más tenues. El globo se gira arrastrando, con inercia
+ * (`drag`, `nudge`), y una ficha pulsada pasa al frente, ampliada.
  * Flota rodeado de partículas y anillos.
  * Decorativa: el h1 dice quién es.
  */
@@ -24,11 +26,22 @@ export interface SceneTech {
   title: string;
   path: string;
   color: string;
+  /** Icono oficial de nube (SVG): se dibuja tal cual, sin recolorear ni deformar, con su nombre debajo. */
+  image?: string;
 }
 
 export interface HeroScene {
-  /** Abre o recoge el abanico de tecnologías; devuelve si queda abierto. */
-  toggleStack(): boolean;
+  /**
+   * Pulsación en (x, y) normalizadas del lienzo: abre el mazo, trae al frente la ficha pulsada,
+   * la devuelve a su sitio o recoge el mazo. `null` = teclado (alterna abrir y recoger).
+   */
+  activate(x: number | null, y: number | null): { open: boolean; focused: string | null };
+  /** Recoge el mazo (Esc). */
+  close(): void;
+  /** Gira los anillos: `dx` es el desplazamiento horizontal normalizado del arrastre. */
+  drag(dx: number): void;
+  /** Empujón de teclado a izquierda (-1) o derecha (1). */
+  nudge(direction: number): void;
   /** Señala la ficha bajo el cursor (coordenadas normalizadas del lienzo, -1…1); devuelve su nombre. */
   pick(x: number, y: number): string | null;
   frame(t: number): void;
@@ -38,6 +51,8 @@ export interface HeroScene {
   setPalette(palette: ScenePalette): void;
   dispose(): void;
 }
+
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
 /** Colores propios del robot: no dependen del tema. */
 const SHELL = 0xf2f3f5;
@@ -205,6 +220,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   const TILE_H = 0.96;
   const tileGeometry = keep(new three.BoxGeometry(TILE_W, TILE_H, 0.05));
   const edge = physical(GRAPHITE, 0.3, { metalness: 0.6 });
+  let current = palette;
   const tiles = techs.map((tech, index) => {
     const art = document.createElement('canvas');
     art.width = 256;
@@ -212,13 +228,25 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const texture = keep(new three.CanvasTexture(art));
     texture.colorSpace = three.SRGBColorSpace;
     texture.anisotropy = 4;
-    const face = keep(new three.MeshPhysicalMaterial({ map: texture, roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.1 }));
-    const mesh = new three.Mesh(tileGeometry, [edge, edge, edge, edge, face, edge]);
+    const face = keep(new three.MeshPhysicalMaterial({ map: texture, roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.1, transparent: true }));
+    // Canto propio con el acento: brilla al señalarla o al traerla al frente.
+    const glow = keep(new three.MeshStandardMaterial({ color: GRAPHITE, emissive: 0x7fee64, emissiveIntensity: 0.15, roughness: 0.4, metalness: 0.5, transparent: true }));
+    const mesh = new three.Mesh(tileGeometry, [glow, glow, glow, glow, face, glow]);
     scene.add(mesh);
-    return { tech, art, texture, mesh, index, hover: 0 };
+    const tile = { tech, art, texture, mesh, index, hover: 0, glow, face, picture: null as HTMLImageElement | null };
+    if (tech.image) {
+      const picture = new Image();
+      picture.decoding = 'async';
+      picture.onload = () => {
+        tile.picture = picture;
+        paintTile(tile, current);
+      };
+      picture.src = tech.image;
+    }
+    return tile;
   });
 
-  function paintTile(tile: (typeof tiles)[number], colors: ScenePalette): void {
+  function paintTile(tile: { art: HTMLCanvasElement; texture: THREE.CanvasTexture; tech: SceneTech; picture: HTMLImageElement | null }, colors: ScenePalette): void {
     const ctx = tile.art.getContext('2d');
     if (!ctx) return;
     const { width, height } = tile.art;
@@ -230,15 +258,24 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     ctx.strokeStyle = colors.line;
     ctx.lineWidth = 4;
     ctx.stroke();
-    // Las marcas casi negras se pintan con el color del texto para que se vean en el tema oscuro.
     const brand = new three.Color(tile.tech.color);
-    const dark = brand.r * 0.2126 + brand.g * 0.7152 + brand.b * 0.0722 < 0.12;
-    ctx.save();
-    ctx.translate(width / 2 - 70, 48);
-    ctx.scale(140 / 24, 140 / 24);
-    ctx.fillStyle = dark ? colors.ink : tile.tech.color;
-    ctx.fill(new Path2D(tile.tech.path));
-    ctx.restore();
+    // Marcas casi negras en oscuro, o casi blancas en claro: con el color del texto, para que se vean.
+    const luminance = brand.r * 0.2126 + brand.g * 0.7152 + brand.b * 0.0722;
+    const dark = colors.light ? luminance > 0.8 : luminance < 0.12;
+    if (tile.picture) {
+      // Icono de nube: tal cual, encajado en 140 px sin deformarlo.
+      const ratio = Math.min(140 / tile.picture.naturalWidth, 140 / tile.picture.naturalHeight) || 1;
+      const w = tile.picture.naturalWidth * ratio;
+      const h = tile.picture.naturalHeight * ratio;
+      ctx.drawImage(tile.picture, (width - w) / 2, 48 + (140 - h) / 2, w, h);
+    } else if (tile.tech.path) {
+      ctx.save();
+      ctx.translate(width / 2 - 70, 48);
+      ctx.scale(140 / 24, 140 / 24);
+      ctx.fillStyle = dark ? colors.ink : tile.tech.color;
+      ctx.fill(new Path2D(tile.tech.path));
+      ctx.restore();
+    }
     ctx.fillStyle = colors.ink;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -255,7 +292,12 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   let openedAt = 0;
   let clock = 0;
   let spin = 0;
+  let spinVelocity = 0;
+  let halfWidth = 4.3;
+  let halfHeight = 2.7;
+  let fit = 1;
   let hovered: (typeof tiles)[number] | null = null;
+  let focused: (typeof tiles)[number] | null = null;
   const raycaster = new three.Raycaster();
   const target = new three.Vector3();
   const targetQuat = new three.Quaternion();
@@ -265,32 +307,66 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
 
   function placeTiles(dt: number): void {
     const count = tiles.length;
-    const follow = animate ? 1 - Math.exp(-dt * 7) : 1;
-    if (!hovered) spin += dt * 0.22;
+    const follow = animate ? 1 - Math.exp(-dt * 6) : 1;
+    // Giro: deriva lenta, más el impulso del arrastre que se apaga con fricción.
+    if (animate) {
+      spinVelocity *= Math.exp(-dt * 2.2);
+      spin += ((hovered || focused ? 0 : 0.08) + spinVelocity) * dt;
+    }
     faceCamera.copy(camera.quaternion);
     character.updateMatrixWorld();
+    // Globo: las fichas repartidas por una esfera de Fibonacci (sin huecos ni montones), tan grande
+    // como la pantalla, que gira sobre su eje vertical.
+    const radius = Math.max(1.6, Math.min(halfHeight * 0.92, halfWidth * 0.9));
+    const cardScale = Math.max(0.42, Math.min(halfHeight, halfWidth) * 0.15);
+    const camY = camera.position.y;
+    const cos = Math.cos(spin);
+    const sin = Math.sin(spin);
     for (const tile of tiles) {
       const i = tile.index;
-      const open = stackOpen && (!animate || clock - openedAt > i * 0.045);
-      if (open) {
-        // Órbita elíptica alrededor del robot; las fichas miran siempre a la cámara.
-        const angle = spin + (i / count) * Math.PI * 2;
-        target.set(Math.cos(angle) * 3.5, -0.55 + Math.sin(angle * 2 + i) * 0.22 + character.position.y, 0.5 + Math.sin(angle) * 1.9);
+      const open = stackOpen && (!animate || clock - openedAt > i * 0.035);
+      let scale: number;
+      let opacity = 1;
+      if (open && tile === focused) {
+        target.set(0, camY, 6);
         targetQuat.copy(faceCamera);
+        scale = Math.min(halfHeight, halfWidth) * 0.42;
+      } else if (open) {
+        const y = 1 - ((i + 0.5) / count) * 2;
+        const ring = Math.sqrt(1 - y * y);
+        const theta = i * GOLDEN_ANGLE;
+        const x0 = Math.cos(theta) * ring;
+        const z0 = Math.sin(theta) * ring;
+        const depth = z0 * cos + x0 * sin; // -1 detrás … 1 delante
+        target.set((x0 * cos - z0 * sin) * radius * 1.25, camY + y * radius * 0.82, depth * radius * 0.9);
+        targetQuat.copy(faceCamera);
+        scale = cardScale * (0.78 + 0.22 * (depth + 1) / 2) * (focused ? 0.8 : 1);
+        opacity = 0.28 + 0.72 * Math.max(0, (depth + 1) / 2) ** 1.4;
       } else {
         // En las manos: un mazo abierto en abanico pequeño, como unas cartas.
         const offset = i - (count - 1) / 2;
-        target.set(HANDS.x + offset * 0.045, HANDS.y + 0.42 - Math.abs(offset) * 0.012, HANDS.z + 0.08 + i * 0.012);
+        const step = Math.min(0.03, 1.2 / count);
+        target.set(HANDS.x + offset * step, HANDS.y + 0.42 - Math.abs(offset) * step * 0.25, HANDS.z + 0.08 + i * 0.006);
         character.localToWorld(target);
-        tilt.setFromAxisAngle(zAxis, -offset * 0.07);
+        tilt.setFromAxisAngle(zAxis, -offset * Math.min(0.05, 1.5 / count));
         targetQuat.copy(character.quaternion).multiply(tilt);
+        scale = 0.62 * character.scale.x;
       }
       tile.mesh.position.lerp(target, follow);
       tile.mesh.quaternion.slerp(targetQuat, follow);
-      tile.hover += ((tile === hovered ? 1 : 0) - tile.hover) * follow;
-      const base = open ? 1 : 0.62;
-      tile.mesh.scale.setScalar((base + tile.hover * 0.4) * character.scale.x);
+      tile.hover += ((tile === hovered && tile !== focused ? 1 : 0) - tile.hover) * follow;
+      tile.mesh.scale.setScalar(scale * (1 + tile.hover * 0.28));
+      tile.glow.emissiveIntensity = 0.15 + tile.hover * 1.4 + (tile === focused ? 1 : 0);
+      const shown = Math.max(opacity, tile.hover);
+      tile.face.opacity += (shown - tile.face.opacity) * follow;
+      tile.glow.opacity = tile.face.opacity;
     }
+  }
+
+  function hit(x: number, y: number): (typeof tiles)[number] | null {
+    raycaster.setFromCamera(new three.Vector2(x, y), camera);
+    const first = raycaster.intersectObjects(tiles.map((tile) => tile.mesh), false)[0];
+    return tiles.find((tile) => tile.mesh === first?.object) ?? null;
   }
 
   // Partículas y anillos alrededor.
@@ -323,6 +399,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   let lift = 0;
 
   function setPalette(next: ScenePalette): void {
+    current = next;
     const accent = new three.Color(next.accent);
     accentMat.color.copy(accent);
     accentMat.emissive.copy(accent);
@@ -335,7 +412,10 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     dustMaterial.blending = next.light ? three.NormalBlending : three.AdditiveBlending;
     dustMaterial.needsUpdate = true;
     hemi.intensity = next.light ? 1.5 : 1.1;
-    for (const tile of tiles) paintTile(tile, next);
+    for (const tile of tiles) {
+      paintTile(tile, next);
+      tile.glow.emissive.copy(accent);
+    }
   }
   setPalette(palette);
 
@@ -345,7 +425,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     last = t;
     clock = t;
     const intro = animate ? easeOutBack(Math.min(1, t / 1.2)) : 1;
-    character.scale.setScalar(0.6 + 0.4 * intro);
+    character.scale.setScalar((0.6 + 0.4 * intro) * fit);
     character.position.y = (animate ? Math.sin(t * 1.2) * 0.08 : 0) + lift * 1.2;
 
     lookX += (pointerX - lookX) * 0.08;
@@ -372,27 +452,48 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
 
   return {
     frame,
-    toggleStack() {
-      stackOpen = !stackOpen;
-      openedAt = clock;
-      if (!stackOpen) hovered = null;
-      return stackOpen;
+    activate(x, y) {
+      const tile = stackOpen && x !== null && y !== null ? hit(x, y) : null;
+      if (!stackOpen) {
+        stackOpen = true;
+        openedAt = clock;
+      } else if (tile) {
+        focused = focused === tile ? null : tile;
+      } else if (focused) {
+        focused = null;
+      } else {
+        stackOpen = false;
+        hovered = null;
+      }
+      return { open: stackOpen, focused: focused?.tech.title ?? null };
+    },
+    close() {
+      stackOpen = false;
+      focused = null;
+      hovered = null;
+    },
+    drag(dx) {
+      if (stackOpen) spinVelocity += dx * 9;
+    },
+    nudge(direction) {
+      if (!stackOpen) return;
+      if (animate) spinVelocity += direction * 1.6;
+      else spin += direction * 0.4;
     },
     pick(x, y) {
-      if (!stackOpen) {
-        hovered = null;
-        return null;
-      }
-      raycaster.setFromCamera(new three.Vector2(x, y), camera);
-      const hit = raycaster.intersectObjects(tiles.map((tile) => tile.mesh), false)[0];
-      hovered = tiles.find((tile) => tile.mesh === hit?.object) ?? null;
+      hovered = stackOpen ? hit(x, y) : null;
       return hovered?.tech.title ?? null;
     },
     setPalette,
     resize(width, height) {
       renderer.setSize(width, height, false);
       camera.aspect = width / Math.max(1, height);
-      camera.position.z = camera.aspect < 0.8 ? 11.5 : 9;
+      camera.position.z = 13;
+      halfHeight = Math.tan((camera.fov * Math.PI) / 360) * (camera.position.z - 0.3);
+      halfWidth = halfHeight * camera.aspect;
+      // El lienzo ocupa toda la pantalla: el robot, a escala de ella, queda en la mitad de abajo, bajo el nombre.
+      fit = Math.min(halfHeight * 0.27, halfWidth * 0.36);
+      camera.position.y = halfHeight * 0.42;
       camera.updateProjectionMatrix();
     },
     pointer(x, y) {

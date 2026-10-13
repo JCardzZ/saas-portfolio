@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, Component, DestroyRef, computed, ElementRef, NgZone, afterNextRender, effect, inject, input, signal, viewChild,
+  ChangeDetectionStrategy, Component, DestroyRef, computed, output, ElementRef, NgZone, afterNextRender, effect, inject, input, signal, viewChild,
 } from '@angular/core';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
@@ -7,17 +7,30 @@ import { ThemeService } from '../../../../core/theme/theme.service';
 import { TECH_ICONS, TechIconKey } from '../../../../shared/ui/tech-icons';
 import type { HeroScene, ScenePalette, SceneTech } from './hero-scene';
 
-/** Las tecnologías con las que está hecha la plataforma, en el orden en que salen del mazo. */
+/**
+ * Las fichas del mazo: con qué está hecha la plataforma y los servicios de nube que dibuja el
+ * Estudio (los principales de cada una, no el catálogo entero: el globo no debe verse cargado).
+ * Los iconos de AWS, Azure y Google Cloud son los oficiales, sin modificar y con su nombre.
+ */
 const STACK: readonly TechIconKey[] = [
-  'java', 'spring', 'angular', 'postgresql', 'redis', 'docker', 'kubernetes', 'terraform', 'githubActions', 'tailwind', 'jwt', 'gemini',
+  'java', 'spring', 'angular', 'postgresql', 'redis', 'gemini', 'docker', 'kubernetes', 'terraform', 'githubActions', 'github',
+  'cloudflare', 'caddy', 'neon', 'upstash', 'tailwind', 'jwt', 'opentelemetry', 'prometheus', 'kafka',
+  'aws', 'awsEks', 'awsLambda', 'awsRds', 'awsAurora', 'awsElastiCache', 'awsApiGateway', 'awsSqs', 'awsCloudFront', 'awsBedrock',
+  'azure', 'azAks', 'azContainerApps', 'azFunctions', 'azPostgresql', 'azCosmosDb', 'azApiManagement', 'azServiceBus', 'azFrontDoor', 'azOpenAi',
+  'gcp', 'gcpGke', 'gcpCloudRun', 'gcpCloudSql', 'gcpAlloyDb', 'gcpSpanner', 'gcpPubSub', 'bigquery', 'gcpApigee', 'gcpVertexAi',
+  'oci',
 ];
+
+/** Desplazamiento (px) a partir del cual una pulsación es un arrastre y no un clic. */
+const DRAG_THRESHOLD = 6;
 
 /**
  * Lienzo del hero 3D. Three.js se pide con `import()` al pintarse, así que no pesa en el arranque.
  * Si el navegador no tiene WebGL (o falla), no se pinta nada. Con `prefers-reduced-motion`
  * se dibuja una sola vez, quieta. Fuera de pantalla o con la pestaña oculta, no dibuja.
- * El lienzo es un botón: pulsarlo (o Intro/Espacio) abre el abanico de tecnologías que sostiene el
- * robot; la lista también está en texto para lectores de pantalla.
+ * El lienzo ocupa toda la pantalla y es un botón: pulsarlo (o Intro/Espacio) abre el mazo de
+ * tecnologías que sostiene el robot; arrastrar (o las flechas) gira los anillos, pulsar una ficha la
+ * trae al frente y Esc lo recoge. La lista también está en texto para lectores de pantalla.
  */
 @Component({
   selector: 'app-hero-scene',
@@ -27,23 +40,32 @@ const STACK: readonly TechIconKey[] = [
   template: `
     <!-- Sin WebGL no hay avatar: el nombre gigante se basta solo. -->
     @if (!failed()) {
+      <div #frame class="relative h-full w-full">
+      <canvas #canvas class="pointer-events-none absolute inset-0 block h-full w-full" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
+      <!-- Zona pulsable: empieza bajo la barra fija para que esta no la tape. -->
       <button
-        #frame
         type="button"
-        class="ui-focus relative block h-full w-full cursor-pointer rounded-card"
+        class="absolute inset-x-0 bottom-0 top-[calc(4.5rem+env(safe-area-inset-top,0px))] block outline-none max-[399px]:top-[calc(7rem+env(safe-area-inset-top,0px))] focus-visible:shadow-[inset_0_0_0_2px_rgb(var(--c-accent-solid))]"
+        [class.cursor-grab]="open()"
+        [class.cursor-pointer]="!open()"
+        style="touch-action: pan-y"
         data-testid="hero-stack-toggle"
         [attr.aria-pressed]="open()"
         [attr.aria-label]="label()"
-        (click)="toggle()"
+        (pointerdown)="pressStart($event)"
+        (pointerup)="pressEnd($event)"
+        (pointercancel)="pressEnd($event)"
+        (click)="activate($event)"
+        (keydown)="key($event)"
       >
-        <canvas #canvas class="block h-full w-full" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
         @if (ready()) {
           <span
-            class="pointer-events-none absolute bottom-3 left-1/2 max-w-[calc(100%-1rem)] -translate-x-1/2 truncate rounded-full border border-line-subtle bg-surface-1/80 px-3 py-1 font-mono text-mono-sm text-ink-2 backdrop-blur"
+            class="pointer-events-none absolute bottom-[max(9.5rem,24dvh)] left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full border border-line-subtle bg-surface-1/80 px-3 py-1 font-mono text-mono-sm text-ink-2 backdrop-blur"
             aria-hidden="true"
           >{{ hint() }}</span>
         }
       </button>
+      </div>
     }
   `,
 })
@@ -52,6 +74,8 @@ export class HeroSceneComponent {
   readonly enabled = input(true);
 
   readonly ready = signal(false);
+  /** Avisa al hero de que el mazo se abre o se recoge (atenúa su texto). */
+  readonly stackOpen = output<boolean>();
   readonly open = signal(false);
   readonly hovered = signal<string | null>(null);
   private readonly i18n = inject(LanguageService);
@@ -63,17 +87,78 @@ export class HeroSceneComponent {
   );
   readonly hint = computed(() => {
     const en = this.i18n.lang() === 'en';
+    if (this.focused()) return en ? `${this.focused()} · click to send it back` : `${this.focused()} · pulsa para devolverla`;
     if (this.hovered()) return this.hovered();
-    if (this.open()) return en ? 'Click again to put them away' : 'Pulsa otra vez para recogerlas';
-    return en ? 'Click the robot to see my stack' : 'Pulsa el robot para ver mi stack';
+    if (this.open()) {
+      if (this.touch) return en ? 'Swipe to spin · tap a card' : 'Desliza para girar · toca una ficha';
+      return en ? 'Drag to spin · click a card · Esc to put them away' : 'Arrastra para girar · pulsa una ficha · Esc para recogerlas';
+    }
+    return en ? `Click the robot to see my stack (${STACK.length})` : `Pulsa el robot para ver mi stack (${STACK.length})`;
   });
   private kickFrame: (() => void) | null = null;
   readonly failed = signal(false);
 
-  toggle(): void {
+  readonly focused = signal<string | null>(null);
+  private readonly touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  private press: { x: number; lastX: number; dragged: boolean } | null = null;
+  private suppressClick = false;
+
+  pressStart(event: PointerEvent): void {
+    this.press = { x: event.clientX, lastX: event.clientX, dragged: false };
+  }
+
+  /** Arrastre: lo llama el listener de `pointermove` de la ventana. */
+  private pressMove(event: PointerEvent): void {
+    const press = this.press;
+    if (!press || !this.scene) return;
+    if (Math.abs(event.clientX - press.x) > DRAG_THRESHOLD) press.dragged = true;
+    if (press.dragged) {
+      this.scene.drag((event.clientX - press.lastX) / Math.max(1, innerWidth));
+      this.kickFrame?.();
+    }
+    press.lastX = event.clientX;
+  }
+
+  pressEnd(_event: PointerEvent): void {
+    this.suppressClick = !!this.press?.dragged;
+    this.press = null;
+  }
+
+  activate(event: MouseEvent): void {
     if (!this.scene) return;
-    this.open.set(this.scene.toggleStack());
-    this.hovered.set(null);
+    if (this.suppressClick) {
+      this.suppressClick = false;
+      return;
+    }
+    // detail 0: Intro o Espacio. Si no, la pulsación cae en un punto del lienzo.
+    const canvas = this.canvas()?.nativeElement;
+    const box = canvas?.getBoundingClientRect();
+    const point = event.detail === 0 || !box
+      ? null
+      : { x: ((event.clientX - box.left) / box.width) * 2 - 1, y: -((event.clientY - box.top) / box.height) * 2 + 1 };
+    const state = this.scene.activate(point?.x ?? null, point?.y ?? null);
+    this.setOpen(state.open);
+    this.focused.set(state.focused);
+    this.kickFrame?.();
+  }
+
+  private setOpen(open: boolean): void {
+    if (open !== this.open()) this.stackOpen.emit(open);
+    this.open.set(open);
+  }
+
+  key(event: KeyboardEvent): void {
+    if (!this.scene || !this.open()) return;
+    if (event.key === 'Escape') {
+      this.scene.close();
+      this.setOpen(false);
+      this.focused.set(null);
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      this.scene.nudge(event.key === 'ArrowLeft' ? -1 : 1);
+    } else {
+      return;
+    }
+    event.preventDefault();
     this.kickFrame?.();
   }
 
@@ -112,7 +197,9 @@ export class HeroSceneComponent {
     try {
       const [three, { createHeroScene }] = await Promise.all([import('three'), import('./hero-scene')]);
       const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const techs: SceneTech[] = STACK.map((key) => TECH_ICONS[key]).map(({ title, path, color }) => ({ title, path, color }));
+      const techs: SceneTech[] = STACK.map((key) => TECH_ICONS[key]).map(({ title, path, color, image }) => ({
+        title, path, color, image: image ? `/${image}` : undefined,
+      }));
       scene = createHeroScene(three, canvas, readPalette(), !still, techs);
       this.scene = scene;
     } catch {
@@ -152,6 +239,7 @@ export class HeroSceneComponent {
     this.kickFrame = kick;
     const zoneRef = this.zone;
     const onPointer = (event: PointerEvent) => {
+      this.pressMove(event);
       scene.pointer((event.clientX / innerWidth) * 2 - 1, (event.clientY / innerHeight) * 2 - 1);
       const box = canvas.getBoundingClientRect();
       const title = scene.pick(((event.clientX - box.left) / box.width) * 2 - 1, -((event.clientY - box.top) / box.height) * 2 + 1);

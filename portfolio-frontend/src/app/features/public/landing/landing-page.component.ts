@@ -31,6 +31,7 @@ import { HERO_ROLE_PLACEHOLDER } from './hero-content';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { LANDING_COPY } from './landing-copy';
 import { HeroSceneComponent } from './hero3d/hero-scene.component';
+import { GalaxyBackdropComponent } from './galaxy/galaxy-backdrop.component';
 
 @Component({
   selector: 'app-landing-page',
@@ -39,6 +40,7 @@ import { HeroSceneComponent } from './hero3d/hero-scene.component';
     RouterLink,
     SectionHeaderComponent,
     HeroSceneComponent,
+    GalaxyBackdropComponent,
     PublicNavbarComponent,
     CvDownloadComponent,
     CvPickerComponent,
@@ -79,6 +81,8 @@ export class LandingPageComponent implements OnInit {
   readonly inspector = inject(TraceInspectorService);
   /** Marcador temporal: ver hero-content.ts. */
   readonly i18n = inject(LanguageService);
+  /** El mazo de tecnologías del hero está abierto: el texto del hero se atenúa. */
+  readonly immersive = signal(false);
   readonly copy = LANDING_COPY;
   readonly heroRole = computed(() => this.i18n.t(HERO_ROLE_PLACEHOLDER));
 

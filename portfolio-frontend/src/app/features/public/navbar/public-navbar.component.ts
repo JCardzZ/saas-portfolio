@@ -77,6 +77,10 @@ export { PAGE_SECTIONS } from './page-sections';
                     </a>
                   </li>
                 }
+                <li class="mt-1 flex items-center justify-between border-t border-line-subtle px-3 pb-1 pt-2 text-body-sm text-ink-2 sm:hidden">
+                  {{ en() ? 'Language' : 'Idioma' }}
+                  <app-language-switch />
+                </li>
               </ul>
             }
           </div>
@@ -97,7 +101,8 @@ export { PAGE_SECTIONS } from './page-sections';
               @default { <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H4zM9 20h6M12 16v4" /></svg> }
             }
           </button>
-          <app-language-switch />
+          <!-- En móvil el interruptor va dentro del menú: en la barra no cabe en una fila. -->
+          <app-language-switch class="hidden sm:block" />
           <!-- Con los enlaces en la barra (lg) no cabe: el CV sigue en el hero y en el pie. -->
           <app-cv-download class="hidden md:inline-block lg:hidden" variant="nav" />
           <!-- La acción primaria de la barra. -->

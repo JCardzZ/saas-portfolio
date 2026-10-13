@@ -41,6 +41,12 @@ import { LanguageService } from './language.service';
       transition: border-color var(--duration-fast) var(--ease-standard);
     }
     .lang-switch:hover { border-color: var(--border-strong); }
+    /* En pantallas estrechas, más compacto para que la barra quepa en una fila. */
+    @media (max-width: 639px) {
+      .lang-option { min-width: 1.5rem; padding: 0 0.3rem; }
+      .lang-switch { padding: 0.125rem; }
+      .lang-thumb { inset: 0.125rem auto 0.125rem 0.125rem; width: calc(50% - 0.125rem); }
+    }
     .lang-option {
       position: relative;
       z-index: 1;
