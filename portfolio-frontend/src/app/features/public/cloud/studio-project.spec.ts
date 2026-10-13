@@ -168,7 +168,7 @@ describe('project schema versions', () => {
 
   it('writes the current version', () => {
     expect(JSON.parse(serializeProject(referenceProject()))['version']).toBe(PROJECT_VERSION);
-    expect(PROJECT_VERSION).toBe(2);
+    expect(PROJECT_VERSION).toBe(3);
   });
 
   it('still opens a project saved with version 1, unchanged', () => {
@@ -202,9 +202,61 @@ describe('project schema versions', () => {
 
   it('refuses versions it does not know, older or newer', () => {
     expect(migrateProject({ version: 0 })).toBeNull();
-    expect(migrateProject({ version: 3 })).toBeNull();
+    expect(migrateProject({ version: 4 })).toBeNull();
     expect(migrateProject({})).toBeNull();
-    expect(migrateProject({ version: 1, links: 'no' })).toEqual({ version: 2, links: 'no' });
+    // Paso a paso hasta la actual: 1 → 2 → 3.
+    expect(migrateProject({ version: 1, links: 'no' })).toEqual({ version: 3, links: 'no' });
+  });
+
+  describe('version 3: the project may carry a system design', () => {
+    // Un proyecto tal como lo guardaba el estudio antes del diseño de sistemas.
+    const savedInVersion2 = (): Record<string, any> => ({ ...JSON.parse(serializeProject(referenceProject())), version: 2 });
+    const system = {
+      choices: { client: 'web-spa', backend: 'go', api: 'grpc', auth: 'jwt-own', database: 'postgresql', cache: 'redis' },
+      deployments: { backend: 'api', database: 'postgres', cache: 'redis' },
+      nfr: { rps: 800, availability: 99.9, compliance: ['pci'] },
+    };
+
+    it('still opens a project saved with version 2, unchanged and without a system design', () => {
+      const parsed = parseProject(JSON.stringify(savedInVersion2()));
+
+      expect(parsed).toEqual({ ok: true, project: referenceProject() });
+      expect(parsed.ok && 'system' in parsed.project).toBeFalse();
+    });
+
+    it('opens every preset as version 2 would have stored it', () => {
+      for (const preset of STUDIO_PRESETS) {
+        const project = preset.build();
+        const stored = JSON.stringify({ ...JSON.parse(serializeProject(project)), version: 2 });
+        expect(parseProject(stored)).withContext(preset.id).toEqual({ ok: true, project });
+      }
+    });
+
+    it('drops a system design from a version 2 file, where it did not exist', () => {
+      const parsed = parseProject(JSON.stringify({ ...savedInVersion2(), system }));
+
+      expect(parsed.ok && parsed.project.system).toBeUndefined();
+    });
+
+    it('saves the system design with the project and reads it back', () => {
+      const project = { ...referenceProject(), system: system as StudioProject['system'] };
+
+      const parsed = parseProject(serializeProject(project));
+
+      expect(parsed).toEqual({ ok: true, project });
+    });
+
+    it('keeps only what the catalog knows of a system design that came from elsewhere', () => {
+      const stored = JSON.parse(serializeProject(referenceProject()));
+      stored['system'] = { choices: { backend: 'cobol', queue: 'queue' }, deployments: { backend: '<script>' }, nfr: { rps: 'muchas', compliance: ['gdpr'] } };
+
+      const parsed = parseProject(JSON.stringify(stored));
+
+      expect(parsed.ok && parsed.project.system).toEqual({
+        choices: { client: 'web-spa', backend: 'spring-boot', api: 'rest', auth: 'jwt-own', database: 'postgresql', queue: 'queue' },
+        deployments: {}, nfr: { compliance: [] },
+      });
+    });
   });
 });
 

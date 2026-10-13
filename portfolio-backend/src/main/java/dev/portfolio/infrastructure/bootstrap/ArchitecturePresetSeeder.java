@@ -1,5 +1,6 @@
 package dev.portfolio.infrastructure.bootstrap;
 
+import dev.portfolio.domain.model.system.SystemDesignDomain;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.portfolio.application.port.in.ArchitectureProjectUseCase;
@@ -43,7 +44,8 @@ public class ArchitecturePresetSeeder implements ApplicationRunner {
         }
     }
 
-    int seed() throws Exception {
+    /** Siembra (o pone al día) las plantillas. @return cuántas */
+    public int seed() throws Exception {
         List<Preset> presets;
         try (InputStream json = new ClassPathResource(PRESETS).getInputStream()) {
             presets = objectMapper.readValue(json, new TypeReference<>() {
@@ -51,12 +53,13 @@ public class ArchitecturePresetSeeder implements ApplicationRunner {
         }
         for (Preset preset : presets) {
             projects.registerPreset(preset.id(), new Draft(preset.title(), preset.description(),
-                    CloudProviderDomain.fromCode(preset.cloudProvider()), preset.nodes(), preset.connections(), preset.zones()));
+                    CloudProviderDomain.fromCode(preset.cloudProvider()), preset.nodes(), preset.connections(), preset.zones(), preset.system()));
         }
         return presets.size();
     }
 
     record Preset(String id, String title, String description, String cloudProvider,
-                  List<Map<String, Object>> nodes, List<Map<String, Object>> connections, List<Map<String, Object>> zones) {
+                  List<Map<String, Object>> nodes, List<Map<String, Object>> connections, List<Map<String, Object>> zones,
+                  SystemDesignDomain system) {
     }
 }

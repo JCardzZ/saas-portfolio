@@ -191,3 +191,140 @@ test.describe('Oracle Cloud en el Estudio (cloud.oracle)', () => {
     await capture(page, testInfo, 'hito-3-oci-despues');
   });
 });
+
+test.describe('diseño de sistemas en el Estudio (studio.system-design)', () => {
+  const VIEWS = 'app-cloud-infra [role="tablist"][aria-label="Vista del proyecto"] [role="tab"]';
+  const APP = 'app-cloud-infra app-system-design';
+
+  async function capturePanel(page: Page, testInfo: TestInfo, name: string): Promise<void> {
+    const path = join('e2e-screens', testInfo.project.name, `${name}.png`);
+    await page.locator(APP).screenshot({ path, animations: 'disabled' });
+    await testInfo.attach(name, { path, contentType: 'image/png' });
+  }
+
+  test('con la flag apagada el Estudio tiene una sola vista', async ({ page }) => {
+    await openStudio(page, {});
+
+    await expect(page.locator(VIEWS)).toHaveCount(0);
+    await expect(page.locator(APP)).toHaveCount(0);
+  });
+
+  test('la vista de Aplicación muestra el sistema entero sin desbordar la página; en el móvil, de solo lectura', async ({ page }, testInfo) => {
+    await openStudio(page, { 'studio.system-design': true });
+    await capture(page, testInfo, 'hito-4-vista-antes');
+
+    await page.locator(VIEWS, { hasText: 'Aplicación' }).click();
+
+    await expect(page.locator(`${APP} fieldset[data-category]`)).toHaveCount(9);
+    await expect(page.locator(`${APP} [data-testid="system-flow"]`)).toContainText('Java · Spring Boot');
+    await expect(page.locator(`${APP} [data-testid="system-findings"]`)).toContainText('3 avisos');
+    await expect(page.locator('app-cloud-infra [data-testid="infra-view"]')).toBeHidden();
+    const scroll = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+    expect(scroll.scroll, 'la página no se desplaza en horizontal').toBeLessThanOrEqual(scroll.client + 1);
+
+    const narrow = page.viewportSize()!.width < 640;
+    await expect(page.locator(`${APP} [data-testid="system-readonly"]`)).toHaveCount(narrow ? 1 : 0);
+    // El recuadro entero se desactiva: se comprueba en uno de sus controles.
+    const option = page.locator(`${APP} fieldset[data-category="backend"] input[value="go"]`);
+    if (narrow) {
+      await expect(option).toBeDisabled();
+    } else {
+      await expect(option).toBeEnabled();
+    }
+    await capturePanel(page, testInfo, 'hito-4-vista-despues');
+
+    await page.locator(VIEWS, { hasText: 'Infraestructura' }).click();
+    await expect(page.locator(CANVAS)).toBeVisible();
+  });
+
+  test('desplegar una pieza, pedir requisitos y generar: las comprobaciones salen al momento', async ({ page }, testInfo) => {
+    test.skip(!isDesktop(testInfo), 'la edición se prueba en escritorio');
+    await openStudio(page, { 'studio.system-design': true });
+    await page.locator(VIEWS, { hasText: 'Aplicación' }).click();
+
+    await page.locator(`${APP} #deploy-backend`).selectOption({ label: 'ECS Fargate' });
+    await page.locator(`${APP} #deploy-database`).selectOption({ label: 'RDS PostgreSQL' });
+    await page.locator(`${APP} #deploy-client`).selectOption({ label: 'S3 + CloudFront' });
+    await expect(page.locator(`${APP} [data-testid="system-findings"]`)).toContainText('Sin avisos');
+    await expect(page.locator(`${APP} [data-testid="system-flow"]`)).toContainText('en ECS Fargate');
+
+    await page.locator(`${APP} [data-nfr="rps"]`).fill('800');
+    await page.locator(`${APP} [data-nfr="rps"]`).blur();
+    await expect(page.locator(`${APP} [data-rule="rps-cache"]`)).toContainText('Elige una caché');
+    await page.locator(`${APP} [data-compliance="pci"]`).check();
+    await expect(page.locator(`${APP} [data-rule="pci-waf"]`)).toBeVisible();
+
+    // Elegir la caché resuelve el aviso de carga; queda pendiente desplegarla.
+    await page.locator(`${APP} fieldset[data-category="cache"] input[value="redis"]`).check();
+    await expect(page.locator(`${APP} [data-rule="rps-cache"]`)).toHaveCount(0);
+    await page.locator(`${APP} #deploy-cache`).selectOption({ label: 'ElastiCache' });
+    await capturePanel(page, testInfo, 'hito-4-requisitos');
+
+    // En modo demo no hay servidor que genere los archivos: se dice, no se inventan.
+    await page.locator(`${APP} [data-testid="system-output"] .ui-btn-primary`).click();
+    await expect(page.locator(`${APP} [data-testid="system-output-error"]`)).toContainText('en modo demo no se simula');
+
+    // El diseño va con el proyecto: sigue ahí al recargar.
+    await page.reload();
+    await expect(page.locator('h1')).toBeVisible();
+    await page.evaluate(() => document.getElementById('cloud')?.scrollIntoView({ block: 'start' }));
+    await page.locator(VIEWS, { hasText: 'Aplicación' }).click();
+    await expect(page.locator(`${APP} [data-testid="system-flow"]`)).toContainText('en ECS Fargate');
+    await expect(page.locator(`${APP} [data-nfr="rps"]`)).toHaveValue('800');
+  });
+
+  test('un proyecto guardado antes del diseño de sistemas (v2) abre igual y parte del diseño por defecto', async ({ page }) => {
+    await page.addInitScript((project) => localStorage.setItem('architecture-studio-project', project), JSON.stringify(OLD_PROJECT));
+    await openStudio(page, { 'studio.system-design': true });
+
+    await expect(page.locator(`${CANVAS} g.node`)).toHaveCount(OLD_PROJECT.nodes.length);
+    await page.locator(VIEWS, { hasText: 'Aplicación' }).click();
+    await expect(page.locator(`${APP} fieldset[data-category="backend"] input[value="spring-boot"]`)).toBeChecked();
+  });
+});
+
+test.describe('sistemas de ejemplo en el Estudio (studio.system-templates)', () => {
+  const TEMPLATES = 'app-cloud-infra #menu-presets [data-testid="system-template"]';
+  // Las plantillas están dentro del menú Proyecto.
+  async function openTemplates(page: Page): Promise<void> {
+    await page.locator('app-cloud-infra [aria-controls="menu-project"]').click();
+    await page.locator('app-cloud-infra [aria-controls="menu-presets"]').click();
+  }
+
+  test('con la flag apagada el menú de plantillas es el de siempre', async ({ page }) => {
+    await openStudio(page, {});
+    await openTemplates(page);
+
+    await expect(page.locator('app-cloud-infra #menu-presets')).toBeVisible();
+    await expect(page.locator(TEMPLATES)).toHaveCount(0);
+  });
+
+  test('los seis sistemas se ofrecen con la etiqueta «Ejemplo ficticio» y uno se carga con sus dos vistas', async ({ page }, testInfo) => {
+    await openStudio(page, { 'studio.system-templates': true, 'studio.system-design': true });
+    await openTemplates(page);
+
+    await expect(page.locator(TEMPLATES)).toHaveCount(6);
+    await expect(page.locator(`${TEMPLATES} .ui-badge`)).toHaveText(Array(6).fill('Ejemplo ficticio'));
+    const scroll = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+    expect(scroll.scroll, 'la página no se desplaza en horizontal').toBeLessThanOrEqual(scroll.client + 1);
+    const menuPath = join('e2e-screens', testInfo.project.name, 'hito-5-plantillas.png');
+    await page.locator('app-cloud-infra #menu-presets').screenshot({ path: menuPath, animations: 'disabled' });
+    await testInfo.attach('hito-5-plantillas', { path: menuPath, contentType: 'image/png' });
+
+    await page.locator(TEMPLATES, { hasText: 'Consulta médica en línea' }).click();
+
+    // Se abre por la vista de Aplicación, con todo desplegado y sin nada que corregir.
+    const app = page.locator('app-cloud-infra app-system-design');
+    await expect(app.locator('[data-testid="system-flow"]')).toContainText('Java · Spring Boot');
+    await expect(app.locator('[data-testid="system-findings"]')).toContainText('Sin avisos');
+    await expect(app.locator('[data-compliance="health"]')).toBeChecked();
+    const appPath = join('e2e-screens', testInfo.project.name, 'hito-5-sistema-aplicacion.png');
+    await app.screenshot({ path: appPath, animations: 'disabled' });
+    await testInfo.attach('hito-5-sistema-aplicacion', { path: appPath, contentType: 'image/png' });
+
+    // Y la misma plantilla trae su infraestructura, en Azure.
+    await page.locator('app-cloud-infra [role="tablist"][aria-label="Vista del proyecto"] [role="tab"]', { hasText: 'Infraestructura' }).click();
+    await expect(page.locator(`${CANVAS} text.node-service`, { hasText: 'PostgreSQL Flexible' }).first()).toBeVisible();
+    await capture(page, testInfo, 'hito-5-sistema-infraestructura');
+  });
+});

@@ -42,6 +42,8 @@ const PRESENTATION: Record<TelemetryEvent.EventTypeEnum, [kind: SystemEventKind,
   PRICING_CACHED: ['ok', 'FinOps Cache', 'SUCCESS'],
   PRICING_UNESTIMATED: ['warn', 'FinOps Engine', 'WARN'],
   PRICING_FALLBACK: ['warn', 'FinOps Engine', 'WARN'],
+  // Una llamada a una herramienta del servidor MCP: solo cuál, cómo acabó y cuánto tardó.
+  MCP_TOOL_CALL: ['ai', 'MCP tool'],
 };
 
 /**

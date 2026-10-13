@@ -1,5 +1,6 @@
 package dev.portfolio.infrastructure.adapter.out.persistence;
 
+import dev.portfolio.domain.model.system.SystemDesignDomain;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,6 +52,7 @@ public class ArchitectureProjectPersistenceAdapter implements ArchitectureProjec
                 .nodesJson(write(project.nodes()))
                 .connectionsJson(write(project.connections()))
                 .zonesJson(write(project.zones()))
+                .systemJson(project.system() == null ? null : writeSystem(project.system()))
                 .preset(project.preset())
                 .createdAt(project.createdAt())
                 .updatedAt(Instant.now())
@@ -61,6 +63,7 @@ public class ArchitectureProjectPersistenceAdapter implements ArchitectureProjec
         return new ArchitectureProjectDomain(entity.getId(), entity.getTitle(), entity.getDescription(),
                 CloudProviderDomain.fromCode(entity.getCloudProvider()),
                 read(entity.getNodesJson()), read(entity.getConnectionsJson()), read(entity.getZonesJson()),
+                entity.getSystemJson() == null ? null : readSystem(entity.getSystemJson()),
                 entity.isPreset(), entity.getCreatedAt());
     }
 
@@ -69,6 +72,22 @@ public class ArchitectureProjectPersistenceAdapter implements ArchitectureProjec
             return objectMapper.writeValueAsString(graph);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("No se pudo serializar el grafo del proyecto", e);
+        }
+    }
+
+    private String writeSystem(SystemDesignDomain system) {
+        try {
+            return objectMapper.writeValueAsString(system);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("No se pudo serializar el diseño de sistema del proyecto", e);
+        }
+    }
+
+    private SystemDesignDomain readSystem(String json) {
+        try {
+            return objectMapper.readValue(json, SystemDesignDomain.class);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("El diseño de sistema guardado del proyecto no es un JSON válido", e);
         }
     }
 

@@ -65,7 +65,7 @@ function project(profile: Profile, engine: Engine) {
 }
 
 /** Lo nuevo que vive detrás de una feature flag: se prueba en todos los perfiles, con la flag encendida. */
-const FLAGGED = ['**/studio-smart.e2e.ts'];
+const FLAGGED = ['**/studio-smart.e2e.ts', '**/mcp-section.e2e.ts'];
 /** Lo que cambia de forma entre el ratón y el dedo: se prueba en todos los perfiles. */
 const EVERYWHERE = ['**/service-card.e2e.ts'];
 

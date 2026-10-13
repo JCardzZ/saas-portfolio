@@ -1,3 +1,4 @@
+import { SYSTEM_TEMPLATE_IDS } from './system/system-templates';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, Subject, map, of, tap } from 'rxjs';
 
@@ -80,8 +81,8 @@ export class ArchitectureStudioService {
   private loadProjects(): void {
     this.api.publicArchitectureProjectsGet().subscribe({
       next: (projects) => {
-        // Los patrones de datos también se siembran en el backend, pero tienen su propia galería.
-        const remote = projects.filter((project) => !BLUEPRINT_IDS.includes(project.id)).map((project): StudioEntry => ({
+        // Los patrones de datos y los sistemas de ejemplo también se siembran en el backend, pero tienen su propia lista.
+        const remote = projects.filter((project) => !BLUEPRINT_IDS.includes(project.id) && !SYSTEM_TEMPLATE_IDS.includes(project.id)).map((project): StudioEntry => ({
           id: project.id, name: project.title, summary: project.description ?? '', kind: project.isPreset ? 'preset' : 'saved',
         }));
         const local = LOCAL_ENTRIES.filter((entry) => !SERVER_PRESET_IDS.includes(entry.id));
@@ -112,6 +113,7 @@ export class ArchitectureStudioService {
       nodes: project.nodes as unknown as { [key: string]: unknown }[],
       connections: project.links as unknown as { [key: string]: unknown }[],
       zones: project.zones as unknown as { [key: string]: unknown }[],
+      ...(project.system ? { system: project.system } : {}),
     };
     const call = id ? this.api.adminArchitectureProjectsIdPut(id, request) : this.api.adminArchitectureProjectsPost(request);
     return call.pipe(tap(() => this.loadProjects()));
@@ -131,7 +133,7 @@ export class ArchitectureStudioService {
 function toStudioProject(project: ArchitectureProject): StudioProject {
   const parsed = parseProject(JSON.stringify({
     format: PROJECT_FORMAT, version: PROJECT_VERSION, provider: project.cloudProvider,
-    nodes: project.nodes, links: project.connections, zones: project.zones,
+    nodes: project.nodes, links: project.connections, zones: project.zones, system: project.system,
   }));
   if (!parsed.ok) {
     throw new Error(parsed.error);

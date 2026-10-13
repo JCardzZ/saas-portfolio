@@ -22,6 +22,7 @@ import { directNodes, fits, settled } from './zone-layout';
 import { DATA_BLUEPRINTS } from './data-blueprints';
 import { CLOUD_NODES } from './cloud-topology.data';
 import { referenceProject, serializeProject } from './studio-project';
+import { defaultSystemDesign } from './system/system-design';
 
 describe('CloudInfraComponent', () => {
   beforeEach(() => {
@@ -1962,6 +1963,193 @@ describe('CloudInfraComponent', () => {
         expect(labels.length).toBeGreaterThan(5);
         // La única cifra es la de Cloudflare, que no es un servicio de la nube.
         expect(new Set(labels)).toEqual(new Set(['sin estimación', '$20/mes']));
+      });
+    });
+  });
+
+  describe('system design (studio.system-design)', () => {
+    const views = (element: HTMLElement) =>
+      Array.from(element.querySelectorAll<HTMLButtonElement>('[role="tablist"][aria-label="Vista del proyecto"] [role="tab"]'));
+    const stored = () => JSON.parse(localStorage.getItem('architecture-studio-project') ?? 'null');
+
+    it('has a single view, and saves no system design, while the flag is off', () => {
+      const { fixture, element, component } = edit();
+
+      expect(views(element)).toEqual([]);
+      expect(element.querySelector('app-system-design')).toBeNull();
+      catalogEntry(element, 'Broker AMQP').click();
+      fixture.detectChanges();
+      TestBed.flushEffects();
+      expect('system' in component.project()).toBeFalse();
+      expect('system' in stored()).toBeFalse();
+    });
+
+    describe('with the flag on', () => {
+      beforeEach(async () => {
+        await OpenFeature.setProviderAndWait(new PlatformFlagsProvider(() => Promise.resolve({ 'studio.system-design': true })));
+      });
+      afterEach(async () => {
+        await OpenFeature.clearProviders();
+      });
+
+      function openApplication() {
+        const context = create();
+        views(context.element)[1].click();
+        context.fixture.detectChanges();
+        return context;
+      }
+
+      it('switches between the two views of the same project', () => {
+        const { fixture, element } = create();
+        expect(views(element).map((tab) => [tab.textContent!.trim(), tab.getAttribute('aria-selected')]))
+          .toEqual([['Infraestructura', 'true'], ['Aplicación', 'false']]);
+        expect(element.querySelector('app-system-design')).toBeNull();
+        expect(element.querySelector<HTMLElement>('[data-testid="infra-view"]')!.hidden).toBeFalse();
+
+        views(element)[1].click();
+        fixture.detectChanges();
+
+        expect(element.querySelector('app-system-design')).not.toBeNull();
+        expect(element.querySelector<HTMLElement>('[data-testid="infra-view"]')!.hidden).toBeTrue();
+        // La nube sigue eligiéndose en la misma barra: es el mismo proyecto.
+        expect(provider(element, 'GCP')).toBeDefined();
+
+        views(element)[0].click();
+        fixture.detectChanges();
+        expect(element.querySelector('app-system-design')).toBeNull();
+        expect(element.querySelector<HTMLElement>('[data-testid="infra-view"]')!.hidden).toBeFalse();
+      });
+
+      it('deploys on the nodes of the canvas, named as the chosen cloud names them', () => {
+        const { fixture, element } = openApplication();
+        const targets = () => Array.from(element.querySelectorAll('fieldset[data-category="backend"] select option')).map((option) => option.textContent!.trim());
+        expect(targets()).toEqual(['Sin desplegar', 'ECS Fargate']);
+
+        provider(element, 'GCP').click();
+        fixture.detectChanges();
+        expect(targets()).toEqual(['Sin desplegar', 'Cloud Run']);
+      });
+
+      it('saves the system design with the project and can undo a change', () => {
+        const { fixture, element, component } = openApplication();
+        const select = element.querySelector<HTMLSelectElement>('fieldset[data-category="backend"] select')!;
+        select.value = 'api';
+        select.dispatchEvent(new Event('change'));
+        fixture.detectChanges();
+        TestBed.flushEffects();
+
+        expect(component.project().system!.deployments).toEqual({ backend: 'api' });
+        expect(stored().version).toBe(3);
+        expect(stored().system.deployments).toEqual({ backend: 'api' });
+        expect(stored().system.choices.backend).toBe('spring-boot');
+
+        component.undo();
+        fixture.detectChanges();
+        expect(component.project().system).toBeUndefined();
+      });
+
+      it('restores the system design of a saved project and drops it on reset', () => {
+        const system = { ...defaultSystemDesign(), choices: { ...defaultSystemDesign().choices, backend: 'go', cache: 'redis' }, deployments: { cache: 'redis' } };
+        localStorage.setItem('architecture-studio-project', serializeProject({ ...referenceProject(), system }));
+
+        const { fixture, element, component } = openApplication();
+
+        expect(component.project().system).toEqual(system);
+        expect(element.querySelector<HTMLInputElement>('fieldset[data-category="backend"] input[value="go"]')!.checked).toBeTrue();
+        expect(element.querySelector('[aria-label="Piezas de apoyo"]')!.textContent).toContain('en ElastiCache');
+
+        component.reset();
+        fixture.detectChanges();
+        expect(component.project().system).toBeUndefined();
+      });
+
+      it('flags a deployment once its node is removed from the infrastructure', () => {
+        const system = { ...defaultSystemDesign(), deployments: { client: 'static', backend: 'api', database: 'postgres' } };
+        localStorage.setItem('architecture-studio-project', serializeProject({ ...referenceProject(), system }));
+        const { fixture, element, component } = openApplication();
+        expect(element.querySelector('[data-rule]')).toBeNull();
+
+        component.remove(component.nodes().find((candidate) => candidate.id === 'postgres')!);
+        fixture.detectChanges();
+
+        expect(element.querySelector('fieldset[data-category="database"] [data-rule="deployment-missing"]')).not.toBeNull();
+      });
+    });
+  });
+
+  describe('system templates (studio.system-templates)', () => {
+    const openTemplates = (fixture: { detectChanges(): void }, element: HTMLElement) => {
+      element.querySelector<HTMLButtonElement>('[aria-controls="menu-presets"]')!.click();
+      fixture.detectChanges();
+      return Array.from(element.querySelectorAll<HTMLButtonElement>('#menu-presets [data-testid="system-template"]'));
+    };
+
+    it('are not offered while the flag is off', () => {
+      const { fixture, element } = create();
+
+      expect(openTemplates(fixture, element)).toEqual([]);
+      expect(element.querySelector('#menu-presets')!.textContent).not.toContain('Sistemas completos');
+    });
+
+    describe('with the flag on', () => {
+      async function flags(values: Record<string, boolean>) {
+        await OpenFeature.setProviderAndWait(new PlatformFlagsProvider(() => Promise.resolve(values)));
+      }
+      afterEach(async () => {
+        await OpenFeature.clearProviders();
+      });
+
+      it('lists the six systems, each labelled as fictional, with its decisions, requirements and estimated cost', async () => {
+        await flags({ 'studio.system-templates': true });
+        const { fixture, element } = create();
+
+        const items = openTemplates(fixture, element);
+
+        expect(items.length).toBe(6);
+        for (const item of items) {
+          expect(item.querySelector('.ui-badge')!.textContent!.trim()).toBe('Ejemplo ficticio');
+          expect(item.textContent).toMatch(/≈ \$[\d,]+\/mes \(orientativo\)/);
+        }
+        expect(items[0].textContent).toContain('Billetera digital');
+        expect(items[0].textContent).toContain('Fintech');
+        expect(items[0].textContent).toContain('200.000 usuarios · 600 req/s · p95 300 ms · 99,95 % · PCI DSS');
+        expect(items[0].textContent).toContain('Todo entra por un API gateway con WAF');
+        expect(items[2].textContent).toContain('datos de salud');
+      });
+
+      it('loads both views of a system in one undoable step', async () => {
+        await flags({ 'studio.system-templates': true, 'studio.system-design': true });
+        const { fixture, element, component } = create();
+        const before = component.nodes().length;
+
+        openTemplates(fixture, element)[3].click();
+        fixture.detectChanges();
+
+        expect(component.selectedId()).toBe('aws');
+        expect(component.project().system!.choices).toEqual(jasmine.objectContaining({ api: 'grpc', database: 'key-value', bff: 'bff' }));
+        expect(component.nodes().some((candidate) => candidate.type === 'kubernetes')).toBeTrue();
+        // Con el diseño de sistemas encendido, se abre por la vista de Aplicación, sin nada que corregir.
+        expect(element.querySelector('app-system-design')).not.toBeNull();
+        expect(element.querySelector('app-system-design [data-rule]')).toBeNull();
+        expect(element.querySelector('app-system-design')!.textContent).toContain('Sin avisos');
+
+        component.undo();
+        fixture.detectChanges();
+        expect(component.nodes().length).toBe(before);
+        expect(component.project().system).toBeUndefined();
+      });
+
+      it('still loads the infrastructure when the system design view is off', async () => {
+        await flags({ 'studio.system-templates': true });
+        const { fixture, element, component } = create();
+
+        openTemplates(fixture, element)[0].click();
+        fixture.detectChanges();
+
+        expect(element.querySelector('app-system-design')).toBeNull();
+        expect(services(element)).toEqual(jasmine.arrayContaining(['WAF', 'Amazon API Gateway']));
+        expect(component.project().system).toBeDefined();
+        expect(element.querySelector('[data-testid="graph-warnings"]')).toBeNull();
       });
     });
   });

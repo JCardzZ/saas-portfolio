@@ -250,6 +250,40 @@ class ArchitectureStudioApiTest {
     }
 
     @Test
+    void aProjectCarriesItsSystemDesignWhenItHasOne() throws Exception {
+        dev.portfolio.domain.model.system.SystemDesignDomain system = new dev.portfolio.domain.model.system.SystemDesignDomain(
+                java.util.Map.of("backend", "go"), java.util.Map.of("backend", "api"),
+                new dev.portfolio.domain.model.system.SystemDesignDomain.NonFunctional(null, 800.0, null, 99.9, null, List.of("pci")));
+        given(projects.findById("with-system")).willReturn(new ArchitectureProjectDomain("with-system", "Con sistema", null, CloudProviderDomain.AWS,
+                PRESET.nodes(), PRESET.connections(), PRESET.zones(), system, false, CREATED));
+        given(projects.findById("core-banking")).willReturn(PRESET);
+
+        mockMvc.perform(get("/public/architecture/projects/with-system"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.system.choices.backend").value("go"))
+                .andExpect(jsonPath("$.system.deployments.backend").value("api"))
+                .andExpect(jsonPath("$.system.nfr.rps").value(800.0))
+                .andExpect(jsonPath("$.system.nfr.availability").value(99.9))
+                .andExpect(jsonPath("$.system.nfr.users").doesNotExist())
+                .andExpect(jsonPath("$.system.nfr.compliance[0]").value("pci"));
+        // Sin diseño, el campo no viaja: la respuesta es la de siempre.
+        mockMvc.perform(get("/public/architecture/projects/core-banking"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.system").doesNotExist());
+
+        given(projects.create(any())).willReturn(PRESET);
+        String withSystem = BODY.replace("\"zones\":[]", "\"zones\":[],\"system\":{\"choices\":{\"backend\":\"node\"},\"deployments\":{},\"nfr\":{\"budgetUsd\":300}}");
+        mockMvc.perform(post("/admin/architecture/projects").header(HttpHeaders.AUTHORIZATION, adminToken())
+                        .contentType(MediaType.APPLICATION_JSON).content(withSystem))
+                .andExpect(status().isCreated());
+        org.mockito.ArgumentCaptor<dev.portfolio.application.port.in.ArchitectureProjectUseCase.Draft> draft =
+                org.mockito.ArgumentCaptor.forClass(dev.portfolio.application.port.in.ArchitectureProjectUseCase.Draft.class);
+        org.mockito.Mockito.verify(projects).create(draft.capture());
+        org.assertj.core.api.Assertions.assertThat(draft.getValue().system().choices()).containsEntry("backend", "node");
+        org.assertj.core.api.Assertions.assertThat(draft.getValue().system().nfr().budgetUsd()).isEqualTo(300.0);
+    }
+
+    @Test
     void oracleCloudOnlyExistsWhileItsFlagIsOn() throws Exception {
         String oci = BODY.replace("\"cloudProvider\":\"gcp\"", "\"cloudProvider\":\"oci\"");
         given(terraform.generate(eq(CloudProviderDomain.OCI), any(), any(), any()))

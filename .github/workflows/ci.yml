@@ -313,10 +313,33 @@ jobs:
       - name: Tests y cobertura
         working-directory: portfolio-backend
         run: ./gradlew test --no-daemon
+      # El HCL que genera la plataforma se comprueba en proceso en cada respuesta (HclSyntax). Aquí,
+      # además, los casos de referencia pasan por el analizador real de Terraform. Se usa `fmt` y no
+      # `validate`: son esqueletos sin los argumentos de cada recurso, así que `validate` no puede pasar.
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: '<2.0.0'
+          terraform_wrapper: false
+      - name: Sintaxis HCL de los casos de referencia (analizador de Terraform)
+        working-directory: portfolio-backend/src/test/resources/architecture/golden
+        run: |
+          set -euo pipefail
+          terraform version
+          count=0
+          for file in *.tf; do
+            # Sin -check: una diferencia de formato no es un error; un archivo que no se puede analizar, sí.
+            terraform fmt -write=false -list=false "$file" > /dev/null
+            count=$((count + 1))
+          done
+          echo "### Terraform · sintaxis de los casos de referencia" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "$count archivos analizados sin errores con $(terraform version | head -n 1)." >> "$GITHUB_STEP_SUMMARY"
       - name: Resumen
         if: always()
         run: |
           python3 .github/scripts/junit-summary.py portfolio-backend/build/test-results/test "Backend · tests unitarios" >> "$GITHUB_STEP_SUMMARY"
+          # Evaluación del servidor MCP con el modelo simulado (McpEvalTest), que corre con los tests.
+          python3 .github/scripts/mcp-eval-summary.py portfolio-backend/build/reports/mcp-eval/mcp-eval.json >> "$GITHUB_STEP_SUMMARY"
           CSV=portfolio-backend/build/reports/jacoco/test/jacocoTestReport.csv
           if [ -f "$CSV" ]; then
             python3 .github/scripts/jacoco-summary.py "$CSV" coverage.json >> "$GITHUB_STEP_SUMMARY"
@@ -336,6 +359,7 @@ jobs:
         with:
           name: backend-unit-reports
           path: |
+            portfolio-backend/build/reports/mcp-eval
             portfolio-backend/build/reports/tests/test
             portfolio-backend/build/reports/jacoco/test
             coverage.json

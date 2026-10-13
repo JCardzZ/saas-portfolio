@@ -67,6 +67,17 @@
       }
     </section>
 
+    @if (mcpSection()) {
+      <section id="mcp" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="mcp-titulo">
+        <app-section-header headingId="mcp-titulo" overline="Model Context Protocol" title="Usa mi plataforma desde tu IA" intro="Lo que hace este estudio (validar una arquitectura, generar Terraform, cotizar, diseñar un sistema) también se puede pedir desde un asistente de IA, conectándolo a su servidor MCP. Ninguna herramienta guarda ni aplica nada." />
+        @defer (on viewport; prefetch on idle) {
+          <app-mcp-section class="animate-slide-up" />
+        } @placeholder {
+          <div class="bento-card flex min-h-[24rem] items-center justify-center text-body-sm text-ink-3">Cargando la sección del servidor MCP…</div>
+        }
+      </section>
+    }
+
     <section id="proyectos" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="proyectos-titulo">
       <app-section-header headingId="proyectos-titulo" title="Proyectos" intro="Trabajo publicado, con su código y las tecnologías que usa." />
 

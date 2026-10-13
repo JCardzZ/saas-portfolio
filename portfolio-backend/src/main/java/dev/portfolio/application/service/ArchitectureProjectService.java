@@ -8,8 +8,11 @@ import dev.portfolio.domain.exception.ResourceNotFoundException;
 import dev.portfolio.domain.model.ArchitectureGraph;
 import dev.portfolio.domain.model.ArchitectureGraphRules;
 import dev.portfolio.domain.model.ArchitectureProjectDomain;
+import dev.portfolio.domain.model.CloudProviderDomain;
 import dev.portfolio.domain.model.FeatureFlagDomain;
 import dev.portfolio.domain.model.GraphDiagnosticDomain;
+import dev.portfolio.domain.model.system.SystemDesignDomain;
+import dev.portfolio.domain.model.system.SystemDesignRules;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,11 +26,20 @@ public class ArchitectureProjectService implements ArchitectureProjectUseCase {
     private final ArchitectureProjectRepositoryPort repository;
     private final ArchitectureGraphRules rules;
     private final FeatureFlags flags;
+    private final SystemDesignRules systemRules;
 
-    public ArchitectureProjectService(ArchitectureProjectRepositoryPort repository, ArchitectureGraphRules rules, FeatureFlags flags) {
+    public ArchitectureProjectService(ArchitectureProjectRepositoryPort repository, ArchitectureGraphRules rules, FeatureFlags flags,
+                                      SystemDesignRules systemRules) {
         this.repository = repository;
         this.rules = rules;
         this.flags = flags;
+        this.systemRules = systemRules;
+    }
+
+    @Override
+    public List<GraphDiagnosticDomain> validate(CloudProviderDomain provider, List<Map<String, Object>> nodes, List<Map<String, Object>> connections) {
+        ArchitectureGraph.validate(nodes, connections, List.of());
+        return rules.diagnostics(nodes, connections, provider);
     }
 
     @Override
@@ -40,12 +52,21 @@ public class ArchitectureProjectService implements ArchitectureProjectUseCase {
 
     @Override
     public List<ArchitectureProjectDomain> findAll() {
-        return repository.findAll();
+        return repository.findAll().stream().filter(this::visible).toList();
+    }
+
+    /**
+     * Los sistemas de ejemplo (plantillas con diseño de sistema) solo existen para quien pregunta
+     * con la flag {@code studio.system-templates} encendida. Se siembran igual, para que encenderla
+     * no exija desplegar.
+     */
+    private boolean visible(ArchitectureProjectDomain project) {
+        return !(project.preset() && project.system() != null) || flags.isEnabled(FeatureFlagDomain.STUDIO_SYSTEM_TEMPLATES);
     }
 
     @Override
     public ArchitectureProjectDomain findById(String id) {
-        return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException(RESOURCE, id));
+        return repository.findById(id).filter(this::visible).orElseThrow(() -> new ResourceNotFoundException(RESOURCE, id));
     }
 
     @Override
@@ -86,7 +107,9 @@ public class ArchitectureProjectService implements ArchitectureProjectUseCase {
         ArchitectureGraph.validate(draft.nodes(), draft.connections(), draft.zones());
         // El editor solo avisa de estas reglas; lo que se guarda y se sirve a otros debe cumplirlas.
         rules.validate(draft.nodes(), draft.connections());
+        // El diseño de sistema, si viene, solo puede nombrar lo que hay en su catálogo.
+        SystemDesignDomain system = draft.system() == null ? null : systemRules.validated(draft.system());
         return new ArchitectureProjectDomain(id, title, description, draft.cloudProvider(),
-                draft.nodes(), draft.connections(), draft.zones(), preset, createdAt);
+                draft.nodes(), draft.connections(), draft.zones(), system, preset, createdAt);
     }
 }

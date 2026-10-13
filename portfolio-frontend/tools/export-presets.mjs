@@ -11,22 +11,24 @@ const bundle = join(tmpdir(), `studio-presets-${process.pid}.mjs`);
 await build({
   // Un solo punto de entrada que reexporta lo necesario de los dos módulos.
   stdin: {
-    contents: "export * from './src/app/features/public/cloud/studio-project'; export * from './src/app/features/public/cloud/terraform-generator'; export * from './src/app/features/public/cloud/cloud-catalog.data'; export * from './src/app/features/public/cloud/cloud-costs.data'; export { forProvider } from './src/app/features/public/cloud/cloud-topology.data'; export * from './src/app/features/public/cloud/data-blueprints'; export * from './src/app/features/public/cloud/graph-rules';",
+    contents: "export * from './src/app/features/public/cloud/studio-project'; export * from './src/app/features/public/cloud/terraform-generator'; export * from './src/app/features/public/cloud/cloud-catalog.data'; export * from './src/app/features/public/cloud/cloud-costs.data'; export { forProvider } from './src/app/features/public/cloud/cloud-topology.data'; export * from './src/app/features/public/cloud/data-blueprints'; export * from './src/app/features/public/cloud/graph-rules'; export { SYSTEM_DESIGN_DATA } from './src/app/features/public/cloud/system/system-catalog.data'; export { evaluatedCases } from './src/app/features/public/cloud/system/system-cases'; export { SYSTEM_TEMPLATES } from './src/app/features/public/cloud/system/system-templates';",
     resolveDir: process.cwd(), loader: 'ts',
   },
   bundle: true, format: 'esm', platform: 'node', outfile: bundle, logLevel: 'error',
 });
-const { STUDIO_PRESETS, SERVER_PRESET_IDS, DATA_BLUEPRINTS, GRAPH_RULES, generateMainTf, generateVariablesTf, catalogRows } = await import(pathToFileURL(bundle).href);
+const { STUDIO_PRESETS, SERVER_PRESET_IDS, DATA_BLUEPRINTS, GRAPH_RULES, SYSTEM_DESIGN_DATA, SYSTEM_TEMPLATES, evaluatedCases, generateMainTf, generateVariablesTf, catalogRows } = await import(pathToFileURL(bundle).href);
 
 // Los patrones de datos son plantillas como las demás: el backend también los siembra.
-const TEMPLATES = [...STUDIO_PRESETS, ...DATA_BLUEPRINTS];
+// Y los sistemas de ejemplo, que además llevan su diseño de sistema.
+const TEMPLATES = [...STUDIO_PRESETS, ...DATA_BLUEPRINTS, ...SYSTEM_TEMPLATES];
 
-const presets = [...SERVER_PRESET_IDS, ...DATA_BLUEPRINTS.map((blueprint) => blueprint.id)].map((id) => {
+const presets = [...SERVER_PRESET_IDS, ...DATA_BLUEPRINTS.map((blueprint) => blueprint.id), ...SYSTEM_TEMPLATES.map((template) => template.id)].map((id) => {
   const preset = TEMPLATES.find((candidate) => candidate.id === id);
   const project = preset.build();
   return {
     id, title: preset.name, description: preset.description, cloudProvider: project.provider,
     nodes: project.nodes, connections: project.links, zones: project.zones,
+    ...(project.system ? { system: project.system } : {}),
   };
 });
 
@@ -45,6 +47,14 @@ console.log(`${catalog.length} entradas del catálogo exportadas`);
 // mismas que avisa el estudio son las que el backend exige al guardar un proyecto.
 writeFileSync(resolve(target, '../graph-rules.json'), JSON.stringify(GRAPH_RULES, null, 2) + '\n');
 console.log('reglas del grafo exportadas');
+
+// Diseño de sistemas: el catálogo de la vista de Aplicación y las reglas de los requisitos no
+// funcionales, y los casos que el backend tiene que evaluar igual que el estudio.
+writeFileSync(resolve(target, '../system-design.json'), JSON.stringify(SYSTEM_DESIGN_DATA, null, 2) + '\n');
+const systemCases = evaluatedCases();
+mkdirSync(resolve('../portfolio-backend/src/test/resources/architecture'), { recursive: true });
+writeFileSync(resolve('../portfolio-backend/src/test/resources/architecture/system-cases.json'), JSON.stringify(systemCases, null, 2) + '\n');
+console.log(`diseño de sistemas exportado (${systemCases.length} casos)`);
 
 // Casos de referencia para el generador de Terraform del backend (Java): la misma topología
 // debe dar exactamente el mismo HCL que el generador del frontend, que es el que los produce.

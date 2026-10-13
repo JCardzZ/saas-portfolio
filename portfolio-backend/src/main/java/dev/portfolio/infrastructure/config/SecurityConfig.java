@@ -37,7 +37,9 @@ public class SecurityConfig {
             "/auth/token",
             "/recruiter/track-ingress",
             "/ai/rag/query",
-            "/ai/architecture/copilot"
+            "/ai/architecture/copilot",
+            // Servidor MCP: sin autenticación, con límite por origen y tope diario (McpAccessService).
+            "/mcp"
     };
 
     @Bean

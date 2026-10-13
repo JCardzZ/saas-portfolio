@@ -120,6 +120,11 @@ public record ArchitectureGraphRules(
      * nombre propio o, si no tienen, por su servicio.
      */
     public List<GraphDiagnosticDomain> diagnostics(List<Map<String, Object>> nodes, List<Map<String, Object>> connections) {
+        return diagnostics(nodes, connections, null);
+    }
+
+    /** @param provider nube en la que se nombran los nodos cuyo servicio va por nube; {@code null} si no se sabe */
+    public List<GraphDiagnosticDomain> diagnostics(List<Map<String, Object>> nodes, List<Map<String, Object>> connections, CloudProviderDomain provider) {
         Map<String, Map<String, Object>> byId = new LinkedHashMap<>();
         Map<String, List<String>> idsByType = new LinkedHashMap<>();
         for (Map<String, Object> node : nodes) {
@@ -137,7 +142,7 @@ public record ArchitectureGraphRules(
             }
             String source = endpointOf((String) byId.get(from).get("type"));
             String target = endpointOf((String) byId.get(to).get("type"));
-            Map<String, String> names = Map.of("from", nameOf(byId.get(from)), "to", nameOf(byId.get(to)));
+            Map<String, String> names = Map.of("from", nameOf(byId.get(from), provider), "to", nameOf(byId.get(to), provider));
             if (!SERVICE.equals(target) && !incoming.getOrDefault(target, List.of()).contains(source)) {
                 Advice why = advice.get(target);
                 found.add(new GraphDiagnosticDomain(to, "connection", GraphDiagnosticDomain.Severity.ERROR,
@@ -163,7 +168,7 @@ public record ArchitectureGraphRules(
                 // El diagnóstico va en las instancias que sobran, no en las primeras.
                 for (String extra : ids.subList(max, ids.size())) {
                     found.add(new GraphDiagnosticDomain(extra, "max-instances", GraphDiagnosticDomain.Severity.ERROR,
-                            "Demasiadas instancias de %s: %d de %d como máximo.".formatted(nameOf(byId.get(extra)), ids.size(), max),
+                            "Demasiadas instancias de %s: %d de %d como máximo.".formatted(nameOf(byId.get(extra), provider), ids.size(), max),
                             "Quita las que sobran.", null, null));
                 }
             }
@@ -172,7 +177,7 @@ public record ArchitectureGraphRules(
             String endpoint = endpointOf((String) node.get("type"));
             for (PlacementRule rule : placement) {
                 if (node.get("zone") instanceof String zone && rule.zones().contains(zone) && rule.endpoints().contains(endpoint)) {
-                    Map<String, String> names = Map.of("node", nameOf(node));
+                    Map<String, String> names = Map.of("node", nameOf(node, provider));
                     found.add(new GraphDiagnosticDomain(id, "placement", GraphDiagnosticDomain.Severity.WARNING,
                             fill(rule.message(), names), fill(rule.suggestion(), names), null, null));
                 }
@@ -182,11 +187,14 @@ public record ArchitectureGraphRules(
     }
 
     /** Nombre con el que se ve un nodo: el propio, el de su servicio o, si no hay otro, su id. */
-    private static String nameOf(Map<String, Object> node) {
+    private static String nameOf(Map<String, Object> node, CloudProviderDomain provider) {
         if (node.get("name") instanceof String name && !name.isBlank()) {
             return name.strip();
         }
         if (node.get("service") instanceof String service && !service.isBlank()) {
+            return service;
+        }
+        if (provider != null && node.get("service") instanceof Map<?, ?> byCloud && byCloud.get(provider.code()) instanceof String service && !service.isBlank()) {
             return service;
         }
         return String.valueOf(node.get("id"));

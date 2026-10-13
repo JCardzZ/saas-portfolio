@@ -87,6 +87,15 @@ dependencies {
     implementation 'io.github.resilience4j:resilience4j-circuitbreaker:2.2.0'
     // Feature flags: API estándar de OpenFeature; el proveedor es propio (PostgreSQL + caché Redis)
     implementation 'dev.openfeature:sdk:1.23.0'
+    // Servidor MCP (hito 6): SDK oficial de Java, solo el núcleo y su transporte Servlet (sin Spring AI,
+    // que exige Spring Boot 4). El mapeo JSON va con Jackson 2, el mismo de la aplicación.
+    implementation 'io.modelcontextprotocol.sdk:mcp-core:2.0.1'
+    implementation 'io.modelcontextprotocol.sdk:mcp-json-jackson2:2.0.1'
+    // Observabilidad del servidor MCP (hito 7): métricas con Micrometer y trazas con la API de OpenTelemetry
+    // (convenciones semánticas de MCP y de IA generativa). Solo la API: sin un SDK o agente de OpenTelemetry
+    // configurado, las trazas no salen a ningún sitio. Las versiones las fija el BOM de Spring Boot.
+    implementation 'io.micrometer:micrometer-core'
+    implementation 'io.opentelemetry:opentelemetry-api'
     // Generación del CV en PDF (adaptador OpenPdfCvRenderer)
     implementation 'com.github.librepdf:openpdf:1.3.43'
     // CV maquetado: plantilla HTML+CSS a PDF sin navegador (StyledCvPdfWriter); el segundo dibuja los SVG
@@ -106,6 +115,11 @@ dependencies {
     integrationTestImplementation 'org.apache.httpcomponents.client5:httpclient5'
     // Reglas de arquitectura sobre el bytecode (HexagonalArchitectureTest)
     testImplementation 'com.tngtech.archunit:archunit-junit5:1.3.0'
+    // Exportador en memoria para comprobar los atributos de las trazas del servidor MCP
+    testImplementation 'io.opentelemetry:opentelemetry-sdk-testing'
+    // Evaluación nocturna del servidor MCP con un modelo real (McpRealModelEvalTest): SDK oficial de Google GenAI.
+    // Solo en los tests; en un PR ese test no corre.
+    testImplementation 'com.google.genai:google-genai:1.76.0'
 }
 
 openApiGenerate {

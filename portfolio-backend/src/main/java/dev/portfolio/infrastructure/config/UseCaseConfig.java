@@ -1,5 +1,10 @@
 package dev.portfolio.infrastructure.config;
 
+import dev.portfolio.application.port.in.McpAccessUseCase;
+import dev.portfolio.application.service.McpAccessService;
+import dev.portfolio.application.port.in.SystemDesignUseCase;
+import dev.portfolio.application.service.SystemDesignService;
+import dev.portfolio.domain.model.system.SystemDesignRules;
 import java.io.UncheckedIOException;
 import java.io.InputStream;
 import java.io.IOException;
@@ -62,6 +67,7 @@ import org.springframework.context.annotation.Configuration;
 public class UseCaseConfig {
 
     static final String GRAPH_RULES = "architecture/graph-rules.json";
+    static final String SYSTEM_DESIGN = "architecture/system-design.json";
 
     @Bean
     public TechnologyUseCase technologyUseCase(TechnologyRepositoryPort repository, CachePort cache) {
@@ -123,12 +129,12 @@ public class UseCaseConfig {
 
     @Bean
     public ArchitectureProjectUseCase architectureProjectUseCase(ArchitectureProjectRepositoryPort repository, ArchitectureGraphRules rules,
-                                                                 ObjectProvider<FeatureFlags> flags) {
+                                                                 ObjectProvider<FeatureFlags> flags, SystemDesignRules systemRules) {
         // Sin proveedor de flags (un contexto parcial), todas cuentan como apagadas.
         return new ArchitectureProjectService(repository, rules, flag -> {
             FeatureFlags provider = flags.getIfAvailable();
             return provider != null && provider.isEnabled(flag);
-        });
+        }, systemRules);
     }
 
     /**
@@ -164,6 +170,28 @@ public class UseCaseConfig {
     @Bean
     public TerraformUseCase terraformUseCase(RateLimiterPort rateLimiter, RateLimitProperties rateLimitProperties) {
         return new TerraformService(rateLimiter, rateLimitProperties.terraform().toPolicy());
+    }
+
+    @Bean
+    public McpAccessUseCase mcpAccessUseCase(RateLimiterPort rateLimiter, RateLimitProperties rateLimitProperties) {
+        return new McpAccessService(rateLimiter, rateLimitProperties.mcp().toPolicy(), rateLimitProperties.mcpGlobal().toPolicy());
+    }
+
+    /** Comparte el cupo del generador de Terraform: las dos cosas compilan lo mismo a partir de un lienzo. */
+    @Bean
+    public SystemDesignUseCase systemDesignUseCase(SystemDesignRules rules, RateLimiterPort rateLimiter, RateLimitProperties rateLimitProperties,
+                                                   ArchitectureProjectRepositoryPort projects) {
+        return new SystemDesignService(rules, rateLimiter, rateLimitProperties.terraform().toPolicy(), projects);
+    }
+
+    /** Catálogo y reglas del diseño de sistemas, que el frontend exporta con {@code npm run export:presets}. */
+    @Bean
+    public SystemDesignRules systemDesignRules(ObjectMapper objectMapper) {
+        try (InputStream json = new ClassPathResource(SYSTEM_DESIGN).getInputStream()) {
+            return objectMapper.readValue(json, SystemDesignRules.class);
+        } catch (IOException e) {
+            throw new UncheckedIOException("No se pudo leer el catálogo del diseño de sistemas (" + SYSTEM_DESIGN + ")", e);
+        }
     }
 
     @Bean
