@@ -2,16 +2,17 @@ import { TECH_ICONS } from '../../../../shared/ui/tech-icons';
 import { CloudNode, CloudProviderId, forProvider, resolveIcon } from '../cloud-topology.data';
 import { SYSTEM_CATALOG, SystemCategoryId } from './system-catalog.data';
 import { SystemDesign, chosen } from './system-design';
+import { BrandLogo, OPTION_LOGOS } from './system-icons';
 
 /**
  * Diagrama de la vista de Aplicación: el sistema elegido, dibujado por capas (cliente, entrada,
  * aplicación y datos) con las conexiones entre sus piezas y, bajo cada una, el servicio de nube
  * en el que se despliega. Se recalcula con cada elección, así que el dibujo cambia al momento.
  *
- * Marcas (docs/brand-usage.md): las tecnologías van con su nombre en texto y un símbolo propio
- * de su papel (navegador, servidor, base de datos…), no con su logo: las guías de Spring, Go,
- * PostgreSQL y la Linux Foundation no permiten usar el logo sin permiso. Lo único con icono
- * oficial es el servicio de AWS, Azure o Google Cloud donde se despliega cada pieza.
+ * Marcas (docs/brand-usage.md): cada pieza lleva el logo de su tecnología (decisión del autor, con
+ * un aviso de marcas junto al dibujo) o, si es genérica, un símbolo propio de su papel; siempre con
+ * el nombre en texto. Bajo ella, el icono oficial del servicio de AWS, Azure o Google Cloud donde
+ * se despliega.
  */
 export type GlyphId = 'browser' | 'mobile' | 'server' | 'gateway' | 'database' | 'lock' | 'bolt' | 'globe' | 'queue' | 'bell' | 'waves';
 
@@ -84,6 +85,10 @@ export interface DiagramNode {
   title: string;
   fullName: string;
   glyph: GlyphId;
+  /** Logos de la tecnología elegida; vacío si la opción es genérica (entonces se pinta `glyph`). */
+  logos: BrandLogo[];
+  /** Opción elegida (`SystemOption.id`). */
+  option: string;
   /** Servicio de nube en el que se despliega; su icono, solo si es uno oficial de arquitectura. */
   deployedOn: { name: string; image: string | null } | null;
   /** Por qué no lleva servicio debajo: no se despliega en la nube, o aún no se ha elegido dónde. */
@@ -118,11 +123,11 @@ export interface SystemDiagram {
 
 export const NODE_W = 176;
 export const NODE_H = 78;
-const LANE_PAD = 14;
+const LANE_PAD = 10;
 const LANE_HEAD = 26;
 const NODE_GAP = 18;
 /** Hueco entre capas: por él pasan las conexiones y sus rótulos. */
-export const LANE_GAP = 60;
+export const LANE_GAP = 52;
 const LANE_GAP_VERTICAL = 44;
 const MARGIN = 8;
 /** Margen a cada lado, en vertical, por donde bajan las conexiones que rodean una pieza. */
@@ -271,6 +276,7 @@ export function buildSystemDiagram(
         id: category, key: `${category}:${option.id}`, lane: id,
         kind: KIND_NAMES[category] ?? SYSTEM_CATALOG.find((entry) => entry.id === category)!.name,
         title: SHORT_NAMES[option.id] ?? option.name, fullName: option.name, glyph: GLYPH_OF[option.id] ?? 'server',
+        logos: OPTION_LOGOS[option.id] ?? [], option: option.id,
         deployedOn: target ? { name: clip(target.name?.trim() || forProvider(target.service, provider), DEPLOY_MAX), image } : null,
         note: target ? null : deploys ? 'Sin desplegar' : category === 'client' ? 'En las tiendas de apps' : 'Dentro del backend',
         pending: deploys && !target,

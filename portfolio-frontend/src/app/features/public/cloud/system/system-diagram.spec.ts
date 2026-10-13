@@ -1,6 +1,7 @@
 import { CLOUD_NODES, CloudNode } from '../cloud-topology.data';
 import { SYSTEM_CATALOG } from './system-catalog.data';
 import { SystemDesign, defaultSystemDesign, withChoice } from './system-design';
+import { OPTION_LOGOS, REQUIRED_ATTRIBUTIONS, TRADEMARK_NOTICE } from './system-icons';
 import { DiagramNode, GLYPHS, MIN_NODE_W, NODE_H, NODE_W, SHORT_NAMES, SystemDiagram, buildSystemDiagram } from './system-diagram';
 
 const infra = (): CloudNode[] => structuredClone(CLOUD_NODES);
@@ -119,7 +120,7 @@ describe('system diagram', () => {
     expect(mobile.nodes.find((node) => node.id === 'client')!.note).toBe('En las tiendas de apps');
   });
 
-  it('never draws a technology logo: every option has its own role glyph and a short text name', () => {
+  it('gives every piece its technology logo or, for a generic option, a role glyph, always with a short text name', () => {
     for (const option of SYSTEM_CATALOG.filter((category) => category.id !== 'api').flatMap((category) => category.options)) {
       expect(SHORT_NAMES[option.id]).withContext(`${option.id}: nombre corto`).toBeDefined();
       expect(SHORT_NAMES[option.id].length).withContext(`${option.id}: cabe en el nodo`).toBeLessThanOrEqual(20);
@@ -128,11 +129,38 @@ describe('system diagram', () => {
       expect(SHORT_NAMES[api.id].length).withContext(`${api.id}: rótulo de la conexión`).toBeLessThanOrEqual(10);
     }
     const diagram = buildSystemDiagram({ ...full(), deployments: { backend: 'api', database: 'postgres', cache: 'edge' } }, infra(), 'aws');
+    const piece = (id: string) => diagram.nodes.find((node) => node.id === id)!;
+
+    expect(piece('backend').logos.map((logo) => logo.title)).toEqual(['Spring Boot']);
+    expect(piece('database').logos.map((logo) => logo.title)).toEqual(['PostgreSQL']);
+    expect(piece('client').logos.map((logo) => logo.title)).toEqual(['Angular', 'React']);
+    expect(piece('auth').logos.map((logo) => logo.title)).toEqual(['OpenID Connect']);
+    // Una opción genérica (una CDN, una cola, un gateway) no es de ninguna marca: lleva su símbolo.
+    for (const id of ['cache', 'queue', 'bff', 'push']) {
+      expect(piece(id).logos).withContext(id).toEqual([]);
+      expect(GLYPHS[piece(id).glyph]).withContext(id).toBeDefined();
+    }
     for (const node of diagram.nodes) {
-      expect(GLYPHS[node.glyph]).withContext(node.id).toBeDefined();
-      // La única imagen posible es el icono de arquitectura de una nube; Cloudflare (CDN) no lleva ninguna.
+      expect(node.title.trim().length).withContext(`${node.id}: nombre en texto`).toBeGreaterThan(1);
+      expect(node.logos.length).withContext(`${node.id}: caben en el nodo`).toBeLessThanOrEqual(2);
+      // Bajo la pieza, la única imagen posible es el icono de arquitectura de una nube.
       expect(node.deployedOn?.image ?? 'cloud-icons/').toContain('cloud-icons/');
     }
-    expect(diagram.nodes.find((node) => node.id === 'cache')!.deployedOn).toEqual({ name: 'Cloudflare', image: null });
+    expect(piece('cache').deployedOn).toEqual({ name: 'Cloudflare', image: null });
+  });
+
+  it('paints a logo that is nearly black with the text colour token, so it reads on the dark canvas', () => {
+    const colors = Object.values(OPTION_LOGOS).flat().map((logo) => logo.color);
+    expect(colors).toContain('var(--text-1)');
+    for (const color of colors.filter((candidate) => candidate.startsWith('#'))) {
+      const [r, g, b] = [1, 3, 5].map((at) => Number.parseInt(color.slice(at, at + 2), 16));
+      expect(0.299 * r + 0.587 * g + 0.114 * b).withContext(color).toBeGreaterThanOrEqual(70);
+    }
+  });
+
+  it('has the attribution line of every brand whose policy asks for one', () => {
+    expect(Object.keys(REQUIRED_ATTRIBUTIONS).every((option) => OPTION_LOGOS[option]?.length)).toBeTrue();
+    expect(TRADEMARK_NOTICE).toContain('marcas de sus respectivos dueños');
+    expect(TRADEMARK_NOTICE).toContain('no está afiliado');
   });
 });

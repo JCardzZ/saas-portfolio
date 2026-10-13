@@ -272,9 +272,10 @@ test.describe('diseño de sistemas en el Estudio (studio.system-design)', () => 
     expect(title, 'el texto no se encoge').toBeGreaterThanOrEqual(14);
     const page_ = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
     expect(page_.scroll, 'la página no se desplaza en horizontal').toBeLessThanOrEqual(page_.client + 1);
-    // Ninguna pieza lleva el logo de una tecnología: solo el icono de la nube donde se despliega.
-    const logos = await diagram.locator('g.piece image').evaluateAll((images) => images.map((image) => image.getAttribute('href') ?? '').filter((href) => !href.includes('cloud-icons/')));
-    expect(logos).toEqual([]);
+    // Cada tecnología lleva su logo con el nombre al lado, y el aviso de marcas va junto al dibujo.
+    await expect(diagram.locator('g.piece[data-piece="backend"] svg.logo')).toHaveAttribute('data-logo', 'Spring Boot');
+    await expect(diagram.locator('g.piece[data-piece="backend"] .piece-title')).toHaveText('Spring Boot');
+    await expect(page.locator(`${APP} [data-testid="trademark-notice"]`)).toContainText('marcas de sus respectivos dueños');
 
     await expect(page.locator(`${APP} [data-testid="advisor-verdict"]`)).toHaveText('Escala, pero con límites');
     if (isDesktop(testInfo)) {

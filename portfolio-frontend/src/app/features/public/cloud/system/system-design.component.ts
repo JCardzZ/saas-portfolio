@@ -9,6 +9,7 @@ import { Advice, assessSystem } from './system-advisor';
 import { AdvisorOrbComponent, SystemAdvisorComponent } from './system-advisor.component';
 import { SystemDesign, SystemFinding, chosen, deployTargets, evaluateSystem, withChoice } from './system-design';
 import { SystemDiagramComponent } from './system-diagram.component';
+import { BrandLogo, OPTION_LOGOS, REQUIRED_ATTRIBUTIONS, TRADEMARK_NOTICE } from './system-icons';
 
 /** Una pieza de la vista de Aplicación ya resuelta: lo elegido y dónde se despliega. */
 interface Piece {
@@ -67,6 +68,10 @@ interface Piece {
       <!-- El sistema, dibujado: cambia con cada elección. -->
       <div class="ui-card-inset">
         <app-system-diagram [design]="design()" [nodes]="nodes()" [provider]="provider()" [active]="focused()" (picked)="goTo($event)" />
+        <p class="mt-2 text-xs leading-snug text-ink-3" data-testid="trademark-notice">
+          {{ trademarkNotice }}
+          @for (line of attributions(); track line) { <span class="block">{{ line }}</span> }
+        </p>
         @if (topAdvice(); as advice) {
           <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line-subtle pt-3" data-testid="advisor-top" role="status">
             <app-advisor-orb [size]="20" [level]="advice.level === 'risk' ? 'risk' : 'limited'" />
@@ -122,7 +127,12 @@ interface Piece {
                 <label class="flex cursor-pointer items-start gap-2 rounded-control px-1 py-1.5 hover:bg-surface-3">
                   <input type="radio" class="mt-1 accent-current" [name]="'system-' + category.id" [value]="option.id" [checked]="design().choices[category.id] === option.id" (change)="choose(category.id, option.id)" />
                   <span class="min-w-0">
-                    <span class="block text-sm font-medium text-ink-1">{{ option.name }}</span>
+                    <span class="flex flex-wrap items-center gap-1.5 text-sm font-medium text-ink-1">
+                      @for (logo of logosOf(option.id); track logo.title) {
+                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true" [attr.data-logo]="logo.title"><path [attr.d]="logo.path" [attr.fill]="logo.color" /></svg>
+                      }
+                      {{ option.name }}
+                    </span>
                     <span class="block text-xs leading-snug text-ink-2">{{ option.summary }}</span>
                   </span>
                 </label>
@@ -307,6 +317,15 @@ export class SystemDesignComponent {
     const contract = chosen(this.design(), 'api')?.contract;
     return contract === 'openapi' ? 'OpenAPI' : contract === 'proto' ? '.proto' : 'no se genera para este estilo';
   });
+
+  // ---------- Marcas ----------
+  readonly trademarkNotice = TRADEMARK_NOTICE;
+  /** Las atribuciones que piden las marcas cuyo logo está ahora en el diagrama. */
+  readonly attributions = computed(() => Object.values(this.design().choices).flatMap((option) => (option && REQUIRED_ATTRIBUTIONS[option] ? [REQUIRED_ATTRIBUTIONS[option]] : [])));
+
+  logosOf(option: string): BrandLogo[] {
+    return OPTION_LOGOS[option] ?? [];
+  }
 
   // ---------- Diagrama y asistente ----------
   /** Categoría que se está editando: su pieza se resalta en el diagrama. */
