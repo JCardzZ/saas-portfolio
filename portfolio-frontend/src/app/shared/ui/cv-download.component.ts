@@ -68,6 +68,8 @@ export class CvPickerService {
 }
 
 /** Botón que abre el selector de CV. */
+import { LanguageService } from '../../core/i18n/language.service';
+
 @Component({
   selector: 'app-cv-download',
   standalone: true,
@@ -75,13 +77,14 @@ export class CvPickerService {
   template: `
     <button type="button" [class]="classes[variant()]" aria-haspopup="dialog" (click)="picker.open.set(true)">
       <svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M4.5 7 8 10.5 11.5 7M3 13.5h10" /></svg>
-      {{ variant() === 'nav' ? 'CV' : 'Descargar CV' }}
+      {{ variant() === 'nav' ? 'CV' : language.lang() === 'en' ? 'Download CV' : 'Descargar CV' }}
     </button>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CvDownloadComponent {
   readonly picker = inject(CvPickerService);
+  readonly language = inject(LanguageService);
   /** `nav`: compacto, para la barra. `primary`: la acción principal del hero. `button`: secundario (pie). */
   readonly variant = input<'nav' | 'primary' | 'button'>('button');
   readonly classes = { nav: 'ui-btn-ghost', primary: 'ui-btn-primary ui-btn-lg', button: 'ui-btn-secondary ui-btn-lg' };

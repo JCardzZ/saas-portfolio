@@ -28,6 +28,8 @@ import { VectorMatrixComponent } from '../widgets/vector-matrix.component';
 import { FlagService } from '../../../core/flags/flag.service';
 import { McpSectionComponent } from '../mcp/mcp-section.component';
 import { HERO_ROLE_PLACEHOLDER } from './hero-content';
+import { LanguageService } from '../../../core/i18n/language.service';
+import { LANDING_COPY } from './landing-copy';
 import { HeroSceneComponent } from './hero3d/hero-scene.component';
 
 @Component({
@@ -76,7 +78,9 @@ export class LandingPageComponent implements OnInit {
   readonly iconFor = techIconFor;
   readonly inspector = inject(TraceInspectorService);
   /** Marcador temporal: ver hero-content.ts. */
-  readonly heroRole = HERO_ROLE_PLACEHOLDER;
+  readonly i18n = inject(LanguageService);
+  readonly copy = LANDING_COPY;
+  readonly heroRole = computed(() => this.i18n.t(HERO_ROLE_PLACEHOLDER));
 
   /** Clase de la tarjeta «¿Cómo está construido?», que cierra la rejilla de proyectos. */
   readonly askSpan = computed(() => ASK_SPAN[askCardColumns(this.catalog.projects().length)]);

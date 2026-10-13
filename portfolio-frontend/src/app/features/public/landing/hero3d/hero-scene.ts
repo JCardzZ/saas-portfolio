@@ -1,11 +1,13 @@
 import type * as THREE from 'three';
 
 /**
- * Escena 3D del hero (Three.js, cargado bajo demanda): un busto esculpido, como una pieza de
- * porcelana —cara modelada deformando una esfera, tupé negro brillante, esmoquin de satén, camisa
- * y corbata—, inspirado en el aspecto de Manuel pero sin rasgos de caricatura ni su foto. Gira la
- * cabeza hacia el cursor y flota, rodeado de partículas y anillos con el acento. Decorativa: el h1
- * dice quién es.
+ * Escena 3D del hero (Three.js, cargado bajo demanda): un robot genérico de carcasa brillante —
+ * casco con visor de cristal negro, ojos de luz con el acento que siguen al cursor y parpadean,
+ * antena, auriculares y un núcleo que late en el pecho—, iluminado con un entorno generado en el
+ * propio navegador (sin texturas descargadas). Sostiene en las manos un mazo con las tecnologías
+ * de la plataforma; al pulsarlo, las fichas salen volando y giran a su alrededor (`toggleStack`).
+ * Flota rodeado de partículas y anillos.
+ * Decorativa: el h1 dice quién es.
  */
 export interface ScenePalette {
   accent: string;
@@ -17,7 +19,18 @@ export interface ScenePalette {
   light: boolean;
 }
 
+/** Una tecnología del mazo: trazado de Simple Icons (viewBox 24 × 24) y color de marca. */
+export interface SceneTech {
+  title: string;
+  path: string;
+  color: string;
+}
+
 export interface HeroScene {
+  /** Abre o recoge el abanico de tecnologías; devuelve si queda abierto. */
+  toggleStack(): boolean;
+  /** Señala la ficha bajo el cursor (coordenadas normalizadas del lienzo, -1…1); devuelve su nombre. */
+  pick(x: number, y: number): string | null;
   frame(t: number): void;
   resize(width: number, height: number): void;
   pointer(x: number, y: number): void;
@@ -26,14 +39,13 @@ export interface HeroScene {
   dispose(): void;
 }
 
-/** Colores propios del busto: no dependen del tema. */
-const PORCELAIN = 0x3a3836; // grafito cálido: busto de bronce oscuro
-const HAIR = 0x060607;
-const SUIT = 0x111113;
-const SATIN = 0x26262b;
-const TIE = 0x2f3036;
+/** Colores propios del robot: no dependen del tema. */
+const SHELL = 0xf2f3f5;
+const GRAPHITE = 0x1c1d21;
+const VISOR = 0x050607;
+const METAL = 0x9aa0a8;
 
-export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, palette: ScenePalette, animate: boolean): HeroScene {
+export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, palette: ScenePalette, animate: boolean, techs: readonly SceneTech[] = []): HeroScene {
   const renderer = new three.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(0x000000, 0);
@@ -62,113 +74,224 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   const character = new three.Group();
   scene.add(character);
   const head = new three.Group();
-  head.position.y = 0.45;
+  head.position.y = 0.35;
   character.add(head);
 
+  // Entorno para los reflejos: una sala generada con cajas luminosas, sin descargar nada.
+  const pmrem = keep(new three.PMREMGenerator(renderer));
+  const room = new three.Scene();
+  const roomBox = new three.Mesh(keep(new three.BoxGeometry(20, 12, 20)), keep(new three.MeshBasicMaterial({ color: 0x15171a, side: three.BackSide })));
+  room.add(roomBox);
+  for (const [x, y, z, w, h, c] of [[0, 5.9, 0, 10, 0.2, 0xffffff], [-9.9, 1, 0, 0.2, 6, 0xdfe6ff], [9.9, 2, -2, 0.2, 4, 0x7fee64], [0, 0, -9.9, 8, 3, 0x9aa4b5]] as const) {
+    const panel = new three.Mesh(keep(new three.BoxGeometry(w || 0.2, h, x === 0 ? (y > 5 ? 10 : 0.2) : 8)), keep(new three.MeshBasicMaterial({ color: c })));
+    panel.position.set(x, y, z);
+    room.add(panel);
+  }
+  const envMap = keep(pmrem.fromScene(room, 0.04).texture);
+  scene.environment = envMap;
+
   const physical = (color: number, roughness: number, extra: Partial<THREE.MeshPhysicalMaterialParameters> = {}) =>
-    keep(new three.MeshPhysicalMaterial({ color, roughness, metalness: 0, clearcoat: 0.6, clearcoatRoughness: 0.35, ...extra }));
-  const porcelain = physical(PORCELAIN, 0.32, { metalness: 0.55, clearcoat: 0.8 });
-  const shirt = physical(0xe9e6e0, 0.5, { clearcoat: 0.2 });
-  const hair = physical(HAIR, 0.35, { clearcoat: 1, clearcoatRoughness: 0.2 });
-  const accentMat = standard(0x7fee64, 0.35, { emissive: 0x7fee64, emissiveIntensity: 0.4 });
-  const suit = physical(SUIT, 0.7, { clearcoat: 0 });
-  const satin = physical(SATIN, 0.25, { clearcoat: 1, clearcoatRoughness: 0.15 });
-  const tie = physical(TIE, 0.3, { clearcoat: 1 });
+    keep(new three.MeshPhysicalMaterial({ color, roughness, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.08, ...extra }));
+  const shell = physical(SHELL, 0.25);
+  const graphite = physical(GRAPHITE, 0.35, { metalness: 0.4 });
+  const visor = physical(VISOR, 0.05, { metalness: 0.9, clearcoatRoughness: 0.02 });
+  const metal = physical(METAL, 0.2, { metalness: 1, clearcoat: 0 });
+  const accentMat = keep(new three.MeshStandardMaterial({ color: 0x7fee64, emissive: 0x7fee64, emissiveIntensity: 1, roughness: 0.3 }));
 
   const sphere = (radius: number, segments = 48) => keep(new three.SphereGeometry(radius, segments, segments));
+  const rounded = (w: number, h: number, d: number, r: number) => {
+    // Caja redondeada a partir de una esfera estirada por octantes: superficie continua, sin aristas.
+    const geometry = keep(new three.SphereGeometry(1, 96, 64));
+    const pos = geometry.getAttribute('position');
+    const p = new three.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      p.fromBufferAttribute(pos, i);
+      const sx = Math.sign(p.x) * (w / 2 - r) + p.x * r;
+      const sy = Math.sign(p.y) * (h / 2 - r) + p.y * r;
+      const sz = Math.sign(p.z) * (d / 2 - r) + p.z * r;
+      pos.setXYZ(i, sx, sy, sz);
+    }
+    geometry.computeVertexNormals();
+    return geometry;
+  };
 
-  // Cara: una esfera densa deformada (pómulos, cuencas, cejas, nariz, labios, mentón y mandíbula).
-  const headGeometry = keep(new three.SphereGeometry(1, 160, 120));
-  const position = headGeometry.getAttribute('position');
-  const v = new three.Vector3();
-  const bump = (dx: number, dy: number, sx: number, sy: number) => Math.exp(-(dx * dx) / sx - (dy * dy) / sy);
-  for (let i = 0; i < position.count; i++) {
-    v.fromBufferAttribute(position, i);
-    const { x, y, z } = v;
-    const front = Math.max(0, z);
-    const ax = Math.abs(x);
-    const relief =
-      0.26 * bump(x, y + 0.1, 0.008, 0.05) * front ** 3 + // nariz
-      0.05 * bump(x, y + 0.3, 0.02, 0.004) * front ** 3 + // punta y aletas
-      0.07 * bump(0, y - 0.3, 1, 0.006) * front ** 2 * (ax < 0.62 ? 1 : 0.3) - // cejas
-      0.11 * bump(ax - 0.34, y - 0.14, 0.016, 0.01) * front ** 2 + // cuencas
-      0.045 * bump(ax - 0.52, y + 0.02, 0.02, 0.02) * front + // pómulos
-      0.035 * bump(x, y + 0.5, 0.03, 0.003) * front ** 2 + // labio superior
-      0.045 * bump(x, y + 0.6, 0.025, 0.003) * front ** 2 + // labio inferior
-      0.09 * bump(x, y + 0.88, 0.04, 0.012) * front ** 2; // mentón
-    v.multiplyScalar(1 + relief);
-    // Proporciones: más alta, mandíbula marcada que se estrecha hacia el mentón.
-    const taper = y < 0 ? 1 - 0.26 * (-y) ** 1.4 : 1 - 0.05 * y * y;
-    v.set(v.x * taper * 0.95, v.y * 1.24, v.z * (y < -0.2 ? 0.96 : 1));
-    position.setXYZ(i, v.x, v.y, v.z);
-  }
-  headGeometry.computeVertexNormals();
-  const face = new three.Mesh(headGeometry, porcelain);
-  face.scale.setScalar(1.08);
-  head.add(face);
+  // Casco y visor.
+  const helmet = new three.Mesh(rounded(2.5, 2.15, 2.2, 0.85), shell);
+  head.add(helmet);
+  const visorPlate = new three.Mesh(rounded(2.05, 1.25, 0.5, 0.42), visor);
+  visorPlate.position.set(0, -0.05, 0.92);
+  head.add(visorPlate);
+  const brow = new three.Mesh(keep(new three.TorusGeometry(0.75, 0.04, 12, 64, Math.PI)), metal);
+  brow.position.set(0, 0.62, 1.05);
+  brow.scale.set(1.25, 0.25, 1);
+  head.add(brow);
+
+  // Ojos de luz: se mueven dentro del visor y parpadean aplastándose.
+  const eyeGroup = new three.Group();
+  eyeGroup.position.set(0, -0.02, 1.19);
+  head.add(eyeGroup);
+  const eyeGeometry = keep(new three.CapsuleGeometry(0.13, 0.12, 8, 24));
+  const eyes = [-1, 1].map((side) => {
+    const eye = new three.Mesh(eyeGeometry, accentMat);
+    eye.position.x = side * 0.42;
+    eye.scale.set(1, 1, 0.4);
+    eyeGroup.add(eye);
+    return eye;
+  });
+  const eyeLight = new three.PointLight(0x7fee64, 2.5, 3, 2);
+  eyeLight.position.set(0, 0, 1.6);
+  head.add(eyeLight);
+
+  // Auriculares y antena.
   for (const side of [-1, 1]) {
-    const ear = new three.Mesh(sphere(0.24, 24), porcelain);
-    ear.position.set(side * 1.0, 0.0, -0.05);
-    ear.scale.set(0.4, 1, 0.7);
-    head.add(ear);
+    const pod = new three.Mesh(keep(new three.CylinderGeometry(0.42, 0.42, 0.3, 48)), graphite);
+    pod.rotation.z = Math.PI / 2;
+    pod.position.set(side * 1.3, 0, 0);
+    head.add(pod);
+    const ring = new three.Mesh(keep(new three.TorusGeometry(0.3, 0.035, 12, 48)), accentMat);
+    ring.rotation.y = Math.PI / 2;
+    ring.position.set(side * 1.46, 0, 0);
+    head.add(ring);
   }
+  const mast = new three.Mesh(keep(new three.CylinderGeometry(0.035, 0.05, 0.6, 16)), metal);
+  mast.position.set(0.55, 1.3, -0.1);
+  mast.rotation.z = -0.25;
+  head.add(mast);
+  const beacon = new three.Mesh(sphere(0.1, 24), accentMat);
+  beacon.position.set(0.63, 1.62, -0.1);
+  head.add(beacon);
 
-  // Pelo: laterales cortos pegados al cráneo y un tupé alto peinado hacia arriba y atrás.
-  const sides = new three.Mesh(keep(new three.SphereGeometry(1.06, 64, 32, 0, Math.PI * 2, 0, Math.PI * 0.36)), hair);
-  sides.position.set(0, 0.2, -0.06);
-  sides.rotation.x = -0.35;
-  sides.scale.set(0.98, 1.15, 1.02);
-  head.add(sides);
-  const quiffGeometry = keep(new three.SphereGeometry(0.6, 64, 48));
-  const quiffPosition = quiffGeometry.getAttribute('position');
-  for (let i = 0; i < quiffPosition.count; i++) {
-    v.fromBufferAttribute(quiffPosition, i);
-    const lift = Math.max(0, v.y) * (0.35 + 0.45 * Math.max(0, v.z / 0.6)); // sube más por delante
-    const wave = 0.05 * Math.sin(v.x * 18) * Math.max(0, v.y / 0.6); // mechones
-    quiffPosition.setXYZ(i, v.x * 1.15, v.y * 0.55 + lift + wave, v.z * 1.55);
+  // Cuello articulado, torso y núcleo.
+  for (let i = 0; i < 3; i++) {
+    const segment = new three.Mesh(keep(new three.CylinderGeometry(0.42 - i * 0.03, 0.42 - i * 0.03, 0.14, 40)), i % 2 ? graphite : metal);
+    segment.position.y = -0.82 - i * 0.16;
+    character.add(segment);
   }
-  quiffGeometry.computeVertexNormals();
-  const quiff = new three.Mesh(quiffGeometry, hair);
-  quiff.position.set(0, 1.05, 0.1);
-  quiff.rotation.set(-0.12, 0, -0.08);
-  head.add(quiff);
-
-  // Cuello, hombros, camisa, corbata y esmoquin con solapas de satén.
-  const neck = new three.Mesh(keep(new three.CylinderGeometry(0.38, 0.46, 0.8, 32)), porcelain);
-  neck.position.y = -1.25;
-  character.add(neck);
-  const body = new three.Mesh(keep(new three.CapsuleGeometry(1.05, 0.7, 16, 48)), suit);
-  body.position.y = -2.55;
-  body.scale.set(1.6, 1, 0.78);
-  character.add(body);
-  const shirtFront = new three.Mesh(keep(new three.ConeGeometry(0.5, 1.2, 3)), shirt);
-  shirtFront.rotation.set(Math.PI, Math.PI, 0);
-  shirtFront.position.set(0, -1.95, 0.86);
-  shirtFront.scale.set(1, 1, 0.4);
-  character.add(shirtFront);
+  const torso = new three.Mesh(rounded(3.1, 2.2, 1.7, 0.75), shell);
+  torso.position.y = -2.2;
+  character.add(torso);
+  const chest = new three.Mesh(rounded(1.6, 1.0, 0.3, 0.22), graphite);
+  chest.position.set(0, -1.9, 0.78);
+  character.add(chest);
+  const core = new three.Mesh(sphere(0.2, 32), accentMat);
+  core.position.set(0, -1.9, 0.95);
+  character.add(core);
+  const coreRing = new three.Mesh(keep(new three.TorusGeometry(0.32, 0.03, 12, 48)), metal);
+  coreRing.position.copy(core.position);
+  character.add(coreRing);
   for (const side of [-1, 1]) {
-    const collar = new three.Mesh(keep(new three.BoxGeometry(0.36, 0.22, 0.06)), shirt);
-    collar.position.set(side * 0.2, -1.55, 0.6);
-    collar.rotation.set(0.3, side * -0.45, side * 0.6);
-    character.add(collar);
-    const lapel = new three.Mesh(keep(new three.BoxGeometry(0.3, 1.5, 0.06)), satin);
-    lapel.position.set(side * 0.46, -2.05, 0.92);
-    lapel.rotation.set(0.12, side * -0.35, side * 0.3);
-    character.add(lapel);
+    const shoulder = new three.Mesh(sphere(0.55, 40), graphite);
+    shoulder.position.set(side * 1.65, -1.7, 0);
+    character.add(shoulder);
   }
-  const knot = new three.Mesh(sphere(0.12, 24), tie);
-  knot.position.set(0, -1.6, 0.74);
-  knot.scale.set(1, 1.1, 0.7);
-  character.add(knot);
-  const blade = new three.Mesh(keep(new three.CylinderGeometry(0.17, 0.08, 1.0, 4)), tie);
-  blade.position.set(0, -2.15, 0.95);
-  blade.rotation.set(-0.1, Math.PI / 4, 0);
-  blade.scale.set(1, 1, 0.35);
-  character.add(blade);
-  // Insignia de solapa con el acento.
-  const pin = new three.Mesh(sphere(0.06, 16), accentMat);
-  pin.position.set(-0.6, -1.95, 1.06);
-  character.add(pin);
+
+  // Brazos y manos: sostienen el mazo delante del pecho.
+  const HANDS = new three.Vector3(0, -1.5, 1.5);
+  for (const side of [-1, 1]) {
+    const from = new three.Vector3(side * 1.65, -1.7, 0);
+    const to = new three.Vector3(side * 0.62, -1.62, 1.45);
+    const arm = new three.Mesh(keep(new three.CapsuleGeometry(0.2, from.distanceTo(to) - 0.2, 8, 24)), shell);
+    arm.position.copy(from).add(to).multiplyScalar(0.5);
+    arm.quaternion.setFromUnitVectors(new three.Vector3(0, 1, 0), to.clone().sub(from).normalize());
+    character.add(arm);
+    const hand = new three.Mesh(sphere(0.27, 32), graphite);
+    hand.position.copy(to);
+    hand.scale.set(1, 1.15, 1);
+    character.add(hand);
+  }
+
+  // Fichas de tecnologías: caja fina con el logo en la cara delantera, pintado en un canvas 2D.
+  const TILE_W = 0.78;
+  const TILE_H = 0.96;
+  const tileGeometry = keep(new three.BoxGeometry(TILE_W, TILE_H, 0.05));
+  const edge = physical(GRAPHITE, 0.3, { metalness: 0.6 });
+  const tiles = techs.map((tech, index) => {
+    const art = document.createElement('canvas');
+    art.width = 256;
+    art.height = 316;
+    const texture = keep(new three.CanvasTexture(art));
+    texture.colorSpace = three.SRGBColorSpace;
+    texture.anisotropy = 4;
+    const face = keep(new three.MeshPhysicalMaterial({ map: texture, roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.1 }));
+    const mesh = new three.Mesh(tileGeometry, [edge, edge, edge, edge, face, edge]);
+    scene.add(mesh);
+    return { tech, art, texture, mesh, index, hover: 0 };
+  });
+
+  function paintTile(tile: (typeof tiles)[number], colors: ScenePalette): void {
+    const ctx = tile.art.getContext('2d');
+    if (!ctx) return;
+    const { width, height } = tile.art;
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = colors.surface;
+    ctx.beginPath();
+    ctx.roundRect(0, 0, width, height, 28);
+    ctx.fill();
+    ctx.strokeStyle = colors.line;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    // Las marcas casi negras se pintan con el color del texto para que se vean en el tema oscuro.
+    const brand = new three.Color(tile.tech.color);
+    const dark = brand.r * 0.2126 + brand.g * 0.7152 + brand.b * 0.0722 < 0.12;
+    ctx.save();
+    ctx.translate(width / 2 - 70, 48);
+    ctx.scale(140 / 24, 140 / 24);
+    ctx.fillStyle = dark ? colors.ink : tile.tech.color;
+    ctx.fill(new Path2D(tile.tech.path));
+    ctx.restore();
+    ctx.fillStyle = colors.ink;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let size = 30;
+    do {
+      ctx.font = `600 ${size}px Inter, system-ui, sans-serif`;
+      size -= 2;
+    } while (ctx.measureText(tile.tech.title).width > width - 32 && size > 14);
+    ctx.fillText(tile.tech.title, width / 2, 254);
+    tile.texture.needsUpdate = true;
+  }
+
+  let stackOpen = false;
+  let openedAt = 0;
+  let clock = 0;
+  let spin = 0;
+  let hovered: (typeof tiles)[number] | null = null;
+  const raycaster = new three.Raycaster();
+  const target = new three.Vector3();
+  const targetQuat = new three.Quaternion();
+  const faceCamera = new three.Quaternion();
+  const tilt = new three.Quaternion();
+  const zAxis = new three.Vector3(0, 0, 1);
+
+  function placeTiles(dt: number): void {
+    const count = tiles.length;
+    const follow = animate ? 1 - Math.exp(-dt * 7) : 1;
+    if (!hovered) spin += dt * 0.22;
+    faceCamera.copy(camera.quaternion);
+    character.updateMatrixWorld();
+    for (const tile of tiles) {
+      const i = tile.index;
+      const open = stackOpen && (!animate || clock - openedAt > i * 0.045);
+      if (open) {
+        // Órbita elíptica alrededor del robot; las fichas miran siempre a la cámara.
+        const angle = spin + (i / count) * Math.PI * 2;
+        target.set(Math.cos(angle) * 3.5, -0.55 + Math.sin(angle * 2 + i) * 0.22 + character.position.y, 0.5 + Math.sin(angle) * 1.9);
+        targetQuat.copy(faceCamera);
+      } else {
+        // En las manos: un mazo abierto en abanico pequeño, como unas cartas.
+        const offset = i - (count - 1) / 2;
+        target.set(HANDS.x + offset * 0.045, HANDS.y + 0.42 - Math.abs(offset) * 0.012, HANDS.z + 0.08 + i * 0.012);
+        character.localToWorld(target);
+        tilt.setFromAxisAngle(zAxis, -offset * 0.07);
+        targetQuat.copy(character.quaternion).multiply(tilt);
+      }
+      tile.mesh.position.lerp(target, follow);
+      tile.mesh.quaternion.slerp(targetQuat, follow);
+      tile.hover += ((tile === hovered ? 1 : 0) - tile.hover) * follow;
+      const base = open ? 1 : 0.62;
+      tile.mesh.scale.setScalar((base + tile.hover * 0.4) * character.scale.x);
+    }
+  }
 
   // Partículas y anillos alrededor.
   const dustMaterial = keep(new three.PointsMaterial({ size: 0.04, transparent: true, opacity: 0.7, depthWrite: false }));
@@ -204,6 +327,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     accentMat.color.copy(accent);
     accentMat.emissive.copy(accent);
     rim.color.copy(accent);
+    eyeLight.color.copy(accent);
     rim2.color.copy(accent);
     ringMaterial.color.copy(accent);
     ringMaterial.opacity = next.light ? 0.6 : 0.4;
@@ -211,10 +335,15 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     dustMaterial.blending = next.light ? three.NormalBlending : three.AdditiveBlending;
     dustMaterial.needsUpdate = true;
     hemi.intensity = next.light ? 1.5 : 1.1;
+    for (const tile of tiles) paintTile(tile, next);
   }
   setPalette(palette);
 
+  let last = 0;
   function frame(t: number): void {
+    const dt = Math.min(0.1, Math.max(0, t - last));
+    last = t;
+    clock = t;
     const intro = animate ? easeOutBack(Math.min(1, t / 1.2)) : 1;
     character.scale.setScalar(0.6 + 0.4 * intro);
     character.position.y = (animate ? Math.sin(t * 1.2) * 0.08 : 0) + lift * 1.2;
@@ -225,14 +354,40 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     head.rotation.x = lookY * 0.3;
     head.rotation.z = -lookX * 0.06;
     character.rotation.y = lookX * 0.15;
+    eyeGroup.position.x = lookX * 0.18;
+    eyeGroup.position.y = -0.02 - lookY * 0.12;
+    const blinkPhase = animate ? t % 4.2 : 1;
+    const closed = blinkPhase < 0.16 ? Math.sin((blinkPhase / 0.16) * Math.PI) : 0;
+    for (const eye of eyes) eye.scale.y = 1 - closed * 0.85;
+    const pulse = animate ? 0.5 + 0.5 * Math.sin(t * 2.4) : 1;
+    accentMat.emissiveIntensity = 0.7 + pulse * 0.6;
+    core.scale.setScalar(0.92 + pulse * 0.12);
+    coreRing.rotation.z = t * 0.8;
     rings[0].rotation.z = t * 0.15;
     rings[1].rotation.z = -t * 0.1;
     field.rotation.y = t * 0.025 + lookX * 0.1;
+    placeTiles(dt);
     renderer.render(scene, camera);
   }
 
   return {
     frame,
+    toggleStack() {
+      stackOpen = !stackOpen;
+      openedAt = clock;
+      if (!stackOpen) hovered = null;
+      return stackOpen;
+    },
+    pick(x, y) {
+      if (!stackOpen) {
+        hovered = null;
+        return null;
+      }
+      raycaster.setFromCamera(new three.Vector2(x, y), camera);
+      const hit = raycaster.intersectObjects(tiles.map((tile) => tile.mesh), false)[0];
+      hovered = tiles.find((tile) => tile.mesh === hit?.object) ?? null;
+      return hovered?.tech.title ?? null;
+    },
     setPalette,
     resize(width, height) {
       renderer.setSize(width, height, false);

@@ -3,6 +3,8 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { LanguageSwitchComponent } from '../../../core/i18n/language-switch.component';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { ThemeService } from '../../../core/theme/theme.service';
 import { CvDownloadComponent } from '../../../shared/ui/cv-download.component';
 import { PAGE_SECTIONS } from './page-sections';
@@ -17,7 +19,7 @@ export { PAGE_SECTIONS } from './page-sections';
 @Component({
   selector: 'app-public-navbar',
   standalone: true,
-  imports: [RouterLink, CvDownloadComponent],
+  imports: [RouterLink, CvDownloadComponent, LanguageSwitchComponent],
   template: `
     <header
       class="safe-top safe-x fixed inset-x-0 top-0 z-nav border-b transition-colors duration-slow ease-standard"
@@ -36,7 +38,7 @@ export { PAGE_SECTIONS } from './page-sections';
                 class="nav-link ui-focus"
                 [class.nav-link-active]="active() === section.id"
                 [attr.aria-current]="active() === section.id ? 'true' : null"
-              >{{ section.label }}</a>
+              >{{ labelOf(section) }}</a>
             </li>
           }
         </ul>
@@ -49,11 +51,11 @@ export { PAGE_SECTIONS } from './page-sections';
               aria-haspopup="true"
               aria-controls="menu-secciones"
               [attr.aria-expanded]="menuOpen()"
-              [attr.aria-label]="'Secciones' + (activeLabel() ? ': ' + activeLabel() : '')"
+              [attr.aria-label]="sectionsWord() + (activeLabel() ? ': ' + activeLabel() : '')"
               (click)="menuOpen.set(!menuOpen())"
             >
               <svg viewBox="0 0 16 16" class="h-4 w-4 sm:hidden" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" /></svg>
-              <span class="hidden sm:inline">{{ activeLabel() || 'Secciones' }}</span>
+              <span class="hidden sm:inline">{{ activeLabel() || sectionsWord() }}</span>
               <svg viewBox="0 0 12 12" class="hidden h-3 w-3 sm:block" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" /></svg>
             </button>
             @if (menuOpen()) {
@@ -68,7 +70,7 @@ export { PAGE_SECTIONS } from './page-sections';
                       [attr.aria-current]="active() === section.id ? 'true' : null"
                       (click)="menuOpen.set(false)"
                     >
-                      {{ section.label }}
+                      {{ labelOf(section) }}
                       @if (active() === section.id) {
                         <span class="h-1.5 w-1.5 rounded-full bg-accent-text" aria-hidden="true"></span>
                       }
@@ -84,8 +86,8 @@ export { PAGE_SECTIONS } from './page-sections';
             type="button"
             class="ui-btn-ghost ui-btn-icon"
             data-testid="theme-toggle"
-            [attr.aria-label]="'Tema: ' + themeLabel() + '. Cambiar'"
-            [attr.title]="'Tema: ' + themeLabel()"
+            [attr.aria-label]="themeWord() + themeLabel()"
+            [attr.title]="themeWord() + themeLabel()"
             (click)="theme.next()"
           >
             <!-- Un SVG por icono: dentro de un bloque de control, un <path> suelto pierde el espacio de nombres SVG. -->
@@ -95,10 +97,12 @@ export { PAGE_SECTIONS } from './page-sections';
               @default { <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H4zM9 20h6M12 16v4" /></svg> }
             }
           </button>
-          <app-cv-download class="hidden md:inline-block" variant="nav" />
+          <app-language-switch />
+          <!-- Con los enlaces en la barra (lg) no cabe: el CV sigue en el hero y en el pie. -->
+          <app-cv-download class="hidden md:inline-block lg:hidden" variant="nav" />
           <!-- La acción primaria de la barra. -->
-          <button type="button" class="ui-btn-primary" aria-label="Preguntar a la IA" (click)="openChat.emit()">
-            <span>Preguntar<span class="hidden sm:inline"> a la IA</span></span>
+          <button type="button" class="ui-btn-primary" [attr.aria-label]="en() ? 'Ask the AI' : 'Preguntar a la IA'" (click)="openChat.emit()">
+            <span>{{ en() ? 'Ask' : 'Preguntar' }}<span class="hidden sm:inline">{{ en() ? ' the AI' : ' a la IA' }}</span></span>
             <!-- El atajo es de teclado: en táctil o sin sitio no se muestra. -->
             <kbd class="hidden rounded-mark border border-accent-on/40 px-1 font-mono text-mono-sm text-accent-on [@media(hover:hover)]:sm:inline">{{ shortcut }}</kbd>
           </button>
@@ -134,7 +138,19 @@ export { PAGE_SECTIONS } from './page-sections';
 export class PublicNavbarComponent {
   readonly openChat = output<void>();
   readonly theme = inject(ThemeService);
-  readonly themeLabel = computed(() => ({ system: 'el del sistema', light: 'claro', dark: 'oscuro' })[this.theme.choice()]);
+  private readonly language = inject(LanguageService);
+  readonly en = computed(() => this.language.lang() === 'en');
+  readonly sectionsWord = computed(() => (this.en() ? 'Sections' : 'Secciones'));
+  readonly themeWord = computed(() => (this.en() ? 'Theme: ' : 'Tema: '));
+  readonly themeLabel = computed(() =>
+    this.en()
+      ? ({ system: 'system', light: 'light', dark: 'dark' })[this.theme.choice()] + '. Change'
+      : ({ system: 'el del sistema', light: 'claro', dark: 'oscuro' })[this.theme.choice()] + '. Cambiar',
+  );
+
+  labelOf(section: { label: string; labelEn: string }): string {
+    return this.en() ? section.labelEn : section.label;
+  }
   readonly scrolled = signal(false);
   readonly menuOpen = signal(false);
   /** Ancla de la sección que cruza el centro de la ventana, o `null` sobre el hero. */
@@ -174,7 +190,8 @@ export class PublicNavbarComponent {
   }
 
   activeLabel(): string | null {
-    return PAGE_SECTIONS.find((section) => section.id === this.active())?.label ?? null;
+    const section = PAGE_SECTIONS.find((item) => item.id === this.active());
+    return section ? this.labelOf(section) : null;
   }
 
   @HostListener('window:scroll')
