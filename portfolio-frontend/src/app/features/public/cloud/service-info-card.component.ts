@@ -75,7 +75,7 @@ export const SHEET_DISMISS_PX = 80;
 
         @if (!card().equivalence.direct) {
           <div class="rounded-control border border-status-warn/40 bg-status-warn/10 px-3 py-2" data-testid="card-no-equivalent">
-            <span class="ui-badge-warn">Sin equivalente directo</span>
+            <span class="ui-badge ui-badge-warn">Sin equivalente directo</span>
             <p class="mt-1.5 text-body-sm text-ink-1">{{ card().equivalence.tradeoff }}</p>
           </div>
         }
@@ -95,7 +95,7 @@ export const SHEET_DISMISS_PX = 80;
                 @if (card().cost.kind !== 'none') {
                   <span class="font-mono text-mono">{{ card().cost.label }}</span>
                 }
-                <span [class]="card().cost.kind === 'live' ? 'ui-badge-ok' : 'ui-badge'" data-testid="card-cost-tag">{{ card().cost.tag }}</span>
+                <span [class]="card().cost.kind === 'live' ? 'ui-badge ui-badge-ok' : 'ui-badge'" data-testid="card-cost-tag">{{ card().cost.tag }}</span>
               </dd>
             </div>
           </dl>
