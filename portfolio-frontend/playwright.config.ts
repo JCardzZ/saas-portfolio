@@ -33,6 +33,17 @@ const PROFILES: Profile[] = [
   { name: 'landscape-915', viewport: { width: 915, height: 412 } },
 ];
 
+/**
+ * Anchos en los que se comprueban los diagramas (diagrams.e2e.ts): móviles de 320 a 440 px
+ * (incluye los iPhone Pro Max actuales y los Android grandes) y tabletas de 744 a 1024, cada uno
+ * en vertical y en horizontal.
+ */
+const DIAGRAM_SIZES: [width: number, height: number][] = [
+  [320, 568], [360, 800], [375, 667], [390, 844], [393, 852], [402, 874], [412, 915], [430, 932], [440, 956],
+  [744, 1133], [768, 1024], [820, 1180], [834, 1194], [1024, 1366],
+];
+const DIAGRAM_VIEWPORTS = DIAGRAM_SIZES.flatMap(([width, height]) => [{ width, height }, { width: height, height: width }]);
+
 /** Dispositivo base de cada motor para los anchos sin perfil propio. */
 const BASE: Record<Engine, keyof typeof devices> = { chromium: 'Pixel 7', webkit: 'iPhone 15' };
 
@@ -55,6 +66,11 @@ function project(profile: Profile, engine: Engine) {
 
 /** Lo nuevo que vive detrás de una feature flag: se prueba en todos los perfiles, con la flag encendida. */
 const FLAGGED = ['**/studio-smart.e2e.ts', '**/mcp-section.e2e.ts'];
+/** Lo que cambia de forma entre el ratón y el dedo: se prueba en todos los perfiles. */
+const EVERYWHERE = ['**/service-card.e2e.ts'];
+
+/** Puerto del servidor de pruebas; `E2E_PORT` lo cambia para probar dos copias del repositorio a la vez. */
+const PORT = Number(process.env['E2E_PORT'] ?? 4310);
 
 export default defineConfig({
   testDir: './e2e',
@@ -70,24 +86,28 @@ export default defineConfig({
     ? [['list'], ['html', { open: 'never', outputFolder: 'e2e-report' }], ['json', { outputFile: 'e2e-results/results.json' }]]
     : [['list']],
   use: {
-    baseURL: 'http://localhost:4310',
+    baseURL: `http://localhost:${PORT}`,
     locale: 'es-ES',
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: 'node tools/serve-dist.mjs dist/portfolio-frontend/browser 4310',
-    url: 'http://localhost:4310',
+    command: `node tools/serve-dist.mjs dist/portfolio-frontend/browser ${PORT}`,
+    url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env['CI'],
   },
   projects: [
     // Móviles y tabletas: toda la batería de mobile.e2e.ts.
     ...PROFILES.flatMap((profile) => (['chromium', 'webkit'] as Engine[]).map((engine) => ({
-      ...project(profile, engine), testMatch: ['**/mobile.e2e.ts', ...FLAGGED],
+      ...project(profile, engine), testMatch: ['**/mobile.e2e.ts', ...FLAGGED, ...EVERYWHERE],
+    }))),
+    // Los diagramas, en cada ancho y orientación: nada recortado, texto legible, nada fijo encima.
+    ...DIAGRAM_VIEWPORTS.flatMap((viewport) => (['chromium', 'webkit'] as Engine[]).map((engine) => ({
+      ...project({ name: `diagramas-${viewport.width}x${viewport.height}`, viewport }, engine), testMatch: '**/diagrams.e2e.ts',
     }))),
     // Escritorio, con ratón: los diagramas en su disposición de columnas (desktop.e2e.ts).
     ...(['chromium', 'webkit'] as Engine[]).map((engine) => ({
       name: `desktop-1440-${engine}`,
-      testMatch: ['**/desktop.e2e.ts', ...FLAGGED],
+      testMatch: ['**/desktop.e2e.ts', ...FLAGGED, ...EVERYWHERE],
       use: { browserName: engine, viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 },
     })),
   ],

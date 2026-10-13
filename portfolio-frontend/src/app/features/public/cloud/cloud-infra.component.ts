@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 
 import { IconPopService } from '../../../shared/ui/icon-pop.service';
+import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
 import { TechIconComponent } from '../../../shared/ui/tech-icon.component';
 import { TECH_ICONS, TechIcon, TechIconKey } from '../../../shared/ui/tech-icons';
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
@@ -13,6 +14,8 @@ import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { FlagService } from '../../../core/flags/flag.service';
+import { FocusTrapDirective } from '../../../shared/ui/focus-trap.directive';
+import { PortalDirective } from '../../../shared/ui/portal.directive';
 import { describeHttpError } from '../../../core/errors/http-error';
 import { ArchitectureStudioService, StudioEntry } from './architecture-studio.service';
 import { ArchitectureCopilotComponent } from './architecture-copilot.component';
@@ -32,6 +35,9 @@ import {
   FAULT_RECOVERY_MS, FaultKind, Faults, TRAFFIC_PROFILES, TrafficMode, backupOf, computeVitals, particlesPerWire, profileOf,
 } from './live-traffic';
 import { LivePricingService } from './live-pricing.service';
+import { StudioMobileCanvasComponent, MobileRow } from './studio-mobile-canvas.component';
+import { CardPlacement, buildServiceCard, placeCard, serviceTooltip } from './service-card';
+import { ServiceInfoCardComponent } from './service-info-card.component';
 import { LiveVitalsComponent } from './live-vitals.component';
 import { NodePatch, NodePropertiesComponent } from './node-properties.component';
 import { History } from './studio-history';
@@ -80,10 +86,29 @@ interface Wire extends CloudLink {
  * de seguridad. Además estima el coste mensual, simula escenarios de fallo y audita la
  * topología. Trabaja sobre una copia en memoria; "Restablecer" vuelve al original.
  */
+/**
+ * Ancho mínimo del lienzo de trabajo; por debajo se muestra la vista vertical de solo lectura. Con
+ * ratón basta con 720 px (el lienzo se reduce y se sigue pudiendo editar). Con el dedo hace falta
+ * que quepa casi a tamaño real: reducido, ni se lee ni se acierta a tocar.
+ */
+const MIN_CANVAS_WIDTH = { mouse: 720, touch: 1088 };
+
+function minCanvasWidth(): number {
+  const touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  return touch ? MIN_CANVAS_WIDTH.touch : MIN_CANVAS_WIDTH.mouse;
+}
+
+/** Espera antes de mostrar el aviso de un nodo: lo justo para que no salte al cruzar el lienzo. */
+export const TOOLTIP_DELAY_MS = 300;
+const TOOLTIP_HALF = 120;
+const TOOLTIP_ROOM = 72;
+/** Alto de la barra de navegación fija: la tarjeta no se coloca debajo de ella. */
+const NAV_HEIGHT = 64;
+
 @Component({
   selector: 'app-cloud-infra',
   standalone: true,
-  imports: [SystemDesignComponent, TechIconComponent, TheaterToggleComponent, ServiceCatalogComponent, CostBadgeComponent, AuditCardComponent, NodePropertiesComponent, ArchitectureCopilotComponent, LiveVitalsComponent],
+  imports: [SystemDesignComponent, TechIconComponent, TheaterToggleComponent, ServiceCatalogComponent, CostBadgeComponent, AuditCardComponent, NodePropertiesComponent, ArchitectureCopilotComponent, LiveVitalsComponent, ContainerWidthDirective, StudioMobileCanvasComponent, ServiceInfoCardComponent, FocusTrapDirective, PortalDirective],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   templateUrl: './cloud-infra.component.html',
@@ -296,6 +321,20 @@ export class CloudInfraComponent {
   readonly activeZone = computed(() => this.zones().find((zone) => zone.id === this.activeZoneId()) ?? null);
 
   private readonly canvas = viewChild<ElementRef<SVGSVGElement>>('canvas');
+  private readonly stageBox = viewChild(ContainerWidthDirective);
+  /** Sin ancho para el lienzo de trabajo, el diagrama se muestra de arriba abajo y de solo lectura. */
+  readonly compact = computed(() => this.stageBox()?.narrowerThan(minCanvasWidth()) ?? false);
+  /** Las piezas del proyecto para la vista estrecha: nombre, papel, zona de red y coste. */
+  readonly mobileRows = computed<MobileRow[]>(() => this.nodes().map((node) => {
+    const zone = zoneAt(this.zones(), node.x, node.y);
+    const price = this.nodeCosts().get(node.id);
+    return {
+      id: node.id, label: this.serviceOf(node), role: node.role, icon: this.iconOf(node),
+      meta: [zone ? this.zoneLabelOf(zone) : null, price?.label].filter(Boolean).join(' · '),
+      live: price?.live === true, state: this.chaosOf(node),
+    };
+  }));
+  readonly mobileLinks = computed(() => this.links().map((link): [string, string] => [link.from, link.to]));
   private nextCustomId = 1;
   private dragging: { id: string; dx: number; dy: number; recorded: boolean } | null = null;
   private zoneDrag: { id: string; mode: 'move' | ZoneCorner; x: number; y: number; origin: StudioZone; nodes: CloudNode[]; zones: StudioZone[]; recorded: boolean } | null = null;
@@ -347,9 +386,17 @@ export class CloudInfraComponent {
     inject(DestroyRef).onDestroy(() => {
       this.clearChaosTimers();
       this.clearFaults();
+      this.hideTooltip();
+      this.watchPage(false);
     });
     this.restore();
     this.studio.load();
+    // Al estrecharse (girar el móvil, acoplar el inspector) se sale de la edición: no hay lienzo donde editar.
+    effect(() => {
+      if (this.compact() && untracked(this.editing)) {
+        this.toggleEditing();
+      }
+    }, { allowSignalWrites: true });
     // Fuera de pantalla se detienen las partículas y el reloj de las métricas (clase `studio-paused`).
     if (typeof IntersectionObserver !== 'undefined') {
       const visibility = new IntersectionObserver(([entry]) => this.host.classList.toggle('studio-paused', !entry.isIntersecting));
@@ -453,6 +500,221 @@ export class CloudInfraComponent {
     this.inspector.select(id);
   }
 
+  // ---------- Tarjeta informativa ----------
+  /** Nodo cuya tarjeta está abierta. */
+  readonly infoId = signal<string | null>(null);
+  /** En táctil, o sin sitio para el lienzo de trabajo, la tarjeta es una hoja inferior. */
+  readonly infoSheet = computed(() => this.touch || this.compact());
+  readonly infoCard = computed(() => {
+    const node = this.nodes().find((candidate) => candidate.id === this.infoId());
+    return node ? buildServiceCard(node, {
+      nodes: this.nodes(), links: this.links(), zones: this.zones(), provider: this.selectedId(),
+      providers: this.providers().map((provider) => provider.id), warnings: this.violationsByNode(), costs: this.nodeCosts(),
+    }) : null;
+  });
+  /** Posición de la tarjeta anclada, dentro del marco del lienzo; `null` mientras se mide. */
+  readonly infoPlacement = signal<(CardPlacement & { maxHeight: number }) | null>(null);
+  /** Aviso mínimo (nombre y una frase) que sale al posar el cursor o el foco sobre un nodo. */
+  readonly tooltip = signal<{ id: string; name: string; what: string; x: number; y: number; above: boolean } | null>(null);
+  private tooltipTimer: ReturnType<typeof setTimeout> | null = null;
+  private quietFocus = false;
+  /** Nodo sobre el que está el cursor mientras su aviso espera o se muestra. */
+  private tooltipTarget: Element | null = null;
+
+  /**
+   * Mientras la tarjeta anclada está abierta se vigila el tamaño de la página: al acoplarse el
+   * inspector de traza cambia el hueco visible sin que la ventana cambie de tamaño ni se desplace.
+   */
+  private pageWatch: ResizeObserver | null = null;
+
+  private watchPage(on: boolean): void {
+    this.pageWatch?.disconnect();
+    this.pageWatch = null;
+    if (on && typeof ResizeObserver !== 'undefined') {
+      this.pageWatch = new ResizeObserver(() => this.onViewportChange());
+      this.pageWatch.observe(document.body);
+    }
+  }
+
+  /** Abre la tarjeta del nodo. Anclada, se coloca en cuanto se conoce su tamaño. */
+  openInfo(node: CloudNode): void {
+    this.hideTooltip();
+    this.activeId.set(node.id);
+    this.infoPlacement.set(null);
+    this.infoId.set(node.id);
+    this.watchPage(!this.infoSheet());
+    setTimeout(() => {
+      this.placeInfo();
+      // El foco pasa a la tarjeta: es un diálogo y Esc lo devuelve al nodo.
+      // (la hoja inferior vive en <body>, fuera de este componente).
+      (this.infoSheet() ? document : this.host).querySelector<HTMLElement>('[data-info-card] [role="dialog"]')?.focus({ preventScroll: true });
+    });
+  }
+
+  closeInfo(restoreFocus = true): void {
+    const id = this.infoId();
+    if (!id) {
+      return;
+    }
+    this.infoId.set(null);
+    this.infoPlacement.set(null);
+    this.watchPage(false);
+    if (restoreFocus) {
+      // Volver al nodo no debe reabrir su aviso.
+      this.quietFocus = true;
+      this.nodeElement(id)?.focus({ preventScroll: true });
+      this.quietFocus = false;
+    }
+  }
+
+  /** El mismo nodo en otra nube: el lienzo cambia y la tarjeta sigue abierta sobre él. */
+  showInCloud(provider: CloudProviderId): void {
+    const id = this.infoId();
+    this.select(provider);
+    if (id) {
+      this.activeId.set(id);
+      setTimeout(() => this.placeInfo());
+    }
+  }
+
+  private nodeElement(id: string): HTMLElement | SVGElement | null {
+    const scope = this.compact() ? 'app-studio-mobile-canvas' : '[data-work-canvas]';
+    return this.host.querySelector<HTMLElement | SVGElement>(`${scope} [data-node-id="${CSS.escape(id)}"]`);
+  }
+
+  /** Parte del marco del lienzo que se ve en la ventana, sin lo que tapan la barra y el inspector acoplado. */
+  private visibleStage(stage: DOMRect): { x: number; y: number; width: number; height: number } {
+    const root = getComputedStyle(document.documentElement);
+    const dock = (name: string) => Number.parseFloat(root.getPropertyValue(name)) || 0;
+    const left = Math.max(0, -stage.left);
+    const top = Math.max(0, NAV_HEIGHT - stage.top);
+    const right = Math.min(stage.width, window.innerWidth - dock('--dock-right') - stage.left);
+    const bottom = Math.min(stage.height, window.innerHeight - dock('--dock-bottom') - stage.top);
+    return { x: left, y: top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+  }
+
+  private placeInfo(): void {
+    const id = this.infoId();
+    const stage = this.host.querySelector<HTMLElement>('[data-stage]');
+    const card = this.host.querySelector<HTMLElement>('[data-info-card]');
+    const anchor = id ? this.nodeElement(id) : null;
+    if (!id || this.infoSheet() || !stage || !card || !anchor) {
+      return;
+    }
+    const frame = stage.getBoundingClientRect();
+    // La tarjeta del Estudio puede estar ampliada (foco por intención): las medidas de pantalla se
+    // pasan a las unidades del marco, que es donde se posiciona la tarjeta.
+    const scale = frame.width / stage.offsetWidth || 1;
+    const shown = this.visibleStage(frame);
+    const visible = { x: shown.x / scale, y: shown.y / scale, width: shown.width / scale, height: shown.height / scale };
+    const node = anchor.getBoundingClientRect();
+    const maxHeight = Math.max(160, visible.height - 16);
+    const size = { width: card.offsetWidth, height: Math.min(card.scrollHeight, maxHeight) };
+    const placement = placeCard(
+      {
+        x: (node.left - frame.left) / scale - visible.x, y: (node.top - frame.top) / scale - visible.y,
+        width: node.width / scale, height: node.height / scale,
+      },
+      size, { width: visible.width, height: visible.height },
+    );
+    this.infoPlacement.set({ ...placement, x: placement.x + visible.x, y: placement.y + visible.y, maxHeight });
+  }
+
+  // La ampliación del Estudio por el foco termina con una transición: la tarjeta se recoloca al acabar.
+  @HostListener('transitionend', ['$event'])
+  onTransitionEnd(event: TransitionEvent): void {
+    if (event.target === this.host && event.propertyName === 'transform') {
+      this.onViewportChange();
+    }
+  }
+
+  @HostListener('window:resize')
+  @HostListener('window:scroll')
+  onViewportChange(): void {
+    // El aviso va dentro del marco del lienzo y se desplaza con él: no hace falta tocarlo (la página
+    // se desplaza sola a menudo, cuando la consola de eventos añade líneas).
+    if (this.infoId() && !this.infoSheet()) {
+      this.placeInfo();
+    }
+  }
+
+  private pointerOver(target: Element, event: MouseEvent): boolean {
+    const box = target.getBoundingClientRect();
+    return event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
+  }
+
+  /** Mientras hay un aviso pendiente o a la vista por el cursor, se retira en cuanto este sale del nodo. */
+  @HostListener('document:mousemove', ['$event'])
+  onPointerMove(event: MouseEvent): void {
+    if (this.tooltipTarget && !this.pointerOver(this.tooltipTarget, event)) {
+      this.hideTooltip();
+    }
+  }
+
+  private scheduleTooltip(node: CloudNode, target: Element, byPointer: boolean): void {
+    this.hideTooltip();
+    if (this.touch || this.quietFocus || this.infoId() === node.id) {
+      return;
+    }
+    this.tooltipTarget = byPointer ? target : null;
+    this.tooltipTimer = setTimeout(() => {
+      const stage = this.host.querySelector<HTMLElement>('[data-stage]');
+      if (!stage || !target.isConnected) {
+        return;
+      }
+      const frame = stage.getBoundingClientRect();
+      const scale = frame.width / stage.offsetWidth || 1;
+      const rect = target.getBoundingClientRect();
+      const box = { left: (rect.left - frame.left) / scale, top: (rect.top - frame.top) / scale, width: rect.width / scale, height: rect.height / scale };
+      // Debajo del nodo; encima si debajo no queda sitio en el marco.
+      const above = box.top + box.height + TOOLTIP_ROOM > stage.offsetHeight;
+      this.tooltip.set({
+        id: node.id, ...serviceTooltip(node, { nodes: this.nodes(), provider: this.selectedId() }),
+        x: Math.max(TOOLTIP_HALF, Math.min(box.left + box.width / 2, stage.offsetWidth - TOOLTIP_HALF)),
+        y: above ? box.top - 8 : box.top + box.height + 8, above,
+      });
+    }, TOOLTIP_DELAY_MS);
+  }
+
+  hideTooltip(): void {
+    if (this.tooltipTimer) {
+      clearTimeout(this.tooltipTimer);
+      this.tooltipTimer = null;
+    }
+    this.tooltip.set(null);
+    this.tooltipTarget = null;
+  }
+
+  /** Fuera de edición, las flechas llevan el foco al nodo más cercano en esa dirección. */
+  private focusNeighbour(node: CloudNode, key: string): boolean {
+    const [dx, dy] = ({ ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] } as Record<string, [number, number]>)[key] ?? [0, 0];
+    if (!dx && !dy) {
+      return false;
+    }
+    let best: CloudNode | null = null;
+    let bestScore = Infinity;
+    for (const other of this.nodes()) {
+      const along = (other.x - node.x) * dx + (other.y - node.y) * dy;
+      const across = Math.abs((other.x - node.x) * dy) + Math.abs((other.y - node.y) * dx);
+      // Solo cuenta lo que queda en esa dirección; desviarse pesa el doble que alejarse.
+      if (other.id !== node.id && along > 0 && along + across * 2 < bestScore) {
+        best = other;
+        bestScore = along + across * 2;
+      }
+    }
+    if (best) {
+      this.nodeElement(best.id)?.focus();
+    }
+    return true;
+  }
+
+  pickMobile(pick: { id: string; event: Event }): void {
+    const node = this.nodes().find((candidate) => candidate.id === pick.id);
+    if (node) {
+      this.activate(node, pick.event);
+    }
+  }
+
   toggleEditing(): void {
     this.cancelConnection();
     this.editing.update((editing) => !editing);
@@ -470,8 +732,17 @@ export class CloudInfraComponent {
       return;
     }
     this.activeId.set(node.id);
+    if (event.type === 'click') {
+      this.hideTooltip();
+    } else if (event.currentTarget instanceof Element) {
+      this.scheduleTooltip(node, event.currentTarget, event.type === 'mouseenter');
+    }
     if (this.editing()) {
+      // En edición el clic selecciona y mueve: la tarjeta se abre con el botón «i» del nodo.
       return;
+    }
+    if (event.type === 'click') {
+      this.openInfo(node);
     }
     const telemetry = telemetryFor(node.type, node.role);
     const name = this.serviceOf(node);
@@ -494,6 +765,11 @@ export class CloudInfraComponent {
   }
 
   leave(event: Event): void {
+    // El logo que despega se pone encima del nodo y el navegador da el cursor por salido aunque
+    // siga sobre él: el aviso solo se retira si de verdad ha salido de su recuadro.
+    if (!(event instanceof MouseEvent) || !this.pointerOver(event.currentTarget as Element, event)) {
+      this.hideTooltip();
+    }
     const logo = (event.currentTarget as Element).querySelector('.node-icon');
     if (logo) {
       this.iconPop.hoverLeave(logo);
@@ -852,6 +1128,13 @@ export class CloudInfraComponent {
   // Con teclado: las flechas mueven el nodo enfocado y Supr o Retroceso lo quitan.
   onNodeKeydown(event: KeyboardEvent, node: CloudNode): void {
     if (!this.editing()) {
+      // Fuera de edición: Intro o Espacio abren la tarjeta y las flechas pasan al nodo vecino.
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        this.openInfo(node);
+      } else if (this.focusNeighbour(node, event.key)) {
+        event.preventDefault();
+      }
       return;
     }
     const step: Record<string, [number, number]> = {
@@ -1038,6 +1321,10 @@ export class CloudInfraComponent {
       this.cancelConnection();
       return;
     }
+    if (event.key === 'Escape' && this.infoId()) {
+      this.closeInfo();
+      return;
+    }
     if (!(event.ctrlKey || event.metaKey) || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) {
       return;
     }
@@ -1055,6 +1342,10 @@ export class CloudInfraComponent {
   onDocumentClick(event: Event): void {
     if (this.menu() && !(event.target as Element).closest?.('[data-menu]')) {
       this.menu.set(null);
+    }
+    // Un clic fuera de la tarjeta anclada y de los nodos la cierra, sin mover el foco.
+    if (this.infoId() && !this.infoSheet() && !(event.target as Element).closest?.('[data-info-card], [data-node-id], [data-info-open]')) {
+      this.closeInfo(false);
     }
   }
 

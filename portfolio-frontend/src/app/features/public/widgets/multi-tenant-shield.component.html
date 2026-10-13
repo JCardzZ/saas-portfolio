@@ -4,35 +4,35 @@
   <p class="text-xs text-ink-3">Una tabla física, dos clientes</p>
 </div>
 
-<div class="theater-stage mt-3 overflow-x-auto">
-  <!-- Con el dedo el diagrama no se encoge por debajo del tamaño en que sus nodos miden 44 px: se desplaza dentro de su marco. -->
-  <svg viewBox="0 0 620 248" class="w-full min-w-[420px] [@media(pointer:coarse)]:min-w-[620px]" role="img" [attr.aria-label]="'Dos tenants consultan la misma tabla de vectores. ' + (filterOff() ? 'Sin filtro, ' + leaks() + ' resultados pertenecen a otro tenant.' : 'Con el filtro por tenant_id, cada uno solo alcanza sus propios vectores.')">
-    <rect x="388" y="16" width="216" height="208" rx="22" fill="rgb(255 255 255 / 0.03)" stroke="rgb(255 255 255 / 0.14)" />
+<!-- Sin sitio para el esquema en horizontal (620 px): los dos clientes arriba, su filtro debajo y la tabla al final, a todo el ancho. -->
+<div class="theater-stage mt-3" appContainerWidth>
+  <svg [attr.viewBox]="'0 0 ' + geo().width + ' ' + geo().height" class="block w-full" [attr.data-layout]="geo().vertical ? 'vertical' : 'horizontal'" role="img" [attr.aria-label]="'Dos tenants consultan la misma tabla de vectores. ' + (filterOff() ? 'Sin filtro, ' + leaks() + ' resultados pertenecen a otro tenant.' : 'Con el filtro por tenant_id, cada uno solo alcanza sus propios vectores.')">
+    <rect [attr.x]="geo().table.x" [attr.y]="geo().table.y" [attr.width]="geo().table.w" [attr.height]="geo().table.h" rx="22" fill="rgb(255 255 255 / 0.03)" stroke="rgb(255 255 255 / 0.14)" />
     <g class="database" tabindex="0" role="button" aria-label="Inspeccionar la traza de PostgreSQL" [style.--brand]="postgresql.color" (mouseenter)="inspectDatabase($event)" (mouseleave)="leaveDatabase($event)" (focus)="inspectDatabase()" (click)="inspectDatabase($event)">
       <!-- Zona que responde al toque: el rótulo solo mide 13 de alto. -->
-      <rect x="388" y="204" width="216" height="44" fill="transparent" />
-      <svg x="398" y="230" width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="postgresql.path" [attr.fill]="postgresql.color" /></svg>
-      <text x="416" y="240" fill="var(--text-2)" font-size="12" class="font-mono">document_embeddings · PostgreSQL</text>
+      <rect [attr.x]="geo().caption.x" [attr.y]="geo().caption.y" [attr.width]="geo().caption.w" height="44" fill="transparent" />
+      <svg [attr.x]="geo().caption.x + 10" [attr.y]="geo().caption.y + 26" width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="postgresql.path" [attr.fill]="postgresql.color" /></svg>
+      <text [attr.x]="geo().caption.x + 28" [attr.y]="geo().caption.y + 36" fill="var(--text-2)" font-size="12" class="font-mono">document_embeddings</text>
     </g>
 
     @for (vector of vectors; track vector.id) {
-      <circle class="vector" [class.dimmed]="isDimmed(vector.tenant)" [attr.cx]="vector.x" [attr.cy]="vector.y" r="2.6" [attr.fill]="color(vector.tenant)" opacity="0.55" />
+      <circle class="vector" [class.dimmed]="isDimmed(vector.tenant)" [attr.cx]="geo().at(vector).x" [attr.cy]="geo().at(vector).y" r="2.6" [attr.fill]="color(vector.tenant)" opacity="0.55" />
     }
 
     @for (search of searches(); track search.tenant.id) {
       <g [class.dimmed]="isDimmed(search.tenant.id)" style="transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1)">
-        <path class="beam" [attr.d]="beam(search.tenant)" [attr.stroke]="search.tenant.color" />
-        <path class="beam-pulse" [attr.d]="beam(search.tenant)" pathLength="100" [style.animation-delay.s]="search.tenant.id === 'B' ? 0.9 : 0" />
+        <path class="beam" [attr.d]="geo().lanes[search.tenant.id].beam" [attr.stroke]="search.tenant.color" />
+        <path class="beam-pulse" [attr.d]="geo().lanes[search.tenant.id].beam" pathLength="100" [style.animation-delay.s]="search.tenant.id === 'B' ? 0.9 : 0" />
 
         @for (hit of search.hits; track hit.id) {
-          <line class="hit-line" [class.leak]="hit.leak" [attr.x1]="search.tenant.query.x" [attr.y1]="search.tenant.query.y" [attr.x2]="hit.x" [attr.y2]="hit.y" [attr.stroke]="search.tenant.color" />
-          <circle [attr.cx]="hit.x" [attr.cy]="hit.y" r="4.4" [attr.fill]="color(hit.tenant)" [attr.stroke]="hit.leak ? 'var(--status-danger)' : 'var(--text-1)'" stroke-width="1.4" />
+          <line class="hit-line" [class.leak]="hit.leak" [attr.x1]="geo().at(search.tenant.query).x" [attr.y1]="geo().at(search.tenant.query).y" [attr.x2]="geo().at(hit).x" [attr.y2]="geo().at(hit).y" [attr.stroke]="search.tenant.color" />
+          <circle [attr.cx]="geo().at(hit).x" [attr.cy]="geo().at(hit).y" r="4.4" [attr.fill]="color(hit.tenant)" [attr.stroke]="hit.leak ? 'var(--status-danger)' : 'var(--text-1)'" stroke-width="1.4" />
         }
-        <circle [attr.cx]="search.tenant.query.x" [attr.cy]="search.tenant.query.y" r="4" fill="var(--text-1)" />
+        <circle [attr.cx]="geo().at(search.tenant.query).x" [attr.cy]="geo().at(search.tenant.query).y" r="4" fill="var(--text-1)" />
 
         <g class="gate" [class.gate-off]="filterOff()">
-          <rect x="190" [attr.y]="search.tenant.y - 16" width="100" height="32" rx="10" [attr.stroke]="search.tenant.color" />
-          <text x="240" [attr.y]="search.tenant.y + 3.5" text-anchor="middle" [attr.fill]="filterOff() ? 'var(--status-danger)' : 'var(--text-1)'">
+          <rect [attr.x]="geo().lanes[search.tenant.id].gate.x" [attr.y]="geo().lanes[search.tenant.id].gate.y" [attr.width]="geo().lanes[search.tenant.id].gate.w" height="32" rx="10" [attr.stroke]="search.tenant.color" />
+          <text [attr.x]="geo().lanes[search.tenant.id].gate.x + geo().lanes[search.tenant.id].gate.w / 2" [attr.y]="geo().lanes[search.tenant.id].gate.y + 19.5" text-anchor="middle" [attr.fill]="filterOff() ? 'var(--status-danger)' : 'var(--text-1)'">
             {{ filterOff() ? 'sin filtro' : "tenant_id='" + search.tenant.id + "'" }}
           </text>
         </g>
@@ -50,15 +50,15 @@
         (focus)="focused.set(search.tenant.id)"
         (blur)="focused.set(null)"
       >
-        <rect x="14" [attr.y]="search.tenant.y - 22" width="104" height="44" rx="14" [attr.stroke]="search.tenant.color" />
-        <text x="66" [attr.y]="search.tenant.y - 1" text-anchor="middle" fill="var(--text-1)" font-size="12.5" font-weight="600">{{ search.tenant.name }}</text>
-        <text x="66" [attr.y]="search.tenant.y + 13" text-anchor="middle" fill="var(--text-2)" font-size="12">consulta vectorial</text>
+        <rect [attr.x]="geo().lanes[search.tenant.id].client.x" [attr.y]="geo().lanes[search.tenant.id].client.y" [attr.width]="geo().lanes[search.tenant.id].client.w" height="44" rx="14" [attr.stroke]="search.tenant.color" />
+        <text [attr.x]="geo().lanes[search.tenant.id].client.x + geo().lanes[search.tenant.id].client.w / 2" [attr.y]="geo().lanes[search.tenant.id].client.y + 21" text-anchor="middle" fill="var(--text-1)" font-size="12.5" font-weight="600">{{ search.tenant.name }}</text>
+        <text [attr.x]="geo().lanes[search.tenant.id].client.x + geo().lanes[search.tenant.id].client.w / 2" [attr.y]="geo().lanes[search.tenant.id].client.y + 35" text-anchor="middle" fill="var(--text-2)" font-size="12">consulta vectorial</text>
       </g>
     }
   </svg>
 </div>
 
-<pre class="mt-2 overflow-x-auto rounded-panel border border-line-subtle bg-surface-2 p-3 font-mono text-xs leading-relaxed text-ink-2">SELECT … FROM document_embeddings
+<pre class="mt-2 whitespace-pre-wrap break-words rounded-panel border border-line-subtle bg-surface-2 p-3 font-mono text-xs leading-relaxed text-ink-2">SELECT … FROM document_embeddings
 @if (filterOff()) {<span class="text-status-danger line-through">WHERE tenant_id = ?</span>} @else {WHERE tenant_id = <span [style.color]="sqlTenant().color">'{{ sqlTenant().slug }}'</span>}
 ORDER BY embedding &lt;=&gt; ?::vector LIMIT 5</pre>
 

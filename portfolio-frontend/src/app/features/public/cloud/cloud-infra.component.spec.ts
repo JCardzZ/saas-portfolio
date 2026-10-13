@@ -1,3 +1,6 @@
+import { By } from '@angular/platform-browser';
+
+import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
 import { HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { TestBed, fakeAsync, tick, flush } from '@angular/core/testing';
 
@@ -14,7 +17,7 @@ import { PriceQuote, PricingRequest } from '../../../core/api';
 import { resetRuntimeConfig, runtimeConfig } from '../../../core/config/runtime-config';
 import { OpenFeature } from '@openfeature/web-sdk';
 import { PlatformFlagsProvider } from '../../../core/flags/feature-flags';
-import { CloudInfraComponent, GRAPH_DIFF_DEBOUNCE_MS } from './cloud-infra.component';
+import { CloudInfraComponent, GRAPH_DIFF_DEBOUNCE_MS, TOOLTIP_DELAY_MS } from './cloud-infra.component';
 import { directNodes, fits, settled } from './zone-layout';
 import { DATA_BLUEPRINTS } from './data-blueprints';
 import { CLOUD_NODES } from './cloud-topology.data';
@@ -1404,6 +1407,8 @@ describe('CloudInfraComponent', () => {
     }
     const signIn = () => sessionStorage.setItem('portfolio.session', JSON.stringify({ accessToken: 'demo.mock.token', expiresAt: Date.now() + 600_000 }));
 
+    // Otra batería puede haber dejado una sesión abierta: estas pruebas parten sin ella.
+    beforeEach(() => sessionStorage.clear());
     afterEach(() => sessionStorage.clear());
 
     it('offers its own presets at once and replaces the scenarios with the ones served by the backend', fakeAsync(() => {
@@ -2474,4 +2479,322 @@ describe('CloudInfraComponent · barra con jerarquía', () => {
     expect(element.querySelector<HTMLElement>('#menu-analyze')!.hidden).toBeTrue();
     expect(element.querySelector('#chaos-panel')).not.toBeNull();
   });
+});
+
+describe('CloudInfraComponent · estrecho (móvil)', () => {
+  beforeEach(() => {
+    localStorage.removeItem('architecture-studio-project');
+    resetMockApi();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(withInterceptors([mockApiInterceptor])), provideApi(environment.apiBaseUrl)],
+    });
+  });
+  afterEach(() => {
+    localStorage.removeItem('architecture-studio-project');
+    document.querySelectorAll('body > app-cloud-infra, body > [data-studio-host]').forEach((host) => host.remove());
+  });
+
+  function create(width: number) {
+    ContainerWidthDirective.fixedWidth = width;
+    const fixture = TestBed.createComponent(CloudInfraComponent);
+    (fixture.nativeElement as HTMLElement).dataset['studioHost'] = '';
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+    return { fixture, element: fixture.nativeElement as HTMLElement, component: fixture.componentInstance };
+  }
+
+  it('shows the project top to bottom and read-only, with the same pieces and connections', () => {
+    const { element, component } = create(342);
+    const mobile = element.querySelector('app-studio-mobile-canvas')!;
+
+    expect(mobile).not.toBeNull();
+    expect(mobile.querySelectorAll('[data-node-id]').length).toBe(component.nodes().length);
+    expect(mobile.querySelectorAll('path.wire').length).toBeGreaterThan(5);
+    // El lienzo de trabajo sigue en el documento (para exportar), pero no se ve.
+    expect(element.querySelector('[data-work-canvas]')!.parentElement!.classList).toContain('hidden');
+    expect(Array.from(element.querySelectorAll('button')).some((button) => button.textContent!.includes('Editar arquitectura'))).toBeFalse();
+    expect(mobile.textContent).toContain('Solo lectura');
+  });
+
+  it('names each piece as the selected cloud does, with its network zone and cost', () => {
+    const { fixture, element } = create(342);
+    const text = () => element.querySelector('app-studio-mobile-canvas [data-node-id="api"]')!.getAttribute('aria-label')!;
+
+    expect(text()).toContain('ECS Fargate');
+    expect(text()).toContain('Subred privada');
+    expect(text()).toMatch(/\$\d+\/mes/);
+
+    Array.from(element.querySelectorAll<HTMLButtonElement>('button')).find((button) => button.textContent!.includes('Azure'))!.click();
+    fixture.detectChanges();
+    expect(text()).not.toContain('ECS Fargate');
+  });
+
+  it('moves the live metrics and FinOps out of the diagram, into a row below it', () => {
+    const { element } = create(342);
+    const panels = element.querySelector('[data-testid="studio-panels"]')!;
+
+    expect(panels.classList).toContain('flex');
+    for (const panel of ['app-live-vitals', 'app-cost-badge']) {
+      expect(panels.querySelector(panel)!.classList).not.toContain('absolute');
+    }
+    const canvas = element.querySelector('app-studio-mobile-canvas')!.getBoundingClientRect();
+    expect(panels.getBoundingClientRect().top).toBeGreaterThanOrEqual(canvas.bottom - 1);
+  });
+
+  it('selects a piece when it is tapped and explains it below', () => {
+    const { fixture, element, component } = create(342);
+
+    const node = Array.from(element.querySelectorAll<SVGGElement>('app-studio-mobile-canvas [data-node-id]'))
+      .find((candidate) => candidate.getAttribute('data-node-id') !== component.activeId())!;
+    const id = node.getAttribute('data-node-id')!;
+    node.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(component.activeId()).toBe(id);
+    expect(element.querySelector(`app-studio-mobile-canvas [data-node-id="${id}"]`)!.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('leaves editing when the canvas becomes too narrow to work on', () => {
+    const { fixture, element, component } = create(1280);
+    Array.from(element.querySelectorAll<HTMLButtonElement>('button')).find((button) => button.textContent!.includes('Editar arquitectura'))!.click();
+    fixture.detectChanges();
+    expect(component.editing()).toBeTrue();
+    expect(element.querySelector('app-studio-mobile-canvas')).toBeNull();
+
+    // Girar el móvil o acoplar el inspector estrecha el hueco.
+    fixture.debugElement.query(By.directive(ContainerWidthDirective)).injector.get(ContainerWidthDirective).width.set(500);
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(component.editing()).toBeFalse();
+    expect(element.querySelector('app-studio-mobile-canvas')).not.toBeNull();
+  });
+});
+
+describe('CloudInfraComponent · ficha de servicio', () => {
+  beforeEach(() => {
+    localStorage.removeItem('architecture-studio-project');
+    resetMockApi();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(withInterceptors([mockApiInterceptor])), provideApi(environment.apiBaseUrl)],
+    });
+  });
+
+  afterEach(() => {
+    document.querySelectorAll('[id^="root"]').forEach((element) => element.remove());
+    localStorage.removeItem('architecture-studio-project');
+  });
+
+  function create() {
+    const fixture = TestBed.createComponent(CloudInfraComponent);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+    return { fixture, element: fixture.nativeElement as HTMLElement, component: fixture.componentInstance };
+  }
+
+  const nodeOf = (element: HTMLElement, id: string) => element.querySelector<SVGGElement>(`[data-work-canvas] g.node[data-node-id="${id}"]`)!;
+  const card = (element: HTMLElement) => element.querySelector<HTMLElement>('app-service-info-card');
+  const dialog = (element: HTMLElement) => element.querySelector<HTMLElement>('app-service-info-card [role="dialog"]');
+  const tooltip = (element: HTMLElement) => element.querySelector<HTMLElement>('[role="tooltip"]');
+
+  it('shows a minimal tooltip after a short wait when a node is hovered, and hides it on leaving', fakeAsync(() => {
+    const { fixture, element } = create();
+
+    nodeOf(element, 'postgres').dispatchEvent(new MouseEvent('mouseenter'));
+    tick(TOOLTIP_DELAY_MS - 1);
+    fixture.detectChanges();
+    expect(tooltip(element)).withContext('todavía no').toBeNull();
+
+    tick(1);
+    fixture.detectChanges();
+    expect(tooltip(element)!.textContent).toContain('RDS PostgreSQL');
+    expect(tooltip(element)!.textContent).toContain('Base de datos relacional PostgreSQL');
+    expect(nodeOf(element, 'postgres').getAttribute('aria-describedby')).toBe(tooltip(element)!.id);
+    expect(card(element)).withContext('pasar el cursor no abre la ficha').toBeNull();
+
+    nodeOf(element, 'postgres').dispatchEvent(new MouseEvent('mouseleave'));
+    fixture.detectChanges();
+    expect(tooltip(element)).toBeNull();
+    flush();
+  }));
+
+  it('does not show the tooltip if the cursor leaves before the wait ends', fakeAsync(() => {
+    const { fixture, element } = create();
+
+    nodeOf(element, 'postgres').dispatchEvent(new MouseEvent('mouseenter'));
+    tick(100);
+    nodeOf(element, 'postgres').dispatchEvent(new MouseEvent('mouseleave'));
+    tick(TOOLTIP_DELAY_MS);
+    fixture.detectChanges();
+
+    expect(tooltip(element)).toBeNull();
+    flush();
+  }));
+
+  it('opens the card next to the clicked node, as a titled dialog with the focus inside', fakeAsync(() => {
+    const { fixture, element } = create();
+
+    nodeOf(element, 'postgres').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    const opened = dialog(element)!;
+    expect(opened.getAttribute('aria-labelledby')).toBe(opened.querySelector('h3')!.id);
+    expect(opened.querySelector('h3')!.textContent).toBe('RDS PostgreSQL');
+    expect(opened.textContent).toContain('Amazon RDS for PostgreSQL');
+    expect(opened.textContent).toContain('Recibe deECS Fargate');
+    expect(opened.textContent).toContain('sin acceso desde Internet');
+    expect(document.activeElement).toBe(opened);
+    expect(card(element)!.style.opacity).toBe('1');
+
+    // Anclada: dentro del marco del lienzo y sin tapar el nodo.
+    const frame = element.querySelector<HTMLElement>('[data-stage]')!.getBoundingClientRect();
+    const box = card(element)!.getBoundingClientRect();
+    const anchor = nodeOf(element, 'postgres').getBoundingClientRect();
+    expect(box.left).toBeGreaterThanOrEqual(frame.left - 1);
+    expect(box.right).toBeLessThanOrEqual(frame.right + 1);
+    const overlaps = box.left < anchor.right && box.right > anchor.left && box.top < anchor.bottom && box.bottom > anchor.top;
+    expect(overlaps).withContext('la ficha no tapa su nodo').toBeFalse();
+    flush();
+  }));
+
+  it('closes with Escape and returns the focus to the node, without reopening its tooltip', fakeAsync(() => {
+    const { fixture, element } = create();
+    nodeOf(element, 'postgres').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    dialog(element)!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    tick(TOOLTIP_DELAY_MS);
+    fixture.detectChanges();
+
+    expect(card(element)).toBeNull();
+    expect(document.activeElement).toBe(nodeOf(element, 'postgres') as unknown as Element);
+    expect(tooltip(element)).toBeNull();
+    flush();
+  }));
+
+  it('closes when clicking outside the card and the nodes', fakeAsync(() => {
+    const { fixture, element } = create();
+    nodeOf(element, 'postgres').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+    tick();
+
+    dialog(element)!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+    expect(card(element)).withContext('un clic dentro no la cierra').not.toBeNull();
+
+    element.querySelector<HTMLElement>('[aria-live]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+    expect(card(element)).toBeNull();
+    flush();
+  }));
+
+  it('opens with Enter from the keyboard and moves between nodes with the arrow keys', fakeAsync(() => {
+    const { fixture, element } = create();
+    const api = nodeOf(element, 'api');
+    api.focus();
+
+    api.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(nodeOf(element, 'postgres') as unknown as Element);
+
+    nodeOf(element, 'postgres').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(api as unknown as Element);
+
+    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    api.dispatchEvent(enter);
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+    expect(enter.defaultPrevented).toBeTrue();
+    expect(dialog(element)!.querySelector('h3')!.textContent).toBe('ECS Fargate');
+    flush();
+  }));
+
+  it('switches the canvas to another cloud from a chip, keeping the same node selected and its card open', fakeAsync(() => {
+    const { fixture, element, component } = create();
+    nodeOf(element, 'postgres').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    dialog(element)!.querySelector<HTMLButtonElement>('[data-provider="azure"]')!.click();
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    expect(component.selectedId()).toBe('azure');
+    expect(component.activeId()).toBe('postgres');
+    expect(dialog(element)!.textContent).toContain('Azure Database for PostgreSQL');
+    expect(nodeOf(element, 'postgres').classList).toContain('node-active');
+    expect(dialog(element)!.querySelector('[data-provider="azure"]')).withContext('la nube activa no es un equivalente').toBeNull();
+    flush();
+  }));
+
+  it('in edit mode a click only selects; the card opens from the «i» button of the node', fakeAsync(() => {
+    const { fixture, element, component } = create();
+    component.toggleEditing();
+    fixture.detectChanges();
+
+    nodeOf(element, 'postgres').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+    tick();
+    expect(component.activeId()).toBe('postgres');
+    expect(card(element)).withContext('el clic selecciona, no abre la ficha').toBeNull();
+
+    const info = element.querySelector<SVGGElement>('g.info')!;
+    expect(info.getAttribute('aria-label')).toBe('Ficha de RDS PostgreSQL');
+    info.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+    expect(dialog(element)!.querySelector('h3')!.textContent).toBe('RDS PostgreSQL');
+
+    // Intro sobre el nodo sigue abriendo sus propiedades, como antes.
+    component.closeInfo();
+    nodeOf(element, 'postgres').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    expect(element.querySelector('app-node-properties')).not.toBeNull();
+    expect(card(element)).toBeNull();
+    flush();
+  }));
+
+  it('also opens from the «Ver ficha» button under the canvas', fakeAsync(() => {
+    const { fixture, element } = create();
+    const open = Array.from(element.querySelectorAll<HTMLButtonElement>('button')).find((candidate) => candidate.textContent!.trim() === 'Ver ficha')!;
+
+    open.click();
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+    expect(open.getAttribute('aria-expanded')).toBe('true');
+    expect(dialog(element)).not.toBeNull();
+
+    open.click();
+    fixture.detectChanges();
+    expect(card(element)).toBeNull();
+    flush();
+  }));
+
+  it('carries the warnings of the graph rules and the cost label of the node', fakeAsync(() => {
+    const { fixture, element, component } = create();
+    component.toggleEditing();
+    fixture.detectChanges();
+    component.add(component.catalog().flatMap((category) => category.items).find((item) => item.type === 'snowflake')!);
+    fixture.detectChanges();
+    const added = component.nodes().find((candidate) => candidate.type === 'snowflake')!;
+
+    component.openInfo(added);
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    expect(dialog(element)!.querySelector('[data-testid="card-cost-tag"]')!.textContent).toBe('Sin estimación');
+    expect(dialog(element)!.textContent).toContain('Es el mismo producto en cualquier nube.');
+    flush();
+  }));
 });

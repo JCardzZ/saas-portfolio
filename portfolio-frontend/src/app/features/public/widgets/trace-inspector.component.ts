@@ -45,6 +45,8 @@ const FLOATING_HEIGHT = 300;
 const EDGE = 8;
 /** Alto que ocupa una píldora en la esquina, con su margen. */
 const PILL_SPACE = '3.5rem';
+/** Alto de la barra recogida (36 px) más el borde y la zona segura inferior. */
+const DEMO_BAR_SPACE = 'calc(2.25rem + 1px + env(safe-area-inset-bottom, 0px))';
 const KEYBOARD_STEP = 24;
 
 const LAYOUT_CLASSES: Record<Exclude<InspectorLayout, 'pill'>, string> = {
@@ -239,8 +241,24 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
           </div>
         </section>
       }
+    } @else if (demo && inspector.narrow()) {
+      <!-- Inspector cerrado en un móvil: su barra queda recogida al pie, con el aviso de demo como segmento.
+           Es una barra opaca que la página esquiva (--dock-bottom), no una píldora flotando sobre el contenido;
+           respeta el indicador de inicio y los laterales con las zonas seguras. -->
+      <div
+        #demoBar
+        data-demo-bar
+        class="fixed inset-x-0 bottom-0 z-[46] border-t border-line-strong bg-surface-1 pb-[env(safe-area-inset-bottom)] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]"
+        role="status"
+      >
+        <!-- 36 px; con el texto ampliado crece en vez de cortar el aviso. -->
+        <div class="flex min-h-9 flex-wrap items-center justify-between gap-x-3 py-1">
+          <span class="min-w-0 truncate font-mono text-mono-sm text-ink-3">Inspector de traza</span>
+          <app-demo-notice class="max-w-full" />
+        </div>
+      </div>
     } @else if (demo) {
-      <!-- Inspector cerrado: el aviso de demo ocupa la esquina de su píldora. No es interactivo. -->
+      <!-- Inspector cerrado con sitio de sobra: el aviso de demo ocupa la esquina de su píldora. No es interactivo. -->
       <div data-demo-pill style="bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); right: calc(1rem + env(safe-area-inset-right, 0px))" class="pointer-events-none fixed z-[46] flex max-w-[calc(100vw-2rem)] rounded-full bg-surface-1 shadow-floating">
         <app-demo-notice />
       </div>
@@ -356,6 +374,9 @@ export class TraceInspectorComponent {
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
   private readonly log = viewChild<ElementRef<HTMLElement>>('log');
+  private readonly demoBar = viewChild<ElementRef<HTMLElement>>('demoBar');
+  /** Alto real de la barra recogida, en px; 0 hasta medirla. Crece con el texto ampliado y con el tamaño táctil del aviso. */
+  private readonly demoBarHeight = signal(0);
   private drag: { dx: number; dy: number } | null = null;
 
   constructor() {
@@ -374,10 +395,23 @@ export class TraceInspectorComponent {
       const layout = this.layout();
       const root = document.documentElement.style;
       root.setProperty('--dock-right', open && layout === 'right' ? RIGHT_WIDTH : '0px');
-      root.setProperty('--dock-bottom', open && (layout === 'bottom' || layout === 'sheet') ? this.height()! : '0px');
+      // Cerrado en un móvil y en modo demo, queda su barra recogida: la página también le deja sitio.
+      const bar = !open && this.demo && this.inspector.narrow();
+      root.setProperty('--dock-bottom', open && (layout === 'bottom' || layout === 'sheet') ? this.height()! : bar ? (this.demoBarHeight() ? `${this.demoBarHeight()}px` : DEMO_BAR_SPACE) : '0px');
       // Una píldora en la esquina (inspector minimizado o aviso de demo): el pie le deja sitio.
-      root.setProperty('--pill-space', (open && layout === 'pill') || (!open && this.demo) ? PILL_SPACE : '0px');
+      root.setProperty('--pill-space', (open && layout === 'pill') || (!open && this.demo && !bar) ? PILL_SPACE : '0px');
     });
+    // La página reserva a la barra recogida el alto que de verdad tiene, no uno supuesto.
+    effect((onCleanup) => {
+      const bar = this.demoBar()?.nativeElement;
+      if (!bar || typeof ResizeObserver === 'undefined') {
+        this.demoBarHeight.set(0);
+        return;
+      }
+      const observer = new ResizeObserver(() => this.demoBarHeight.set(Math.ceil(bar.getBoundingClientRect().height)));
+      observer.observe(bar);
+      onCleanup(() => observer.disconnect());
+    }, { allowSignalWrites: true });
     this.demoHost.hosted.set(true);
     inject(DestroyRef).onDestroy(() => {
       document.documentElement.classList.remove('dock-resizing');

@@ -13,7 +13,9 @@ const OLD_PROJECT: { nodes: unknown[] } = JSON.parse(readFileSync(join(__dirname
  * en modo demo (sin backend), donde las flags se encienden en el navegador (`demo-feature-flags`).
  * En móviles y tabletas solo se comprueba la lectura; la edición, en escritorio.
  */
-const CANVAS = 'app-cloud-infra svg[role="group"]';
+const CANVAS = 'app-cloud-infra svg[data-work-canvas]';
+/** En estrecho el Estudio no muestra el lienzo de trabajo sino su vista vertical de solo lectura. */
+const MOBILE = 'app-cloud-infra app-studio-mobile-canvas';
 
 async function openStudio(page: Page, flags: Record<string, boolean>): Promise<void> {
   await page.addInitScript((value) => localStorage.setItem('demo-feature-flags', value), JSON.stringify(flags));
@@ -23,8 +25,24 @@ async function openStudio(page: Page, flags: Record<string, boolean>): Promise<v
   await expect(page.locator('h1')).toBeVisible();
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
   await page.evaluate(() => document.getElementById('cloud')?.scrollIntoView({ block: 'start' }));
-  await expect(page.locator(CANVAS)).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(`${CANVAS}, ${MOBILE}`).first()).toBeAttached({ timeout: 15_000 });
+  await expect(page.locator('app-cloud-infra')).toBeVisible();
   await page.waitForTimeout(400);
+}
+
+/** La vista del proyecto que se ve: el lienzo de trabajo o, en estrecho, su versión vertical. */
+async function shownView(page: Page): Promise<string> {
+  return (await page.locator(MOBILE).count()) > 0 ? MOBILE : CANVAS;
+}
+
+/**
+ * Nodos con ese nombre en la vista que se ve. La vertical puede abreviar el rótulo para que quepa,
+ * así que ahí se mira el nombre accesible del nodo, que va entero (y lleva también su coste).
+ */
+async function nodesNamed(page: Page, text: string) {
+  return (await shownView(page)) === MOBILE
+    ? page.locator(`${MOBILE} [data-node-id][aria-label*="${text}"]`)
+    : page.locator(`${CANVAS} text.node-service`, { hasText: text });
 }
 
 async function capture(page: Page, testInfo: TestInfo, name: string): Promise<void> {
@@ -44,6 +62,7 @@ const isDesktop = (testInfo: TestInfo) => testInfo.project.name.startsWith('desk
 test.describe('lienzo responsivo del Estudio (studio.smart-rules)', () => {
   test('«Ajustar a pantalla» muestra el diagrama entero, sin desplazar el marco ni la página', async ({ page }, testInfo) => {
     await openStudio(page, { 'studio.smart-rules': true });
+    test.skip((await page.locator(MOBILE).count()) > 0, 'en estrecho el lienzo de trabajo no se muestra: lo cubre diagrams.e2e.ts');
     await capture(page, testInfo, 'hito-1-ajustar-antes');
 
     await (await viewMenuItem(page, 'Ajustar a pantalla')).click();
@@ -149,7 +168,8 @@ test.describe('conexiones inteligentes del Estudio (studio.smart-rules)', () => 
     await page.addInitScript((project) => localStorage.setItem('architecture-studio-project', project), JSON.stringify(OLD_PROJECT));
     await openStudio(page, { 'studio.smart-rules': true });
 
-    await expect(page.locator(`${CANVAS} g.node`)).toHaveCount(OLD_PROJECT.nodes.length);
+    const nodes = (await page.locator(MOBILE).count()) ? `${MOBILE} [data-node-id]` : `${CANVAS} g.node`;
+    await expect(page.locator(nodes)).toHaveCount(OLD_PROJECT.nodes.length);
     const warnings = page.getByTestId('graph-warnings');
     await expect(warnings).toContainText('Riesgo de seguridad');
     await expect(warnings).toContainText('Pon una API en medio');
@@ -175,12 +195,17 @@ test.describe('Oracle Cloud en el Estudio (cloud.oracle)', () => {
 
     await page.locator(CLOUDS, { hasText: 'OCI' }).click();
 
-    await expect(page.locator(`${CANVAS} text.node-service`, { hasText: 'OCI Database with PostgreSQL' })).toBeVisible();
-    await expect(page.locator(`${CANVAS} text.node-service`, { hasText: 'RDS PostgreSQL' })).toHaveCount(0);
-    const foreign = await page.locator(`${CANVAS} image.node-icon`).evaluateAll((images) =>
-      images.map((image) => image.getAttribute('href') ?? '').filter((href) => /cloud-icons\/(aws|gcp|azure)\//.test(href)));
+    // En estrecho el lienzo de trabajo está oculto y se ve su vista vertical: se comprueba lo que se ve.
+    const view = await shownView(page);
+    await expect((await nodesNamed(page, 'OCI Database with PostgreSQL')).first()).toBeVisible();
+    await expect(await nodesNamed(page, 'RDS PostgreSQL')).toHaveCount(0);
+    const foreign = await page.locator(`${view} :is(image, img)`).evaluateAll((images) =>
+      images.map((image) => image.getAttribute('href') ?? image.getAttribute('src') ?? '').filter((href) => /cloud-icons\/(aws|gcp|azure)\//.test(href)));
     expect(foreign, 'ningún icono de arquitectura de otra nube').toEqual([]);
-    await expect(page.locator(`${CANVAS} [data-testid="node-cost"]`, { hasText: 'sin estimación' }).first()).toBeVisible();
+    const unpriced = view === MOBILE
+      ? page.locator(`${MOBILE} [data-node-id][aria-label*="sin estimación"]`)
+      : page.locator(`${CANVAS} [data-testid="node-cost"]`, { hasText: 'sin estimación' });
+    await expect(unpriced.first()).toBeVisible();
     const scroll = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
     expect(scroll.scroll, 'la página no se desplaza en horizontal').toBeLessThanOrEqual(scroll.client + 1);
     await capture(page, testInfo, 'hito-3-oci-despues');
@@ -229,7 +254,55 @@ test.describe('diseño de sistemas en el Estudio (studio.system-design)', () => 
     await capturePanel(page, testInfo, 'hito-4-vista-despues');
 
     await page.locator(VIEWS, { hasText: 'Infraestructura' }).click();
-    await expect(page.locator(CANVAS)).toBeVisible();
+    await expect(page.locator(await shownView(page))).toBeVisible();
+  });
+
+  test('el sistema se dibuja al elegir cada pieza y el asistente dice si escala y qué cambiar', async ({ page }, testInfo) => {
+    await openStudio(page, { 'studio.system-design': true });
+    await page.locator(VIEWS, { hasText: 'Aplicación' }).click();
+    const diagram = page.locator(`${APP} [data-testid="system-diagram"]`);
+    await expect(diagram).toBeVisible();
+    await expect(diagram.locator('g.piece')).toHaveCount(4);
+
+    // El dibujo cabe en su marco sin encogerse: a lo ancho si hay sitio, apilado si no.
+    const frame = (await page.locator(`${APP} app-system-diagram`).boundingBox())!;
+    const drawn = (await diagram.boundingBox())!;
+    expect(drawn.width, 'el diagrama no desborda su marco').toBeLessThanOrEqual(frame.width + 1);
+    const title = await diagram.locator('.piece-title').first().evaluate((text) => Number.parseFloat(getComputedStyle(text).fontSize));
+    expect(title, 'el texto no se encoge').toBeGreaterThanOrEqual(14);
+    const page_ = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+    expect(page_.scroll, 'la página no se desplaza en horizontal').toBeLessThanOrEqual(page_.client + 1);
+    // Cada tecnología lleva su logo con el nombre al lado, y el aviso de marcas va junto al dibujo.
+    await expect(diagram.locator('g.piece[data-piece="backend"] svg.logo')).toHaveAttribute('data-logo', 'Spring Boot');
+    await expect(diagram.locator('g.piece[data-piece="backend"] .piece-title')).toHaveText('Spring Boot');
+    await expect(page.locator(`${APP} [data-testid="trademark-notice"]`)).toContainText('marcas de sus respectivos dueños');
+
+    await expect(page.locator(`${APP} [data-testid="advisor-verdict"]`)).toHaveText('Escala, pero con límites');
+    if (isDesktop(testInfo)) {
+      await page.locator(`${APP} fieldset[data-category="cache"] input[value="redis"]`).check();
+      await expect(diagram.locator('g.piece')).toHaveCount(5);
+      await expect(diagram.locator('g.edge[data-edge="backend-cache"]')).toHaveCount(1);
+    }
+    await capturePanel(page, testInfo, 'sistema-diagrama');
+
+    await page.locator(`${APP} [data-testid="advisor-open"]`).click();
+    const dialog = page.locator('[data-testid="advisor-layer"] [role="dialog"]');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-dimension]')).toHaveCount(5);
+    await expect(dialog.getByTestId('advisor-basis')).toContainText('No es un modelo de IA');
+    await page.waitForTimeout(400);
+    const viewport = page.viewportSize()!;
+    const box = (await dialog.boundingBox())!;
+    expect(box.x, 'la ventana del asistente cabe a lo ancho').toBeGreaterThanOrEqual(-0.5);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 0.5);
+    expect(box.y, 'y a lo alto').toBeGreaterThanOrEqual(-0.5);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 0.5);
+    const path = join('e2e-screens', testInfo.project.name, 'sistema-asistente.png');
+    await page.screenshot({ path, animations: 'disabled' });
+    await testInfo.attach('sistema-asistente', { path, contentType: 'image/png' });
+
+    await dialog.getByRole('button', { name: 'Cerrar' }).click();
+    await expect(dialog).toHaveCount(0);
   });
 
   test('desplegar una pieza, pedir requisitos y generar: las comprobaciones salen al momento', async ({ page }, testInfo) => {
@@ -319,7 +392,7 @@ test.describe('sistemas de ejemplo en el Estudio (studio.system-templates)', () 
 
     // Y la misma plantilla trae su infraestructura, en Azure.
     await page.locator('app-cloud-infra [role="tablist"][aria-label="Vista del proyecto"] [role="tab"]', { hasText: 'Infraestructura' }).click();
-    await expect(page.locator(`${CANVAS} text.node-service`, { hasText: 'PostgreSQL Flexible' }).first()).toBeVisible();
+    await expect((await nodesNamed(page, 'PostgreSQL Flexible')).first()).toBeVisible();
     await capture(page, testInfo, 'hito-5-sistema-infraestructura');
   });
 });
