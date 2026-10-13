@@ -21,23 +21,36 @@ export class LoginComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  readonly form = inject(NonNullableFormBuilder).group({
+  private readonly forms = inject(NonNullableFormBuilder);
+  /** Una persona entra con su correo; el cliente de máquina, con su id y su secreto. */
+  readonly mode = signal<'user' | 'client'>('user');
+  readonly userForm = this.forms.group({
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', Validators.required],
+  });
+  readonly form = this.forms.group({
     clientId: ['', Validators.required],
     clientSecret: ['', Validators.required],
   });
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
 
+  choose(mode: 'user' | 'client'): void {
+    this.mode.set(mode);
+    this.error.set(null);
+  }
+
   submit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+    const form = this.mode() === 'user' ? this.userForm : this.form;
+    if (form.invalid) {
+      form.markAllAsTouched();
       return;
     }
+    const { email, password } = this.userForm.getRawValue();
     const { clientId, clientSecret } = this.form.getRawValue();
     this.submitting.set(true);
     this.error.set(null);
-    this.auth
-      .login(clientId, clientSecret)
+    (this.mode() === 'user' ? this.auth.loginUser(email, password) : this.auth.login(clientId, clientSecret))
       .pipe(finalize(() => this.submitting.set(false)))
       .subscribe({
         next: () => void this.router.navigateByUrl(this.returnUrl()),

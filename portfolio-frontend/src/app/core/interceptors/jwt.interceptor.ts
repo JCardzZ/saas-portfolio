@@ -4,7 +4,7 @@ import { inject } from '@angular/core';
 import { runtimeConfig } from '../config/runtime-config';
 import { AuthService } from '../auth/auth.service';
 
-const PROTECTED_PATHS = ['/admin/', '/auth/validate'];
+const PROTECTED_PATHS = ['/admin/', '/auth/validate', '/auth/me'];
 
 /** Solo las rutas protegidas de nuestra API reciben el token; nunca otros orígenes. */
 export function requiresToken(url: string): boolean {
