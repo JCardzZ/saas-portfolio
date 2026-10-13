@@ -318,7 +318,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     // Globo: las fichas repartidas por una esfera de Fibonacci (sin huecos ni montones), tan grande
     // como la pantalla, que gira sobre su eje vertical.
     const radius = Math.max(1.6, Math.min(halfHeight * 0.92, halfWidth * 0.9));
-    const cardScale = Math.max(0.42, Math.min(halfHeight, halfWidth) * 0.15);
+    const cardScale = Math.max(0.62, Math.min(halfHeight, halfWidth) * 0.23);
     const camY = camera.position.y;
     const cos = Math.cos(spin);
     const sin = Math.sin(spin);
@@ -493,7 +493,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       halfWidth = halfHeight * camera.aspect;
       // El lienzo ocupa toda la pantalla: el robot, a escala de ella, queda en la mitad de abajo, bajo el nombre.
       fit = Math.min(halfHeight * 0.27, halfWidth * 0.36);
-      camera.position.y = halfHeight * 0.42;
+      camera.position.y = halfHeight * (camera.aspect < 0.8 ? 0.42 : 0.52);
       camera.updateProjectionMatrix();
     },
     pointer(x, y) {

@@ -60,7 +60,7 @@ const DRAG_THRESHOLD = 6;
       >
         @if (ready()) {
           <span
-            class="pointer-events-none absolute bottom-[max(9.5rem,24dvh)] left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full border border-line-subtle bg-surface-1/80 px-3 py-1 font-mono text-mono-sm text-ink-2 backdrop-blur"
+            class="pointer-events-none absolute bottom-[max(7rem,15dvh)] left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full border border-line-subtle bg-surface-1/80 px-3 py-1 font-mono text-mono-sm text-ink-2 backdrop-blur"
             aria-hidden="true"
           >{{ hint() }}</span>
         }

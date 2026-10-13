@@ -11,10 +11,15 @@
     <!-- El hero deja pasar los clics a la escena salvo en sus enlaces y botones. -->
     <section class="hero pointer-events-none relative flex min-h-[calc(100dvh-7rem)] flex-col pb-16 sm:pb-24 [&_a]:pointer-events-auto [&_button]:pointer-events-auto" aria-labelledby="hero-titulo" [class.hero-dimmed]="immersive()">
       <!-- Con el mazo abierto (hero-dimmed), el texto se retira para que las fichas ocupen la pantalla. -->
-      <p class="relative z-10 text-center font-mono text-mono-sm uppercase tracking-[0.2em] text-accent-text" data-testid="hero-role">{{ heroRole() }}</p>
-      <h1 id="hero-titulo" class="hero-name relative z-0 mt-3 text-center font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink-1">
+      <!-- Jerarquía: nombre (h1) y, justo debajo, el rol como subtítulo legible; no como rótulo diminuto encima. -->
+      <h1 id="hero-titulo" class="hero-name relative z-0 text-center font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink-1">
         {{ i18n.t(copy.heroTitle) }}
       </h1>
+      <p class="hero-role relative z-10 mx-auto mt-5 flex items-center justify-center gap-3 text-center font-medium tracking-tight text-ink-2" data-testid="hero-role">
+        <span class="h-px w-8 bg-accent-solid max-sm:hidden" aria-hidden="true"></span>
+        {{ heroRole() }}
+        <span class="h-px w-8 bg-accent-solid max-sm:hidden" aria-hidden="true"></span>
+      </p>
       <div class="-mt-[6vw] h-[min(34rem,58dvh)]" aria-hidden="true"></div>
       <div class="relative z-10 mt-auto flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
         <p class="max-w-[30rem] text-balance text-body-lg text-ink-2">

@@ -320,6 +320,10 @@
   transition: opacity var(--duration-slow) var(--ease-standard);
 }
 
+.hero-role {
+  font-size: clamp(1.125rem, 2.2vw, 1.75rem);
+}
+
 .hero-name {
   /* «MANUEL CARDOZA» tiene que caber en una línea dentro de la columna (máx. 72 rem): 8,2vw. */
   font-size: clamp(2.5rem, 8.2vw, 7.4rem);
