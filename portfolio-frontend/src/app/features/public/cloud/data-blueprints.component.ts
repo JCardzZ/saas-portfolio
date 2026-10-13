@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { ArchitectureStudioService } from './architecture-studio.service';
 
@@ -28,11 +29,12 @@ interface Card {
 @Component({
   selector: 'app-data-blueprints',
   standalone: true,
+  imports: [TranslatePipe],
   host: { class: 'bento-card block' },
   template: `
     <section id="patrones-de-datos" aria-labelledby="data-blueprints-title">
-      <p class="text-xs font-medium uppercase tracking-wider text-ink-3">Patrones de datos</p>
-      <h3 id="data-blueprints-title" class="mt-1 text-xl font-semibold tracking-tight text-ink-1">CDC, streaming y analítica, listos para el lienzo</h3>
+      <p class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Patrones de datos' | t }}</p>
+      <h3 id="data-blueprints-title" class="mt-1 text-xl font-semibold tracking-tight text-ink-1">{{ 'CDC, streaming y analítica, listos para el lienzo' | t }}</h3>
       <p class="mt-1 max-w-2xl text-sm text-ink-2">
         Tres patrones de referencia. Cada uno se traduce a {{ providerName() }} y a las otras dos nubes; son ilustrativos, no la
         infraestructura de ninguna entidad.
@@ -55,12 +57,12 @@ interface Card {
 
             <div class="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <h4 class="text-base font-semibold text-ink-1">{{ card.blueprint.name }}</h4>
-              <span class="rounded-full border border-line-strong px-1.5 font-mono text-xs text-ink-2" title="Versión del blueprint">v{{ card.blueprint.version }}</span>
+              <span class="rounded-full border border-line-strong px-1.5 font-mono text-xs text-ink-2" [attr.title]="'Versión del blueprint' | t">v{{ card.blueprint.version }}</span>
             </div>
             <p class="mt-0.5 font-mono text-xs text-ink-2">{{ card.blueprint.summary }}</p>
             <dl class="mt-3 flex-1 space-y-2 text-[13px] leading-snug">
               <div>
-                <dt class="text-xs font-medium uppercase tracking-wider text-ink-3">Problema</dt>
+                <dt class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Problema' | t }}</dt>
                 <dd class="text-ink-1">{{ card.blueprint.problem }}</dd>
               </div>
               <div>
@@ -75,16 +77,16 @@ interface Card {
 
             @if (asking() === card.blueprint.id) {
               <div class="mt-3 rounded-panel border border-line-strong bg-surface-2 p-3" role="group" [attr.aria-label]="'Cómo cargar ' + card.blueprint.name">
-                <p class="text-[13px] text-ink-1">El lienzo ya tiene contenido. ¿Qué hago con él?</p>
+                <p class="text-[13px] text-ink-1">{{ 'El lienzo ya tiene contenido. ¿Qué hago con él?' | t }}</p>
                 <div class="mt-2 flex flex-wrap gap-2">
-                  <button type="button" class="focus-ring rounded-control bg-ink-1 px-3 py-1.5 text-xs font-medium text-canvas" (click)="choose(card.blueprint, 'replace')">Reemplazar</button>
-                  <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1.5 text-xs text-ink-1 hover:bg-surface-3" (click)="choose(card.blueprint, 'add')">Agregar al lienzo</button>
-                  <button type="button" class="focus-ring rounded-control px-3 py-1.5 text-xs text-ink-2 hover:text-ink-1" (click)="asking.set(null)">Cancelar</button>
+                  <button type="button" class="focus-ring rounded-control bg-ink-1 px-3 py-1.5 text-xs font-medium text-canvas" (click)="choose(card.blueprint, 'replace')">{{ 'Reemplazar' | t }}</button>
+                  <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1.5 text-xs text-ink-1 hover:bg-surface-3" (click)="choose(card.blueprint, 'add')">{{ 'Agregar al lienzo' | t }}</button>
+                  <button type="button" class="focus-ring rounded-control px-3 py-1.5 text-xs text-ink-2 hover:text-ink-1" (click)="asking.set(null)">{{ 'Cancelar' | t }}</button>
                 </div>
               </div>
             } @else {
               <button type="button" class="focus-ring mt-3 self-start rounded-control border border-line-strong px-4 py-1.5 text-sm text-ink-1 transition hover:bg-surface-3" (click)="request(card.blueprint)">
-                Cargar en el lienzo
+                {{ 'Cargar en el lienzo' | t }}
               </button>
             }
           </li>

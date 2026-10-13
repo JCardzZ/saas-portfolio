@@ -11,7 +11,7 @@
         appFocusTrap
         role="dialog"
         aria-modal="true"
-        aria-label="Buscar en el portafolio y preguntar al asistente"
+        [attr.aria-label]="'Buscar en el portafolio y preguntar al asistente' | t"
         class="relative flex w-full flex-col gap-2 text-ink-1 max-sm:max-h-[92dvh] max-sm:animate-sheet-down max-sm:rounded-b-card max-sm:border-b max-sm:border-line-strong max-sm:bg-surface-2/90 max-sm:pb-3 max-sm:pl-[max(0.75rem,env(safe-area-inset-left))] max-sm:pr-[max(0.75rem,env(safe-area-inset-right))] max-sm:pt-[max(0.75rem,env(safe-area-inset-top))] max-sm:shadow-floating max-sm:backdrop-blur-2xl sm:max-h-[78dvh] sm:max-w-2xl sm:animate-scale-up"
         (click)="$event.stopPropagation()"
         (keydown)="onDialogKeydown($event)"
@@ -49,7 +49,7 @@
             <button
               type="button"
               class="focus-ring flex h-8 shrink-0 items-center justify-center rounded-full border border-line-subtle px-2 font-mono text-xs text-ink-2 hover:text-ink-1"
-              aria-label="Cerrar"
+              [attr.aria-label]="'Cerrar' | t"
               (click)="close()"
             >
               <!-- El atajo es de teclado: con el dedo se muestra un aspa. -->
@@ -58,7 +58,7 @@
             </button>
           </form>
 
-          <div class="flex items-center gap-2" role="group" aria-label="Accesos rápidos">
+          <div class="flex items-center gap-2" role="group" [attr.aria-label]="'Accesos rápidos' | t">
             @for (action of quickActions; track action.id; let index = $index) {
               <button
                 type="button"
@@ -82,7 +82,7 @@
 
         <div class="relative flex min-h-[14rem] flex-1 flex-col overflow-hidden rounded-panel border border-line-strong bg-surface-2/80 backdrop-blur-2xl sm:shadow-floating">
           @if (searching()) {
-            <div #listbox id="palette-results" role="listbox" aria-label="Resultados" class="flex-1 overflow-y-auto p-2">
+            <div #listbox id="palette-results" role="listbox" [attr.aria-label]="'Resultados' | t" class="flex-1 overflow-y-auto p-2">
               @for (group of groups(); track group.group) {
                 <div role="group" [attr.aria-labelledby]="'palette-group-' + group.group">
                   <p [id]="'palette-group-' + group.group" class="px-3 pb-1 pt-2 text-overline uppercase text-ink-3">{{ group.label }}</p>
@@ -104,7 +104,7 @@
                   }
                 </div>
               } @empty {
-                <p class="px-3 py-3 text-body-sm text-ink-2" role="presentation">Sin resultados en el portafolio.</p>
+                <p class="px-3 py-3 text-body-sm text-ink-2" role="presentation">{{ 'Sin resultados en el portafolio.' | t }}</p>
               }
               @if (askOption(); as ask) {
                 <div
@@ -143,7 +143,7 @@
         appFocusTrap
         role="dialog"
         aria-modal="true"
-        aria-label="Asistente del portafolio"
+        [attr.aria-label]="'Asistente del portafolio' | t"
         class="relative flex max-h-[78dvh] min-h-[19rem] w-full max-w-2xl animate-scale-up flex-col overflow-hidden rounded-card border border-line-subtle bg-surface-2/80 text-ink-1 shadow-2xl shadow-black/70 backdrop-blur-2xl"
         (click)="$event.stopPropagation()"
       >
@@ -152,7 +152,7 @@
             <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.8" />
             <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
           </svg>
-          <label class="sr-only" for="rag-prompt">Tu pregunta</label>
+          <label class="sr-only" for="rag-prompt">{{ 'Tu pregunta' | t }}</label>
           <input
             #field
             appAutofocus
@@ -160,14 +160,14 @@
             type="text"
             autocomplete="off"
             class="min-w-0 flex-1 bg-transparent text-lg text-ink-1 placeholder:text-ink-3 focus:outline-none"
-            placeholder="Pregunta sobre el portafolio…"
+            [placeholder]="'Pregunta sobre el portafolio…' | t"
             [formControl]="prompt"
             [attr.maxlength]="maxLength"
           />
           <button
             type="button"
             class="focus-ring rounded-control border border-line-subtle px-1.5 py-0.5 font-mono text-xs text-ink-2 hover:text-ink-1"
-            aria-label="Cerrar"
+            [attr.aria-label]="'Cerrar' | t"
             (click)="close()"
           >
             esc
@@ -197,7 +197,7 @@
           }
 
           @if (message.citations.length) {
-            <div class="flex flex-wrap gap-2" aria-label="Fuentes de la respuesta">
+            <div class="flex flex-wrap gap-2" [attr.aria-label]="'Fuentes de la respuesta' | t">
               @for (citation of message.citations; track $index) {
                 <app-citation-pill [citation]="citation" />
               }
@@ -207,7 +207,7 @@
       }
     } @empty {
       <div class="space-y-2 py-2">
-        <p class="px-1 text-xs font-medium uppercase tracking-wider text-ink-3">Sugerencias</p>
+        <p class="px-1 text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Sugerencias' | t }}</p>
         @for (suggestion of suggestions; track suggestion) {
           <button
             type="button"
@@ -221,7 +221,7 @@
     }
 
     @if (store.pending()) {
-      <div class="flex animate-fade-in items-center gap-1 px-2" role="status" aria-label="Buscando la respuesta">
+      <div class="flex animate-fade-in items-center gap-1 px-2" role="status" [attr.aria-label]="'Buscando la respuesta' | t">
         <span class="h-1.5 w-1.5 animate-typing rounded-full bg-line-control"></span>
         <span class="h-1.5 w-1.5 animate-typing rounded-full bg-line-control [animation-delay:0.15s]"></span>
         <span class="h-1.5 w-1.5 animate-typing rounded-full bg-line-control [animation-delay:0.3s]"></span>
@@ -250,7 +250,7 @@
           class="w-full border-t border-line-subtle py-2.5 text-base font-semibold text-accent-text transition hover:bg-surface-2 focus:outline-none focus-visible:bg-surface-3"
           (click)="dismissAlert()"
         >
-          Entendido
+          {{ 'Entendido' | t }}
         </button>
       </div>
     </div>

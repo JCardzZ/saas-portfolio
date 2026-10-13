@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output, signal } from '@angular/core';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { finalize } from 'rxjs';
 import { SystemDesignFile, SystemDesignService as SystemDesignApi } from '../../../../core/api';
 import { CloudLink, CloudNode, CloudProviderId, forProvider } from '../cloud-topology.data';
@@ -30,21 +31,20 @@ interface Piece {
 @Component({
   selector: 'app-system-design',
   standalone: true,
-  imports: [AdvisorOrbComponent, SystemAdvisorComponent, SystemDiagramComponent],
+  imports: [TranslatePipe, AdvisorOrbComponent, SystemAdvisorComponent, SystemDiagramComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <section class="mt-3 space-y-4" aria-labelledby="system-design-title" data-testid="system-design">
       <header class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
        <div class="min-w-0">
-        <p class="text-xs font-medium uppercase tracking-wider text-ink-3">Diseño de sistema</p>
-        <h4 id="system-design-title" class="mt-1 text-base font-semibold text-ink-1">Vista de Aplicación</h4>
+        <p class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Diseño de sistema' | t }}</p>
+        <h4 id="system-design-title" class="mt-1 text-base font-semibold text-ink-1">{{ 'Vista de Aplicación' | t }}</h4>
         <p class="mt-1 max-w-prose text-sm leading-snug text-ink-2">
-          Qué se construye y dónde corre. Cada pieza se despliega en una de las piezas de la vista de Infraestructura,
-          que es el mismo proyecto visto desde abajo.
+          {{ 'Qué se construye y dónde corre. Cada pieza se despliega en una de las piezas de la vista de Infraestructura, que es el mismo proyecto visto desde abajo.' | t }}
         </p>
         @if (readonly()) {
-          <p class="mt-2 text-xs text-ink-3" data-testid="system-readonly">En el móvil esta vista es de solo lectura: se edita en una pantalla más ancha.</p>
+          <p class="mt-2 text-xs text-ink-3" data-testid="system-readonly">{{ 'En el móvil esta vista es de solo lectura: se edita en una pantalla más ancha.' | t }}</p>
         }
        </div>
         <!-- El asistente: su veredicto siempre a la vista; la ventana da el detalle. -->
@@ -58,7 +58,7 @@ interface Piece {
         >
           <app-advisor-orb [size]="36" [level]="assessment().verdict" />
           <span class="min-w-0">
-            <span class="block text-xs uppercase tracking-wide text-ink-3">Asistente de diseño</span>
+            <span class="block text-xs uppercase tracking-wide text-ink-3">{{ 'Asistente de diseño' | t }}</span>
             <span class="block text-sm font-semibold text-ink-1" data-testid="advisor-verdict">{{ assessment().headline }}</span>
             <span class="block text-xs text-ink-2">{{ adviceCount() }}</span>
           </span>
@@ -81,7 +81,7 @@ interface Piece {
                 <button type="button" class="ui-btn-secondary" data-testid="advisor-top-apply" (click)="apply(advice)">{{ action.label }}</button>
               }
             }
-            <button type="button" class="ui-btn-ghost" aria-haspopup="dialog" (click)="advisorOpen.set(true)">Ver todo</button>
+            <button type="button" class="ui-btn-ghost" aria-haspopup="dialog" (click)="advisorOpen.set(true)">{{ 'Ver todo' | t }}</button>
           </div>
         }
       </div>
@@ -91,7 +91,7 @@ interface Piece {
       }
 
       <!-- El mismo sistema en texto: es lo que lee un lector de pantalla en lugar del dibujo. -->
-      <div class="sr-only" aria-label="Resumen del sistema" role="group">
+      <div class="sr-only" [attr.aria-label]="'Resumen del sistema' | t" role="group">
         <ol class="flex flex-wrap items-stretch gap-x-2 gap-y-3" data-testid="system-flow">
           @for (piece of requestPath(); track piece.category.id; let first = $first) {
             @if (!first) {
@@ -105,7 +105,7 @@ interface Piece {
           }
         </ol>
         @if (supporting().length) {
-          <ul class="mt-3 flex flex-wrap gap-2 border-t border-line-subtle pt-3" aria-label="Piezas de apoyo">
+          <ul class="mt-3 flex flex-wrap gap-2 border-t border-line-subtle pt-3" [attr.aria-label]="'Piezas de apoyo' | t">
             @for (piece of supporting(); track piece.category.id) {
               <li class="app-piece">
                 <span class="text-xs uppercase tracking-wide text-ink-3">{{ piece.category.name }}</span>
@@ -147,9 +147,9 @@ interface Piece {
 
             @if (optionOf(category.id); as option) {
               @if (option.deploysOn.length) {
-                <label class="mt-3 block text-xs font-medium text-ink-2" [attr.for]="'deploy-' + category.id">Se despliega en</label>
+                <label class="mt-3 block text-xs font-medium text-ink-2" [attr.for]="'deploy-' + category.id">{{ 'Se despliega en' | t }}</label>
                 <select [id]="'deploy-' + category.id" class="focus-ring mt-1 w-full rounded-control border border-line-strong bg-surface-2 px-2 py-1.5 text-sm text-ink-1" (change)="deploy(category.id, $any($event.target).value)">
-                  <option value="" [selected]="!design().deployments[category.id]">Sin desplegar</option>
+                  <option value="" [selected]="!design().deployments[category.id]">{{ 'Sin desplegar' | t }}</option>
                   @for (target of targetsOf(option); track target.id) {
                     <option [value]="target.id" [selected]="design().deployments[category.id] === target.id">{{ nameOf(target) }}</option>
                   }
@@ -168,15 +168,15 @@ interface Piece {
       </div>
 
       <fieldset class="ui-card-inset" [disabled]="readonly()" data-testid="system-nfr">
-        <legend class="float-left mb-1 w-full text-xs font-medium uppercase tracking-wider text-ink-3">Requisitos no funcionales</legend>
-        <p class="clear-both text-sm text-ink-2">Lo que se le pide al sistema. Deja en blanco lo que no importe: no se comprueba.</p>
+        <legend class="float-left mb-1 w-full text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Requisitos no funcionales' | t }}</legend>
+        <p class="clear-both text-sm text-ink-2">{{ 'Lo que se le pide al sistema. Deja en blanco lo que no importe: no se comprueba.' | t }}</p>
         <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           @for (item of inputs; track item.field) {
             <label class="block min-w-0 text-xs font-medium text-ink-2">
               {{ item.name }}
               @if (item.choices) {
                 <select class="focus-ring mt-1 w-full rounded-control border border-line-strong bg-surface-2 px-2 py-1.5 text-sm text-ink-1" [attr.data-nfr]="item.field" (change)="setNumber(item.field, $any($event.target).value)">
-                  <option value="" [selected]="design().nfr[item.field] === undefined">Sin objetivo</option>
+                  <option value="" [selected]="design().nfr[item.field] === undefined">{{ 'Sin objetivo' | t }}</option>
                   @for (choice of item.choices; track choice) {
                     <option [value]="choice" [selected]="design().nfr[item.field] === choice">{{ choice }} {{ item.unit }}</option>
                   }
@@ -200,7 +200,7 @@ interface Piece {
 
       <section aria-labelledby="system-findings-title" data-testid="system-findings">
         <h5 id="system-findings-title" class="text-sm font-semibold text-ink-1">
-          Comprobaciones
+          {{ 'Comprobaciones' | t }}
           <span class="ml-1 ui-badge" [class.ui-badge-ok]="!findings().length" [class.ui-badge-warn]="findings().length > 0 && !errors()" [class.ui-badge-danger]="errors() > 0">{{ summary() }}</span>
         </h5>
         @if (general().length) {
@@ -212,17 +212,17 @@ interface Piece {
             }
           </ul>
         } @else if (!findings().length) {
-          <p class="mt-1 text-xs text-ink-2">El diseño cumple lo que se le pide y todo está desplegado donde puede correr.</p>
+          <p class="mt-1 text-xs text-ink-2">{{ 'El diseño cumple lo que se le pide y todo está desplegado donde puede correr.' | t }}</p>
         }
       </section>
 
       <section class="ui-card-inset" aria-labelledby="system-output-title" data-testid="system-output">
         <div class="flex flex-wrap items-center gap-3">
           <div class="min-w-0 flex-1">
-            <h5 id="system-output-title" class="text-sm font-semibold text-ink-1">Archivos de partida</h5>
+            <h5 id="system-output-title" class="text-sm font-semibold text-ink-1">{{ 'Archivos de partida' | t }}</h5>
             <p class="text-xs leading-snug text-ink-2">
               Terraform, contrato inicial de la API ({{ contractName() }}), docker-compose y README.
-              <span class="ui-badge ml-1">Esqueleto</span> Son para completar: nada se puede desplegar tal cual.
+              <span class="ui-badge ml-1">{{ 'Esqueleto' | t }}</span> {{ 'Son para completar: nada se puede desplegar tal cual.' | t }}
             </p>
           </div>
           <button type="button" class="ui-btn-primary" [disabled]="generating()" (click)="generate()">{{ generating() ? 'Generando…' : 'Generar archivos' }}</button>
@@ -231,7 +231,7 @@ interface Piece {
           <p class="mt-3 rounded-control border border-status-warn/30 bg-status-warn/10 px-3 py-1.5 text-xs text-status-warn" role="alert" data-testid="system-output-error">{{ message }}</p>
         }
         @if (files().length) {
-          <div class="mt-3 ui-segmented" role="tablist" aria-label="Archivos generados">
+          <div class="mt-3 ui-segmented" role="tablist" [attr.aria-label]="'Archivos generados' | t">
             @for (file of files(); track file.path) {
               <button type="button" role="tab" class="ui-segment font-mono" [attr.aria-selected]="file.path === openPath()" (click)="opened.set(file.path)">{{ file.path }}</button>
             }
@@ -240,7 +240,7 @@ interface Piece {
             <div class="mt-2 overflow-hidden rounded-panel border border-line-subtle bg-surface-1" role="tabpanel" [attr.aria-label]="file.path">
               <div class="flex items-center justify-end gap-2 border-b border-line-subtle px-2 py-1">
                 <button type="button" class="ui-btn-ghost" (click)="copy(file)">{{ copied() === file.path ? 'Copiado' : 'Copiar' }}</button>
-                <button type="button" class="ui-btn-ghost" (click)="download(file)">Descargar</button>
+                <button type="button" class="ui-btn-ghost" (click)="download(file)">{{ 'Descargar' | t }}</button>
               </div>
               <pre class="max-h-96 overflow-auto p-3 text-xs leading-relaxed text-ink-1"><code>{{ file.content }}</code></pre>
             </div>

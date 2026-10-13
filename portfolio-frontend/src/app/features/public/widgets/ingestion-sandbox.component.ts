@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { SystemEventsService } from '../data/system-events.service';
@@ -78,7 +79,7 @@ const CHUNK_STYLES = ['border-line-subtle bg-surface-2', 'border-line-strong bg-
 @Component({
   selector: 'app-ingestion-sandbox',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [TranslatePipe, ReactiveFormsModule],
   host: { class: 'bento-card block' },
   templateUrl: './ingestion-sandbox.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
 import { verticalFlow } from '../../../shared/ui/vertical-flow';
@@ -144,16 +145,16 @@ const LEVELS: C4Level[] = [
 @Component({
   selector: 'app-architecture-canvas',
   standalone: true,
-  imports: [ContainerWidthDirective, TheaterToggleComponent],
+  imports: [TranslatePipe, ContainerWidthDirective, TheaterToggleComponent],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   template: `
     <app-theater-toggle name="Arquitectura en vivo" />
     <div class="flex flex-wrap items-center justify-between gap-3 pr-10">
-      <h3 class="text-title-2 text-ink-1">Arquitectura en vivo</h3>
+      <h3 class="text-title-2 text-ink-1">{{ 'Arquitectura en vivo' | t }}</h3>
 
       <!-- Cuatro niveles no caben en una fila estrecha: pasan a una rejilla de 2 × 2, todos a la vista. -->
-      <div class="ui-segmented" [class.ui-segmented-grid]="scene().compact" role="tablist" aria-label="Nivel del modelo C4" (keydown)="onTabKeydown($event)">
+      <div class="ui-segmented" [class.ui-segmented-grid]="scene().compact" role="tablist" [attr.aria-label]="'Nivel del modelo C4' | t" (keydown)="onTabKeydown($event)">
         @for (candidate of levels; track candidate.id) {
           <button
             type="button"

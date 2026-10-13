@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
 import { ContainerWidthDirective } from '../../../../shared/ui/container-width.directive';
 import { CloudNode, CloudProviderId } from '../cloud-topology.data';
@@ -15,17 +16,17 @@ import { DiagramNode, GLYPHS, SystemDiagram, buildSystemDiagram } from './system
 @Component({
   selector: 'app-system-diagram',
   standalone: true,
-  imports: [ContainerWidthDirective],
+  imports: [TranslatePipe, ContainerWidthDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <div class="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-      <p class="text-xs font-medium uppercase tracking-wider text-ink-3">Arquitectura del sistema</p>
-      <ul class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-3" aria-label="Tipos de conexión">
-        <li class="flex items-center gap-1.5"><span class="legend legend-request" aria-hidden="true"></span>petición</li>
-        <li class="flex items-center gap-1.5"><span class="legend legend-data" aria-hidden="true"></span>datos</li>
-        <li class="flex items-center gap-1.5"><span class="legend legend-async" aria-hidden="true"></span>asíncrono</li>
-        <li class="flex items-center gap-1.5"><span class="legend legend-auth" aria-hidden="true"></span>identidad</li>
+      <p class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Arquitectura del sistema' | t }}</p>
+      <ul class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-3" [attr.aria-label]="'Tipos de conexión' | t">
+        <li class="flex items-center gap-1.5"><span class="legend legend-request" aria-hidden="true"></span>{{ 'petición' | t }}</li>
+        <li class="flex items-center gap-1.5"><span class="legend legend-data" aria-hidden="true"></span>{{ 'datos' | t }}</li>
+        <li class="flex items-center gap-1.5"><span class="legend legend-async" aria-hidden="true"></span>{{ 'asíncrono' | t }}</li>
+        <li class="flex items-center gap-1.5"><span class="legend legend-auth" aria-hidden="true"></span>{{ 'identidad' | t }}</li>
       </ul>
     </div>
     <div class="canvas flex justify-center overflow-x-auto rounded-panel border border-line-subtle p-2" appContainerWidth #box="containerWidth">
@@ -38,7 +39,7 @@ import { DiagramNode, GLYPHS, SystemDiagram, buildSystemDiagram } from './system
           [attr.data-layout]="scene.vertical ? 'vertical' : 'horizontal'"
           [class.is-hovering]="hovered() !== null"
           role="group"
-          aria-label="Diagrama del sistema: sus piezas por capas y cómo se conectan"
+          [attr.aria-label]="'Diagrama del sistema: sus piezas por capas y cómo se conectan' | t"
           data-testid="system-diagram"
         >
           <defs>

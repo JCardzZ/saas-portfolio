@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, HostListener, afterNextRender, inject, output, signal,
 } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { RouterLink } from '@angular/router';
 
 import { LanguageSwitchComponent } from '../../../core/i18n/language-switch.component';
@@ -19,14 +20,14 @@ export { PAGE_SECTIONS } from './page-sections';
 @Component({
   selector: 'app-public-navbar',
   standalone: true,
-  imports: [RouterLink, CvDownloadComponent, LanguageSwitchComponent],
+  imports: [TranslatePipe, RouterLink, CvDownloadComponent, LanguageSwitchComponent],
   template: `
     <header
       class="safe-top safe-x fixed inset-x-0 top-0 z-nav border-b transition-colors duration-slow ease-standard"
       style="right: var(--dock-right, 0px)"
       [class]="scrolled() || menuOpen() ? 'border-line-subtle bg-canvas/70 backdrop-blur-xl' : 'border-transparent bg-transparent'"
     >
-      <nav class="mx-auto flex min-h-14 max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-1 px-6 py-1 max-[399px]:px-4" aria-label="Principal">
+      <nav class="mx-auto flex min-h-14 max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-1 px-6 py-1 max-[399px]:px-4" [attr.aria-label]="'Principal' | t">
         <a routerLink="/" class="ui-focus tap rounded-mark text-title-3 text-ink-1">Manuel Cardoza</a>
 
         <ul class="hidden items-center gap-1 lg:flex">

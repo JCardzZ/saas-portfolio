@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
 import { TheaterDirective } from '../../../shared/ui/theater.directive';
@@ -27,14 +28,14 @@ const SIMULATION_MS = 900;
 @Component({
   selector: 'app-deploy-timeline',
   standalone: true,
-  imports: [TheaterToggleComponent],
+  imports: [TranslatePipe, TheaterToggleComponent],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   template: `
     <app-theater-toggle name="Despliegues y rollback" />
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pr-10">
-      <h3 class="text-xl font-semibold tracking-tight text-ink-1">Despliegues y rollback</h3>
-      <p class="text-xs text-ink-3">Solo lectura · datos del CD</p>
+      <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Despliegues y rollback' | t }}</h3>
+      <p class="text-xs text-ink-3">{{ 'Solo lectura · datos del CD' | t }}</p>
     </div>
 
     <div class="mt-6 grid gap-8 md:grid-cols-2 [&>*]:min-w-0">
@@ -44,7 +45,7 @@ const SIMULATION_MS = 900;
             {{ lane.title }}
             <span class="normal-case tracking-normal text-ink-3">{{ lane.where }}</span>
             @if (lane.planned) {
-              <span class="rounded-full border border-dashed border-line-control px-2 py-0.5 normal-case tracking-normal text-ink-2">planificado</span>
+              <span class="rounded-full border border-dashed border-line-control px-2 py-0.5 normal-case tracking-normal text-ink-2">{{ 'planificado' | t }}</span>
             }
           </p>
 
@@ -98,7 +99,7 @@ const SIMULATION_MS = 900;
       >{{ simulating() ? 'Deshacer la simulación' : 'Simular rollback' }}</button>
       <p class="min-w-0 flex-1 text-xs text-ink-3" aria-live="polite">
         @if (simulating()) {
-          <span class="mr-1 rounded-full border border-status-warn/50 px-2 py-0.5 font-medium text-status-warn">Simulación</span>
+          <span class="mr-1 rounded-full border border-status-warn/50 px-2 py-0.5 font-medium text-status-warn">{{ 'Simulación' | t }}</span>
           Producción no ha cambiado: el marcador se movió solo en esta pantalla.
         } @else {
           Desde aquí no se puede revertir producción. El rollback real es un workflow manual, con aprobación.

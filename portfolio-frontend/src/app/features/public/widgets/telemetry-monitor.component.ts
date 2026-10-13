@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 const BAR_COUNT = 18;
 const TICK_MS = 1300;
@@ -13,16 +14,17 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 @Component({
   selector: 'app-telemetry-monitor',
   standalone: true,
+  imports: [TranslatePipe],
   host: { class: 'bento-card flex flex-col' },
   template: `
     <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-      <h3 class="text-xl font-semibold tracking-tight text-ink-1">Telemetría</h3>
+      <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Telemetría' | t }}</h3>
       <span class="inline-flex items-center gap-1.5 rounded-full border border-line-subtle px-2 py-0.5 text-xs text-ink-2">
         <span class="relative flex h-1.5 w-1.5">
           <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-ok opacity-75"></span>
           <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-status-ok"></span>
         </span>
-        Simulación
+        {{ 'Simulación' | t }}
       </span>
     </div>
 
@@ -46,10 +48,10 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
     <div class="mt-5 flex min-h-[5rem] flex-1 flex-col">
       <div class="flex items-baseline justify-between">
-        <p class="text-xs font-medium uppercase tracking-wider text-ink-3">Latencia</p>
+        <p class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Latencia' | t }}</p>
         <p class="font-mono text-sm tabular-nums text-ink-1">{{ latestLatency() }} ms</p>
       </div>
-      <svg viewBox="0 0 180 48" class="mt-2 min-h-12 w-full flex-1" preserveAspectRatio="none" role="img" aria-label="Latencia simulada de las últimas peticiones">
+      <svg viewBox="0 0 180 48" class="mt-2 min-h-12 w-full flex-1" preserveAspectRatio="none" role="img" [attr.aria-label]="'Latencia simulada de las últimas peticiones' | t">
         @for (latency of latencies(); track $index) {
           <rect
             class="bar"
@@ -62,7 +64,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
     </div>
 
     <div class="pt-5">
-      <p class="text-xs font-medium uppercase tracking-wider text-ink-3">Preguntas RAG procesadas</p>
+      <p class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Preguntas RAG procesadas' | t }}</p>
       <p class="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-ink-1">{{ formattedRequests() }}</p>
     </div>
   `,

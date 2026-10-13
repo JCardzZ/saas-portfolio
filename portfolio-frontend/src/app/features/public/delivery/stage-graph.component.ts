@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, output, signal,
 } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { TECH_ICONS, TechIconKey } from '../../../shared/ui/tech-icons';
 import { CARD, PILL, columnsThatFit, edgePath, layoutStages } from './delivery-data';
@@ -45,12 +46,13 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
 @Component({
   selector: 'app-stage-graph',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     @if (!vertical()) {
-      <div class="tools" role="group" aria-label="Vista del diagrama">
-        <button type="button" class="tool focus-ring" aria-label="Alejar" [disabled]="fit() || !canZoomOut()" (click)="zoomBy(-1)">−</button>
+      <div class="tools" role="group" [attr.aria-label]="'Vista del diagrama' | t">
+        <button type="button" class="tool focus-ring" [attr.aria-label]="'Alejar' | t" [disabled]="fit() || !canZoomOut()" (click)="zoomBy(-1)">−</button>
         <span class="level" aria-live="polite">{{ percent() }} %</span>
-        <button type="button" class="tool focus-ring" aria-label="Acercar" [disabled]="fit() || !canZoomIn()" (click)="zoomBy(1)">+</button>
+        <button type="button" class="tool focus-ring" [attr.aria-label]="'Acercar' | t" [disabled]="fit() || !canZoomIn()" (click)="zoomBy(1)">+</button>
         <button type="button" class="tool wide focus-ring" [attr.aria-pressed]="fit()" (click)="toggleFit()">
           {{ fit() ? 'Tamaño real' : 'Ajustar a pantalla' }}
         </button>

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { SystemEventsService } from '../data/system-events.service';
 
@@ -43,11 +44,12 @@ const POINTS_PER_CLUSTER = 14;
 @Component({
   selector: 'app-vector-matrix',
   standalone: true,
+  imports: [TranslatePipe],
   host: { class: 'bento-card block' },
   template: `
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-      <h3 class="text-xl font-semibold tracking-tight text-ink-1">Búsqueda vectorial</h3>
-      <p class="text-xs text-ink-3">Mueve el cursor por el mapa o elige una pregunta</p>
+      <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Búsqueda vectorial' | t }}</h3>
+      <p class="text-xs text-ink-3">{{ 'Mueve el cursor por el mapa o elige una pregunta' | t }}</p>
     </div>
 
     <div class="mt-3 flex flex-wrap gap-2">
@@ -69,7 +71,7 @@ const POINTS_PER_CLUSTER = 14;
         [attr.viewBox]="viewBox"
         class="w-full cursor-crosshair touch-none rounded-panel border border-line-subtle bg-surface-2 md:col-span-2"
         role="img"
-        aria-label="Mapa de fragmentos indexados; la pregunta se conecta con los cinco más afines"
+        [attr.aria-label]="'Mapa de fragmentos indexados; la pregunta se conecta con los cinco más afines' | t"
         (pointermove)="follow($event)"
         (pointerdown)="follow($event)"
       >
@@ -85,7 +87,7 @@ const POINTS_PER_CLUSTER = 14;
       </svg>
 
       <div aria-live="polite">
-        <p class="text-xs font-medium uppercase tracking-wider text-ink-3">Más afines</p>
+        <p class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Más afines' | t }}</p>
         <ol class="mt-2 space-y-1.5">
           @for (match of matches(); track match.id) {
             <li class="flex animate-fade-in items-center justify-between gap-3 rounded-panel border border-line-subtle bg-surface-2 px-3 py-1.5">
@@ -95,7 +97,7 @@ const POINTS_PER_CLUSTER = 14;
           }
         </ol>
         <p class="mt-3 text-xs leading-snug text-ink-3">
-          Proyección 2D ilustrativa. El índice real compara vectores de 768 dimensiones por distancia coseno.
+          {{ 'Proyección 2D ilustrativa. El índice real compara vectores de 768 dimensiones por distancia coseno.' | t }}
         </p>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
 import { IconPopService } from '../../../shared/ui/icon-pop.service';
@@ -76,7 +77,7 @@ const TENANTS: Tenant[] = [
 @Component({
   selector: 'app-multi-tenant-shield',
   standalone: true,
-  imports: [ContainerWidthDirective, TheaterToggleComponent],
+  imports: [TranslatePipe, ContainerWidthDirective, TheaterToggleComponent],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   templateUrl: './multi-tenant-shield.component.html',

@@ -1,6 +1,6 @@
 <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-  <h3 class="text-xl font-semibold tracking-tight text-ink-1">Simulador de ingesta RAG</h3>
-  <p class="text-xs text-ink-3">Pega un texto o elige una plantilla</p>
+  <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Simulador de ingesta RAG' | t }}</h3>
+  <p class="text-xs text-ink-3">{{ 'Pega un texto o elige una plantilla' | t }}</p>
 </div>
 
 <div class="mt-4 grid gap-6 lg:grid-cols-2">
@@ -19,12 +19,12 @@
       }
     </div>
 
-    <label class="sr-only" for="ingestion-input">Texto a indexar</label>
+    <label class="sr-only" for="ingestion-input">{{ 'Texto a indexar' | t }}</label>
     <textarea
       id="ingestion-input"
       class="focus-ring min-h-[14rem] flex-1 resize-y rounded-panel border border-line-subtle bg-surface-2 p-3 font-mono text-xs leading-relaxed text-ink-1 placeholder:text-ink-3"
       spellcheck="false"
-      placeholder="Pega aquí código o texto…"
+      [placeholder]="'Pega aquí código o texto…' | t"
       [formControl]="input"
       [attr.maxlength]="maxInput"
     ></textarea>
@@ -36,10 +36,10 @@
         [disabled]="!input.value.trim()"
         (click)="process()"
       >
-        Procesar ingesta
+        {{ 'Procesar ingesta' | t }}
       </button>
 
-      <ol class="flex flex-wrap items-center gap-2 text-xs" aria-label="Pasos de la ingesta">
+      <ol class="flex flex-wrap items-center gap-2 text-xs" [attr.aria-label]="'Pasos de la ingesta' | t">
         @for (name of steps; track name; let index = $index) {
           <li
             class="flex items-center gap-1.5 transition-colors duration-500 ease-spring"
@@ -59,7 +59,7 @@
 
   <div class="min-w-0 space-y-5" aria-live="polite">
     @if (step() === 0) {
-      <p class="text-sm text-ink-3">Pulsa «Procesar ingesta» para ver los tres pasos.</p>
+      <p class="text-sm text-ink-3">{{ 'Pulsa «Procesar ingesta» para ver los tres pasos.' | t }}</p>
     }
 
     @if (step() >= 1) {
@@ -113,8 +113,7 @@
           }
         </div>
         <p class="mt-2 text-xs leading-snug text-ink-3">
-          Vector ilustrativo calculado en tu navegador a partir del texto; no es la salida de Gemini. El troceo sí es el
-          algoritmo real, con límites reducidos para la demo.
+          {{ 'Vector ilustrativo calculado en tu navegador a partir del texto; no es la salida de Gemini. El troceo sí es el algoritmo real, con límites reducidos para la demo.' | t }}
         </p>
       </section>
     }

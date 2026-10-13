@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { formatUsd } from './cloud-costs.data';
 import { Vitals } from './live-traffic';
@@ -12,9 +13,10 @@ import { Vitals } from './live-traffic';
 @Component({
   selector: 'app-live-vitals',
   standalone: true,
+  imports: [TranslatePipe],
   host: { class: 'block' },
   template: `
-    <section class="glass rounded-panel px-3 py-2" aria-label="Métricas en vivo (simulación)">
+    <section class="glass rounded-panel px-3 py-2" [attr.aria-label]="'Métricas en vivo (simulación)' | t">
       <p class="flex flex-wrap items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-ink-2">
         <span
           class="vitals-clock h-1.5 w-1.5 rounded-full"
@@ -22,18 +24,18 @@ import { Vitals } from './live-traffic';
           aria-hidden="true"
           (animationiteration)="beat.emit()"
         ></span>
-        Métricas en vivo <span class="font-normal normal-case tracking-normal text-ink-3">· simulación</span>
+        {{ 'Métricas en vivo' | t }} <span class="font-normal normal-case tracking-normal text-ink-3">{{ '· simulación' | t }}</span>
       </p>
       <dl class="mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-0.5 text-xs [&>dd]:break-words">
         <dt class="text-ink-2">RPS</dt>
         <dd class="text-right font-mono tabular-nums text-ink-1">{{ number(vitals().rps) }} <span class="text-ink-3">req/s</span></dd>
-        <dt class="text-ink-2">Latencia p95</dt>
+        <dt class="text-ink-2">{{ 'Latencia p95' | t }}</dt>
         <dd class="text-right font-mono tabular-nums" [class]="vitals().status === 'ok' ? 'text-ink-1' : vitals().status === 'warn' ? 'text-status-warn' : 'text-status-danger'">
           {{ vitals().p95 }} <span class="text-ink-3">ms</span>
         </dd>
-        <dt class="text-ink-2" title="Coste fijo orientativo de FinOps; no cambia con el tráfico">Coste</dt>
+        <dt class="text-ink-2" [attr.title]="'Coste fijo orientativo de FinOps; no cambia con el tráfico' | t">{{ 'Coste' | t }}</dt>
         <dd class="text-right font-mono tabular-nums text-ink-1">
-          {{ '$' + vitals().costPerHour.toFixed(2) }}<span class="text-ink-3">/h</span> · {{ usd(vitals().costPerMonth) }}<span class="text-ink-3">/mes</span>
+          {{ '$' + vitals().costPerHour.toFixed(2) }}<span class="text-ink-3">/h</span> · {{ usd(vitals().costPerMonth) }}<span class="text-ink-3">{{ '/mes' | t }}</span>
         </dd>
       </dl>
       <p class="mt-1 max-w-[13rem] text-xs leading-snug text-ink-3" role="status">{{ vitals().note }}</p>

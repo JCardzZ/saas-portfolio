@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { MCPService, McpStatus } from '../../../core/api';
 import { runtimeConfig } from '../../../core/config/runtime-config';
@@ -25,18 +26,18 @@ const REPLAY_STEP_MS = 900;
 @Component({
   selector: 'app-mcp-section',
   standalone: true,
+  imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <div class="grid gap-4 lg:grid-cols-2" data-testid="mcp-section">
       <!-- Conectar -->
       <section class="ui-card min-w-0 lg:col-span-2" aria-labelledby="mcp-connect-title">
-        <h3 id="mcp-connect-title" class="text-base font-semibold text-ink-1">Conectar en un clic</h3>
+        <h3 id="mcp-connect-title" class="text-base font-semibold text-ink-1">{{ 'Conectar en un clic' | t }}</h3>
         <p class="mt-1 text-sm text-ink-2">
-          El servidor está en <code class="break-all rounded-control bg-surface-2 px-1.5 py-0.5 text-xs text-ink-1" data-testid="mcp-url">{{ url }}</code>.
-          No pide cuenta ni clave.
+          {{ 'El servidor está en' | t }} <code class="break-all rounded-control bg-surface-2 px-1.5 py-0.5 text-xs text-ink-1" data-testid="mcp-url">{{ url }}</code>{{ '. No pide cuenta ni clave.' | t }}
         </p>
-        <div class="mt-4 ui-segmented" role="tablist" aria-label="Cliente">
+        <div class="mt-4 ui-segmented" role="tablist" [attr.aria-label]="'Cliente' | t">
           @for (guide of guides; track guide.id) {
             <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="guide.id === client().id" [attr.aria-controls]="'mcp-client-panel'" (click)="clientId.set(guide.id)">{{ guide.name }}</button>
           }
@@ -57,9 +58,9 @@ const REPLAY_STEP_MS = 900;
       <section class="ui-card min-w-0" aria-labelledby="mcp-tools-title">
         <h3 id="mcp-tools-title" class="text-base font-semibold text-ink-1">
           Herramientas
-          @if (recorded()) { <span class="ml-1 ui-badge ui-badge-warn" data-testid="mcp-recorded">Grabación</span> }
+          @if (recorded()) { <span class="ml-1 ui-badge ui-badge-warn" data-testid="mcp-recorded">{{ 'Grabación' | t }}</span> }
         </h3>
-        <p class="mt-1 text-sm text-ink-2">Las que el servidor anuncia en <code class="text-xs">tools/list</code>. Ninguna guarda ni aplica nada.</p>
+        <p class="mt-1 text-sm text-ink-2">{{ 'Las que el servidor anuncia en' | t }} <code class="text-xs">tools/list</code>{{ '. Ninguna guarda ni aplica nada.' | t }}</p>
         @if (tools().length) {
           <ul class="mt-3 space-y-3" data-testid="mcp-tools">
             @for (tool of tools(); track tool.name) {
@@ -74,48 +75,48 @@ const REPLAY_STEP_MS = 900;
             }
           </ul>
         } @else {
-          <p class="mt-3 text-sm text-ink-3">No se pudo leer la lista de herramientas.</p>
+          <p class="mt-3 text-sm text-ink-3">{{ 'No se pudo leer la lista de herramientas.' | t }}</p>
         }
       </section>
 
       <!-- Estado y actividad -->
       <section class="ui-card min-w-0" aria-labelledby="mcp-status-title">
-        <h3 id="mcp-status-title" class="text-base font-semibold text-ink-1">Estado</h3>
+        <h3 id="mcp-status-title" class="text-base font-semibold text-ink-1">{{ 'Estado' | t }}</h3>
         <dl class="mt-3 grid grid-cols-2 gap-3 text-sm" data-testid="mcp-status">
           <div>
-            <dt class="text-xs text-ink-3">Servidor</dt>
+            <dt class="text-xs text-ink-3">{{ 'Servidor' | t }}</dt>
             <dd class="mt-0.5">
               @if (status(); as live) {
-                <span class="ui-badge ui-badge-ok"><span class="ui-badge-dot"></span>En línea</span>
+                <span class="ui-badge ui-badge-ok"><span class="ui-badge-dot"></span>{{ 'En línea' | t }}</span>
               } @else if (recorded()) {
-                <span class="ui-badge ui-badge-warn">Grabación</span>
+                <span class="ui-badge ui-badge-warn">{{ 'Grabación' | t }}</span>
               } @else {
                 <span class="ui-badge"><span class="ui-badge-dot"></span>{{ statusFailed() ? 'Sin respuesta' : 'Comprobando…' }}</span>
               }
             </dd>
           </div>
           <div>
-            <dt class="text-xs text-ink-3">Latencia p95</dt>
+            <dt class="text-xs text-ink-3">{{ 'Latencia p95' | t }}</dt>
             <dd class="mt-0.5 text-ink-1">{{ p95() }}</dd>
           </div>
           <div>
-            <dt class="text-xs text-ink-3">Límite por cliente</dt>
+            <dt class="text-xs text-ink-3">{{ 'Límite por cliente' | t }}</dt>
             <dd class="mt-0.5 text-ink-1">{{ limit() }}</dd>
           </div>
           <div>
-            <dt class="text-xs text-ink-3">Tope diario</dt>
+            <dt class="text-xs text-ink-3">{{ 'Tope diario' | t }}</dt>
             <dd class="mt-0.5 text-ink-1">{{ daily() }}</dd>
           </div>
         </dl>
         <p class="mt-2 text-xs leading-snug text-ink-3">
-          El límite va por dirección de origen. Claude Desktop se conecta desde la nube de su proveedor, así que sus usuarios comparten cupo.
+          {{ 'El límite va por dirección de origen. Claude Desktop se conecta desde la nube de su proveedor, así que sus usuarios comparten cupo.' | t }}
         </p>
 
         <h4 class="mt-4 text-sm font-semibold text-ink-1">
           Actividad reciente
-          @if (activityRecorded()) { <span class="ml-1 ui-badge ui-badge-warn">Grabación</span> }
+          @if (activityRecorded()) { <span class="ml-1 ui-badge ui-badge-warn">{{ 'Grabación' | t }}</span> }
         </h4>
-        <p class="text-xs text-ink-3">Anónima: qué herramienta, cómo acabó y cuánto tardó. Nunca el contenido.</p>
+        <p class="text-xs text-ink-3">{{ 'Anónima: qué herramienta, cómo acabó y cuánto tardó. Nunca el contenido.' | t }}</p>
         @if (activity().length) {
           <ul class="mt-2 space-y-1 text-xs" data-testid="mcp-activity">
             @for (call of activity(); track $index) {
@@ -128,7 +129,7 @@ const REPLAY_STEP_MS = 900;
             }
           </ul>
         } @else {
-          <p class="mt-2 text-xs text-ink-3">Todavía no ha llegado ninguna llamada desde que abriste la página.</p>
+          <p class="mt-2 text-xs text-ink-3">{{ 'Todavía no ha llegado ninguna llamada desde que abriste la página.' | t }}</p>
         }
       </section>
 
@@ -136,13 +137,13 @@ const REPLAY_STEP_MS = 900;
       <section class="ui-card min-w-0 lg:col-span-2" aria-labelledby="mcp-replay-title">
         <div class="flex flex-wrap items-center gap-3">
           <div class="min-w-0 flex-1">
-            <h3 id="mcp-replay-title" class="text-base font-semibold text-ink-1">Probar sin instalar <span class="ml-1 ui-badge ui-badge-warn">Grabación</span></h3>
-            <p class="mt-1 text-sm text-ink-2">Una sesión MCP real contra este servidor, mensaje a mensaje, como la enseña el Inspector de MCP. El diagrama es sintético.</p>
+            <h3 id="mcp-replay-title" class="text-base font-semibold text-ink-1">{{ 'Probar sin instalar' | t }} <span class="ml-1 ui-badge ui-badge-warn">{{ 'Grabación' | t }}</span></h3>
+            <p class="mt-1 text-sm text-ink-2">{{ 'Una sesión MCP real contra este servidor, mensaje a mensaje, como la enseña el Inspector de MCP. El diagrama es sintético.' | t }}</p>
           </div>
           @if (recording(); as session) {
             <div class="flex items-center gap-2">
               <button type="button" class="ui-btn-primary" [disabled]="playing()" (click)="play()">{{ shown() >= session.steps.length ? 'Reproducir otra vez' : shown() ? 'Continuar' : 'Reproducir' }}</button>
-              <button type="button" class="ui-btn-secondary" [disabled]="shown() >= session.steps.length" (click)="next()">Siguiente</button>
+              <button type="button" class="ui-btn-secondary" [disabled]="shown() >= session.steps.length" (click)="next()">{{ 'Siguiente' | t }}</button>
             </div>
           }
         </div>
@@ -170,7 +171,7 @@ const REPLAY_STEP_MS = 900;
 
       <!-- Evaluaciones -->
       <section class="ui-card min-w-0 lg:col-span-2" aria-labelledby="mcp-eval-title">
-        <h3 id="mcp-eval-title" class="text-base font-semibold text-ink-1">Evaluaciones</h3>
+        <h3 id="mcp-eval-title" class="text-base font-semibold text-ink-1">{{ 'Evaluaciones' | t }}</h3>
         @if (evaluation(); as report) {
           <p class="mt-1 text-sm text-ink-2" data-testid="mcp-eval">
             <strong class="font-semibold text-ink-1">{{ report.passed }} de {{ report.total }}</strong> tareas resueltas
@@ -181,9 +182,9 @@ const REPLAY_STEP_MS = 900;
           <p class="mt-2 text-xs leading-snug text-ink-3">
             Tareas sintéticas, sin datos de nadie, resueltas con un cliente MCP real contra el servidor. En cada cambio las resuelve un modelo simulado,
             que comprueba el servidor; la evaluación con un modelo real es nocturna y @if (report.simulated) { todavía no se ha ejecutado } @else { es esta }.
-            El detalle está en <code>docs/mcp/README.md</code>, en el repositorio.
+            El detalle está en <code>docs/mcp/README.md</code>{{ ', en el repositorio.' | t }}
           </p>
-          <ul class="mt-3 flex flex-wrap gap-1.5" aria-label="Tareas por área">
+          <ul class="mt-3 flex flex-wrap gap-1.5" [attr.aria-label]="'Tareas por área' | t">
             @for (area of areas(); track area.name) {
               <li class="ui-badge" [class.ui-badge-ok]="area.passed === area.total" [class.ui-badge-warn]="area.passed !== area.total">{{ area.name }} {{ area.passed }}/{{ area.total }}</li>
             }

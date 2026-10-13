@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input, model, signal, viewChild } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -56,7 +57,7 @@ const ASK_OPTION_ID = 'palette-option-ask';
 @Component({
   selector: 'app-rag-chat',
   standalone: true,
-  imports: [NgTemplateOutlet, ReactiveFormsModule, AutofocusDirective, CitationPillComponent, FocusTrapDirective, MarkdownComponent],
+  imports: [TranslatePipe, NgTemplateOutlet, ReactiveFormsModule, AutofocusDirective, CitationPillComponent, FocusTrapDirective, MarkdownComponent],
   providers: [RagChatStore],
   templateUrl: './rag-chat.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,6 +1,6 @@
 <app-theater-toggle name="Resiliencia ante fallos" />
 <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pr-10">
-  <h3 class="text-xl font-semibold tracking-tight text-ink-1">Resiliencia ante fallos</h3>
+  <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Resiliencia ante fallos' | t }}</h3>
   <p class="font-mono text-xs text-ink-3">
     /telemetry/health:
     <span class="transition-colors duration-500" [class]="health() === 'UP' ? 'text-status-ok' : 'text-status-warn'">{{ health() }}</span>
@@ -17,7 +17,7 @@
 
     <path class="pipe" [class.pipe-cut]="redisDown()" [attr.d]="geo().cache" />
     <path class="pulse" [class.pulse-hidden]="redisDown()" [attr.d]="geo().cache" pathLength="100" />
-    <text class="pipe-label" [attr.x]="geo().cacheLabel.x" [attr.y]="geo().cacheLabel.y" [attr.text-anchor]="geo().labelAnchor">caché</text>
+    <text class="pipe-label" [attr.x]="geo().cacheLabel.x" [attr.y]="geo().cacheLabel.y" [attr.text-anchor]="geo().labelAnchor">{{ 'caché' | t }}</text>
 
     <path class="pipe" [class.pipe-off]="redisDown()" [attr.d]="geo().miss" />
     <path class="pulse" [class.pulse-hidden]="redisDown()" [attr.d]="geo().miss" pathLength="100" />
@@ -68,13 +68,13 @@
     <span class="relative h-6 w-10 rounded-full transition-colors duration-500 ease-spring" [class]="redisDown() ? 'bg-status-danger' : 'bg-surface-3'">
       <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-500 ease-spring" [class.translate-x-4]="redisDown()"></span>
     </span>
-    Simular caída de Redis
+    {{ 'Simular caída de Redis' | t }}
   </button>
   <button type="button" role="switch" class="focus-ring group flex items-center gap-2.5 rounded-full text-sm text-ink-1" [attr.aria-checked]="geminiDown()" (click)="toggleGemini()">
     <span class="relative h-6 w-10 rounded-full transition-colors duration-500 ease-spring" [class]="geminiDown() ? 'bg-status-danger' : 'bg-surface-3'">
       <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-500 ease-spring" [class.translate-x-4]="geminiDown()"></span>
     </span>
-    Simular agotamiento de cuota de Gemini
+    {{ 'Simular agotamiento de cuota de Gemini' | t }}
   </button>
 </div>
 
@@ -83,10 +83,10 @@
     <p class="font-mono text-xs text-ink-3">GET /public/projects</p>
     @if (redisDown()) {
       <p class="mt-1 animate-slide-up text-sm font-medium text-status-ok">200 OK · Fail-open</p>
-      <p class="animate-slide-up text-xs text-ink-2">Redis no responde en 2 s: se registra un aviso y se sirve desde PostgreSQL.</p>
+      <p class="animate-slide-up text-xs text-ink-2">{{ 'Redis no responde en 2 s: se registra un aviso y se sirve desde PostgreSQL.' | t }}</p>
     } @else {
-      <p class="mt-1 animate-slide-up text-sm font-medium text-status-ok">200 OK · caché</p>
-      <p class="animate-slide-up text-xs text-ink-2">Servido desde Redis; en un fallo de caché se consulta PostgreSQL y se repuebla.</p>
+      <p class="mt-1 animate-slide-up text-sm font-medium text-status-ok">{{ '200 OK · caché' | t }}</p>
+      <p class="animate-slide-up text-xs text-ink-2">{{ 'Servido desde Redis; en un fallo de caché se consulta PostgreSQL y se repuebla.' | t }}</p>
     }
   </div>
 
@@ -96,8 +96,8 @@
       <p class="mt-1 animate-slide-up text-sm font-medium text-status-danger">503 Service Unavailable · RFC 7807</p>
       <pre class="mt-2 max-h-40 animate-slide-up overflow-auto rounded-panel border border-line-subtle bg-surface-2 p-2.5 font-mono text-xs leading-relaxed text-ink-2">{{ problem }}</pre>
     } @else {
-      <p class="mt-1 animate-slide-up text-sm font-medium text-status-ok">200 OK · respuesta con citas</p>
-      <p class="animate-slide-up text-xs text-ink-2">Circuito cerrado. Se abre con un 50 % de fallos del proveedor y reintenta a los 30 s.</p>
+      <p class="mt-1 animate-slide-up text-sm font-medium text-status-ok">{{ '200 OK · respuesta con citas' | t }}</p>
+      <p class="animate-slide-up text-xs text-ink-2">{{ 'Circuito cerrado. Se abre con un 50 % de fallos del proveedor y reintenta a los 30 s.' | t }}</p>
     }
   </div>
 </div>

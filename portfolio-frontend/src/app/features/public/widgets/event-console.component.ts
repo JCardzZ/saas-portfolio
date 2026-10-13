@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { SystemEventKind, SystemEventStep, SystemEventsService } from '../data/system-events.service';
 import { TelemetryStreamService } from '../data/telemetry-stream.service';
@@ -38,6 +39,7 @@ const AMBIENT: (() => SystemEventStep)[] = [
 @Component({
   selector: 'app-event-console',
   standalone: true,
+  imports: [TranslatePipe],
   host: { class: 'bento-card flex flex-col overflow-hidden !p-0' },
   template: `
     <div class="flex min-h-9 flex-wrap items-center gap-2 border-b border-line-subtle px-4 py-1">
@@ -51,15 +53,15 @@ const AMBIENT: (() => SystemEventStep)[] = [
     </div>
 
     <!-- aria-live apagado: un flujo continuo saturaría a un lector de pantalla. -->
-    <div #log class="h-72 flex-1 overflow-y-auto px-4 py-3 font-mono text-mono" role="log" aria-live="off" aria-label="Eventos simulados del sistema" tabindex="0">
+    <div #log class="h-72 flex-1 overflow-y-auto px-4 py-3 font-mono text-mono" role="log" aria-live="off" [attr.aria-label]="'Eventos simulados del sistema' | t" tabindex="0">
       @for (event of events.events(); track event.id) {
         <!-- Dos columnas: la hora, y el evento, que al partirse sigue bajo su propia columna. -->
         <p class="log-row animate-fade-in" [class.user-event]="event.fromUser" [style.animation-delay.ms]="event.stagger">
-          <span class="tabular-nums text-ink-3">@if (event.origin === 'live') {<span class="text-status-ok" title="Evento real del backend">● </span>}{{ event.time }}</span>
+          <span class="tabular-nums text-ink-3">@if (event.origin === 'live') {<span class="text-status-ok" [attr.title]="'Evento real del backend' | t">● </span>}{{ event.time }}</span>
           <span class="min-w-0 break-words"><span [class]="kindClasses[event.kind]">[{{ event.tag }}]</span><span class="text-ink-2"> {{ event.detail }}</span></span>
         </p>
       } @empty {
-        <p class="text-ink-3">Esperando eventos…</p>
+        <p class="text-ink-3">{{ 'Esperando eventos…' | t }}</p>
       }
     </div>
 
@@ -67,7 +69,7 @@ const AMBIENT: (() => SystemEventStep)[] = [
       @if (telemetry.status() === 'live') {
         <span class="text-status-ok">●</span> Eventos reales del backend.
       }
-      <span class="text-accent-text">▍</span> Simulaciones que provocas tú en los widgets de esta página.
+      <span class="text-accent-text">▍</span> {{ 'Simulaciones que provocas tú en los widgets de esta página.' | t }}
     </p>
   `,
   styles: `

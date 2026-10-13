@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output, signal, viewChild } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
 import { TechIcon } from '../../../shared/ui/tech-icons';
@@ -39,21 +40,21 @@ export function fitText(text: string, width: number, charWidth: number): string 
 @Component({
   selector: 'app-studio-mobile-canvas',
   standalone: true,
-  imports: [ContainerWidthDirective],
+  imports: [TranslatePipe, ContainerWidthDirective],
   host: { class: 'block' },
   template: `
     <div class="mb-2 flex flex-wrap items-center gap-2">
-      <div class="flex items-center gap-1" role="group" aria-label="Zoom del diagrama">
-        <button type="button" class="ui-btn-secondary ui-btn-icon" aria-label="Alejar" [disabled]="zoom() <= minZoom" (click)="zoomBy(-step)">
+      <div class="flex items-center gap-1" role="group" [attr.aria-label]="'Zoom del diagrama' | t">
+        <button type="button" class="ui-btn-secondary ui-btn-icon" [attr.aria-label]="'Alejar' | t" [disabled]="zoom() <= minZoom" (click)="zoomBy(-step)">
           <svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3.5 8h9" /></svg>
         </button>
         <span class="min-w-[3.25rem] text-center font-mono text-mono-sm text-ink-2" aria-live="polite" data-testid="mobile-zoom">{{ percent() }}</span>
-        <button type="button" class="ui-btn-secondary ui-btn-icon" aria-label="Acercar" [disabled]="zoom() >= maxZoom" (click)="zoomBy(step)">
+        <button type="button" class="ui-btn-secondary ui-btn-icon" [attr.aria-label]="'Acercar' | t" [disabled]="zoom() >= maxZoom" (click)="zoomBy(step)">
           <svg viewBox="0 0 16 16" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3.5 8h9M8 3.5v9" /></svg>
         </button>
       </div>
-      <button type="button" class="ui-btn-secondary" [disabled]="zoom() === minZoom" (click)="fit()">Ajustar a pantalla</button>
-      <p class="w-full text-caption font-normal text-ink-3">Solo lectura. Pellizca para ampliar y arrastra para moverte; la edición necesita una pantalla más ancha.</p>
+      <button type="button" class="ui-btn-secondary" [disabled]="zoom() === minZoom" (click)="fit()">{{ 'Ajustar a pantalla' | t }}</button>
+      <p class="w-full text-caption font-normal text-ink-3">{{ 'Solo lectura. Pellizca para ampliar y arrastra para moverte; la edición necesita una pantalla más ancha.' | t }}</p>
     </div>
 
     <div
@@ -74,7 +75,7 @@ export function fitText(text: string, width: number, charWidth: number): string 
         class="block origin-top-left"
         data-layout="vertical"
         role="group"
-        aria-label="Piezas del proyecto, de arriba abajo en el sentido de la petición"
+        [attr.aria-label]="'Piezas del proyecto, de arriba abajo en el sentido de la petición' | t"
         [style.transform]="'translate(' + offset().x + 'px,' + offset().y + 'px) scale(' + zoom() + ')'"
       >
         @for (edge of scene().edges; track edge.from + edge.to) {

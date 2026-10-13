@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { CostEstimate, formatUsd } from './cloud-costs.data';
 import { LivePricingState } from './live-pricing.service';
@@ -10,10 +11,11 @@ import { LivePricingState } from './live-pricing.service';
 @Component({
   selector: 'app-cost-badge',
   standalone: true,
+  imports: [TranslatePipe],
   host: { class: 'block', '(mouseenter)': 'hovered.set(true)', '(mouseleave)': 'hovered.set(false)', '(keydown.escape)': 'pinned.set(false)' },
   template: `
     @if (open()) {
-      <div id="cost-breakdown" class="mb-2 w-64 animate-scale-up rounded-panel border border-line-strong bg-surface-1/95 p-3 text-left shadow-2xl backdrop-blur-2xl" role="region" aria-label="Desglose del coste mensual estimado">
+      <div id="cost-breakdown" class="mb-2 w-64 animate-scale-up rounded-panel border border-line-strong bg-surface-1/95 p-3 text-left shadow-2xl backdrop-blur-2xl" role="region" [attr.aria-label]="'Desglose del coste mensual estimado' | t">
         <p class="text-xs font-medium uppercase tracking-wider text-ink-2">FinOps · {{ providerName() }}</p>
         <ul class="mt-2 space-y-2">
           @for (category of estimate().categories; track category.id) {
@@ -32,7 +34,7 @@ import { LivePricingState } from './live-pricing.service';
               </p>
             </li>
           } @empty {
-            <li class="text-xs text-ink-2">Ningún nodo del lienzo tiene coste fijo.</li>
+            <li class="text-xs text-ink-2">{{ 'Ningún nodo del lienzo tiene coste fijo.' | t }}</li>
           }
         </ul>
         @if (estimate().unestimated.length) {
@@ -44,8 +46,7 @@ import { LivePricingState } from './live-pricing.service';
           {{ sourceLabel() }}
         </p>
         <p class="mt-2 border-t border-line-subtle pt-2 text-xs leading-snug text-ink-3">
-          Estimación orientativa en USD para el tamaño mínimo de cada servicio. No incluye tráfico de salida, el uso de
-          Gemini, soporte ni descuentos. Contrasta con la calculadora oficial antes de decidir.
+          {{ 'Estimación orientativa en USD para el tamaño mínimo de cada servicio. No incluye tráfico de salida, el uso de Gemini, soporte ni descuentos. Contrasta con la calculadora oficial antes de decidir.' | t }}
         </p>
       </div>
     }
@@ -62,9 +63,9 @@ import { LivePricingState } from './live-pricing.service';
       @for (total of [usd(estimate().total)]; track total) {
         <span class="animate-slide-up font-mono text-sm font-semibold tabular-nums text-ink-1">≈ {{ total }}</span>
       }
-      <span class="text-xs text-ink-2">/mes</span>
+      <span class="text-xs text-ink-2">{{ '/mes' | t }}</span>
       @if (estimate().liveUsd > 0) {
-        <span class="rounded-full border border-status-ok/40 px-1.5 text-xs text-status-ok" data-testid="cost-live" title="Parte del total que son precios de lista reales, leídos de la API del proveedor">{{ usd(estimate().liveUsd) }} reales</span>
+        <span class="rounded-full border border-status-ok/40 px-1.5 text-xs text-status-ok" data-testid="cost-live" [attr.title]="'Parte del total que son precios de lista reales, leídos de la API del proveedor' | t">{{ usd(estimate().liveUsd) }} reales</span>
       }
       @if (estimate().unestimated.length) {
         <span class="rounded-full border border-status-warn/40 px-1.5 text-xs text-status-warn" [title]="'Sin estimación: ' + unestimatedNames()">+{{ estimate().unestimated.length }} sin estimación</span>
