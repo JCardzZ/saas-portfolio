@@ -1,9 +1,11 @@
 import type * as THREE from 'three';
 
 /**
- * Escena 3D del hero (Three.js, cargado bajo demanda): un avatar genérico de desarrollador —no es
- * la cara de nadie— con gafas y cascos, que sigue el cursor con la cabeza y los ojos, parpadea y
- * flota, rodeado de un campo de partículas y anillos con el acento. Decorativa: el h1 dice quién es.
+ * Escena 3D del hero (Three.js, cargado bajo demanda): avatar estilizado de Manuel hecho con
+ * primitivas —tupé negro de punta con laterales rebajados, cejas rectas y gruesas, gesto serio,
+ * esmoquin negro con solapas de satén, camisa blanca y corbata gris—. No usa su foto: no hay
+ * ninguna imagen suya en el bundle. Sigue el cursor con la cabeza y los ojos, parpadea y flota,
+ * rodeado de un campo de partículas y anillos con el acento. Decorativa: el h1 dice quién es.
  */
 export interface ScenePalette {
   accent: string;
@@ -24,12 +26,17 @@ export interface HeroScene {
   dispose(): void;
 }
 
-/** Colores propios del personaje (piel, pelo, ojos): no dependen del tema. */
-const SKIN = 0xe8b08a;
-const SKIN_SHADE = 0xd99a73;
-const HAIR = 0x2a1d17;
-const EYE_WHITE = 0xfafafa;
-const IRIS = 0x3a2a20;
+/** Colores propios del personaje (piel, pelo, ojos, traje): no dependen del tema. */
+const SKIN = 0xd9a07c;
+const SKIN_SHADE = 0xc4855f;
+const HAIR = 0x141110;
+const EYE_WHITE = 0xf2efea;
+const IRIS = 0x2b1d14;
+const LIPS = 0xc0786a;
+const SUIT = 0x16171a;
+const SATIN = 0x2a2b30;
+const SHIRT = 0xf4f4f2;
+const TIE = 0x3b3d42;
 
 export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, palette: ScenePalette, animate: boolean): HeroScene {
   const renderer = new three.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -65,120 +72,151 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
 
   const skin = standard(SKIN, 0.6);
   const skinShade = standard(SKIN_SHADE, 0.65);
-  const hair = standard(HAIR, 0.8);
+  const hair = standard(HAIR, 0.7);
+  const fade = standard(HAIR, 0.95, { transparent: true, opacity: 0.55 });
   const accentMat = standard(0x7fee64, 0.35, { emissive: 0x7fee64, emissiveIntensity: 0.25 });
-  const dark = standard(0x1a1d1b, 0.5);
-  const hoodie = standard(0x1e2320, 0.85);
+  const suit = standard(SUIT, 0.75);
+  const satin = standard(SATIN, 0.25, { metalness: 0.2 });
+  const shirt = standard(SHIRT, 0.5);
+  const tie = standard(TIE, 0.3, { metalness: 0.25 });
 
   const sphere = (radius: number, segments = 48) => keep(new three.SphereGeometry(radius, segments, segments));
 
-  // Cabeza, algo más ancha que alta, como un personaje de animación.
-  const skull = new three.Mesh(sphere(1.25), skin);
-  skull.scale.set(1, 1.05, 0.98);
+  // Cabeza algo más alta que ancha, mandíbula marcada.
+  const skull = new three.Mesh(sphere(1.2), skin);
+  skull.scale.set(0.96, 1.16, 0.98);
   head.add(skull);
-  const cheekGeometry = sphere(0.32, 24);
+  const chin = new three.Mesh(sphere(0.3, 24), skin);
+  chin.position.set(0, -1.02, 0.7);
+  chin.scale.set(1.2, 0.65, 0.6);
+  head.add(chin);
   for (const side of [-1, 1]) {
-    const cheek = new three.Mesh(cheekGeometry, skinShade);
-    cheek.position.set(side * 0.72, -0.38, 0.9);
-    cheek.scale.set(1, 0.7, 0.4);
-    head.add(cheek);
     const ear = new three.Mesh(sphere(0.26, 24), skin);
-    ear.position.set(side * 1.24, -0.05, 0);
-    ear.scale.set(0.5, 1, 0.8);
+    ear.position.set(side * 1.16, -0.05, 0);
+    ear.scale.set(0.45, 1, 0.75);
     head.add(ear);
+    const nostril = new three.Mesh(sphere(0.085, 16), skinShade);
+    nostril.position.set(side * 0.11, -0.28, 1.1);
+    head.add(nostril);
   }
-  const nose = new three.Mesh(sphere(0.17, 24), skinShade);
-  nose.position.set(0, -0.12, 1.22);
-  nose.scale.set(1, 0.9, 0.8);
+  const nose = new three.Mesh(keep(new three.CapsuleGeometry(0.1, 0.2, 8, 16)), skinShade);
+  nose.position.set(0, -0.12, 1.17);
+  nose.rotation.x = 0.45;
   head.add(nose);
 
-  // Pelo: casquete con un tupé.
-  const cap = new three.Mesh(keep(new three.SphereGeometry(1.3, 48, 32, 0, Math.PI * 2, 0, Math.PI * 0.5)), hair);
-  cap.position.y = 0.12;
-  cap.rotation.x = -0.25;
-  cap.scale.set(1.02, 0.9, 1.04);
-  head.add(cap);
-  for (const [x, y, z, s] of [[0.25, 1.05, 0.65, 0.55], [-0.35, 1.0, 0.55, 0.5], [0.0, 1.18, 0.2, 0.62], [0.6, 0.85, 0.5, 0.42]] as const) {
-    const tuft = new three.Mesh(sphere(s, 24), hair);
-    tuft.position.set(x, y, z);
-    tuft.scale.set(1, 0.6, 0.85);
-    head.add(tuft);
+  // Boca seria, labios carnosos.
+  const lipMat = standard(LIPS, 0.5);
+  const upperLip = new three.Mesh(keep(new three.CapsuleGeometry(0.07, 0.34, 8, 16)), lipMat);
+  upperLip.rotation.z = Math.PI / 2;
+  upperLip.position.set(0, -0.6, 1.02);
+  const lowerLip = new three.Mesh(keep(new three.CapsuleGeometry(0.09, 0.3, 8, 16)), lipMat);
+  lowerLip.rotation.z = Math.PI / 2;
+  lowerLip.position.set(0, -0.74, 0.98);
+  head.add(upperLip, lowerLip);
+
+  // Pelo: laterales rebajados (casquete bajo y opaco) y tupé alto peinado hacia arriba.
+  const sides = new three.Mesh(keep(new three.SphereGeometry(1.215, 48, 32, 0, Math.PI * 2, 0, Math.PI * 0.34)), standard(0x2a2320, 0.95));
+  sides.position.y = 0.05;
+  sides.rotation.x = -0.32;
+  sides.scale.set(0.99, 1.1, 1.0);
+  head.add(sides);
+  const quiff = new three.Group();
+  quiff.position.set(0, 1.0, 0.2);
+  quiff.rotation.x = 0.18;
+  head.add(quiff);
+  const mass = new three.Mesh(sphere(0.6, 32), hair);
+  mass.scale.set(1.0, 0.9, 1.45);
+  mass.position.y = 0.2;
+  quiff.add(mass);
+  const spikeGeometry = keep(new three.ConeGeometry(0.27, 1, 16));
+  const spikes: [number, number, number, number, number, number][] = [
+    // x, y, z, alto, inclinación adelante, inclinación lateral
+    [-0.32, 0.55, 0.55, 0.85, 0.32, 0.38],
+    [0.0, 0.55, 0.55, 1.00, 0.32, -0.15],
+    [0.32, 0.55, 0.55, 0.85, 0.32, -0.45],
+    [-0.32, 0.55, 0.25, 0.95, 0.15, 0.38],
+    [0.0, 0.55, 0.25, 1.12, 0.15, -0.15],
+    [0.32, 0.55, 0.25, 0.95, 0.15, -0.45],
+    [-0.32, 0.55, -0.1, 0.89, 0.0, 0.38],
+    [0.0, 0.55, -0.1, 1.05, 0.0, -0.15],
+    [0.32, 0.55, -0.1, 0.89, 0.0, -0.45],
+    [-0.32, 0.55, -0.45, 0.72, -0.2, 0.38],
+    [0.0, 0.55, -0.45, 0.85, -0.2, -0.15],
+    [0.32, 0.55, -0.45, 0.72, -0.2, -0.45],
+  ];
+  for (const [x, y, z, h, tiltX, tiltZ] of spikes) {
+    const spike = new three.Mesh(spikeGeometry, hair);
+    spike.position.set(x, y + h * 0.15, z);
+    spike.scale.set(1, h, 0.8);
+    spike.rotation.set(tiltX, 0, tiltZ);
+    quiff.add(spike);
   }
 
-  // Ojos que siguen al cursor, y párpados para parpadear.
+  // Ojos oscuros, algo entornados (párpado medio caído), que siguen al cursor y parpadean.
   const eyes = [-1, 1].map((side) => {
     const socket = new three.Group();
-    socket.position.set(side * 0.42, 0.12, 1.02);
-    const white = new three.Mesh(sphere(0.24, 32), standard(EYE_WHITE, 0.25));
-    white.scale.z = 0.7;
-    const iris = new three.Mesh(sphere(0.12, 24), standard(IRIS, 0.3));
-    iris.position.z = 0.15;
-    const shine = new three.Mesh(sphere(0.035, 12), keep(new three.MeshBasicMaterial({ color: 0xffffff })));
-    shine.position.set(0.04, 0.05, 0.25);
+    socket.position.set(side * 0.4, 0.12, 0.98);
+    const white = new three.Mesh(sphere(0.2, 32), standard(EYE_WHITE, 0.25));
+    white.scale.set(1.15, 0.8, 0.7);
+    const iris = new three.Mesh(sphere(0.11, 24), standard(IRIS, 0.3));
+    iris.position.z = 0.12;
+    const shine = new three.Mesh(sphere(0.03, 12), keep(new three.MeshBasicMaterial({ color: 0xffffff })));
+    shine.position.set(0.04, 0.04, 0.21);
     const pupil = new three.Group();
     pupil.add(iris, shine);
-    const lid = new three.Mesh(keep(new three.SphereGeometry(0.26, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2)), skin);
-    lid.scale.set(1, 1, 0.75);
-    lid.rotation.x = -Math.PI / 2 + 0.35;
+    const lid = new three.Mesh(keep(new three.SphereGeometry(0.235, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2)), skin);
+    lid.scale.set(1.15, 1, 0.75);
     socket.add(white, pupil, lid);
     head.add(socket);
     return { pupil, lid };
   });
-  const browGeometry = keep(new three.CapsuleGeometry(0.06, 0.28, 6, 12));
+  const LID_OPEN = -Math.PI / 2 + 0.75;
+  const browGeometry = keep(new three.BoxGeometry(0.46, 0.1, 0.12));
   const brows = [-1, 1].map((side) => {
     const brow = new three.Mesh(browGeometry, hair);
-    brow.position.set(side * 0.42, 0.5, 1.08);
-    brow.rotation.z = Math.PI / 2 + side * 0.12;
+    brow.position.set(side * 0.42, 0.4, 1.06);
+    brow.rotation.z = side * -0.1;
+    brow.rotation.y = side * 0.25;
     head.add(brow);
     return brow;
   });
 
-  // Gafas redondas.
-  const rimGeometry = keep(new three.TorusGeometry(0.31, 0.035, 12, 48));
-  for (const side of [-1, 1]) {
-    const lens = new three.Mesh(rimGeometry, dark);
-    lens.position.set(side * 0.42, 0.12, 1.2);
-    head.add(lens);
-  }
-  const bridge = new three.Mesh(keep(new three.CylinderGeometry(0.03, 0.03, 0.22, 8)), dark);
-  bridge.rotation.z = Math.PI / 2;
-  bridge.position.set(0, 0.16, 1.24);
-  head.add(bridge);
-
-  // Sonrisa.
-  const smile = new three.Mesh(keep(new three.TorusGeometry(0.22, 0.035, 10, 32, Math.PI * 0.8)), keep(new three.MeshStandardMaterial({ color: 0x6b2f2a, roughness: 0.6 })));
-  smile.position.set(0, -0.48, 1.08);
-  smile.rotation.z = Math.PI + Math.PI * 0.1;
-  head.add(smile);
-
-  // Cascos con el acento.
-  const band = new three.Mesh(keep(new three.TorusGeometry(1.36, 0.07, 12, 64, Math.PI)), dark);
-  band.position.y = 0.05;
-  head.add(band);
-  for (const side of [-1, 1]) {
-    const cup = new three.Mesh(keep(new three.CylinderGeometry(0.36, 0.36, 0.26, 32)), dark);
-    cup.rotation.z = Math.PI / 2;
-    cup.position.set(side * 1.32, 0, 0);
-    head.add(cup);
-    const glowRing = new three.Mesh(keep(new three.TorusGeometry(0.3, 0.035, 8, 32)), accentMat);
-    glowRing.rotation.y = Math.PI / 2;
-    glowRing.position.set(side * 1.47, 0, 0);
-    head.add(glowRing);
-  }
-
-  // Cuello y sudadera.
-  const neck = new three.Mesh(keep(new three.CylinderGeometry(0.38, 0.45, 0.6, 24)), skinShade);
-  neck.position.y = -0.9;
+  // Cuello, camisa, corbata y esmoquin con solapas de satén.
+  const neck = new three.Mesh(keep(new three.CylinderGeometry(0.42, 0.48, 0.7, 24)), skinShade);
+  neck.position.y = -1.0;
   character.add(neck);
-  const body = new three.Mesh(keep(new three.CapsuleGeometry(1.15, 0.6, 12, 32)), hoodie);
-  body.position.y = -2.1;
-  body.scale.set(1.35, 1, 0.85);
+  const body = new three.Mesh(keep(new three.CapsuleGeometry(1.15, 0.6, 12, 32)), suit);
+  body.position.y = -2.25;
+  body.scale.set(1.45, 1, 0.85);
   character.add(body);
+  const shirtFront = new three.Mesh(keep(new three.ConeGeometry(0.55, 1.1, 3, 1, false)), shirt);
+  shirtFront.rotation.set(Math.PI, Math.PI, 0);
+  shirtFront.position.set(0, -1.6, 0.98);
+  shirtFront.scale.set(1, 1, 0.45);
+  character.add(shirtFront);
   for (const side of [-1, 1]) {
-    const cord = new three.Mesh(keep(new three.CylinderGeometry(0.035, 0.035, 0.6, 8)), accentMat);
-    cord.position.set(side * 0.28, -1.45, 0.88);
-    character.add(cord);
+    const collar = new three.Mesh(keep(new three.BoxGeometry(0.42, 0.26, 0.08)), shirt);
+    collar.position.set(side * 0.22, -1.2, 0.72);
+    collar.rotation.set(0.25, side * -0.4, side * 0.55);
+    character.add(collar);
+    const lapel = new three.Mesh(keep(new three.BoxGeometry(0.34, 1.5, 0.08)), satin);
+    lapel.position.set(side * 0.5, -1.75, 1.08);
+    lapel.rotation.set(0.15, side * -0.35, side * 0.32);
+    character.add(lapel);
   }
+  const knot = new three.Mesh(sphere(0.15, 20), tie);
+  knot.position.set(0, -1.3, 0.86);
+  knot.scale.set(1, 1.05, 0.7);
+  character.add(knot);
+  const blade = new three.Mesh(keep(new three.CylinderGeometry(0.2, 0.09, 1.05, 4)), tie);
+  blade.position.set(0, -1.88, 1.12);
+  blade.rotation.set(-0.12, Math.PI / 4, 0);
+  blade.scale.set(1, 1, 0.35);
+  character.add(blade);
+  // Insignia de solapa con el acento: el único guiño de color del personaje.
+  const pin = new three.Mesh(sphere(0.07, 16), accentMat);
+  pin.position.set(-0.62, -1.75, 1.18);
+  character.add(pin);
 
   // Partículas y anillos alrededor.
   const dustMaterial = keep(new three.PointsMaterial({ size: 0.04, transparent: true, opacity: 0.7, depthWrite: false }));
@@ -220,7 +258,6 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     dustMaterial.color.set(next.muted);
     dustMaterial.blending = next.light ? three.NormalBlending : three.AdditiveBlending;
     dustMaterial.needsUpdate = true;
-    hoodie.color.set(next.light ? 0x2a302c : 0x1e2320);
     hemi.intensity = next.light ? 1.5 : 1.1;
   }
   setPalette(palette);
@@ -243,10 +280,10 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const blinkPhase = animate ? (t % 4.2) : 1;
     const closed = blinkPhase < 0.14 ? Math.sin((blinkPhase / 0.14) * Math.PI) : 0;
     for (const eye of eyes) {
-      eye.lid.rotation.x = -Math.PI / 2 + 0.35 + closed * 1.25;
+      eye.lid.rotation.x = LID_OPEN + closed * 0.85;
     }
     for (const brow of brows) {
-      brow.position.y = 0.5 + Math.max(0, -lookY) * 0.06;
+      brow.position.y = 0.4 + Math.max(0, -lookY) * 0.06;
     }
     rings[0].rotation.z = t * 0.15;
     rings[1].rotation.z = -t * 0.1;
