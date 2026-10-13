@@ -246,6 +246,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
            Es una barra opaca que la página esquiva (--dock-bottom), no una píldora flotando sobre el contenido;
            respeta el indicador de inicio y los laterales con las zonas seguras. -->
       <div
+        #demoBar
         data-demo-bar
         class="fixed inset-x-0 bottom-0 z-[46] border-t border-line-strong bg-surface-1 pb-[env(safe-area-inset-bottom)] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]"
         role="status"
@@ -373,6 +374,9 @@ export class TraceInspectorComponent {
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
   private readonly log = viewChild<ElementRef<HTMLElement>>('log');
+  private readonly demoBar = viewChild<ElementRef<HTMLElement>>('demoBar');
+  /** Alto real de la barra recogida, en px; 0 hasta medirla. Crece con el texto ampliado y con el tamaño táctil del aviso. */
+  private readonly demoBarHeight = signal(0);
   private drag: { dx: number; dy: number } | null = null;
 
   constructor() {
@@ -393,10 +397,21 @@ export class TraceInspectorComponent {
       root.setProperty('--dock-right', open && layout === 'right' ? RIGHT_WIDTH : '0px');
       // Cerrado en un móvil y en modo demo, queda su barra recogida: la página también le deja sitio.
       const bar = !open && this.demo && this.inspector.narrow();
-      root.setProperty('--dock-bottom', open && (layout === 'bottom' || layout === 'sheet') ? this.height()! : bar ? DEMO_BAR_SPACE : '0px');
+      root.setProperty('--dock-bottom', open && (layout === 'bottom' || layout === 'sheet') ? this.height()! : bar ? (this.demoBarHeight() ? `${this.demoBarHeight()}px` : DEMO_BAR_SPACE) : '0px');
       // Una píldora en la esquina (inspector minimizado o aviso de demo): el pie le deja sitio.
       root.setProperty('--pill-space', (open && layout === 'pill') || (!open && this.demo && !bar) ? PILL_SPACE : '0px');
     });
+    // La página reserva a la barra recogida el alto que de verdad tiene, no uno supuesto.
+    effect((onCleanup) => {
+      const bar = this.demoBar()?.nativeElement;
+      if (!bar || typeof ResizeObserver === 'undefined') {
+        this.demoBarHeight.set(0);
+        return;
+      }
+      const observer = new ResizeObserver(() => this.demoBarHeight.set(Math.ceil(bar.getBoundingClientRect().height)));
+      observer.observe(bar);
+      onCleanup(() => observer.disconnect());
+    }, { allowSignalWrites: true });
     this.demoHost.hosted.set(true);
     inject(DestroyRef).onDestroy(() => {
       document.documentElement.classList.remove('dock-resizing');
