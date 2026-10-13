@@ -40,7 +40,7 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
       <header class="flex items-start gap-3 border-b border-line-subtle px-4 py-3">
         <div class="min-w-0 flex-1">
           <h4 id="copilot-title" class="text-sm font-semibold text-ink-1">{{ 'Co-piloto de arquitectura' | t }}</h4>
-          <p class="text-xs text-ink-2">IA sobre tu diagrama{{ demo ? ' · respuestas simuladas (modo demo)' : ' · Gemini con el índice RAG' }}</p>
+          <p class="text-xs text-ink-2">IA sobre tu diagrama{{ demo ? (' · respuestas simuladas (modo demo)' | t) : (' · Gemini con el índice RAG' | t) }}</p>
         </div>
         <button type="button" class="focus-ring rounded-control px-2 text-lg leading-none text-ink-2 hover:text-ink-1" [attr.aria-label]="'Cerrar el copiloto' | t" (click)="closed.emit()">×</button>
       </header>
@@ -98,7 +98,7 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
                       [disabled]="recommendation.applied !== null"
                       (click)="apply(exchange.id, recommendation)"
                     >
-                      {{ recommendation.applied === null ? '✨ Aplicar cambios al lienzo' : 'Aplicado · ' + recommendation.applied + (recommendation.applied === 1 ? ' pieza' : ' piezas') }}
+                      {{ recommendation.applied === null ? ('✨ Aplicar cambios al lienzo' | t) : ('Aplicado · ' | t) + recommendation.applied + (recommendation.applied === 1 ? (' pieza' | t) : (' piezas' | t)) }}
                     </button>
                   }
                 </div>

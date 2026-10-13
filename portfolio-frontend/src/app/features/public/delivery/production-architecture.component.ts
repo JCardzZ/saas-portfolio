@@ -52,7 +52,7 @@ interface Fact {
           {{ node.label }}
           <span class="rounded-full border px-2 py-0.5 text-xs font-medium"
             [class]="node.status === 'live' ? 'border-status-ok/40 text-status-ok' : 'border-dashed border-line-control text-ink-2'">
-            {{ node.status === 'live' ? 'en producción' : 'planificado' }}
+            {{ node.status === 'live' ? ('en producción' | t) : 'planificado' }}
           </span>
         </p>
         <p class="mt-1 text-sm text-ink-2">{{ node.what }}</p>

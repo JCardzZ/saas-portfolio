@@ -40,7 +40,7 @@ const SIMULATION_MS = 900;
 
     <div class="mt-6 grid gap-8 md:grid-cols-2 [&>*]:min-w-0">
       @for (lane of lanes; track lane.target) {
-        <section [attr.aria-label]="'Despliegues de ' + lane.title">
+        <section [attr.aria-label]="('Despliegues de ' | t) + lane.title">
           <p class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.06em] text-ink-3">
             {{ lane.title }}
             <span class="normal-case tracking-normal text-ink-3">{{ lane.where }}</span>
@@ -65,7 +65,7 @@ const SIMULATION_MS = 900;
                         @if (index === currentIndex(lane.target)) {
                           <span class="rounded-full border px-2 py-0.5 text-xs font-medium"
                             [class]="simulating() && lane.target === 'frontend' ? 'border-status-warn/50 text-status-warn' : 'border-status-ok/40 text-status-ok'">
-                            {{ simulating() && lane.target === 'frontend' ? 'en producción · simulación' : 'en producción' }}
+                            {{ simulating() && lane.target === 'frontend' ? ('en producción · simulación' | t) : ('en producción' | t) }}
                           </span>
                         }
                       </p>
@@ -74,7 +74,7 @@ const SIMULATION_MS = 900;
                       </p>
                       <p class="mt-0.5 flex items-center gap-1.5 text-xs" [class]="deployment.healthy === false ? 'text-status-danger' : 'text-ink-2'">
                         <span class="h-2 w-2 rounded-full" [class]="deployment.healthy === true ? 'bg-status-ok' : deployment.healthy === false ? 'bg-status-danger' : 'border border-line-control'" aria-hidden="true"></span>
-                        {{ deployment.healthy === true ? 'Salud comprobada' : deployment.healthy === false ? 'No pasó la comprobación de salud' : 'Salud sin comprobar' }}
+                        {{ deployment.healthy === true ? ('Salud comprobada' | t) : deployment.healthy === false ? ('No pasó la comprobación de salud' | t) : ('Salud sin comprobar' | t) }}
                       </p>
                     </div>
                   </li>
@@ -82,7 +82,7 @@ const SIMULATION_MS = 900;
               </ol>
             } @else {
               <p class="mt-3 rounded-control border border-dashed border-line-strong p-4 text-sm text-ink-2">
-                {{ lane.planned ? 'Sin despliegues: todavía no existe en producción. Cuando exista, su historial y su rollback aparecerán aquí.' : (loaded() ? 'Aún no hay despliegues publicados.' : 'Cargando…') }}
+                {{ lane.planned ? ('Sin despliegues: todavía no existe en producción. Cuando exista, su historial y su rollback aparecerán aquí.' | t) : (loaded() ? ('Aún no hay despliegues publicados.' | t) : ('Cargando…' | t)) }}
               </p>
             }
           }
@@ -96,7 +96,7 @@ const SIMULATION_MS = 900;
         class="focus-ring rounded-control border border-line-strong px-4 py-1.5 text-sm font-medium text-ink-1 transition duration-200 ease-out hover:bg-surface-3 disabled:opacity-40"
         [disabled]="!canSimulate() || animating()"
         (click)="simulating() ? reset() : simulate()"
-      >{{ simulating() ? 'Deshacer la simulación' : 'Simular rollback' }}</button>
+      >{{ simulating() ? ('Deshacer la simulación' | t) : ('Simular rollback' | t) }}</button>
       <p class="min-w-0 flex-1 text-xs text-ink-3" aria-live="polite">
         @if (simulating()) {
           <span class="mr-1 rounded-full border border-status-warn/50 px-2 py-0.5 font-medium text-status-warn">{{ 'Simulación' | t }}</span>

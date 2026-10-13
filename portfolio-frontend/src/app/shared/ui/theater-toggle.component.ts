@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input } from '@angular/core';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 import { TheaterDirective } from './theater.directive';
 
@@ -9,13 +10,14 @@ import { TheaterDirective } from './theater.directive';
 @Component({
   selector: 'app-theater-toggle',
   standalone: true,
+  imports: [TranslatePipe],
   host: { class: 'absolute right-3 top-3 z-10' },
   template: `
     <button
       type="button"
       class="focus-ring flex items-center justify-center rounded-control border border-line-subtle bg-surface-3 text-ink-2 backdrop-blur-md transition duration-300 ease-spring hover:bg-surface-3 hover:text-ink-1 active:scale-90"
       [class]="theater.expanded() ? 'h-11 w-11' : 'h-8 w-8'"
-      [attr.aria-label]="(theater.expanded() ? 'Minimizar ' : 'Ampliar a pantalla completa ') + name()"
+      [attr.aria-label]="(theater.expanded() ? ('Minimizar ' | t) : ('Ampliar a pantalla completa ' | t)) + name()"
       [attr.aria-expanded]="theater.expanded()"
       (click)="theater.toggle()"
     >

@@ -38,7 +38,7 @@ import { Vitals } from './live-traffic';
           {{ '$' + vitals().costPerHour.toFixed(2) }}<span class="text-ink-3">/h</span> · {{ usd(vitals().costPerMonth) }}<span class="text-ink-3">{{ '/mes' | t }}</span>
         </dd>
       </dl>
-      <p class="mt-1 max-w-[13rem] text-xs leading-snug text-ink-3" role="status">{{ vitals().note }}</p>
+      <p class="mt-1 max-w-[13rem] text-xs leading-snug text-ink-3" role="status">{{ vitals().note | t }}</p>
     </section>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

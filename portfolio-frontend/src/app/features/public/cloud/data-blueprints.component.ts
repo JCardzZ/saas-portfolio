@@ -43,7 +43,7 @@ interface Card {
       <ul class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         @for (card of cards(); track card.blueprint.id) {
           <li class="flex min-w-0 flex-col rounded-panel border border-line-subtle bg-surface-2 p-4" [attr.data-blueprint]="card.blueprint.id">
-            <svg class="w-full rounded-panel border border-line-subtle bg-surface-1" [attr.viewBox]="viewBox" role="img" [attr.aria-label]="'Diagrama en miniatura: ' + card.blueprint.summary">
+            <svg class="w-full rounded-panel border border-line-subtle bg-surface-1" [attr.viewBox]="viewBox" role="img" [attr.aria-label]="('Diagrama en miniatura: ' | t) + card.blueprint.summary">
               @for (zone of card.thumbnail.zones; track zone.id) {
                 <rect [attr.x]="zone.x" [attr.y]="zone.y" [attr.width]="zone.w" [attr.height]="zone.h" rx="14" fill="none" stroke="var(--border-strong)" stroke-width="3" />
               }
@@ -76,7 +76,7 @@ interface Card {
             </dl>
 
             @if (asking() === card.blueprint.id) {
-              <div class="mt-3 rounded-panel border border-line-strong bg-surface-2 p-3" role="group" [attr.aria-label]="'Cómo cargar ' + card.blueprint.name">
+              <div class="mt-3 rounded-panel border border-line-strong bg-surface-2 p-3" role="group" [attr.aria-label]="('Cómo cargar ' | t) + card.blueprint.name">
                 <p class="text-[13px] text-ink-1">{{ 'El lienzo ya tiene contenido. ¿Qué hago con él?' | t }}</p>
                 <div class="mt-2 flex flex-wrap gap-2">
                   <button type="button" class="focus-ring rounded-control bg-ink-1 px-3 py-1.5 text-xs font-medium text-canvas" (click)="choose(card.blueprint, 'replace')">{{ 'Reemplazar' | t }}</button>

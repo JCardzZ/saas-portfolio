@@ -26,7 +26,7 @@
               <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.8" />
               <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
             </svg>
-            <label class="sr-only" for="rag-prompt">{{ chatting() ? 'Tu pregunta' : 'Buscar o preguntar' }}</label>
+            <label class="sr-only" for="rag-prompt">{{ chatting() ? ('Tu pregunta' | t) : ('Buscar o preguntar' | t) }}</label>
             <input
               #field
               appAutofocus
@@ -41,7 +41,7 @@
               [attr.aria-expanded]="searching()"
               [attr.aria-activedescendant]="activeOption()?.id ?? null"
               class="min-w-0 flex-1 bg-transparent text-body text-ink-1 placeholder:text-ink-3 focus:outline-none"
-              [placeholder]="chatting() ? 'Pregunta sobre el portafolio…' : scope() === 'proyectos' ? 'Buscar en proyectos…' : scope() === 'plantillas' ? 'Buscar en plantillas del Estudio…' : 'Busca o pregunta sobre el portafolio…'"
+              [placeholder]="chatting() ? ('Pregunta sobre el portafolio…' | t) : scope() === 'proyectos' ? ('Buscar en proyectos…' | t) : scope() === 'plantillas' ? ('Buscar en plantillas del Estudio…' | t) : ('Busca o pregunta sobre el portafolio…' | t)"
               [formControl]="prompt"
               [attr.maxlength]="maxLength"
               (keydown)="onFieldKeydown($event)"

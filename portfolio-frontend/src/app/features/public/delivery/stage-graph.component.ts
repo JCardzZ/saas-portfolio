@@ -54,7 +54,7 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
         <span class="level" aria-live="polite">{{ percent() }} %</span>
         <button type="button" class="tool focus-ring" [attr.aria-label]="'Acercar' | t" [disabled]="fit() || !canZoomIn()" (click)="zoomBy(1)">+</button>
         <button type="button" class="tool wide focus-ring" [attr.aria-pressed]="fit()" (click)="toggleFit()">
-          {{ fit() ? 'Tamaño real' : 'Ajustar a pantalla' }}
+          {{ fit() ? ('Tamaño real' | t) : ('Ajustar a pantalla' | t) }}
         </button>
       </div>
     }

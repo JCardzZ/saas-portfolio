@@ -166,7 +166,7 @@ const LEVELS: C4Level[] = [
             aria-controls="c4-panel"
             (click)="selectLevel(candidate.id)"
           >
-            {{ candidate.tab }}
+            {{ candidate.tab | t }}
           </button>
         }
       </div>
@@ -174,7 +174,7 @@ const LEVELS: C4Level[] = [
 
     <div id="c4-panel" role="tabpanel" [attr.aria-labelledby]="'c4-tab-' + level().id">
       <p class="mt-3 text-body-sm text-ink-2">
-        <span class="font-medium text-ink-1">{{ level().title }}.</span> {{ level().description }}
+        <span class="font-medium text-ink-1">{{ level().title | t }}.</span> {{ level().description | t }}
       </p>
 
       <!-- Sin sitio para las columnas (600 px), el mismo grafo se dibuja de arriba abajo, a todo el ancho. -->
@@ -212,8 +212,8 @@ const LEVELS: C4Level[] = [
                       <path [attr.d]="icon.path" [attr.fill]="icon.color" />
                     </svg>
                   }
-                  <text class="node-label" [attr.x]="placed.textX" [attr.y]="placed.labelY" [attr.text-anchor]="placed.anchor">{{ placed.node.label }}</text>
-                  <text class="node-role" [attr.x]="placed.textX" [attr.y]="placed.roleY" [attr.text-anchor]="placed.anchor">{{ placed.node.role }}</text>
+                  <text class="node-label" [attr.x]="placed.textX" [attr.y]="placed.labelY" [attr.text-anchor]="placed.anchor">{{ placed.node.label | t }}</text>
+                  <text class="node-role" [attr.x]="placed.textX" [attr.y]="placed.roleY" [attr.text-anchor]="placed.anchor">{{ placed.node.role | t }}</text>
                 </g>
               }
             </g>
@@ -222,9 +222,9 @@ const LEVELS: C4Level[] = [
       </div>
 
       <div class="mt-3 flex min-h-[3.25rem] flex-wrap items-center gap-2" aria-live="polite">
-        <p class="mr-1 text-body-sm font-medium text-ink-1">{{ active().label }}</p>
+        <p class="mr-1 text-body-sm font-medium text-ink-1">{{ active().label | t }}</p>
         @for (fact of active().facts; track level().id + active().id + fact) {
-          <span class="ui-badge animate-fade-in font-mono">{{ fact }}</span>
+          <span class="ui-badge animate-fade-in font-mono">{{ fact | t }}</span>
         }
       </div>
     </div>

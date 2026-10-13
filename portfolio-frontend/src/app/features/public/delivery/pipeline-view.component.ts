@@ -62,7 +62,7 @@ const REPLAY_STAGE_MS = 850;
     <p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-2" aria-live="polite">
       <span class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-medium"
         [class]="replaying() ? 'border-accent-text/50 text-accent-text' : 'border-line-subtle text-ink-2'">
-        {{ replaying() ? 'Reproducción animada' : dataLabel() }}
+        {{ replaying() ? ('Reproducción animada' | t) : dataLabel() }}
       </span>
       @if (run(); as run) {
         <span>Commit <code class="font-mono text-ink-1">{{ run.sha.slice(0, 7) }}</code></span>
@@ -80,7 +80,7 @@ const REPLAY_STAGE_MS = 850;
       [nodes]="nodes()"
       [edges]="edges()"
       [activeId]="activeId()"
-      [label]="'Jobs del workflow ' + tabLabel()"
+      [label]="('Jobs del workflow ' | t) + tabLabel()"
       variant="pill"
       (picked)="pick($event)"
     />

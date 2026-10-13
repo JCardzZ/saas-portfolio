@@ -103,7 +103,7 @@
         <h4 class="text-xs font-medium uppercase tracking-wider text-ink-3">
           3 · Embedding · {{ shownDimensions }} de {{ totalDimensions }} dimensiones
         </h4>
-        <div class="mt-2 grid grid-cols-8 gap-1 sm:grid-cols-12" role="img" [attr.aria-label]="'Vector ilustrativo del chunk ' + selectedIndex()">
+        <div class="mt-2 grid grid-cols-8 gap-1 sm:grid-cols-12" role="img" [attr.aria-label]="('Vector ilustrativo del chunk ' | t) + selectedIndex()">
           @for (value of embedding(); track selectedIndex() + '-' + $index) {
             <span
               class="animate-scale-up rounded-control py-1 text-center font-mono text-xs tabular-nums text-ink-1"

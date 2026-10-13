@@ -225,7 +225,7 @@ interface Piece {
               <span class="ui-badge ml-1">{{ 'Esqueleto' | t }}</span> {{ 'Son para completar: nada se puede desplegar tal cual.' | t }}
             </p>
           </div>
-          <button type="button" class="ui-btn-primary" [disabled]="generating()" (click)="generate()">{{ generating() ? 'Generando…' : 'Generar archivos' }}</button>
+          <button type="button" class="ui-btn-primary" [disabled]="generating()" (click)="generate()">{{ generating() ? ('Generando…' | t) : ('Generar archivos' | t) }}</button>
         </div>
         @if (error(); as message) {
           <p class="mt-3 rounded-control border border-status-warn/30 bg-status-warn/10 px-3 py-1.5 text-xs text-status-warn" role="alert" data-testid="system-output-error">{{ message }}</p>
@@ -239,7 +239,7 @@ interface Piece {
           @if (openFile(); as file) {
             <div class="mt-2 overflow-hidden rounded-panel border border-line-subtle bg-surface-1" role="tabpanel" [attr.aria-label]="file.path">
               <div class="flex items-center justify-end gap-2 border-b border-line-subtle px-2 py-1">
-                <button type="button" class="ui-btn-ghost" (click)="copy(file)">{{ copied() === file.path ? 'Copiado' : 'Copiar' }}</button>
+                <button type="button" class="ui-btn-ghost" (click)="copy(file)">{{ copied() === file.path ? ('Copiado' | t) : ('Copiar' | t) }}</button>
                 <button type="button" class="ui-btn-ghost" (click)="download(file)">{{ 'Descargar' | t }}</button>
               </div>
               <pre class="max-h-96 overflow-auto p-3 text-xs leading-relaxed text-ink-1"><code>{{ file.content }}</code></pre>

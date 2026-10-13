@@ -108,7 +108,7 @@ export { PAGE_SECTIONS } from './page-sections';
           <app-cv-download class="hidden md:inline-block lg:hidden" variant="nav" />
           <!-- La acción primaria de la barra. -->
           <button type="button" class="ui-btn-primary" [attr.aria-label]="en() ? 'Ask the AI' : 'Preguntar a la IA'" (click)="openChat.emit()">
-            <span>{{ en() ? 'Ask' : 'Preguntar' }}<span class="hidden sm:inline">{{ en() ? ' the AI' : ' a la IA' }}</span></span>
+            <span>{{ en() ? 'Ask' : ('Preguntar' | t) }}<span class="hidden sm:inline">{{ en() ? ' the AI' : ' a la IA' }}</span></span>
             <!-- El atajo es de teclado: en táctil o sin sitio no se muestra. -->
             <kbd class="hidden rounded-mark border border-accent-on/40 px-1 font-mono text-mono-sm text-accent-on [@media(hover:hover)]:sm:inline">{{ shortcut }}</kbd>
           </button>

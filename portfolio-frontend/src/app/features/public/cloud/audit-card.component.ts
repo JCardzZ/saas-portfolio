@@ -25,7 +25,7 @@ import { AUDIT_AREAS, Recommendation, auditPrompt } from './topology-auditor';
       <header class="flex items-start gap-3 border-b border-line-subtle px-4 py-3">
         <div class="min-w-0 flex-1">
           <h4 id="audit-title" class="text-sm font-semibold text-ink-1">{{ 'Auditoría de la topología' | t }}</h4>
-          <p class="text-xs text-ink-2">{{ providerName() }} · {{ actions() }} {{ actions() === 1 ? 'recomendación' : 'recomendaciones' }} · {{ covered() }} ya cubiertas</p>
+          <p class="text-xs text-ink-2">{{ providerName() }} · {{ actions() }} {{ actions() === 1 ? ('recomendación' | t) : 'recomendaciones' }} · {{ covered() }} ya cubiertas</p>
         </div>
         <button type="button" appAutofocus class="focus-ring rounded-control px-2 text-lg leading-none text-ink-2 hover:text-ink-1" [attr.aria-label]="'Cerrar la auditoría' | t" (click)="closed.emit()">×</button>
       </header>
@@ -40,7 +40,7 @@ import { AUDIT_AREAS, Recommendation, auditPrompt } from './topology-auditor';
                   <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" [class]="item.level === 'ok' ? 'bg-status-ok' : 'bg-status-warn'" aria-hidden="true"></span>
                   <p class="text-xs leading-snug text-ink-2">
                     <span class="font-medium text-ink-1">{{ item.title }}.</span>
-                    <span class="sr-only">{{ item.level === 'ok' ? ' Cubierto. ' : ' A revisar. ' }}</span>
+                    <span class="sr-only">{{ item.level === 'ok' ? (' Cubierto. ' | t) : (' A revisar. ' | t) }}</span>
                     {{ item.detail }}
                   </p>
                 </li>
@@ -51,7 +51,7 @@ import { AUDIT_AREAS, Recommendation, auditPrompt } from './topology-auditor';
 
         <section class="rounded-panel border border-line-subtle bg-surface-2 p-3" [attr.aria-label]="'Contraste con la plataforma real' | t" aria-live="polite">
           <h5 class="text-xs font-medium uppercase tracking-wider text-ink-3">
-            Contraste con la plataforma real · asistente RAG (Gemini){{ demo ? ' · respuesta simulada' : '' }}
+            Contraste con la plataforma real · asistente RAG (Gemini){{ demo ? (' · respuesta simulada' | t) : '' }}
           </h5>
           @if (pending()) {
             <p class="mt-2 animate-pulse text-xs text-ink-2">{{ 'Consultando el código y la documentación indexados…' | t }}</p>
@@ -61,7 +61,7 @@ import { AUDIT_AREAS, Recommendation, auditPrompt } from './topology-auditor';
           } @else {
             <app-markdown class="mt-2 block text-xs leading-relaxed text-ink-2" [text]="answer()" />
             @if (sources() > 0) {
-              <p class="mt-2 text-xs text-ink-3">{{ sources() }} {{ sources() === 1 ? 'fuente citada' : 'fuentes citadas' }} del índice.</p>
+              <p class="mt-2 text-xs text-ink-3">{{ sources() }} {{ sources() === 1 ? ('fuente citada' | t) : ('fuentes citadas' | t) }} del índice.</p>
             }
           }
         </section>

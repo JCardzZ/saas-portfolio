@@ -29,7 +29,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
     </div>
 
     <div class="mt-5 flex items-center gap-4">
-      <svg viewBox="0 0 80 80" class="h-20 w-20 shrink-0" role="img" [attr.aria-label]="'Cache hit ratio simulado: ' + hitRatio + ' %'">
+      <svg viewBox="0 0 80 80" class="h-20 w-20 shrink-0" role="img" [attr.aria-label]="('Cache hit ratio simulado: ' | t) + hitRatio + ' %'">
         <circle cx="40" cy="40" [attr.r]="ringRadius" fill="none" stroke="rgb(var(--c-ink-1) / 0.08)" stroke-width="6" />
         <circle
           class="ring"

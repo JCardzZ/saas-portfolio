@@ -61,7 +61,7 @@ const POINTS_PER_CLUSTER = 14;
           [attr.aria-pressed]="activeSuggestion() === suggestion.label"
           (click)="select(suggestion)"
         >
-          {{ suggestion.label }}
+          {{ suggestion.label | t }}
         </button>
       }
     </div>

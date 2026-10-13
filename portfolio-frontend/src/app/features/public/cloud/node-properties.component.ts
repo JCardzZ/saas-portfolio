@@ -85,15 +85,15 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
               <li class="flex items-center gap-2 rounded-control bg-surface-2 px-2 py-1">
                 <span class="font-mono text-ink-3" aria-hidden="true">{{ link.outgoing ? '→' : '←' }}</span>
                 <span class="min-w-0 flex-1 truncate">
-                  <span class="sr-only">{{ link.outgoing ? 'Hacia' : 'Desde' }}</span> {{ link.label }}
+                  <span class="sr-only">{{ link.outgoing ? ('Hacia' | t) : ('Desde' | t) }}</span> {{ link.label }}
                 </span>
-                <select class="field !w-auto !py-0.5 text-xs" [attr.aria-label]="'Tipo de la conexión con ' + link.label" (change)="onKind(link, $event)">
+                <select class="field !w-auto !py-0.5 text-xs" [attr.aria-label]="('Tipo de la conexión con ' | t) + link.label" (change)="onKind(link, $event)">
                   <option value="" [selected]="!link.kind">{{ 'Peticiones' | t }}</option>
                   @for (option of linkKinds; track option.kind) {
                     <option [value]="option.kind" [selected]="link.kind === option.kind" [title]="option.hint">{{ option.name }}</option>
                   }
                 </select>
-                <button type="button" class="rounded-control px-1.5 text-ink-2 hover:text-ink-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-text" [attr.aria-label]="'Quitar la conexión con ' + link.label" (click)="disconnected.emit({ from: link.from, to: link.to })">×</button>
+                <button type="button" class="rounded-control px-1.5 text-ink-2 hover:text-ink-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-text" [attr.aria-label]="('Quitar la conexión con ' | t) + link.label" (click)="disconnected.emit({ from: link.from, to: link.to })">×</button>
               </li>
             } @empty {
               <li class="text-ink-3">{{ 'Sin conexiones.' | t }}</li>
@@ -119,7 +119,7 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
       </div>
 
       <footer class="border-t border-line-subtle px-3 py-2 text-xs leading-snug text-ink-3">
-        {{ 'Recurso de Terraform:' | t }} <span class="font-mono text-ink-2">{{ resource() ?? 'fuera de Terraform' }}</span>
+        {{ 'Recurso de Terraform:' | t }} <span class="font-mono text-ink-2">{{ resource() ?? ('fuera de Terraform' | t) }}</span>
       </footer>
     </section>
   `,

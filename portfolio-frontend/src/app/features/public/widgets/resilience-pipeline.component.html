@@ -9,7 +9,7 @@
 
 <!-- Sin sitio para el recorrido en horizontal (620 px), las mismas etapas bajan en vertical, a todo el ancho. -->
 <div class="theater-stage mt-3" appContainerWidth>
-  <svg [attr.viewBox]="'0 0 ' + geo().width + ' ' + geo().height" class="block w-full" [attr.data-layout]="geo().vertical ? 'vertical' : 'horizontal'" role="img" [attr.aria-label]="'Recorrido de una petición. Redis ' + (redisDown() ? 'caído: se sirve desde PostgreSQL' : 'operativo') + '. Circuito de Gemini ' + (geminiDown() ? 'abierto: responde 503' : 'cerrado') + '.'">
+  <svg [attr.viewBox]="'0 0 ' + geo().width + ' ' + geo().height" class="block w-full" [attr.data-layout]="geo().vertical ? 'vertical' : 'horizontal'" role="img" [attr.aria-label]="('Recorrido de una petición. Redis ' | t) + (redisDown() ? ('caído: se sirve desde PostgreSQL' | t) : 'operativo') + ('. Circuito de Gemini ' | t) + (geminiDown() ? ('abierto: responde 503' | t) : 'cerrado') + '.'">
     <!-- Desvío fail-open: solo se enciende cuando Redis no responde. -->
     <path class="pipe pipe-bypass" [class.pipe-bypass-on]="redisDown()" [attr.d]="geo().bypass" />
     <path class="pulse pulse-bypass" [class.pulse-hidden]="!redisDown()" [attr.d]="geo().bypass" pathLength="100" />
@@ -40,7 +40,7 @@
         [class.stage-hot]="stage.id === 'postgresql' && redisDown()"
         [attr.tabindex]="stage.tech ? 0 : null"
         [attr.role]="stage.tech ? 'button' : null"
-        [attr.aria-label]="stage.tech ? 'Inspeccionar la traza de ' + stage.label.replace(' API', '') : null"
+        [attr.aria-label]="stage.tech ? ('Inspeccionar la traza de ' | t) + stage.label.replace(' API', '') : null"
         (mouseenter)="stage.tech && inspect(stage.tech, $event)"
         (mouseleave)="stage.tech && leave($event)"
         (focus)="stage.tech && inspect(stage.tech)"
@@ -50,8 +50,8 @@
         @if (stage.tech; as tech) {
           <svg [attr.x]="stage.x + 10" [attr.y]="stage.y + 10" width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" [style.--brand]="icons[tech].color"><path [attr.d]="icons[tech].path" [attr.fill]="icons[tech].color" /></svg>
         }
-        <text class="stage-label" [attr.x]="stage.textX" [attr.y]="stage.y + 21" text-anchor="middle">{{ stage.label }}</text>
-        <text class="stage-role" [attr.x]="stage.textX" [attr.y]="stage.y + 37" text-anchor="middle">{{ stage.role }}</text>
+        <text class="stage-label" [attr.x]="stage.textX" [attr.y]="stage.y + 21" text-anchor="middle">{{ stage.label | t }}</text>
+        <text class="stage-role" [attr.x]="stage.textX" [attr.y]="stage.y + 37" text-anchor="middle">{{ stage.role | t }}</text>
         @if (stage.id === 'redis' || stage.id === 'gemini') {
           <g class="badge" [class.badge-on]="stage.id === 'redis' ? redisDown() : geminiDown()">
             <circle [attr.cx]="stage.x + stage.w - 4" [attr.cy]="stage.y + 2" r="9" fill="var(--status-danger)" />

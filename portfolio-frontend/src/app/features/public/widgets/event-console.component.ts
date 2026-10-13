@@ -45,10 +45,10 @@ const AMBIENT: (() => SystemEventStep)[] = [
     <div class="flex min-h-9 flex-wrap items-center gap-2 border-b border-line-subtle px-4 py-1">
       <h3 class="min-w-0 flex-1 truncate font-mono text-mono-sm font-normal text-ink-2">system-events</h3>
       <span class="ui-badge" [class.ui-badge-ok]="telemetry.status() === 'live'" [class.ui-badge-warn]="telemetry.status() === 'simulated'" data-testid="console-origin">
-        <span class="ui-badge-dot" aria-hidden="true"></span>{{ statusLabel() }}
+        <span class="ui-badge-dot" aria-hidden="true"></span>{{ statusLabel() | t }}
       </span>
       <button type="button" class="ui-btn-ghost" [attr.aria-pressed]="paused()" (click)="paused.set(!paused())">
-        {{ paused() ? 'Reanudar' : 'Pausar' }}
+        {{ paused() ? ('Reanudar' | t) : ('Pausar' | t) }}
       </button>
     </div>
 

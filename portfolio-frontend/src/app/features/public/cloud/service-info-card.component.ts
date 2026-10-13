@@ -120,7 +120,7 @@ export const SHEET_DISMISS_PX = 80;
                     type="button"
                     class="ui-focus tap inline-flex max-w-full items-center gap-1.5 rounded-full border border-line-strong px-3 py-1 text-left text-body-sm text-ink-1 transition-colors duration-fast ease-standard hover:border-line-control"
                     [attr.data-provider]="equivalent.provider"
-                    [attr.aria-label]="'Ver en ' + equivalent.cloud + ': ' + equivalent.name + (equivalent.direct ? '' : ' (sin equivalente directo)')"
+                    [attr.aria-label]="('Ver en ' | t) + equivalent.cloud + ': ' + equivalent.name + (equivalent.direct ? '' : (' (sin equivalente directo)' | t))"
                     (click)="providerChosen.emit(equivalent.provider)"
                   >
                     <span class="shrink-0 text-ink-3">{{ equivalent.cloud }}</span>

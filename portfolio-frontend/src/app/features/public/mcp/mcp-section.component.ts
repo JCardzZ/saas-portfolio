@@ -49,7 +49,7 @@ const REPLAY_STEP_MS = 900;
             @if (client().link; as link) {
               <a class="ui-btn-primary" [href]="safe(link.href)" data-testid="mcp-install-link">{{ link.label }}</a>
             }
-            <button type="button" class="ui-btn-secondary" (click)="copy(client())">{{ copied() === client().id ? 'Copiado' : client().copyLabel }}</button>
+            <button type="button" class="ui-btn-secondary" (click)="copy(client())">{{ copied() === client().id ? ('Copiado' | t) : client().copyLabel }}</button>
           </div>
         </div>
       </section>
@@ -67,7 +67,7 @@ const REPLAY_STEP_MS = 900;
               <li class="min-w-0">
                 <p class="flex flex-wrap items-center gap-2">
                   <code class="break-all text-sm font-semibold text-ink-1">{{ tool.name }}</code>
-                  <span class="ui-badge" [class.ui-badge-accent]="tool.kind === 'generate'">{{ tool.kind === 'generate' ? 'Genera' : 'Lectura' }}</span>
+                  <span class="ui-badge" [class.ui-badge-accent]="tool.kind === 'generate'">{{ tool.kind === 'generate' ? ('Genera' | t) : ('Lectura' | t) }}</span>
                   @if (tool.version) { <span class="text-xs text-ink-3">v{{ tool.version }}</span> }
                 </p>
                 <p class="mt-0.5 text-xs leading-snug text-ink-2">{{ tool.title }}</p>
@@ -91,7 +91,7 @@ const REPLAY_STEP_MS = 900;
               } @else if (recorded()) {
                 <span class="ui-badge ui-badge-warn">{{ 'Grabación' | t }}</span>
               } @else {
-                <span class="ui-badge"><span class="ui-badge-dot"></span>{{ statusFailed() ? 'Sin respuesta' : 'Comprobando…' }}</span>
+                <span class="ui-badge"><span class="ui-badge-dot"></span>{{ statusFailed() ? ('Sin respuesta' | t) : ('Comprobando…' | t) }}</span>
               }
             </dd>
           </div>
@@ -142,7 +142,7 @@ const REPLAY_STEP_MS = 900;
           </div>
           @if (recording(); as session) {
             <div class="flex items-center gap-2">
-              <button type="button" class="ui-btn-primary" [disabled]="playing()" (click)="play()">{{ shown() >= session.steps.length ? 'Reproducir otra vez' : shown() ? 'Continuar' : 'Reproducir' }}</button>
+              <button type="button" class="ui-btn-primary" [disabled]="playing()" (click)="play()">{{ shown() >= session.steps.length ? ('Reproducir otra vez' | t) : shown() ? ('Continuar' | t) : ('Reproducir' | t) }}</button>
               <button type="button" class="ui-btn-secondary" [disabled]="shown() >= session.steps.length" (click)="next()">{{ 'Siguiente' | t }}</button>
             </div>
           }
@@ -154,7 +154,7 @@ const REPLAY_STEP_MS = 900;
               <li class="min-w-0 rounded-panel border border-line-subtle bg-surface-2">
                 <details [open]="$index === visibleSteps().length - 1">
                   <summary class="flex cursor-pointer flex-wrap items-center gap-2 px-3 py-2 text-xs">
-                    <span class="ui-badge" [class.ui-badge-accent]="step.direction === 'request'">{{ step.direction === 'request' ? 'cliente →' : '← servidor' }}</span>
+                    <span class="ui-badge" [class.ui-badge-accent]="step.direction === 'request'">{{ step.direction === 'request' ? ('cliente →' | t) : ('← servidor' | t) }}</span>
                     <code class="text-ink-1">{{ methodOf(step) }}</code>
                     <span class="text-ink-2">{{ step.label }}</span>
                     @if (step.ms !== undefined) { <span class="ml-auto text-ink-3">{{ step.ms }} ms</span> }
@@ -165,7 +165,7 @@ const REPLAY_STEP_MS = 900;
             }
           </ol>
         } @else {
-          <p class="mt-3 text-sm text-ink-3">{{ recordingFailed() ? 'No se pudo cargar la grabación.' : 'Cargando la grabación…' }}</p>
+          <p class="mt-3 text-sm text-ink-3">{{ recordingFailed() ? ('No se pudo cargar la grabación.' | t) : ('Cargando la grabación…' | t) }}</p>
         }
       </section>
 
@@ -175,7 +175,7 @@ const REPLAY_STEP_MS = 900;
         @if (evaluation(); as report) {
           <p class="mt-1 text-sm text-ink-2" data-testid="mcp-eval">
             <strong class="font-semibold text-ink-1">{{ report.passed }} de {{ report.total }}</strong> tareas resueltas
-            · {{ report.simulated ? 'modelo simulado y determinista' : report.model }}
+            · {{ report.simulated ? ('modelo simulado y determinista' | t) : report.model }}
             · {{ report.toolCalls }} llamadas a herramientas
             · <time [attr.datetime]="report.generatedAt">{{ dateOf(report.generatedAt) }}</time>
           </p>
@@ -190,7 +190,7 @@ const REPLAY_STEP_MS = 900;
             }
           </ul>
         } @else {
-          <p class="mt-1 text-sm text-ink-3">{{ evalFailed() ? 'No se pudieron cargar los resultados.' : 'Cargando los resultados…' }}</p>
+          <p class="mt-1 text-sm text-ink-3">{{ evalFailed() ? ('No se pudieron cargar los resultados.' | t) : ('Cargando los resultados…' | t) }}</p>
         }
       </section>
     </div>

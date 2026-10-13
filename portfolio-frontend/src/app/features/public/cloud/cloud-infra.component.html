@@ -29,7 +29,7 @@
     </button>
     <ul id="menu-project" class="project-menu w-64" [hidden]="menu() !== 'project'">
       <li><button type="button" class="project-item" [attr.aria-expanded]="menu() === 'presets'" aria-controls="menu-presets" (click)="menu.set(menu() === 'presets' ? null : 'presets')">{{ 'Plantillas' | t }}<span class="float-right text-ink-3" aria-hidden="true">›</span></button></li>
-      <li><button type="button" class="project-item" [disabled]="exporting()" [attr.aria-expanded]="menu() === 'export'" aria-controls="menu-export" (click)="menu.set(menu() === 'export' ? null : 'export')">{{ exporting() ? 'Exportando…' : 'Exportar diagrama' }}<span class="float-right text-ink-3" aria-hidden="true">›</span></button></li>
+      <li><button type="button" class="project-item" [disabled]="exporting()" [attr.aria-expanded]="menu() === 'export'" aria-controls="menu-export" (click)="menu.set(menu() === 'export' ? null : 'export')">{{ exporting() ? ('Exportando…' | t) : ('Exportar diagrama' | t) }}<span class="float-right text-ink-3" aria-hidden="true">›</span></button></li>
       <li><button type="button" class="project-item" [attr.aria-expanded]="menu() === 'cloud'" aria-controls="menu-cloud" (click)="menu.set(menu() === 'cloud' ? null : 'cloud')">{{ 'Guardar en la nube' | t }}<span class="float-right text-ink-3" aria-hidden="true">›</span></button></li>
       <li>
         <label class="project-item cursor-pointer">
@@ -78,7 +78,7 @@
           </li>
         }
         <li class="px-2 pb-1 pt-2 text-xs leading-snug text-ink-3">
-          {{ presetsFromServer() ? 'Plantillas y proyectos servidos por el backend.' : 'Plantillas incluidas en el estudio.' }}
+          {{ presetsFromServer() ? ('Plantillas y proyectos servidos por el backend.' | t) : ('Plantillas incluidas en el estudio.' | t) }}
           Los escenarios son ilustrativos de un tipo de sistema: no describen la infraestructura real de ninguna entidad.
         </li>
       </ul>
@@ -102,7 +102,7 @@
               <button type="button" class="project-button" [disabled]="saving() || !cloudTitle().trim()" (click)="saveToCloud(false)">Actualizar «{{ current.title }}»</button>
             }
             <button type="button" class="project-button" [disabled]="saving() || !cloudTitle().trim()" (click)="saveToCloud(true)">
-              {{ saving() ? 'Guardando…' : cloudProject() ? 'Guardar como nuevo' : 'Guardar' }}
+              {{ saving() ? ('Guardando…' | t) : cloudProject() ? ('Guardar como nuevo' | t) : ('Guardar' | t) }}
             </button>
           </div>
           <p class="mt-2 text-xs leading-snug text-ink-3">{{ 'Lo guardado aparece en «Plantillas» para todos los visitantes.' | t }}</p>
@@ -124,7 +124,7 @@
       <li>
         <button type="button" class="project-item" [attr.aria-expanded]="codeOpen()" aria-controls="main-tf-panel" (click)="codeOpen.set(!codeOpen()); menu.set(null)">
           <span class="font-mono">main.tf</span>
-          <span class="block text-caption font-normal text-ink-2">{{ codeOpen() ? 'Ocultar el esqueleto de Terraform' : 'El esqueleto de Terraform, en vivo' }}</span>
+          <span class="block text-caption font-normal text-ink-2">{{ codeOpen() ? ('Ocultar el esqueleto de Terraform' | t) : ('El esqueleto de Terraform, en vivo' | t) }}</span>
         </button>
       </li>
       <li>
@@ -142,8 +142,8 @@
       @if (smartRules()) {
         <li>
           <button type="button" class="project-item" [attr.aria-pressed]="fitted()" (click)="fitted.set(!fitted()); menu.set(null)">
-            {{ fitted() ? 'Ver el lienzo completo' : 'Ajustar a pantalla' }}
-            <span class="block text-caption font-normal text-ink-2">{{ fitted() ? 'Vuelve al tamaño de trabajo' : 'El diagrama entero, sin desplazar' }}</span>
+            {{ fitted() ? ('Ver el lienzo completo' | t) : ('Ajustar a pantalla' | t) }}
+            <span class="block text-caption font-normal text-ink-2">{{ fitted() ? ('Vuelve al tamaño de trabajo' | t) : ('El diagrama entero, sin desplazar' | t) }}</span>
           </button>
         </li>
       }
@@ -184,7 +184,7 @@
     <button type="button" class="ui-btn-secondary" [attr.aria-expanded]="copilotOpen()" (click)="toggleCopilot()">{{ 'Co-piloto IA' | t }}</button>
     <!-- Editar necesita el lienzo de trabajo: en estrecho el diagrama es de solo lectura. -->
     @if (!compact()) {
-      <button type="button" class="ui-btn-primary" [attr.aria-pressed]="editing()" (click)="toggleEditing()">{{ editing() ? 'Listo' : 'Editar arquitectura' }}</button>
+      <button type="button" class="ui-btn-primary" [attr.aria-pressed]="editing()" (click)="toggleEditing()">{{ editing() ? ('Listo' | t) : ('Editar arquitectura' | t) }}</button>
     }
   </div>
 
@@ -217,7 +217,7 @@
       [attr.aria-pressed]="catalogDocked()"
       (click)="catalogDocked.set(!catalogDocked())"
     >
-      {{ catalogDocked() ? 'Ocultar catálogo' : 'Mostrar catálogo' }}
+      {{ catalogDocked() ? ('Ocultar catálogo' | t) : ('Mostrar catálogo' | t) }}
     </button>
     <div class="relative" data-menu>
       <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs font-medium text-ink-1 transition hover:bg-surface-3" [attr.aria-expanded]="menu() === 'zones'" aria-controls="menu-zones" (click)="menu.set(menu() === 'zones' ? null : 'zones')">
@@ -270,7 +270,7 @@
           [class]="chaos()?.scenario === scenario ? 'border-status-danger/70 bg-status-danger/15' : 'border-line-subtle bg-surface-2 hover:border-line-strong hover:bg-surface-2'"
           [disabled]="!canRun(scenario)"
           [attr.aria-pressed]="chaos()?.scenario === scenario"
-          [title]="canRun(scenario) ? scenario.basis : 'Falta en el lienzo algún nodo que este escenario necesita'"
+          [title]="canRun(scenario) ? scenario.basis : ('Falta en el lienzo algún nodo que este escenario necesita' | t)"
           (click)="runChaos(scenario)"
         >
           <span class="block text-[13px] font-medium text-ink-1">{{ scenario.name }}</span>
@@ -325,7 +325,7 @@
       [class.canvas-editing]="editing()"
       role="group"
       [style.--provider]="providerColor()"
-      [attr.aria-label]="'Arquitectura de referencia en ' + selected().name + (editing() ? ', en edición' : '')"
+      [attr.aria-label]="('Arquitectura de referencia en ' | t) + selected().name + (editing() ? (', en edición' | t) : '')"
       (dragover)="onCanvasDragOver($event)"
       (drop)="onCanvasDrop($event)"
     >
@@ -356,7 +356,7 @@
               class="zone-grip"
               tabindex="0"
               role="button"
-              [attr.aria-label]="'Zona ' + zoneLabelOf(zone) + '. Arrastra o usa las flechas para moverla, Mayúsculas y flechas para redimensionarla, Suprimir para quitarla'"
+              [attr.aria-label]="('Zona ' | t) + zoneLabelOf(zone) + ('. Arrastra o usa las flechas para moverla, Mayúsculas y flechas para redimensionarla, Suprimir para quitarla' | t)"
               [attr.aria-pressed]="zone.id === activeZoneId()"
               [attr.x]="zone.x" [attr.y]="zone.y" [attr.width]="zone.w" [attr.height]="touch ? touchTarget : 26" rx="8"
               (pointerdown)="onZonePointerDown($event, zone, 'move')"
@@ -431,7 +431,7 @@
           [style.--brand]="iconOf(node)?.color"
           tabindex="0"
           role="button"
-          [attr.aria-label]="serviceOf(node) + ': ' + node.role + (chaosOf(node) ? '. Estado: ' + chaosOf(node)!.label : '') + (editing() ? '. Flechas para mover, Intro para sus propiedades, Suprimir para quitar' : '. Intro para su ficha, flechas para ir a otro nodo')"
+          [attr.aria-label]="serviceOf(node) + ': ' + node.role + (chaosOf(node) ? '. Estado: ' + chaosOf(node)!.label : '') + (editing() ? '. Flechas para mover, Intro para sus propiedades, Suprimir para quitar' : ('. Intro para su ficha, flechas para ir a otro nodo' | t))"
           [attr.aria-pressed]="node.id === activeId()"
           [attr.aria-describedby]="tooltip()?.id === node.id ? 'node-tooltip' : null"
           [attr.aria-haspopup]="editing() ? null : 'dialog'"
@@ -495,7 +495,7 @@
             class="remove"
             tabindex="0"
             role="button"
-            [attr.aria-label]="'Quitar ' + serviceOf(node)"
+            [attr.aria-label]="('Quitar ' | t) + serviceOf(node)"
             (click)="remove(node)"
             (keydown.enter)="remove(node)"
             (keydown.space)="remove(node); $event.preventDefault()"
@@ -514,7 +514,7 @@
             role="button"
             data-info-open
             aria-haspopup="dialog"
-            [attr.aria-label]="'Ficha de ' + serviceOf(node)"
+            [attr.aria-label]="('Ficha de ' | t) + serviceOf(node)"
             (pointerdown)="$event.stopPropagation()"
             (click)="$event.stopPropagation(); openInfo(node)"
             (keydown.enter)="$event.stopPropagation(); openInfo(node)"
@@ -531,7 +531,7 @@
             class="connect"
             tabindex="0"
             role="button"
-            [attr.aria-label]="'Conectar ' + serviceOf(node) + ' con otro nodo'"
+            [attr.aria-label]="('Conectar ' | t) + serviceOf(node) + (' con otro nodo' | t)"
             [attr.aria-pressed]="connectingFrom() === node.id"
             (pointerdown)="startConnection(node, $event)"
             (pointermove)="onLinkPointerMove($event)"
@@ -679,7 +679,7 @@
   </div>
 
   @if (!editing() && active(); as node) {
-    <div class="flex flex-wrap items-center gap-2" role="group" [attr.aria-label]="'Inyectar un fallo en ' + serviceOf(node)">
+    <div class="flex flex-wrap items-center gap-2" role="group" [attr.aria-label]="('Inyectar un fallo en ' | t) + serviceOf(node)">
       @if (activeFault()) {
         <button type="button" class="project-button" (click)="clearFault(node.id, true)">Restaurar {{ serviceOf(node) }}</button>
       } @else {
@@ -714,7 +714,7 @@
         }
       </ul>
       <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs text-ink-1 transition hover:bg-surface-3" (click)="copyMainTf()">
-        {{ copied() ? 'Copiado' : 'Copiar' }}
+        {{ copied() ? ('Copiado' | t) : ('Copiar' | t) }}
       </button>
     </header>
     @for (warning of warnings(); track warning.check) {

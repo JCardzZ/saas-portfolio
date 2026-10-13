@@ -2,7 +2,7 @@
   <div class="border-b border-line-subtle p-3">
     <p class="text-sm font-semibold text-ink-1">{{ 'Catálogo de servicios' | t }}</p>
     <p class="text-xs text-ink-2">
-      {{ 'Nombres y recursos de' | t }} <span class="font-medium text-ink-1">{{ providerName() }}</span>{{ fromServer() ? ' · servido por el backend' : '' }}
+      {{ 'Nombres y recursos de' | t }} <span class="font-medium text-ink-1">{{ providerName() }}</span>{{ fromServer() ? (' · servido por el backend' | t) : '' }}
     </p>
     <label class="sr-only" for="catalog-search">{{ 'Buscar un servicio' | t }}</label>
     <input
@@ -27,7 +27,7 @@
                 type="button"
                 draggable="true"
                 class="focus-ring group flex w-full cursor-grab items-center gap-2.5 rounded-panel border border-transparent px-2 py-1.5 text-left transition duration-300 ease-spring hover:border-line-strong hover:bg-surface-2 active:cursor-grabbing"
-                [attr.aria-label]="'Añadir ' + nameOf(item) + ': ' + item.capability"
+                [attr.aria-label]="('Añadir ' | t) + nameOf(item) + ': ' + item.capability"
                 [title]="item.why + (gapOf(item) ? ' ' + gapOf(item) : '') + ' · ' + terraformOf(item)"
                 (click)="picked.emit(item)"
                 (dragstart)="onDragStart($event, item)"
