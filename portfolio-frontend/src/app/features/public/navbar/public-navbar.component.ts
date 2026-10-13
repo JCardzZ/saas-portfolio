@@ -1,8 +1,9 @@
 import {
-  ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, afterNextRender, inject, output, signal,
+  ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, HostListener, afterNextRender, inject, output, signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { ThemeService } from '../../../core/theme/theme.service';
 import { CvDownloadComponent } from '../../../shared/ui/cv-download.component';
 import { PAGE_SECTIONS } from './page-sections';
 
@@ -78,12 +79,28 @@ export { PAGE_SECTIONS } from './page-sections';
             }
           </div>
 
+          <!-- Tema: sistema → claro → oscuro. El icono dice el que hay elegido. -->
+          <button
+            type="button"
+            class="ui-btn-ghost ui-btn-icon"
+            data-testid="theme-toggle"
+            [attr.aria-label]="'Tema: ' + themeLabel() + '. Cambiar'"
+            [attr.title]="'Tema: ' + themeLabel()"
+            (click)="theme.next()"
+          >
+            <!-- Un SVG por icono: dentro de un bloque de control, un <path> suelto pierde el espacio de nombres SVG. -->
+            @switch (theme.choice()) {
+              @case ('light') { <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v1.5M12 18.5V20M4 12h1.5M18.5 12H20M6.3 6.3l1 1M16.7 16.7l1 1M6.3 17.7l1-1M16.7 7.3l1-1M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" /></svg> }
+              @case ('dark') { <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z" /></svg> }
+              @default { <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H4zM9 20h6M12 16v4" /></svg> }
+            }
+          </button>
           <app-cv-download class="hidden md:inline-block" variant="nav" />
           <!-- La acción primaria de la barra. -->
           <button type="button" class="ui-btn-primary" aria-label="Preguntar a la IA" (click)="openChat.emit()">
             <span>Preguntar<span class="hidden sm:inline"> a la IA</span></span>
             <!-- El atajo es de teclado: en táctil o sin sitio no se muestra. -->
-            <kbd class="hidden rounded-mark border border-white/40 px-1 font-mono text-mono-sm text-white [@media(hover:hover)]:sm:inline">{{ shortcut }}</kbd>
+            <kbd class="hidden rounded-mark border border-accent-on/40 px-1 font-mono text-mono-sm text-accent-on [@media(hover:hover)]:sm:inline">{{ shortcut }}</kbd>
           </button>
         </div>
       </nav>
@@ -116,6 +133,8 @@ export { PAGE_SECTIONS } from './page-sections';
 })
 export class PublicNavbarComponent {
   readonly openChat = output<void>();
+  readonly theme = inject(ThemeService);
+  readonly themeLabel = computed(() => ({ system: 'el del sistema', light: 'claro', dark: 'oscuro' })[this.theme.choice()]);
   readonly scrolled = signal(false);
   readonly menuOpen = signal(false);
   /** Ancla de la sección que cruza el centro de la ventana, o `null` sobre el hero. */
