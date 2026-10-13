@@ -22,6 +22,22 @@ const STACK: readonly TechIconKey[] = [
   'oci',
 ];
 
+type StackGroup = 'platform' | 'aws' | 'azure' | 'gcp' | 'all';
+
+/** Índices de STACK de cada grupo del globo (`null` = todos). */
+function groupIndices(group: StackGroup): ReadonlySet<number> | null {
+  if (group === 'all') return null;
+  const inGroup = (key: TechIconKey): boolean => {
+    switch (group) {
+      case 'platform': return STACK_CARDS[key]?.where === 'platform';
+      case 'aws': return key.startsWith('aws');
+      case 'azure': return key === 'azure' || key.startsWith('az');
+      case 'gcp': return key.startsWith('gcp') || key === 'bigquery';
+    }
+  };
+  return new Set(STACK.flatMap((key, index) => (inGroup(key) ? [index] : [])));
+}
+
 /** Desplazamiento (px) a partir del cual una pulsación es un arrastre y no un clic. */
 const DRAG_THRESHOLD = 6;
 
@@ -76,11 +92,30 @@ const DRAG_THRESHOLD = 6;
         } @else if (ready()) {
           <!-- El foco de teclado se ve en esta píldora, no como un marco alrededor de la escena. -->
           <span
+            [class.hint-glow]="!open()"
             class="pointer-events-none absolute bottom-[max(7rem,15dvh)] left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full border border-line-subtle bg-surface-1/80 group-focus-visible:border-accent-solid group-focus-visible:ring-2 group-focus-visible:ring-accent-solid/40 px-3 py-1 font-mono text-mono-sm text-ink-2 backdrop-blur"
             aria-hidden="true"
           >{{ hint() }}</span>
         }
       </button>
+      @if (open()) {
+        <!-- Filtros del globo: fuera del botón, para que pulsarlos no recoja el mazo. -->
+        <div
+          class="absolute left-1/2 top-[calc(5rem+env(safe-area-inset-top,0px))] z-10 max-w-[calc(100%-2rem)] -translate-x-1/2 animate-fade-in max-[399px]:top-[calc(7.5rem+env(safe-area-inset-top,0px))]"
+        >
+          <div class="ui-segmented flex-wrap justify-center bg-surface-1/80 backdrop-blur" role="radiogroup" [attr.aria-label]="i18n.lang() === 'en' ? 'Show' : 'Mostrar'" data-testid="stack-filters">
+            @for (option of filters(); track option.id) {
+              <button
+                type="button"
+                role="radio"
+                class="ui-segment"
+                [attr.aria-checked]="filter() === option.id"
+                (click)="setFilter(option.id)"
+              >{{ option.label }} <span class="ml-1 text-ink-3">{{ option.count }}</span></button>
+            }
+          </div>
+        </div>
+      }
       <!-- Lo que dice la ficha, también para lectores de pantalla. -->
       <span class="sr-only" aria-live="polite">{{ card() ? card()!.title + '. ' + card()!.about : '' }}</span>
       </div>
@@ -96,7 +131,23 @@ export class HeroSceneComponent {
   readonly stackOpen = output<boolean>();
   readonly open = signal(false);
   readonly hovered = signal<string | null>(null);
-  private readonly i18n = inject(LanguageService);
+  readonly i18n = inject(LanguageService);
+  /** Grupo del globo a la vista; al abrir, primero lo que usa la plataforma. */
+  readonly filter = signal<StackGroup>('platform');
+  readonly filters = computed(() => {
+    const en = this.i18n.lang() === 'en';
+    const label: Record<StackGroup, string> = {
+      platform: en ? 'Platform' : 'Plataforma', aws: 'AWS', azure: 'Azure', gcp: 'Google Cloud', all: en ? 'All' : 'Todo',
+    };
+    return (['platform', 'aws', 'azure', 'gcp', 'all'] as const).map((id) => ({ id, label: label[id], count: groupIndices(id)?.size ?? STACK.length }));
+  });
+
+  setFilter(group: StackGroup): void {
+    this.filter.set(group);
+    this.scene?.show(groupIndices(group));
+    this.focused.set(null);
+    this.kickFrame?.();
+  }
   private readonly titles = STACK.map((key) => TECH_ICONS[key].title);
   readonly label = computed(() =>
     this.i18n.lang() === 'en'
@@ -170,6 +221,7 @@ export class HeroSceneComponent {
     const point = event.detail === 0 || !box
       ? null
       : { x: ((event.clientX - box.left) / box.width) * 2 - 1, y: -((event.clientY - box.top) / box.height) * 2 + 1 };
+    if (!this.open()) this.scene.show(groupIndices(this.filter()));
     const state = this.scene.activate(point?.x ?? null, point?.y ?? null);
     this.setOpen(state.open);
     this.focused.set(state.focused);

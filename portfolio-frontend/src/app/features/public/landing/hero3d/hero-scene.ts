@@ -8,7 +8,6 @@ import type * as THREE from 'three';
  * de la plataforma y de las nubes; al pulsarlo, las fichas salen volando a un globo que ocupa la
  * pantalla (`activate`), con las de detrás más tenues. El globo se gira arrastrando, con inercia
  * (`drag`, `nudge`), y una ficha pulsada pasa al frente, ampliada.
- * Flota rodeado de partículas y anillos.
  * Decorativa: el h1 dice quién es.
  */
 export interface ScenePalette {
@@ -42,6 +41,8 @@ export interface HeroScene {
   drag(dx: number): void;
   /** Empujón de teclado a izquierda (-1) o derecha (1). */
   nudge(direction: number): void;
+  /** Fichas que salen al globo (índices); `null` = todas. Las demás se quedan en las manos. */
+  show(indices: ReadonlySet<number> | null): void;
   /** Señala la ficha bajo el cursor (coordenadas normalizadas del lienzo, -1…1); devuelve su nombre. */
   pick(x: number, y: number): string | null;
   frame(t: number): void;
@@ -307,6 +308,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
 
   function placeTiles(dt: number): void {
     const count = tiles.length;
+    const shown = tiles.filter((tile) => isShown(tile));
+    const shownCount = Math.max(1, shown.length);
     const follow = animate ? 1 - Math.exp(-dt * 6) : 1;
     // Giro: deriva lenta, más el impulso del arrastre que se apaga con fricción.
     if (animate) {
@@ -318,13 +321,15 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     // Globo: las fichas repartidas por una esfera de Fibonacci (sin huecos ni montones), tan grande
     // como la pantalla, que gira sobre su eje vertical.
     const radius = Math.max(1.6, Math.min(halfHeight * 0.92, halfWidth * 0.9));
-    const cardScale = Math.max(0.62, Math.min(halfHeight, halfWidth) * 0.23);
+    // Con pocas fichas a la vista, más grandes (hasta un 35 %).
+    const cardScale = Math.max(0.62, Math.min(halfHeight, halfWidth) * 0.23) * Math.min(1.35, Math.max(1, Math.sqrt(40 / shownCount)));
     const camY = camera.position.y;
     const cos = Math.cos(spin);
     const sin = Math.sin(spin);
     for (const tile of tiles) {
       const i = tile.index;
-      const open = stackOpen && (!animate || clock - openedAt > i * 0.035);
+      const rank = shown.indexOf(tile);
+      const open = stackOpen && rank >= 0 && (!animate || clock - openedAt > rank * 0.035);
       let scale: number;
       let opacity = 1;
       if (open && tile === focused) {
@@ -332,9 +337,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         targetQuat.copy(faceCamera);
         scale = Math.min(halfHeight, halfWidth) * 0.42;
       } else if (open) {
-        const y = 1 - ((i + 0.5) / count) * 2;
+        const y = 1 - ((rank + 0.5) / shownCount) * 2;
         const ring = Math.sqrt(1 - y * y);
-        const theta = i * GOLDEN_ANGLE;
+        const theta = rank * GOLDEN_ANGLE;
         const x0 = Math.cos(theta) * ring;
         const z0 = Math.sin(theta) * ring;
         const depth = z0 * cos + x0 * sin; // -1 detrás … 1 delante
@@ -357,40 +362,24 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       tile.hover += ((tile === hovered && tile !== focused ? 1 : 0) - tile.hover) * follow;
       tile.mesh.scale.setScalar(scale * (1 + tile.hover * 0.28));
       tile.glow.emissiveIntensity = 0.15 + tile.hover * 1.4 + (tile === focused ? 1 : 0);
-      const shown = Math.max(opacity, tile.hover);
-      tile.face.opacity += (shown - tile.face.opacity) * follow;
+      const alpha = Math.max(opacity, tile.hover);
+      tile.face.opacity += (alpha - tile.face.opacity) * follow;
       tile.glow.opacity = tile.face.opacity;
     }
   }
 
+  let visible: ReadonlySet<number> | null = null;
+  function isShown(tile: (typeof tiles)[number]): boolean {
+    return visible === null || visible.has(tile.index);
+  }
+
   function hit(x: number, y: number): (typeof tiles)[number] | null {
     raycaster.setFromCamera(new three.Vector2(x, y), camera);
-    const first = raycaster.intersectObjects(tiles.map((tile) => tile.mesh), false)[0];
+    const first = raycaster.intersectObjects(tiles.filter((tile) => isShown(tile)).map((tile) => tile.mesh), false)[0];
     return tiles.find((tile) => tile.mesh === first?.object) ?? null;
   }
 
-  // Partículas y anillos alrededor.
-  const dustMaterial = keep(new three.PointsMaterial({ size: 0.04, transparent: true, opacity: 0.7, depthWrite: false }));
-  const dustGeometry = keep(new three.BufferGeometry());
-  const count = 1600;
-  const positions = new Float32Array(count * 3);
-  for (let i = 0; i < count; i++) {
-    const radius = 3.6 + Math.random() * 7;
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(2 * Math.random() - 1);
-    positions.set([radius * Math.sin(phi) * Math.cos(theta), radius * Math.cos(phi) * 0.7, radius * Math.sin(phi) * Math.sin(theta) - 2], i * 3);
-  }
-  dustGeometry.setAttribute('position', new three.BufferAttribute(positions, 3));
-  const field = new three.Points(dustGeometry, dustMaterial);
-  scene.add(field);
-  const ringMaterial = keep(new three.MeshBasicMaterial({ transparent: true, opacity: 0.4, depthWrite: false }));
-  const rings = [0, 1].map((index) => {
-    const ring = new three.Mesh(keep(new three.TorusGeometry(2.4 + index * 0.5, 0.01, 6, 160)), ringMaterial);
-    ring.rotation.x = Math.PI / 2 + (index ? 0.4 : -0.25);
-    ring.position.y = -0.4;
-    scene.add(ring);
-    return ring;
-  });
+  // Sin partículas ni anillos propios: el fondo (galaxia y marca de agua) ya da la profundidad.
 
   let pointerX = 0;
   let pointerY = 0;
@@ -406,11 +395,6 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     rim.color.copy(accent);
     eyeLight.color.copy(accent);
     rim2.color.copy(accent);
-    ringMaterial.color.copy(accent);
-    ringMaterial.opacity = next.light ? 0.6 : 0.4;
-    dustMaterial.color.set(next.muted);
-    dustMaterial.blending = next.light ? three.NormalBlending : three.AdditiveBlending;
-    dustMaterial.needsUpdate = true;
     hemi.intensity = next.light ? 1.5 : 1.1;
     for (const tile of tiles) {
       paintTile(tile, next);
@@ -443,9 +427,6 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     accentMat.emissiveIntensity = 0.7 + pulse * 0.6;
     core.scale.setScalar(0.92 + pulse * 0.12);
     coreRing.rotation.z = t * 0.8;
-    rings[0].rotation.z = t * 0.15;
-    rings[1].rotation.z = -t * 0.1;
-    field.rotation.y = t * 0.025 + lookX * 0.1;
     placeTiles(dt);
     renderer.render(scene, camera);
   }
@@ -474,6 +455,12 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     },
     drag(dx) {
       if (stackOpen) spinVelocity += dx * 9;
+    },
+    show(indices) {
+      visible = indices;
+      if (focused && !isShown(focused)) focused = null;
+      if (hovered && !isShown(hovered)) hovered = null;
+      openedAt = clock;
     },
     nudge(direction) {
       if (!stackOpen) return;

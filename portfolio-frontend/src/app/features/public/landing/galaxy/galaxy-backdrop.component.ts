@@ -7,7 +7,8 @@ import type { GalaxyPalette, GalaxyScene } from './galaxy-scene';
  * Fondo fijo de toda la página pública: una galaxia 3D detrás del contenido (`-z-10`, sin eventos
  * de puntero), que no cambia la maqueta de nada. Three.js se pide con `import()` cuando el
  * navegador está libre. Dibuja a ~30 fps, se para con la pestaña oculta y, con
- * `prefers-reduced-motion`, se queda quieta. Sin WebGL, solo queda el color de fondo.
+ * `prefers-reduced-motion`, se queda quieta. Sin WebGL, en un móvil o con ahorro de datos, solo
+ * quedan el color de fondo y la marca de agua.
  */
 @Component({
   selector: 'app-galaxy-backdrop',
@@ -78,7 +79,7 @@ export class GalaxyBackdropComponent {
 
   private async start(destroyRef: DestroyRef): Promise<void> {
     const canvas = this.canvas()?.nativeElement;
-    if (!canvas) return;
+    if (!canvas || !worthRendering()) return;
     let scene: GalaxyScene;
     try {
       const [three, { createGalaxyScene }] = await Promise.all([import('three'), import('./galaxy-scene')]);
@@ -127,6 +128,16 @@ export class GalaxyBackdropComponent {
       this.scene = null;
     });
   }
+}
+
+/**
+ * La galaxia es decoración: en un móvil (pantalla estrecha y táctil) o con «ahorro de datos» no se
+ * dibuja, para no gastar batería ni GPU. Queda el color de fondo y la marca de agua.
+ */
+function worthRendering(): boolean {
+  const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
+  const phone = matchMedia('(max-width: 639px) and (pointer: coarse)').matches;
+  return !saveData && !phone;
 }
 
 function readPalette(): GalaxyPalette {

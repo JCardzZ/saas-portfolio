@@ -314,10 +314,21 @@
 }
 .hero-dimmed :is(h1, p) {
   opacity: 0.1;
+  /* Con el globo abierto, el texto atenuado no debe tapar las fichas que hay detrás. */
+  pointer-events: none !important;
 }
 .hero-dimmed :is(a, button, app-cv-download) {
   opacity: 0.5;
   transition: opacity var(--duration-slow) var(--ease-standard);
+}
+
+/* La píldora del robot late suave mientras el mazo está cerrado, para que se descubra. */
+.hint-glow {
+  animation: hint-glow 2.6s var(--ease-standard) infinite;
+}
+@keyframes hint-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--c-accent-solid) / 0); border-color: var(--border-subtle); }
+  50% { box-shadow: 0 0 18px 2px rgb(var(--c-accent-solid) / 0.35); border-color: rgb(var(--c-accent-solid) / 0.7); }
 }
 
 /* Ficha «tipo carta» del globo: canto con degradado del acento, como las cartas de colección. */
