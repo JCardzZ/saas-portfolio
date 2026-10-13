@@ -88,6 +88,27 @@ AWS (leídos de sus fuentes públicas, sin clave) y cada consulta aparece en el 
 Google Cloud exige una clave de API (`GCP_PRICING_API_KEY`) y asignar sus SKU en `pricing.gcp.skus`;
 sin eso sus servicios salen como «sin precio». Un servicio sin tarifa asignada nunca se aproxima.
 
+### Usuarios, roles y permisos
+
+Además del cliente de máquina (`POST /auth/token`), las personas entran con correo y contraseña
+(`POST /auth/login`) y reciben un token de acceso de 15 minutos y uno de refresco de un solo uso.
+No hay registro público: el primer administrador se crea al arrancar con `ADMIN_BOOTSTRAP_EMAIL` y
+`ADMIN_BOOTSTRAP_PASSWORD` (solo si aún no hay cuentas) y los demás, desde `/admin/users`.
+
+| Rol | Puede |
+| --- | --- |
+| `ADMIN` | Todo: contenido, Estudio, flags, usuarios e infraestructura |
+| `EDITOR` | Escribir el contenido y el Estudio, la foto del CV y la reindexación; ver las flags |
+| `VIEWER` | Solo leer la administración |
+
+Cada operación de `/admin` pide un permiso (`cms:write`, `flags:write`, `users:manage`…); la tabla
+está en `AccessRules` y un test comprueba que todas las del contrato tienen el suyo. Para probarlo
+con un usuario de cada rol contra un backend en marcha:
+
+```bash
+ADMIN_EMAIL=admin@local.test ADMIN_PASSWORD='<la de tu .env>' ./scripts/rbac-smoke.sh http://localhost:8080/v1
+```
+
 ### Tests
 
 ```bash

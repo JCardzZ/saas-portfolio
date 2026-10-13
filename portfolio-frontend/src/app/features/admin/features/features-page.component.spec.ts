@@ -19,6 +19,8 @@ describe('FeaturesPageComponent (demo mode)', () => {
   };
 
   beforeEach(async () => {
+    // La página está detrás del inicio de sesión: aquí entra el cliente de máquina, que es administrador.
+    sessionStorage.setItem('portfolio.session', JSON.stringify({ accessToken: 'jwt', expiresAt: Date.now() + 600_000 }));
     localStorage.removeItem(DEMO_FLAGS_STORAGE_KEY);
     resetMockApi();
     await loadFeatureFlags();
@@ -33,6 +35,7 @@ describe('FeaturesPageComponent (demo mode)', () => {
   });
 
   afterEach(async () => {
+    sessionStorage.removeItem('portfolio.session');
     localStorage.removeItem(DEMO_FLAGS_STORAGE_KEY);
     await OpenFeature.clearProviders();
   });
@@ -62,5 +65,24 @@ describe('FeaturesPageComponent (demo mode)', () => {
     expect(fixture.nativeElement.textContent).toContain('Apagada → Encendida');
     expect(fixture.nativeElement.textContent).toContain('demo-admin');
     expect(TestBed.inject(FlagService).isEnabled('cloud.oracle')).toBeTrue();
+  }));
+
+  it('lets a role that can only read the flags see them without changing them', fakeAsync(() => {
+    sessionStorage.setItem('portfolio.session', JSON.stringify({
+      accessToken: 'jwt', expiresAt: Date.now() + 600_000,
+      profile: { subject: 'u1', role: 'VIEWER', permissions: ['flags:read'] },
+    }));
+    // El servicio de sesión ya se creó con la del administrador: se parte de un inyector nuevo.
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [FeaturesPageComponent],
+      providers: [provideHttpClient(withInterceptors([mockApiInterceptor])), { provide: BASE_PATH, useValue: environment.apiBaseUrl }],
+    });
+    fixture = TestBed.createComponent(FeaturesPageComponent);
+    fixture.detectChanges();
+    settle();
+
+    expect(switches().length).toBeGreaterThan(0);
+    expect(switches().every((item) => item.disabled)).toBeTrue();
   }));
 });

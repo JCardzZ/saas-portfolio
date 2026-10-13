@@ -3,6 +3,8 @@ package dev.portfolio.infrastructure.security;
 import dev.portfolio.application.port.out.TokenIssuerPort;
 import dev.portfolio.domain.model.AccessToken;
 import dev.portfolio.domain.model.ClientIdentity;
+import dev.portfolio.domain.model.access.Permission;
+import dev.portfolio.domain.model.access.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -18,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Component
 public class JwtTokenService implements TokenIssuerPort {
@@ -34,15 +37,20 @@ public class JwtTokenService implements TokenIssuerPort {
 
     @Override
     public AccessToken issue(ClientIdentity identity) {
+        return issue(identity, expiration);
+    }
+
+    @Override
+    public AccessToken issue(ClientIdentity identity, Duration timeToLive) {
         Instant now = Instant.now();
         String token = Jwts.builder()
                 .subject(identity.subject())
                 .claim(ROLES_CLAIM, identity.roles())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plus(expiration)))
+                .expiration(Date.from(now.plus(timeToLive)))
                 .signWith(key)
                 .compact();
-        return new AccessToken(token, expiration.toSeconds());
+        return new AccessToken(token, timeToLive.toSeconds());
     }
 
     /**
@@ -57,9 +65,17 @@ public class JwtTokenService implements TokenIssuerPort {
             throw new JwtException("Token sin subject o sin expiración");
         }
         List<?> roles = claims.get(ROLES_CLAIM, List.class);
+        // El token solo lleva el rol; los permisos se deducen aquí, en cada petición.
         List<SimpleGrantedAuthority> authorities = roles == null
                 ? List.of()
-                : roles.stream().map(role -> new SimpleGrantedAuthority(String.valueOf(role))).toList();
+                : roles.stream().map(String::valueOf).flatMap(JwtTokenService::authoritiesOf).toList();
         return UsernamePasswordAuthenticationToken.authenticated(claims.getSubject(), null, authorities);
+    }
+
+    /** El rol tal cual, más un permiso por cada cosa que ese rol puede hacer. */
+    private static Stream<SimpleGrantedAuthority> authoritiesOf(String authority) {
+        Stream<String> permissions = Role.fromAuthority(authority).stream()
+                .flatMap(role -> role.permissions().stream()).map(Permission::code);
+        return Stream.concat(Stream.of(authority), permissions).map(SimpleGrantedAuthority::new);
     }
 }

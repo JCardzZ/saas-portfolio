@@ -9,6 +9,7 @@ api/adminMediaDemosCMS.service.ts
 api/adminProjectsCMS.service.ts
 api/adminTechnicalBlogCMS.service.ts
 api/adminTechnologiesCMS.service.ts
+api/adminUsers.service.ts
 api/api.ts
 api/appliedAIRAG.service.ts
 api/architectureStudio.service.ts
@@ -51,6 +52,7 @@ model/featureFlagUpdate.ts
 model/fieldError.ts
 model/graphDiagnostic.ts
 model/ingressTrackingRequest.ts
+model/loginRequest.ts
 model/mcpStatus.ts
 model/mcpStatusLatency.ts
 model/mcpStatusLimits.ts
@@ -58,6 +60,7 @@ model/mcpStatusServer.ts
 model/mcpToolInfo.ts
 model/models.ts
 model/nonFunctionalRequirements.ts
+model/permissionDefinition.ts
 model/priceQuote.ts
 model/pricingRequest.ts
 model/pricingResponse.ts
@@ -65,6 +68,9 @@ model/problemDetails.ts
 model/project.ts
 model/projectRequest.ts
 model/recruiterVisitLog.ts
+model/refreshRequest.ts
+model/roleDefinition.ts
+model/sessionResponse.ts
 model/systemDesign.ts
 model/systemDesignBundle.ts
 model/systemDesignCatalog.ts
@@ -85,6 +91,11 @@ model/terraformBundle.ts
 model/tokenIntrospection.ts
 model/tokenRequest.ts
 model/tokenResponse.ts
+model/userAccount.ts
+model/userCreateRequest.ts
+model/userProfile.ts
+model/userRole.ts
+model/userUpdateRequest.ts
 model/videoMedia.ts
 model/videoMediaRequest.ts
 param.ts

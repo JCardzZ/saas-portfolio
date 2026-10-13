@@ -13,8 +13,10 @@ if [[ ! -f .env ]]; then
     echo "# Generado por scripts/dev-up.sh. Solo para desarrollo local; no lo subas."
     echo "JWT_SECRET=$(openssl rand -base64 32)"
     echo "ADMIN_CLIENT_SECRET=$(openssl rand -base64 24)"
+    echo "ADMIN_BOOTSTRAP_EMAIL=admin@local.test"
+    echo "ADMIN_BOOTSTRAP_PASSWORD=$(openssl rand -base64 18)"
   } > .env
-  echo "Creado .env con secretos nuevos (el del administrador está en ADMIN_CLIENT_SECRET)."
+  echo "Creado .env con secretos nuevos: el primer administrador entra con ADMIN_BOOTSTRAP_EMAIL y ADMIN_BOOTSTRAP_PASSWORD."
 fi
 
 docker compose up -d --build "$@"

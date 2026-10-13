@@ -1,38 +1,57 @@
 <div class="flex min-h-dvh items-center justify-center px-4">
-  <form class="card w-full max-w-sm space-y-5" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="card w-full max-w-sm space-y-5">
     <div>
       <h1 class="text-xl font-semibold">Portfolio CMS</h1>
-      <p class="mt-1 text-sm text-slate-500">Inicia sesión con las credenciales del cliente administrador.</p>
+      <p class="mt-1 text-sm text-slate-500">
+        {{ mode() === 'user' ? 'Inicia sesión con tu correo y tu contraseña.' : 'Inicia sesión con las credenciales del cliente de máquina.' }}
+      </p>
+    </div>
+
+    <div class="flex gap-1 rounded-md bg-slate-100 p-1" role="tablist" aria-label="Forma de entrar">
+      <button type="button" role="tab" class="flex-1 rounded px-3 py-1.5 text-sm font-medium" [class]="mode() === 'user' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'" [attr.aria-selected]="mode() === 'user'" (click)="choose('user')">Usuario</button>
+      <button type="button" role="tab" class="flex-1 rounded px-3 py-1.5 text-sm font-medium" [class]="mode() === 'client' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'" [attr.aria-selected]="mode() === 'client'" (click)="choose('client')">Cliente</button>
     </div>
 
     @if (error(); as message) {
       <app-alert [message]="message" />
     }
 
-    <div>
-      <label class="label" for="clientId">Client ID</label>
-      <input id="clientId" class="input" type="text" formControlName="clientId" autocomplete="username" />
-      @if (form.controls.clientId.touched && form.controls.clientId.invalid) {
-        <p class="field-error">El Client ID es obligatorio.</p>
-      }
-    </div>
-
-    <div>
-      <label class="label" for="clientSecret">Client Secret</label>
-      <input
-        id="clientSecret"
-        class="input"
-        type="password"
-        formControlName="clientSecret"
-        autocomplete="current-password"
-      />
-      @if (form.controls.clientSecret.touched && form.controls.clientSecret.invalid) {
-        <p class="field-error">El Client Secret es obligatorio.</p>
-      }
-    </div>
-
-    <button type="submit" class="btn-primary w-full" [disabled]="submitting()">
-      {{ submitting() ? 'Entrando…' : 'Entrar' }}
-    </button>
-  </form>
+    @if (mode() === 'user') {
+      <form class="space-y-5" [formGroup]="userForm" (ngSubmit)="submit()" novalidate>
+        <div>
+          <label class="label" for="email">Correo</label>
+          <input id="email" class="input" type="email" formControlName="email" autocomplete="username" />
+          @if (userForm.controls.email.touched && userForm.controls.email.invalid) {
+            <p class="field-error">Escribe un correo válido.</p>
+          }
+        </div>
+        <div>
+          <label class="label" for="password">Contraseña</label>
+          <input id="password" class="input" type="password" formControlName="password" autocomplete="current-password" />
+          @if (userForm.controls.password.touched && userForm.controls.password.invalid) {
+            <p class="field-error">La contraseña es obligatoria.</p>
+          }
+        </div>
+        <button type="submit" class="btn-primary w-full" [disabled]="submitting()">{{ submitting() ? 'Entrando…' : 'Entrar' }}</button>
+      </form>
+    } @else {
+      <form class="space-y-5" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div>
+          <label class="label" for="clientId">Client ID</label>
+          <input id="clientId" class="input" type="text" formControlName="clientId" autocomplete="username" />
+          @if (form.controls.clientId.touched && form.controls.clientId.invalid) {
+            <p class="field-error">El Client ID es obligatorio.</p>
+          }
+        </div>
+        <div>
+          <label class="label" for="clientSecret">Client Secret</label>
+          <input id="clientSecret" class="input" type="password" formControlName="clientSecret" autocomplete="current-password" />
+          @if (form.controls.clientSecret.touched && form.controls.clientSecret.invalid) {
+            <p class="field-error">El Client Secret es obligatorio.</p>
+          }
+        </div>
+        <button type="submit" class="btn-primary w-full" [disabled]="submitting()">{{ submitting() ? 'Entrando…' : 'Entrar' }}</button>
+      </form>
+    }
+  </div>
 </div>

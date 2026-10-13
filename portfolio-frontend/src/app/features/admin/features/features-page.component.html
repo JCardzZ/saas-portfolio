@@ -46,7 +46,8 @@
                 [class]="flag.enabled ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-300 bg-white text-slate-700'"
                 [attr.aria-checked]="flag.enabled"
                 [attr.aria-label]="flag.key"
-                [disabled]="saving() === flag.key"
+                [disabled]="saving() === flag.key || !canWrite"
+                [attr.title]="canWrite ? null : 'Tu rol puede ver las flags, pero no cambiarlas'"
                 (click)="toggle(flag)"
               >
                 <span class="h-2 w-2 rounded-full" [class]="flag.enabled ? 'bg-emerald-600' : 'bg-slate-400'" aria-hidden="true"></span>

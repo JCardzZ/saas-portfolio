@@ -3,7 +3,7 @@ import { of, switchMap, throwError, timer } from 'rxjs';
 
 import { runtimeConfig } from '../config/runtime-config';
 import { BUILD_DEFAULTS, FEATURE_FLAGS, FeatureFlagKey, demoOverrides, isFeatureFlagKey, saveDemoOverride } from '../flags/feature-flags';
-import { Article, ArticleRequest, FeatureFlagAuditEntry, FeatureFlagDetail, Project, ProjectRequest, Technology, TechnologyRequest } from '../api';
+import { Article, ArticleRequest, FeatureFlagAuditEntry, FeatureFlagDetail, Project, ProjectRequest, RoleDefinition, Technology, TechnologyRequest, UserAccount, UserProfile } from '../api';
 import { MOCK_ARTICLES, MOCK_CAREER, MOCK_FLAG_DESCRIPTIONS, MOCK_PROJECTS, MOCK_TECHNOLOGIES, mockRagAnswer } from './mock-data';
 // El modo demo sirve las mismas plantillas y el mismo Terraform que el backend, con el código del estudio.
 import { catalogRows } from '../../features/public/cloud/cloud-costs.data';
@@ -68,6 +68,11 @@ function route(method: string, path: string, body: unknown): MockResponse {
     return architectureProjects(method, scope, projectId, body as Record<string, unknown>);
   }
 
+  const [, userId] = /^\/admin\/users(?:\/([^/]+))?$/.exec(path) ?? [];
+  if (path.startsWith('/admin/users')) {
+    return usersCrud(method, userId, body as Record<string, unknown> | null);
+  }
+
   const [, flagKey] = /^\/admin\/features\/([^/]+)$/.exec(path) ?? [];
   if (method === 'PUT' && flagKey) {
     return setFlag(flagKey, body as { enabled?: unknown } | null);
@@ -102,6 +107,16 @@ function route(method: string, path: string, body: unknown): MockResponse {
     case 'POST /auth/token':
       // Cualquier credencial entra: el token es ficticio y no vale contra el backend real.
       return ok({ accessToken: 'demo.mock.token', expiresInSeconds: 3600 });
+    // Las personas también entran sin comprobar nada: en modo demo no hay cuentas de verdad.
+    case 'POST /auth/login':
+    case 'POST /auth/refresh':
+      return ok({ accessToken: 'demo.mock.token', expiresInSeconds: 900, refreshToken: 'demo-refresh-token-0000000000', refreshExpiresInSeconds: 604800, user: DEMO_PROFILE });
+    case 'POST /auth/logout':
+      return { status: 204 };
+    case 'GET /auth/me':
+      return ok(DEMO_PROFILE);
+    case 'GET /admin/roles':
+      return ok(DEMO_ROLES);
     case 'GET /auth/validate':
       return ok({ active: true, subject: 'demo-admin', roles: ['ROLE_ADMIN'] });
     case 'POST /ai/rag/query':
@@ -274,6 +289,50 @@ function setFlag(key: string, body: { enabled?: unknown } | null): MockResponse 
   return ok(flagDetails().find((flag) => flag.key === key));
 }
 
+const DEMO_PERMISSIONS = ['cms:read', 'cms:write', 'studio:write', 'profile:write', 'ai:reindex', 'flags:read', 'flags:write', 'analytics:read', 'infra:operate', 'users:manage'];
+const DEMO_PROFILE: UserProfile = { subject: 'demo-admin', email: 'demo@example.com', displayName: 'Administrador de demostración', role: 'ADMIN', permissions: DEMO_PERMISSIONS };
+const describe = (codes: string[]) => codes.map((code) => ({ code, description: code }));
+const DEMO_ROLES: RoleDefinition[] = [
+  { role: 'ADMIN', description: 'Puede hacerlo todo, incluido gestionar usuarios y feature flags.', permissions: describe(DEMO_PERMISSIONS) },
+  { role: 'EDITOR', description: 'Escribe el contenido y el Estudio. No gestiona usuarios, flags ni infraestructura.', permissions: describe(['cms:read', 'cms:write', 'studio:write', 'profile:write', 'ai:reindex', 'flags:read', 'analytics:read']) },
+  { role: 'VIEWER', description: 'Solo lee la administración.', permissions: describe(['cms:read', 'flags:read', 'analytics:read']) },
+];
+const DEMO_USERS: UserAccount[] = [
+  { id: 'demo-admin', email: 'demo@example.com', displayName: 'Administrador de demostración', role: 'ADMIN', active: true, createdAt: '2026-10-01T09:00:00Z' },
+];
+let demoUsers: UserAccount[] = structuredClone(DEMO_USERS);
+
+/** Cuentas simuladas: se quedan en esta pestaña y la contraseña no se guarda en ningún sitio. */
+function usersCrud(method: string, id: string | undefined, body: Record<string, unknown> | null): MockResponse {
+  if (method === 'GET' && !id) {
+    return ok(demoUsers);
+  }
+  if (method === 'POST' && !id) {
+    const email = String(body?.['email'] ?? '').trim().toLowerCase();
+    if (!email || demoUsers.some((user) => user.email === email)) {
+      return problem(400, 'VALIDATION_ERROR', email ? 'Ya hay una cuenta con ese correo' : 'El correo no es válido');
+    }
+    const user: UserAccount = {
+      id: `demo-user-${nextId++}`, email, displayName: String(body?.['displayName'] ?? email),
+      role: (body?.['role'] as UserAccount['role']) ?? 'VIEWER', active: true, createdAt: new Date().toISOString(),
+    };
+    demoUsers = [...demoUsers, user];
+    return { status: 201, body: user };
+  }
+  const current = demoUsers.find((user) => user.id === id);
+  if (method === 'PUT' && current) {
+    const updated: UserAccount = {
+      ...current,
+      ...(typeof body?.['displayName'] === 'string' ? { displayName: body['displayName'] } : {}),
+      ...(typeof body?.['role'] === 'string' ? { role: body['role'] as UserAccount['role'] } : {}),
+      ...(typeof body?.['active'] === 'boolean' ? { active: body['active'] } : {}),
+    };
+    demoUsers = demoUsers.map((user) => (user.id === id ? updated : user));
+    return ok(updated);
+  }
+  return problem(404, 'RESOURCE_NOT_FOUND', 'Usuario no encontrado');
+}
+
 function ok(body: unknown): MockResponse {
   return { status: 200, body };
 }
@@ -290,4 +349,5 @@ export function resetMockApi(): void {
   nextId = 1;
   savedArchitectures = [];
   flagAudit = [];
+  demoUsers = structuredClone(DEMO_USERS);
 }

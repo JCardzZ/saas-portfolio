@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { finalize, forkJoin } from 'rxjs';
 
 import { FeatureFlagAuditEntry, FeatureFlagDetail, FeatureFlagsService } from '../../../core/api';
+import { AuthService } from '../../../core/auth/auth.service';
 import { runtimeConfig } from '../../../core/config/runtime-config';
 import { describeHttpError } from '../../../core/errors/http-error';
 import { isFeatureFlagKey } from '../../../core/flags/feature-flags';
@@ -23,6 +24,8 @@ import { AlertComponent } from '../../../shared/ui/alert.component';
 export class FeaturesPageComponent implements OnInit {
   private readonly api = inject(FeatureFlagsService);
   private readonly flagService = inject(FlagService);
+  /** Quien solo tiene `flags:read` ve las flags y su historial, pero no las cambia. */
+  readonly canWrite = inject(AuthService).can('flags:write');
 
   readonly flags = signal<FeatureFlagDetail[]>([]);
   readonly audit = signal<FeatureFlagAuditEntry[]>([]);
