@@ -134,6 +134,8 @@ test.describe('tarjeta informativa de servicio', () => {
     // La ficha sigue en el mismo nodo, ya con su nombre en la otra nube. (Que quede seleccionado lo
     // comprueba el test unitario: aquí el cursor puede caer sobre otro nodo al recolocarse la tarjeta.)
     await expect(dialog.getByRole('heading', { level: 3 })).toHaveText('Cloud SQL');
+    // Si la página se ha desplazado al cambiar de nube, el nodo vuelve a la vista: la tarjeta va con él.
+    await (await nodeOf(page, 'postgres')).scrollIntoViewIfNeeded();
     await page.waitForTimeout(300);
     await expectWhole(page, 'postgres en GCP');
     await capture(page, testInfo, 'ficha-otra-nube');

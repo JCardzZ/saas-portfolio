@@ -30,6 +30,21 @@ async function openStudio(page: Page, flags: Record<string, boolean>): Promise<v
   await page.waitForTimeout(400);
 }
 
+/** La vista del proyecto que se ve: el lienzo de trabajo o, en estrecho, su versión vertical. */
+async function shownView(page: Page): Promise<string> {
+  return (await page.locator(MOBILE).count()) > 0 ? MOBILE : CANVAS;
+}
+
+/**
+ * Nodos con ese nombre en la vista que se ve. La vertical puede abreviar el rótulo para que quepa,
+ * así que ahí se mira el nombre accesible del nodo, que va entero (y lleva también su coste).
+ */
+async function nodesNamed(page: Page, text: string) {
+  return (await shownView(page)) === MOBILE
+    ? page.locator(`${MOBILE} [data-node-id][aria-label*="${text}"]`)
+    : page.locator(`${CANVAS} text.node-service`, { hasText: text });
+}
+
 async function capture(page: Page, testInfo: TestInfo, name: string): Promise<void> {
   const path = join('e2e-screens', testInfo.project.name, `${name}.png`);
   // El lienzo con lo que flota sobre él (o, con la vista ajustada, debajo).
@@ -180,12 +195,17 @@ test.describe('Oracle Cloud en el Estudio (cloud.oracle)', () => {
 
     await page.locator(CLOUDS, { hasText: 'OCI' }).click();
 
-    await expect(page.locator(`${CANVAS} text.node-service`, { hasText: 'OCI Database with PostgreSQL' })).toBeVisible();
-    await expect(page.locator(`${CANVAS} text.node-service`, { hasText: 'RDS PostgreSQL' })).toHaveCount(0);
-    const foreign = await page.locator(`${CANVAS} image.node-icon`).evaluateAll((images) =>
-      images.map((image) => image.getAttribute('href') ?? '').filter((href) => /cloud-icons\/(aws|gcp|azure)\//.test(href)));
+    // En estrecho el lienzo de trabajo está oculto y se ve su vista vertical: se comprueba lo que se ve.
+    const view = await shownView(page);
+    await expect((await nodesNamed(page, 'OCI Database with PostgreSQL')).first()).toBeVisible();
+    await expect(await nodesNamed(page, 'RDS PostgreSQL')).toHaveCount(0);
+    const foreign = await page.locator(`${view} :is(image, img)`).evaluateAll((images) =>
+      images.map((image) => image.getAttribute('href') ?? image.getAttribute('src') ?? '').filter((href) => /cloud-icons\/(aws|gcp|azure)\//.test(href)));
     expect(foreign, 'ningún icono de arquitectura de otra nube').toEqual([]);
-    await expect(page.locator(`${CANVAS} [data-testid="node-cost"]`, { hasText: 'sin estimación' }).first()).toBeVisible();
+    const unpriced = view === MOBILE
+      ? page.locator(`${MOBILE} [data-node-id][aria-label*="sin estimación"]`)
+      : page.locator(`${CANVAS} [data-testid="node-cost"]`, { hasText: 'sin estimación' });
+    await expect(unpriced.first()).toBeVisible();
     const scroll = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
     expect(scroll.scroll, 'la página no se desplaza en horizontal').toBeLessThanOrEqual(scroll.client + 1);
     await capture(page, testInfo, 'hito-3-oci-despues');
@@ -234,7 +254,7 @@ test.describe('diseño de sistemas en el Estudio (studio.system-design)', () => 
     await capturePanel(page, testInfo, 'hito-4-vista-despues');
 
     await page.locator(VIEWS, { hasText: 'Infraestructura' }).click();
-    await expect(page.locator(CANVAS)).toBeVisible();
+    await expect(page.locator(await shownView(page))).toBeVisible();
   });
 
   test('desplegar una pieza, pedir requisitos y generar: las comprobaciones salen al momento', async ({ page }, testInfo) => {
@@ -324,7 +344,7 @@ test.describe('sistemas de ejemplo en el Estudio (studio.system-templates)', () 
 
     // Y la misma plantilla trae su infraestructura, en Azure.
     await page.locator('app-cloud-infra [role="tablist"][aria-label="Vista del proyecto"] [role="tab"]', { hasText: 'Infraestructura' }).click();
-    await expect(page.locator(`${CANVAS} text.node-service`, { hasText: 'PostgreSQL Flexible' }).first()).toBeVisible();
+    await expect((await nodesNamed(page, 'PostgreSQL Flexible')).first()).toBeVisible();
     await capture(page, testInfo, 'hito-5-sistema-infraestructura');
   });
 });
