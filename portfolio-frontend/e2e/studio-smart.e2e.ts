@@ -137,7 +137,9 @@ test.describe('conexiones inteligentes del Estudio (studio.smart-rules)', () => 
     await capture(page, testInfo, 'hito-2-conectar-antes');
 
     await page.locator(`${CANVAS} g.node[data-node-id="users"]`).click();
-    await page.locator(`${CANVAS} g.connect`).press('Enter');
+    // El asa de conectar es la del nodo activo: se espera a que lo sea el pulsado, y no el que ya lo era.
+    await expect(page.locator(`${CANVAS} g.node[data-node-id="users"]`)).toHaveClass(/node-active/);
+    await page.locator(`${CANVAS} g.connect[aria-label^="Conectar Visitantes"]`).press('Enter');
     await expect(page.locator(`${CANVAS} g.node[data-node-id="api"]`)).toHaveClass(/node-target-ok/);
     await expect(page.locator(`${CANVAS} g.node[data-node-id="postgres"]`)).toHaveClass(/node-target-no/);
     await capture(page, testInfo, 'hito-2-conectar-destinos');
@@ -157,7 +159,9 @@ test.describe('conexiones inteligentes del Estudio (studio.smart-rules)', () => 
     const wires = await page.locator(`${CANVAS} path.wire`).count();
 
     await page.locator(`${CANVAS} g.node[data-node-id="users"]`).click();
-    await page.locator(`${CANVAS} g.connect`).press('Enter');
+    // El asa de conectar es la del nodo activo: se espera a que lo sea el pulsado, y no el que ya lo era.
+    await expect(page.locator(`${CANVAS} g.node[data-node-id="users"]`)).toHaveClass(/node-active/);
+    await page.locator(`${CANVAS} g.connect[aria-label^="Conectar Visitantes"]`).press('Enter');
     await expect(page.locator(`${CANVAS} .node-target-ok, ${CANVAS} .node-target-no`)).toHaveCount(0);
     await page.locator(`${CANVAS} g.node[data-node-id="postgres"]`).click({ force: true });
     await expect(page.locator(`${CANVAS} path.wire`)).toHaveCount(wires + 1);
