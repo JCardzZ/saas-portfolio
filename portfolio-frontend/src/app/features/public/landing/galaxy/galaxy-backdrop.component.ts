@@ -52,8 +52,8 @@ import type { GalaxyPalette, GalaxyScene } from './galaxy-scene';
     </svg>
   `,
   styles: `
-    .doodles { opacity: 0.1; }
-    :host-context([data-theme='light']) .doodles { opacity: 0.06; }
+    .doodles { opacity: 0.15; }
+    :host-context([data-theme='light']) .doodles { opacity: 0.09; }
   `,
 })
 export class GalaxyBackdropComponent {
