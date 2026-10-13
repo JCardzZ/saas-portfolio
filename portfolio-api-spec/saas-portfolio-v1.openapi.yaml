@@ -14,6 +14,7 @@ servers:
 
 tags:
   - name: Auth & RBAC
+  - name: Admin - Users
   - name: Admin - Technologies CMS
   - name: Admin - Projects CMS
   - name: Admin - Architecture C4 CMS
@@ -72,6 +73,198 @@ paths:
                 $ref: '#/components/schemas/TokenIntrospection'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/login:
+    post:
+      tags: [Auth & RBAC]
+      summary: Sign a person in with e-mail and password
+      description: >
+        Returns a short-lived access token and a refresh token. Attempts are limited per source
+        address. A wrong e-mail and a wrong password give the same 401, and a deactivated account
+        cannot sign in.
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Signed in.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /auth/refresh:
+    post:
+      tags: [Auth & RBAC]
+      summary: Exchange a refresh token for a new session
+      description: >
+        The refresh token is single-use: it is revoked and replaced on every call. Presenting one
+        that was already used revokes every session of that person.
+      operationId: refreshSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Session renewed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /auth/logout:
+    post:
+      tags: [Auth & RBAC]
+      summary: End a session by revoking its refresh token
+      description: Always answers 204, whether or not the token was still valid.
+      operationId: logoutSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '204':
+          description: Session ended.
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+
+  /auth/me:
+    get:
+      tags: [Auth & RBAC]
+      summary: Fetch who the caller is, with their role and permissions
+      operationId: currentUser
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: The caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /admin/roles:
+    get:
+      tags: [Admin - Users]
+      summary: Fetch the roles and the permissions each one grants
+      operationId: listRoles
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Roles fetched successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoleDefinition'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /admin/users:
+    get:
+      tags: [Admin - Users]
+      summary: Fetch every user account
+      operationId: listUsers
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Users fetched successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserAccount'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+    post:
+      tags: [Admin - Users]
+      summary: Create a user account
+      description: There is no public sign-up. The e-mail must be unique.
+      operationId: createUser
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: User created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAccount'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /admin/users/{id}:
+    put:
+      tags: [Admin - Users]
+      summary: Change a user's name, role, password or whether the account is active
+      description: >
+        Only the fields sent are changed. Deactivating an account or changing its password revokes
+        its sessions. The last active administrator cannot be deactivated or given another role.
+      operationId: updateUser
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, maxLength: 36 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: User updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAccount'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 
   /admin/technologies:
     get:
@@ -1139,6 +1332,101 @@ components:
         active: { type: boolean, example: true }
         subject: { type: string, example: "usr_admin_principal" }
         roles: { type: array, items: { type: string }, example: ["ROLE_ADMIN"] }
+
+    UserRole:
+      type: string
+      description: >
+        ADMIN can do everything, including managing users and feature flags. EDITOR writes the CMS
+        and the Studio. VIEWER only reads the administration.
+      enum: [ADMIN, EDITOR, VIEWER]
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 254, example: "ana@example.com" }
+        password: { type: string, format: password, minLength: 1, maxLength: 72 }
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string, minLength: 20, maxLength: 200 }
+
+    SessionResponse:
+      type: object
+      required: [accessToken, expiresInSeconds, refreshToken, refreshExpiresInSeconds, user]
+      properties:
+        accessToken: { type: string, example: "eyJhbGciOiJ..." }
+        expiresInSeconds: { type: integer, example: 900 }
+        refreshToken: { type: string, description: "Opaque and single-use. Never a JWT." }
+        refreshExpiresInSeconds: { type: integer, example: 604800 }
+        user:
+          $ref: '#/components/schemas/UserProfile'
+
+    UserProfile:
+      type: object
+      required: [subject, role, permissions]
+      properties:
+        subject: { type: string, description: "The user id, or the client id for a machine token.", example: "0b9c1f6e-3d2a-4f6b-9a1e-5d7c8b9a0f11" }
+        email: { type: string, format: email, description: "Absent for a machine token." }
+        displayName: { type: string, example: "Ana Pérez" }
+        role:
+          $ref: '#/components/schemas/UserRole'
+        permissions:
+          type: array
+          items: { type: string }
+          example: ["cms:read", "cms:write"]
+
+    RoleDefinition:
+      type: object
+      required: [role, description, permissions]
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+        description: { type: string }
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionDefinition'
+
+    PermissionDefinition:
+      type: object
+      required: [code, description]
+      properties:
+        code: { type: string, example: "cms:write" }
+        description: { type: string }
+
+    UserAccount:
+      type: object
+      required: [id, email, displayName, role, active, createdAt]
+      properties:
+        id: { type: string, example: "0b9c1f6e-3d2a-4f6b-9a1e-5d7c8b9a0f11" }
+        email: { type: string, format: email }
+        displayName: { type: string }
+        role:
+          $ref: '#/components/schemas/UserRole'
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    UserCreateRequest:
+      type: object
+      required: [email, displayName, password, role]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        displayName: { type: string, minLength: 1, maxLength: 80 }
+        password: { type: string, format: password, minLength: 12, maxLength: 72, description: "12 to 72 characters. Stored only as a BCrypt hash." }
+        role:
+          $ref: '#/components/schemas/UserRole'
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        displayName: { type: string, minLength: 1, maxLength: 80 }
+        password: { type: string, format: password, minLength: 12, maxLength: 72 }
+        role:
+          $ref: '#/components/schemas/UserRole'
+        active: { type: boolean }
 
     Technology:
       type: object
