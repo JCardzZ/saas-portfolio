@@ -1,11 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output, signal } from '@angular/core';
 import { finalize } from 'rxjs';
 import { SystemDesignFile, SystemDesignService as SystemDesignApi } from '../../../../core/api';
 import { CloudLink, CloudNode, CloudProviderId, forProvider } from '../cloud-topology.data';
 import { downloadBlob } from '../diagram-export';
 import { COMPLIANCE_OPTIONS, Compliance, NFR_INPUTS, NfrField, SYSTEM_CATALOG, SystemCategory, SystemCategoryId, SystemOption } from './system-catalog.data';
+import { Advice, assessSystem } from './system-advisor';
+import { AdvisorOrbComponent, SystemAdvisorComponent } from './system-advisor.component';
 import { SystemDesign, SystemFinding, chosen, deployTargets, evaluateSystem, withChoice } from './system-design';
+import { SystemDiagramComponent } from './system-diagram.component';
 
 /** Una pieza de la vista de Aplicación ya resuelta: lo elegido y dónde se despliega. */
 interface Piece {
@@ -26,11 +29,13 @@ interface Piece {
 @Component({
   selector: 'app-system-design',
   standalone: true,
+  imports: [AdvisorOrbComponent, SystemAdvisorComponent, SystemDiagramComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
     <section class="mt-3 space-y-4" aria-labelledby="system-design-title" data-testid="system-design">
-      <header>
+      <header class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+       <div class="min-w-0">
         <p class="text-xs font-medium uppercase tracking-wider text-ink-3">Diseño de sistema</p>
         <h4 id="system-design-title" class="mt-1 text-base font-semibold text-ink-1">Vista de Aplicación</h4>
         <p class="mt-1 max-w-prose text-sm leading-snug text-ink-2">
@@ -40,10 +45,48 @@ interface Piece {
         @if (readonly()) {
           <p class="mt-2 text-xs text-ink-3" data-testid="system-readonly">En el móvil esta vista es de solo lectura: se edita en una pantalla más ancha.</p>
         }
+       </div>
+        <!-- El asistente: su veredicto siempre a la vista; la ventana da el detalle. -->
+        <button
+          type="button"
+          class="advisor-button ui-focus tap flex max-w-full items-center gap-3 rounded-panel border border-line-strong bg-surface-2 py-2 pl-2.5 pr-4 text-left transition-colors duration-fast ease-standard hover:border-line-control"
+          aria-haspopup="dialog"
+          [attr.aria-expanded]="advisorOpen()"
+          data-testid="advisor-open"
+          (click)="advisorOpen.set(true)"
+        >
+          <app-advisor-orb [size]="36" [level]="assessment().verdict" />
+          <span class="min-w-0">
+            <span class="block text-xs uppercase tracking-wide text-ink-3">Asistente de diseño</span>
+            <span class="block text-sm font-semibold text-ink-1" data-testid="advisor-verdict">{{ assessment().headline }}</span>
+            <span class="block text-xs text-ink-2">{{ adviceCount() }}</span>
+          </span>
+        </button>
       </header>
 
-      <!-- El sistema de un vistazo: el camino de una petición y las piezas de apoyo. -->
-      <div class="ui-card-inset" aria-label="Resumen del sistema" role="group">
+      <!-- El sistema, dibujado: cambia con cada elección. -->
+      <div class="ui-card-inset">
+        <app-system-diagram [design]="design()" [nodes]="nodes()" [provider]="provider()" [active]="focused()" (picked)="goTo($event)" />
+        @if (topAdvice(); as advice) {
+          <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line-subtle pt-3" data-testid="advisor-top" role="status">
+            <app-advisor-orb [size]="20" [level]="advice.level === 'risk' ? 'risk' : 'limited'" />
+            <p class="min-w-0 flex-1 text-sm text-ink-2"><span class="font-medium text-ink-1">{{ advice.title }}.</span> {{ advice.why }}</p>
+            @if (advice.action; as action) {
+              @if (action.kind === 'choose' && !readonly()) {
+                <button type="button" class="ui-btn-secondary" data-testid="advisor-top-apply" (click)="apply(advice)">{{ action.label }}</button>
+              }
+            }
+            <button type="button" class="ui-btn-ghost" aria-haspopup="dialog" (click)="advisorOpen.set(true)">Ver todo</button>
+          </div>
+        }
+      </div>
+
+      @if (advisorOpen()) {
+        <app-system-advisor [assessment]="assessment()" [readonly]="readonly()" (closed)="advisorOpen.set(false)" (applied)="apply($event)" />
+      }
+
+      <!-- El mismo sistema en texto: es lo que lee un lector de pantalla en lugar del dibujo. -->
+      <div class="sr-only" aria-label="Resumen del sistema" role="group">
         <ol class="flex flex-wrap items-stretch gap-x-2 gap-y-3" data-testid="system-flow">
           @for (piece of requestPath(); track piece.category.id; let first = $first) {
             @if (!first) {
@@ -71,7 +114,7 @@ interface Piece {
 
       <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         @for (category of catalog; track category.id) {
-          <fieldset class="ui-card-inset min-w-0" [attr.data-category]="category.id" [disabled]="readonly()">
+          <fieldset class="ui-card-inset min-w-0 scroll-mt-28" [class.category-focused]="focused() === category.id" [attr.data-category]="category.id" [disabled]="readonly()" (focusin)="focused.set(category.id)">
             <legend class="float-left mb-1 w-full text-xs font-medium uppercase tracking-wider text-ink-3">{{ category.name }}</legend>
             <p class="clear-both text-sm text-ink-2">{{ category.question }}</p>
             <div class="mt-2 space-y-1">
@@ -197,6 +240,7 @@ interface Piece {
     </section>
   `,
   styles: [`
+    .category-focused { border-color: var(--accent-text); }
     .app-piece {
       min-width: 9rem;
       max-width: 16rem;
@@ -212,6 +256,7 @@ export class SystemDesignComponent {
   private readonly api = inject(SystemDesignApi);
 
   readonly design = input.required<SystemDesign>();
+  private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   readonly nodes = input.required<CloudNode[]>();
   readonly links = input.required<CloudLink[]>();
   readonly provider = input.required<CloudProviderId>();
@@ -262,6 +307,35 @@ export class SystemDesignComponent {
     const contract = chosen(this.design(), 'api')?.contract;
     return contract === 'openapi' ? 'OpenAPI' : contract === 'proto' ? '.proto' : 'no se genera para este estilo';
   });
+
+  // ---------- Diagrama y asistente ----------
+  /** Categoría que se está editando: su pieza se resalta en el diagrama. */
+  readonly focused = signal<SystemCategoryId | null>(null);
+  readonly advisorOpen = signal(false);
+  readonly assessment = computed(() => assessSystem(this.design(), this.nodes(), this.findings()));
+  /** El consejo más grave, que se muestra bajo el diagrama. */
+  readonly topAdvice = computed(() => this.assessment().advice[0] ?? null);
+  readonly adviceCount = computed(() => {
+    const total = this.assessment().advice.length;
+    return total ? `${total} ${total === 1 ? 'sugerencia' : 'sugerencias'}` : 'Sin sugerencias';
+  });
+
+  /** Lleva a las opciones de la pieza pulsada en el diagrama. */
+  goTo(category: SystemCategoryId): void {
+    this.focused.set(category);
+    const fieldset = this.host.querySelector<HTMLElement>(`fieldset[data-category="${category}"]`);
+    const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    fieldset?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+    fieldset?.querySelector<HTMLElement>('input:checked, input, select')?.focus({ preventScroll: true });
+  }
+
+  /** Aplica un consejo que es una elección de esta vista. */
+  apply(advice: Advice): void {
+    if (advice.action?.kind === 'choose' && !this.readonly()) {
+      this.focused.set(advice.action.category);
+      this.choose(advice.action.category, advice.action.option);
+    }
+  }
 
   // ---------- Archivos generados ----------
   readonly generating = signal(false);

@@ -257,6 +257,53 @@ test.describe('diseño de sistemas en el Estudio (studio.system-design)', () => 
     await expect(page.locator(await shownView(page))).toBeVisible();
   });
 
+  test('el sistema se dibuja al elegir cada pieza y el asistente dice si escala y qué cambiar', async ({ page }, testInfo) => {
+    await openStudio(page, { 'studio.system-design': true });
+    await page.locator(VIEWS, { hasText: 'Aplicación' }).click();
+    const diagram = page.locator(`${APP} [data-testid="system-diagram"]`);
+    await expect(diagram).toBeVisible();
+    await expect(diagram.locator('g.piece')).toHaveCount(4);
+
+    // El dibujo cabe en su marco sin encogerse: a lo ancho si hay sitio, apilado si no.
+    const frame = (await page.locator(`${APP} app-system-diagram`).boundingBox())!;
+    const drawn = (await diagram.boundingBox())!;
+    expect(drawn.width, 'el diagrama no desborda su marco').toBeLessThanOrEqual(frame.width + 1);
+    const title = await diagram.locator('.piece-title').first().evaluate((text) => Number.parseFloat(getComputedStyle(text).fontSize));
+    expect(title, 'el texto no se encoge').toBeGreaterThanOrEqual(14);
+    const page_ = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+    expect(page_.scroll, 'la página no se desplaza en horizontal').toBeLessThanOrEqual(page_.client + 1);
+    // Ninguna pieza lleva el logo de una tecnología: solo el icono de la nube donde se despliega.
+    const logos = await diagram.locator('g.piece image').evaluateAll((images) => images.map((image) => image.getAttribute('href') ?? '').filter((href) => !href.includes('cloud-icons/')));
+    expect(logos).toEqual([]);
+
+    await expect(page.locator(`${APP} [data-testid="advisor-verdict"]`)).toHaveText('Escala, pero con límites');
+    if (isDesktop(testInfo)) {
+      await page.locator(`${APP} fieldset[data-category="cache"] input[value="redis"]`).check();
+      await expect(diagram.locator('g.piece')).toHaveCount(5);
+      await expect(diagram.locator('g.edge[data-edge="backend-cache"]')).toHaveCount(1);
+    }
+    await capturePanel(page, testInfo, 'sistema-diagrama');
+
+    await page.locator(`${APP} [data-testid="advisor-open"]`).click();
+    const dialog = page.locator('[data-testid="advisor-layer"] [role="dialog"]');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-dimension]')).toHaveCount(5);
+    await expect(dialog.getByTestId('advisor-basis')).toContainText('No es un modelo de IA');
+    await page.waitForTimeout(400);
+    const viewport = page.viewportSize()!;
+    const box = (await dialog.boundingBox())!;
+    expect(box.x, 'la ventana del asistente cabe a lo ancho').toBeGreaterThanOrEqual(-0.5);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 0.5);
+    expect(box.y, 'y a lo alto').toBeGreaterThanOrEqual(-0.5);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 0.5);
+    const path = join('e2e-screens', testInfo.project.name, 'sistema-asistente.png');
+    await page.screenshot({ path, animations: 'disabled' });
+    await testInfo.attach('sistema-asistente', { path, contentType: 'image/png' });
+
+    await dialog.getByRole('button', { name: 'Cerrar' }).click();
+    await expect(dialog).toHaveCount(0);
+  });
+
   test('desplegar una pieza, pedir requisitos y generar: las comprobaciones salen al momento', async ({ page }, testInfo) => {
     test.skip(!isDesktop(testInfo), 'la edición se prueba en escritorio');
     await openStudio(page, { 'studio.system-design': true });
