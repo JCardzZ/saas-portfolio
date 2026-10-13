@@ -44,10 +44,16 @@ no se da nada por permitido de memoria. No es asesoría legal.
   paquetes oficiales; se pintan como imagen, sin recolorear, recortar ni girar, y siempre con el
   nombre del servicio. Solo aparecen en el diagrama del Estudio de arquitectura.
 
-- **Vista de Aplicación del Estudio** (`cloud/system/system-diagram.ts`): cada pieza lleva su nombre en
-  texto y un símbolo propio de su papel (navegador, servidor, base de datos, candado…), dibujado para
-  este sitio. El único icono oficial es el del servicio de AWS, Azure o Google Cloud donde se despliega,
-  bajo el nombre de la pieza. Hay tests que fallan si una pieza pinta otra imagen.
+- **Vista de Aplicación del Estudio** (`cloud/system/system-icons.ts`): **decisión del autor del 12 de
+  octubre de 2026, que se aparta de la regla general de este documento.** Cada tecnología lleva su
+  logo (trazado de Simple Icons, en el color de la marca) junto a su nombre en texto, para
+  identificarla, con un aviso de marcas visible junto al diagrama («marcas de sus respectivos dueños…
+  este sitio no está afiliado») y las frases de atribución que piden Redis, Spring y PostgreSQL cuando
+  su logo está en pantalla. **Un aviso no es un permiso**: las guías de Spring y Go lo prohíben sin
+  autorización y las de PostgreSQL y la Linux Foundation piden solicitarlo (tabla de arriba). El autor
+  asume ese riesgo; si una marca pide retirarlo, se quita su entrada de `OPTION_LOGOS` y la pieza pasa
+  a su símbolo genérico. Las opciones genéricas (CDN, cola, gateway) llevan un símbolo propio, y el
+  servicio de nube donde se despliega cada pieza, su icono oficial de arquitectura.
 
 ## Pendiente de revisar
 
