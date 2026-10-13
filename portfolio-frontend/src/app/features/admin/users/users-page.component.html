@@ -1,0 +1,116 @@
+<section class="space-y-6">
+  <header>
+    <h1 class="text-2xl font-semibold">Usuarios</h1>
+    <p class="mt-1 text-sm text-slate-600">Quién puede entrar en el panel y con qué rol. No hay registro público: las cuentas se crean aquí.</p>
+  </header>
+
+  @if (error(); as message) {
+    <app-alert [message]="message" />
+  }
+  @if (notice(); as message) {
+    <p class="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status" data-testid="users-notice">{{ message }}</p>
+  }
+
+  <div class="card overflow-x-auto p-0">
+    <table class="w-full text-left text-sm">
+      <caption class="sr-only">Cuentas de usuario</caption>
+      <thead class="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+        <tr>
+          <th scope="col" class="px-4 py-3">Nombre</th>
+          <th scope="col" class="px-4 py-3">Correo</th>
+          <th scope="col" class="px-4 py-3">Rol</th>
+          <th scope="col" class="px-4 py-3">Estado</th>
+          <th scope="col" class="px-4 py-3">Alta</th>
+          <th scope="col" class="px-4 py-3"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users(); track user.id) {
+          <tr class="border-b border-slate-100 align-top" [attr.data-user]="user.email">
+            <td class="px-4 py-3 font-medium text-slate-900">{{ user.displayName }} @if (isSelf(user)) { <span class="text-xs font-normal text-slate-500">(tú)</span> }</td>
+            <td class="px-4 py-3 text-slate-600">{{ user.email }}</td>
+            <td class="px-4 py-3">
+              <label class="sr-only" [attr.for]="'role-' + user.id">Rol de {{ user.email }}</label>
+              <select #role [id]="'role-' + user.id" class="input py-1" [value]="user.role" [disabled]="saving() === user.id || isSelf(user)" (change)="setRole(user, role.value)">
+                @for (name of roleNames; track name) {
+                  <option [value]="name" [selected]="name === user.role">{{ name }}</option>
+                }
+              </select>
+            </td>
+            <td class="px-4 py-3">
+              <span class="rounded-full px-2 py-0.5 text-xs font-medium" [class]="user.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'">{{ user.active ? 'Activa' : 'Desactivada' }}</span>
+            </td>
+            <td class="px-4 py-3 text-slate-600">{{ user.createdAt | date: 'dd/MM/yyyy' }}</td>
+            <td class="px-4 py-3">
+              <div class="flex flex-wrap justify-end gap-2">
+                <button type="button" class="btn-secondary" [disabled]="saving() === user.id" (click)="startReset(user)">Cambiar contraseña</button>
+                <button type="button" class="btn-secondary" [disabled]="saving() === user.id || isSelf(user)" (click)="setActive(user, !user.active)">{{ user.active ? 'Desactivar' : 'Activar' }}</button>
+              </div>
+              @if (resetting() === user.id) {
+                <form class="mt-3 flex flex-wrap items-start justify-end gap-2" (submit)="$event.preventDefault(); savePassword(user)">
+                  <div>
+                    <label class="sr-only" [attr.for]="'password-' + user.id">Contraseña nueva de {{ user.email }}</label>
+                    <input [id]="'password-' + user.id" class="input py-1" type="password" autocomplete="new-password" placeholder="Contraseña nueva" [formControl]="newPassword" />
+                    @if (newPassword.touched && newPassword.invalid) {
+                      <p class="field-error">Entre 12 y 72 caracteres.</p>
+                    }
+                  </div>
+                  <button type="submit" class="btn-primary" [disabled]="saving() === user.id">Guardar</button>
+                  <button type="button" class="btn-secondary" (click)="resetting.set(null)">Cancelar</button>
+                </form>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">{{ loading() ? 'Cargando…' : 'No hay cuentas todavía.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <form class="card space-y-4" [formGroup]="form" (ngSubmit)="create()" novalidate>
+    <h2 class="text-lg font-semibold">Nueva cuenta</h2>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="label" for="new-email">Correo</label>
+        <input id="new-email" class="input" type="email" formControlName="email" autocomplete="off" />
+        @if (form.controls.email.touched && form.controls.email.invalid) { <p class="field-error">Escribe un correo válido.</p> }
+      </div>
+      <div>
+        <label class="label" for="new-name">Nombre</label>
+        <input id="new-name" class="input" type="text" formControlName="displayName" autocomplete="off" />
+        @if (form.controls.displayName.touched && form.controls.displayName.invalid) { <p class="field-error">El nombre es obligatorio (hasta 80 caracteres).</p> }
+      </div>
+      <div>
+        <label class="label" for="new-password">Contraseña inicial</label>
+        <input id="new-password" class="input" type="password" formControlName="password" autocomplete="new-password" />
+        @if (form.controls.password.touched && form.controls.password.invalid) { <p class="field-error">Entre 12 y 72 caracteres.</p> }
+      </div>
+      <div>
+        <label class="label" for="new-role">Rol</label>
+        <select id="new-role" class="input" formControlName="role">
+          @for (name of roleNames; track name) { <option [value]="name">{{ name }}</option> }
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="btn-primary" [disabled]="creating()">{{ creating() ? 'Creando…' : 'Crear cuenta' }}</button>
+  </form>
+
+  @if (roles().length) {
+    <div class="card" data-testid="roles-matrix">
+      <h2 class="text-lg font-semibold">Qué puede hacer cada rol</h2>
+      <dl class="mt-3 space-y-4">
+        @for (role of roles(); track role.role) {
+          <div>
+            <dt class="font-medium text-slate-900">{{ role.role }} <span class="font-normal text-slate-600">· {{ role.description }}</span></dt>
+            <dd class="mt-1.5 flex flex-wrap gap-2">
+              @for (permission of role.permissions; track permission.code) {
+                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-mono text-xs text-slate-700" [attr.title]="permission.description">{{ permission.code }}</span>
+              }
+            </dd>
+          </div>
+        }
+      </dl>
+    </div>
+  }
+</section>

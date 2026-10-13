@@ -1404,6 +1404,8 @@ describe('CloudInfraComponent', () => {
     }
     const signIn = () => sessionStorage.setItem('portfolio.session', JSON.stringify({ accessToken: 'demo.mock.token', expiresAt: Date.now() + 600_000 }));
 
+    // Otra batería puede haber dejado una sesión abierta: estas pruebas parten sin ella.
+    beforeEach(() => sessionStorage.clear());
     afterEach(() => sessionStorage.clear());
 
     it('offers its own presets at once and replaces the scenarios with the ones served by the backend', fakeAsync(() => {
