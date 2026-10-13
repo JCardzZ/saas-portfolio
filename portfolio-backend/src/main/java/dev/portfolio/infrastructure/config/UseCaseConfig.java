@@ -1,5 +1,11 @@
 package dev.portfolio.infrastructure.config;
 
+import java.time.Clock;
+import dev.portfolio.application.port.out.PasswordHasherPort;
+import dev.portfolio.application.port.out.RefreshTokenRepositoryPort;
+import dev.portfolio.application.port.out.UserRepositoryPort;
+import dev.portfolio.application.service.UserAccessService;
+import dev.portfolio.infrastructure.security.SessionProperties;
 import dev.portfolio.application.port.in.McpAccessUseCase;
 import dev.portfolio.application.service.McpAccessService;
 import dev.portfolio.application.port.in.SystemDesignUseCase;
@@ -86,6 +92,15 @@ public class UseCaseConfig {
                                    RateLimitProperties rateLimitProperties) {
         return new AuthService(
                 clientAuthenticator, tokenIssuer, rateLimiter, rateLimitProperties.authToken().toPolicy());
+    }
+
+    /** Un solo servicio para las sesiones y para la gestión de cuentas: se inyecta por cualquiera de sus dos puertos. */
+    @Bean
+    public UserAccessService userAccessService(UserRepositoryPort users, RefreshTokenRepositoryPort refreshTokens,
+                                               PasswordHasherPort hasher, TokenIssuerPort tokenIssuer, RateLimiterPort rateLimiter,
+                                               RateLimitProperties rateLimitProperties, SessionProperties sessions) {
+        return new UserAccessService(users, refreshTokens, hasher, tokenIssuer, rateLimiter,
+                rateLimitProperties.authToken().toPolicy(), sessions.accessTtl(), sessions.refreshTtl(), Clock.systemUTC());
     }
 
     @Bean

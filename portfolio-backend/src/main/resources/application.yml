@@ -70,6 +70,15 @@ security:
   admin-client:
     id: ${ADMIN_CLIENT_ID:admin-ui}
     secret: ${ADMIN_CLIENT_SECRET}
+  # Sesiones de las personas (POST /auth/login). El token de acceso dura poco porque no se puede
+  # revocar; el de refresco es de un solo uso y sí se revoca. Si no hay ninguna cuenta y se dan
+  # ADMIN_BOOTSTRAP_EMAIL y ADMIN_BOOTSTRAP_PASSWORD (12 a 72 caracteres), al arrancar se crea
+  # con ellos el primer administrador; después esas variables ya no hacen nada.
+  sessions:
+    access-ttl: ${SESSION_ACCESS_TTL:15m}
+    refresh-ttl: ${SESSION_REFRESH_TTL:7d}
+    bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}
+    bootstrap-password: ${ADMIN_BOOTSTRAP_PASSWORD:}
   # Orígenes del frontend, separados por comas
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}

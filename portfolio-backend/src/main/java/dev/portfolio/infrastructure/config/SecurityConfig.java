@@ -6,7 +6,9 @@ import dev.portfolio.infrastructure.security.AdminClientProperties;
 import dev.portfolio.infrastructure.security.CorsProperties;
 import dev.portfolio.infrastructure.security.JwtAuthenticationFilter;
 import dev.portfolio.infrastructure.security.JwtProperties;
+import dev.portfolio.infrastructure.security.AccessRules;
 import dev.portfolio.infrastructure.security.JwtTokenService;
+import dev.portfolio.infrastructure.security.SessionProperties;
 import dev.portfolio.infrastructure.security.ProblemDetailSecurityHandler;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -27,7 +29,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableConfigurationProperties({JwtProperties.class, AdminClientProperties.class, CorsProperties.class})
+@EnableConfigurationProperties({JwtProperties.class, AdminClientProperties.class, CorsProperties.class, SessionProperties.class})
 public class SecurityConfig {
 
     // Rutas relativas al context-path (/v1). Públicas = operaciones sin `security` en el contrato OpenAPI.
@@ -35,6 +37,10 @@ public class SecurityConfig {
             "/public/**",
             "/telemetry/**",
             "/auth/token",
+            // Sesiones de las personas: entrar, renovar y salir no llevan token de acceso.
+            "/auth/login",
+            "/auth/refresh",
+            "/auth/logout",
             "/recruiter/track-ingress",
             "/ai/rag/query",
             "/ai/architecture/copilot",
@@ -56,11 +62,17 @@ public class SecurityConfig {
                 .authenticationEntryPoint(securityHandler)
                 .accessDeniedHandler(securityHandler)
             )
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            )
+            .authorizeHttpRequests(auth -> {
+                auth.requestMatchers(PUBLIC_ENDPOINTS).permitAll();
+                // Cada operación de la administración pide su permiso (AccessRules), en orden.
+                for (AccessRules.Rule rule : AccessRules.RULES) {
+                    (rule.method() == null ? auth.requestMatchers(rule.pattern()) : auth.requestMatchers(rule.method(), rule.pattern()))
+                            .hasAuthority(rule.permission().code());
+                }
+                // Lo que aún no tiene regla propia nace cerrado: solo el administrador.
+                auth.requestMatchers("/admin/**").hasRole("ADMIN");
+                auth.anyRequest().authenticated();
+            })
             .addFilterBefore(new JwtAuthenticationFilter(tokenService, securityHandler, telemetry),
                 UsernamePasswordAuthenticationFilter.class)
             .build();

@@ -55,7 +55,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.setContext(context);
             // Solo los roles: el canal de telemetría es público y no debe revelar quién se autentica.
             telemetry.publish(TelemetryEventType.JWT_VERIFIED, authentication.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority).collect(Collectors.joining(", ")));
+                    .map(GrantedAuthority::getAuthority).filter(authority -> authority.startsWith("ROLE_"))
+                    .collect(Collectors.joining(", ")));
         } catch (JwtException | IllegalArgumentException e) {
             SecurityContextHolder.clearContext();
             authenticationEntryPoint.commence(request, response,

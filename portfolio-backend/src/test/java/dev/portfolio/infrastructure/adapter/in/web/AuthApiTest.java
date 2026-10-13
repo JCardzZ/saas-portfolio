@@ -24,6 +24,10 @@ import dev.portfolio.infrastructure.adapter.in.web.mapper.AuthWebMapperImpl;
 import dev.portfolio.infrastructure.adapter.in.web.mapper.TechnologyWebMapperImpl;
 import dev.portfolio.infrastructure.config.SecurityConfig;
 import dev.portfolio.infrastructure.config.UseCaseConfig;
+import dev.portfolio.application.port.out.RefreshTokenRepositoryPort;
+import dev.portfolio.application.port.out.UserRepositoryPort;
+import dev.portfolio.infrastructure.adapter.in.web.mapper.UserWebMapper;
+import dev.portfolio.infrastructure.security.BCryptPasswordHasher;
 import dev.portfolio.infrastructure.security.ConfiguredClientAuthenticator;
 import dev.portfolio.infrastructure.security.JwtTokenService;
 import dev.portfolio.infrastructure.security.ProblemDetailSecurityHandler;
@@ -70,6 +74,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         ProblemDetailSecurityHandler.class,
         ProblemDetailFactory.class,
         AuthWebMapperImpl.class,
+        UserWebMapper.class,
+        BCryptPasswordHasher.class,
         TechnologyWebMapperImpl.class
 })
 @TestPropertySource(properties = {
@@ -94,6 +100,10 @@ class AuthApiTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @MockBean
+    private UserRepositoryPort userRepositoryPort;
+    @MockBean
+    private RefreshTokenRepositoryPort refreshTokenRepositoryPort;
     @MockBean
     private TelemetryPort telemetryPort;
 
