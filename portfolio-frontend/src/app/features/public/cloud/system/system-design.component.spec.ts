@@ -240,4 +240,123 @@ describe('SystemDesignComponent', () => {
     expect(card(element, 'backend').disabled).toBeTrue();
     expect(element.querySelector<HTMLFieldSetElement>('[data-testid="system-nfr"]')!.disabled).toBeTrue();
   });
+
+  describe('live diagram and design advisor', () => {
+    const pieces = (element: HTMLElement) => Array.from(element.querySelectorAll('app-system-diagram g.piece')).map((piece) => piece.getAttribute('data-piece'));
+    const edges = (element: HTMLElement) => Array.from(element.querySelectorAll('app-system-diagram g.edge')).map((item) => item.getAttribute('data-edge'));
+    const dialog = () => document.querySelector<HTMLElement>('[data-testid="advisor-layer"] [role="dialog"]');
+
+    afterEach(() => document.querySelectorAll('[data-testid="advisor-layer"]').forEach((layer) => layer.remove()));
+
+    it('draws the chosen system and redraws it the moment a technology is picked', () => {
+      const { fixture, element } = create();
+
+      expect(pieces(element)).toEqual(['client', 'backend', 'auth', 'database']);
+      expect(edges(element)).toEqual(['client-backend', 'backend-database', 'backend-auth']);
+      expect(element.querySelector('app-system-diagram [data-piece="backend"] .piece-title')!.textContent).toBe('Spring Boot');
+
+      pick(fixture, radio(element, 'cache', 'redis'));
+      pick(fixture, radio(element, 'backend', 'go'));
+
+      expect(pieces(element)).toContain('cache');
+      expect(edges(element)).toContain('backend-cache');
+      expect(element.querySelector('app-system-diagram [data-piece="backend"] .piece-title')!.textContent).toBe('Go');
+      // El resumen en texto, que es lo que lee un lector de pantalla, sigue al día.
+      expect(flow(element).join(' | ')).toContain('Go');
+    });
+
+    it('shows each technology with its logo and its name, the cloud icon where it is deployed, and the trademark notice', () => {
+      const { fixture, element } = create();
+      select(fixture, card(element, 'backend').querySelector('select')!, 'api');
+      const backend = element.querySelector('app-system-diagram [data-piece="backend"]')!;
+
+      expect(backend.querySelector('svg.logo')!.getAttribute('data-logo')).toBe('Spring Boot');
+      expect(backend.querySelector('.piece-title')!.textContent).toBe('Spring Boot');
+      expect(backend.querySelector('.piece-where')!.textContent).toBe('ECS Fargate');
+      expect(backend.querySelector('image')!.getAttribute('href')).toContain('cloud-icons/aws/');
+      expect(backend.getAttribute('aria-label')).toContain('Java · Spring Boot. Se despliega en ECS Fargate');
+      expect(element.querySelector('app-system-diagram [data-piece="client"]')!.classList).toContain('piece-pending');
+      // Los mismos logos acompañan a cada opción de la lista.
+      expect(Array.from(card(element, 'client').querySelectorAll('label svg[data-logo]')).map((logo) => logo.getAttribute('data-logo')))
+        .toEqual(['Angular', 'React', 'Swift', 'Kotlin', 'Flutter', 'React Native']);
+
+      const notice = element.querySelector('[data-testid="trademark-notice"]')!.textContent!;
+      expect(notice).toContain('marcas de sus respectivos dueños');
+      expect(notice).toContain('Spring is a trademark of Broadcom');
+      expect(notice).toContain('PostgreSQL Community Association of Canada');
+      expect(notice).not.toContain('Redis is a registered trademark');
+      pick(fixture, radio(element, 'cache', 'redis'));
+      expect(element.querySelector('[data-testid="trademark-notice"]')!.textContent).toContain('Redis is a registered trademark of Redis Ltd.');
+    });
+
+    it('lights the path of the piece under the cursor and dims the rest', () => {
+      const { fixture, element } = create();
+      const database = element.querySelector<SVGGElement>('app-system-diagram [data-piece="database"]')!;
+
+      database.dispatchEvent(new MouseEvent('mouseenter'));
+      fixture.detectChanges();
+
+      expect(element.querySelector('app-system-diagram svg.system-diagram')!.classList).toContain('is-hovering');
+      expect(Array.from(element.querySelectorAll('app-system-diagram g.edge.edge-lit')).map((edge) => edge.getAttribute('data-edge'))).toEqual(['backend-database']);
+      expect(Array.from(element.querySelectorAll('app-system-diagram g.piece.piece-lit')).map((piece) => piece.getAttribute('data-piece'))).toEqual(['backend', 'database']);
+
+      database.dispatchEvent(new MouseEvent('mouseleave'));
+      fixture.detectChanges();
+      expect(element.querySelector('app-system-diagram svg.system-diagram')!.classList).not.toContain('is-hovering');
+    });
+
+    it('takes you to the options of the piece you click in the diagram', () => {
+      const { fixture, element } = create();
+      document.body.appendChild(element);
+
+      element.querySelector<SVGGElement>('app-system-diagram [data-piece="database"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      fixture.detectChanges();
+
+      expect(card(element, 'database').classList).toContain('category-focused');
+      expect(card(element, 'database').contains(document.activeElement)).toBeTrue();
+      expect(element.querySelector('app-system-diagram [data-piece="database"]')!.classList).toContain('piece-active');
+      element.remove();
+    });
+
+    it('keeps the verdict in view and applies the top advice with one click', () => {
+      const { fixture, element, host } = create();
+      select(fixture, card(element, 'backend').querySelector('select')!, 'api');
+
+      expect(element.querySelector('[data-testid="advisor-verdict"]')!.textContent).toBe('Escala, pero con límites');
+      expect(element.querySelector('[data-testid="advisor-top"]')!.textContent).toContain('Cada lectura llega a la base de datos');
+
+      element.querySelector<HTMLButtonElement>('[data-testid="advisor-top-apply"]')!.click();
+      fixture.detectChanges();
+
+      expect(host.design().choices.cache).toBe('redis');
+      expect(pieces(element)).toContain('cache');
+      expect(element.querySelector('[data-testid="advisor-top"]')!.textContent).not.toContain('Cada lectura llega');
+    });
+
+    it('opens the advisor as a dialog that says what its advice is based on, and applies a suggestion from it', () => {
+      const { fixture, element, host } = create();
+      pick(fixture, radio(element, 'auth', 'session'));
+      const open = element.querySelector<HTMLButtonElement>('[data-testid="advisor-open"]')!;
+
+      expect(element.querySelector('[data-testid="advisor-verdict"]')!.textContent).toBe('Así no va a escalar');
+      open.click();
+      fixture.detectChanges();
+
+      expect(open.getAttribute('aria-expanded')).toBe('true');
+      expect(dialog()!.getAttribute('aria-modal')).toBe('true');
+      expect(dialog()!.querySelector('[data-testid="advisor-headline"]')!.textContent).toBe('Así no va a escalar');
+      expect(dialog()!.querySelectorAll('[data-dimension]').length).toBe(5);
+      expect(dialog()!.querySelector('[data-dimension="scalability"]')!.getAttribute('data-level')).toBe('risk');
+      expect(dialog()!.querySelector('[data-testid="advisor-basis"]')!.textContent).toContain('No es un modelo de IA');
+
+      dialog()!.querySelector<HTMLButtonElement>('[data-apply="session-without-store"]')!.click();
+      fixture.detectChanges();
+      expect(host.design().choices.cache).toBe('redis');
+      expect(dialog()!.querySelector('[data-advice="session-without-store"]')).toBeNull();
+
+      dialog()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      fixture.detectChanges();
+      expect(dialog()).toBeNull();
+    });
+  });
 });
