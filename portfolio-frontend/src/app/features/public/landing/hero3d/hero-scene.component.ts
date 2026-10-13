@@ -3,24 +3,21 @@ import {
 } from '@angular/core';
 
 import { ThemeService } from '../../../../core/theme/theme.service';
-import { HeroStackComponent } from '../hero-stack.component';
 import type { HeroScene, ScenePalette } from './hero-scene';
 
 /**
  * Lienzo del hero 3D. Three.js se pide con `import()` al pintarse, así que no pesa en el arranque.
- * Si el navegador no tiene WebGL (o falla), queda la versión en CSS 3D. Con `prefers-reduced-motion`
+ * Si el navegador no tiene WebGL (o falla), no se pinta nada. Con `prefers-reduced-motion`
  * se dibuja una sola vez, quieta. Fuera de pantalla o con la pestaña oculta, no dibuja.
  */
 @Component({
   selector: 'app-hero-scene',
   standalone: true,
-  imports: [HeroStackComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    @if (failed()) {
-      <app-hero-stack />
-    } @else {
+    <!-- Sin WebGL no hay avatar: el nombre gigante se basta solo. -->
+    @if (!failed()) {
       <div #frame class="relative h-full w-full" aria-hidden="true">
         <canvas #canvas class="block h-full w-full" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease"></canvas>
       </div>
@@ -28,7 +25,7 @@ import type { HeroScene, ScenePalette } from './hero-scene';
   `,
 })
 export class HeroSceneComponent {
-  /** Para los tests: sin WebGL, directamente la versión en CSS. */
+  /** Para los tests: sin WebGL. */
   readonly enabled = input(true);
 
   readonly ready = signal(false);

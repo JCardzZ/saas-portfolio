@@ -3,21 +3,23 @@
 
   <main class="mx-auto max-w-6xl px-6 pb-24 pt-[calc(7rem+env(safe-area-inset-top,0px))] max-[399px]:px-4 sm:pt-[calc(9rem+env(safe-area-inset-top,0px))]">
     <!-- Primero quién: nombre y rol se leen antes que nada (docs/DESIGN.md §8.2). -->
-    <!-- Hero: el texto encima y, detrás (a la derecha en escritorio), la plataforma en 3D. -->
-    <section class="hero relative grid items-center pb-16 sm:pb-24 lg:min-h-[min(46rem,82dvh)]" aria-labelledby="hero-titulo">
-      <app-hero-scene class="hero-scene pointer-events-none h-[min(26rem,62dvh)] w-full lg:absolute lg:-right-24 lg:top-1/2 lg:h-[min(46rem,90dvh)] lg:w-[64%] lg:-translate-y-1/2" />
-      <div class="relative z-10 min-w-0 animate-slide-up max-lg:order-first lg:max-w-[34rem]">
-      <h1 id="hero-titulo" class="text-display-sm text-ink-1 sm:text-display">Manuel Cardoza</h1>
-      <p class="mt-3 text-body-lg font-medium text-ink-1" data-testid="hero-role">{{ heroRole }}</p>
-      <p class="mt-4 max-w-[40rem] text-balance text-body-lg text-ink-2">
-        Ingeniería que se puede interrogar: proyectos, tecnologías y el propio código de esta plataforma, con un
-        asistente que responde citando sus fuentes.
-      </p>
-      <div class="mt-8 flex flex-wrap gap-3">
-        <app-cv-download variant="primary" />
-        <button type="button" class="ui-btn-secondary ui-btn-lg" (click)="chatOpen.set(true)">Preguntar a la IA</button>
-        <a href="#proyectos" class="ui-btn-secondary ui-btn-lg tap">Ver proyectos</a>
-      </div>
+    <!-- Hero: el nombre gigante de borde a borde y, encima, el avatar 3D (genérico por ahora). -->
+    <section class="hero relative flex min-h-[calc(100dvh-7rem)] flex-col pb-16 sm:pb-24" aria-labelledby="hero-titulo">
+      <p class="relative z-10 text-center font-mono text-mono-sm uppercase tracking-[0.2em] text-accent-text" data-testid="hero-role">{{ heroRole }}</p>
+      <h1 id="hero-titulo" class="hero-name relative z-0 mt-3 text-center font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink-1">
+        Hola, soy Manuel Cardoza
+      </h1>
+      <app-hero-scene class="pointer-events-none relative z-10 -mt-[6vw] h-[min(34rem,58dvh)] w-full" />
+      <div class="relative z-10 mt-auto flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
+        <p class="max-w-[30rem] text-balance text-body-lg text-ink-2">
+          Ingeniería que se puede interrogar: proyectos, tecnologías y el propio código de esta plataforma, con un
+          asistente que responde citando sus fuentes.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <app-cv-download variant="primary" />
+          <button type="button" class="ui-btn-secondary ui-btn-lg" (click)="chatOpen.set(true)">Preguntar a la IA</button>
+          <a href="#proyectos" class="ui-btn-secondary ui-btn-lg tap">Ver proyectos</a>
+        </div>
       </div>
     </section>
 

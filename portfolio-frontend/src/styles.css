@@ -307,6 +307,13 @@
 }
 :root[data-theme='light'] .dark { color-scheme: light; }
 
+/* Nombre del hero: un cartel de borde a borde. Escala con el ancho y nunca baja del titular normal. */
+.hero-name {
+  /* «MANUEL CARDOZA» tiene que caber en una línea dentro de la columna (máx. 72 rem): 8,2vw. */
+  font-size: clamp(2.5rem, 8.2vw, 7.4rem);
+  text-wrap: balance;
+}
+
 /* Markdown de las respuestas del asistente. Global porque el HTML se inyecta con [innerHTML]. */
 .markdown > * + * {
   margin-top: 0.65em;

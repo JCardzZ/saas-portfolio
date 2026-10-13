@@ -1,16 +1,12 @@
 import type * as THREE from 'three';
 
 /**
- * Escena 3D del hero (Three.js, cargado bajo demanda). La plataforma real por capas: cliente
- * (Angular), API (Spring Boot) y datos (PostgreSQL, Redis), con Gemini en órbita. Paquetes de
- * luz recorren las conexiones, un campo de partículas lo rodea y el conjunto responde al cursor y
- * al scroll. Es decorativa: el texto del hero dice lo mismo.
- *
- * Todo sale de aquí: el componente solo le da un lienzo, el tema y si puede moverse.
+ * Escena 3D del hero (Three.js, cargado bajo demanda): un avatar genérico de desarrollador —no es
+ * la cara de nadie— con gafas y cascos, que sigue el cursor con la cabeza y los ojos, parpadea y
+ * flota, rodeado de un campo de partículas y anillos con el acento. Decorativa: el h1 dice quién es.
  */
 export interface ScenePalette {
   accent: string;
-  /** Acento para texto: en claro, un verde oscuro que se lee. */
   accentText: string;
   ink: string;
   muted: string;
@@ -20,232 +16,241 @@ export interface ScenePalette {
 }
 
 export interface HeroScene {
-  /** Dibuja un fotograma; `t` en segundos desde el inicio. */
   frame(t: number): void;
   resize(width: number, height: number): void;
-  /** Posición del cursor normalizada a [-1, 1]. */
   pointer(x: number, y: number): void;
-  /** Cuánto se ha hecho scroll sobre el hero, de 0 a 1: las capas se separan. */
   scroll(progress: number): void;
   setPalette(palette: ScenePalette): void;
   dispose(): void;
 }
 
-interface Service {
-  label: string;
-  layer: number;
-  x: number;
-  z: number;
-}
-
-const LAYERS = ['CLIENTE', 'API', 'DATOS'];
-const SERVICES: Service[] = [
-  { label: 'Angular', layer: 0, x: 0, z: 0 },
-  { label: 'Spring Boot', layer: 1, x: 0, z: 0 },
-  { label: 'PostgreSQL', layer: 2, x: -0.95, z: 0.35 },
-  { label: 'Redis', layer: 2, x: 0.95, z: -0.35 },
-];
-/** De quién a quién viaja el tráfico (índices de SERVICES; 4 = Gemini, en órbita). */
-const ROUTES: [number, number][] = [[0, 1], [1, 2], [1, 3], [1, 4]];
-const LAYER_GAP = 1.7;
-const PLATE = 3.4;
+/** Colores propios del personaje (piel, pelo, ojos): no dependen del tema. */
+const SKIN = 0xe8b08a;
+const SKIN_SHADE = 0xd99a73;
+const HAIR = 0x2a1d17;
+const EYE_WHITE = 0xfafafa;
+const IRIS = 0x3a2a20;
 
 export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, palette: ScenePalette, animate: boolean): HeroScene {
   const renderer = new three.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(0x000000, 0);
+  renderer.outputColorSpace = three.SRGBColorSpace;
+  renderer.toneMapping = three.ACESFilmicToneMapping;
 
   const scene = new three.Scene();
-  const camera = new three.PerspectiveCamera(34, 1, 0.1, 100);
-  camera.position.set(5.4, 3.9, 6.4);
-  camera.lookAt(0, -0.2, 0);
+  const camera = new three.PerspectiveCamera(30, 1, 0.1, 100);
+  camera.position.set(0, 0.25, 9);
 
   const disposables: { dispose(): void }[] = [];
   const keep = <T extends { dispose(): void }>(item: T): T => (disposables.push(item), item);
+  const standard = (color: number, roughness = 0.55, extra: Partial<THREE.MeshStandardMaterialParameters> = {}) =>
+    keep(new three.MeshStandardMaterial({ color, roughness, metalness: 0, ...extra }));
 
-  const glowTexture = keep(radialTexture(three));
-  const rig = new three.Group();
-  scene.add(rig);
+  // ---------- Luces: cálida de frente, fría de relleno y un contraluz con el acento ----------
+  const hemi = new three.HemisphereLight(0xffffff, 0x223322, 1.1);
+  const key = new three.DirectionalLight(0xfff1e6, 2.4);
+  key.position.set(3, 4, 6);
+  const rim = new three.DirectionalLight(0x7fee64, 3.2);
+  rim.position.set(-4, 2, -4);
+  const rim2 = new three.DirectionalLight(0x7fee64, 1.6);
+  rim2.position.set(4, -1, -3);
+  scene.add(hemi, key, rim, rim2);
 
-  // ---------- Materiales (se recolorean al cambiar de tema) ----------
-  const plateFill = keep(new three.MeshBasicMaterial({ transparent: true, opacity: 0.55, depthWrite: false }));
-  const plateEdge = keep(new three.LineBasicMaterial({ transparent: true, opacity: 0.9 }));
-  const gridLine = keep(new three.LineBasicMaterial({ transparent: true, opacity: 0.18 }));
-  const blockFill = keep(new three.MeshBasicMaterial({ transparent: true, opacity: 0.9 }));
-  const blockEdge = keep(new three.LineBasicMaterial({ transparent: true }));
-  const beam = keep(new three.LineBasicMaterial({ transparent: true, opacity: 0.35 }));
-  const ring = keep(new three.MeshBasicMaterial({ transparent: true, opacity: 0.35, depthWrite: false }));
-  const dust = keep(new three.PointsMaterial({ size: 0.035, transparent: true, opacity: 0.7, depthWrite: false, sizeAttenuation: true }));
-  const glow = keep(new three.SpriteMaterial({ map: glowTexture, transparent: true, depthWrite: false }));
+  const character = new three.Group();
+  scene.add(character);
+  const head = new three.Group();
+  head.position.y = 0.55;
+  character.add(head);
 
-  // ---------- Capas ----------
-  const plateGeometry = keep(new three.BoxGeometry(PLATE, 0.08, PLATE));
-  const plateEdges = keep(new three.EdgesGeometry(plateGeometry));
-  const gridGeometry = keep(gridLines(three, PLATE, 8));
-  const layers: THREE.Group[] = LAYERS.map((name, index) => {
-    const layer = new three.Group();
-    layer.add(new three.Mesh(plateGeometry, plateFill));
-    layer.add(new three.LineSegments(plateEdges, plateEdge));
-    const grid = new three.LineSegments(gridGeometry, gridLine);
-    grid.position.y = 0.045;
-    layer.add(grid);
-    const tag = keep(labelSprite(three, name, palette.accentText, 0.34, true));
-    tag.position.set(-PLATE / 2 + 0.55, 0.12, PLATE / 2 - 0.25);
-    layer.add(tag);
-    layer.userData['index'] = index;
-    rig.add(layer);
-    return layer;
+  const skin = standard(SKIN, 0.6);
+  const skinShade = standard(SKIN_SHADE, 0.65);
+  const hair = standard(HAIR, 0.8);
+  const accentMat = standard(0x7fee64, 0.35, { emissive: 0x7fee64, emissiveIntensity: 0.25 });
+  const dark = standard(0x1a1d1b, 0.5);
+  const hoodie = standard(0x1e2320, 0.85);
+
+  const sphere = (radius: number, segments = 48) => keep(new three.SphereGeometry(radius, segments, segments));
+
+  // Cabeza, algo más ancha que alta, como un personaje de animación.
+  const skull = new three.Mesh(sphere(1.25), skin);
+  skull.scale.set(1, 1.05, 0.98);
+  head.add(skull);
+  const cheekGeometry = sphere(0.32, 24);
+  for (const side of [-1, 1]) {
+    const cheek = new three.Mesh(cheekGeometry, skinShade);
+    cheek.position.set(side * 0.72, -0.38, 0.9);
+    cheek.scale.set(1, 0.7, 0.4);
+    head.add(cheek);
+    const ear = new three.Mesh(sphere(0.26, 24), skin);
+    ear.position.set(side * 1.24, -0.05, 0);
+    ear.scale.set(0.5, 1, 0.8);
+    head.add(ear);
+  }
+  const nose = new three.Mesh(sphere(0.17, 24), skinShade);
+  nose.position.set(0, -0.12, 1.22);
+  nose.scale.set(1, 0.9, 0.8);
+  head.add(nose);
+
+  // Pelo: casquete con un tupé.
+  const cap = new three.Mesh(keep(new three.SphereGeometry(1.3, 48, 32, 0, Math.PI * 2, 0, Math.PI * 0.5)), hair);
+  cap.position.y = 0.12;
+  cap.rotation.x = -0.25;
+  cap.scale.set(1.02, 0.9, 1.04);
+  head.add(cap);
+  for (const [x, y, z, s] of [[0.25, 1.05, 0.65, 0.55], [-0.35, 1.0, 0.55, 0.5], [0.0, 1.18, 0.2, 0.62], [0.6, 0.85, 0.5, 0.42]] as const) {
+    const tuft = new three.Mesh(sphere(s, 24), hair);
+    tuft.position.set(x, y, z);
+    tuft.scale.set(1, 0.6, 0.85);
+    head.add(tuft);
+  }
+
+  // Ojos que siguen al cursor, y párpados para parpadear.
+  const eyes = [-1, 1].map((side) => {
+    const socket = new three.Group();
+    socket.position.set(side * 0.42, 0.12, 1.02);
+    const white = new three.Mesh(sphere(0.24, 32), standard(EYE_WHITE, 0.25));
+    white.scale.z = 0.7;
+    const iris = new three.Mesh(sphere(0.12, 24), standard(IRIS, 0.3));
+    iris.position.z = 0.15;
+    const shine = new three.Mesh(sphere(0.035, 12), keep(new three.MeshBasicMaterial({ color: 0xffffff })));
+    shine.position.set(0.04, 0.05, 0.25);
+    const pupil = new three.Group();
+    pupil.add(iris, shine);
+    const lid = new three.Mesh(keep(new three.SphereGeometry(0.26, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2)), skin);
+    lid.scale.set(1, 1, 0.75);
+    lid.rotation.x = -Math.PI / 2 + 0.35;
+    socket.add(white, pupil, lid);
+    head.add(socket);
+    return { pupil, lid };
+  });
+  const browGeometry = keep(new three.CapsuleGeometry(0.06, 0.28, 6, 12));
+  const brows = [-1, 1].map((side) => {
+    const brow = new three.Mesh(browGeometry, hair);
+    brow.position.set(side * 0.42, 0.5, 1.08);
+    brow.rotation.z = Math.PI / 2 + side * 0.12;
+    head.add(brow);
+    return brow;
   });
 
-  // ---------- Servicios ----------
-  const blockGeometry = keep(new three.BoxGeometry(0.62, 0.42, 0.62));
-  const blockEdges = keep(new three.EdgesGeometry(blockGeometry));
-  const anchors: THREE.Object3D[] = SERVICES.map((service) => {
-    const block = new three.Group();
-    block.add(new three.Mesh(blockGeometry, blockFill));
-    block.add(new three.LineSegments(blockEdges, blockEdge));
-    const halo = new three.Sprite(glow);
-    halo.scale.setScalar(2.6);
-    block.add(halo);
-    const label = keep(labelSprite(three, service.label, palette.ink, 0.3));
-    label.position.set(0, 0.62, 0);
-    block.add(label);
-    block.position.set(service.x, 0.27, service.z);
-    layers[service.layer].add(block);
-    return block;
-  });
+  // Gafas redondas.
+  const rimGeometry = keep(new three.TorusGeometry(0.31, 0.035, 12, 48));
+  for (const side of [-1, 1]) {
+    const lens = new three.Mesh(rimGeometry, dark);
+    lens.position.set(side * 0.42, 0.12, 1.2);
+    head.add(lens);
+  }
+  const bridge = new three.Mesh(keep(new three.CylinderGeometry(0.03, 0.03, 0.22, 8)), dark);
+  bridge.rotation.z = Math.PI / 2;
+  bridge.position.set(0, 0.16, 1.24);
+  head.add(bridge);
 
-  // Gemini: un satélite que orbita la capa de la API.
-  const satellite = new three.Group();
-  const satelliteCore = new three.Mesh(keep(new three.OctahedronGeometry(0.26)), blockFill);
-  satellite.add(satelliteCore, new three.LineSegments(keep(new three.EdgesGeometry(new three.OctahedronGeometry(0.26))), blockEdge));
-  const satelliteHalo = new three.Sprite(glow);
-  satelliteHalo.scale.setScalar(1.5);
-  satellite.add(satelliteHalo);
-  const satelliteLabel = keep(labelSprite(three, 'Gemini', palette.ink, 0.28));
-  satelliteLabel.position.y = 0.45;
-  satellite.add(satelliteLabel);
-  rig.add(satellite);
-  anchors.push(satellite);
+  // Sonrisa.
+  const smile = new three.Mesh(keep(new three.TorusGeometry(0.22, 0.035, 10, 32, Math.PI * 0.8)), keep(new three.MeshStandardMaterial({ color: 0x6b2f2a, roughness: 0.6 })));
+  smile.position.set(0, -0.48, 1.08);
+  smile.rotation.z = Math.PI + Math.PI * 0.1;
+  head.add(smile);
 
-  // Anillos que giran alrededor del conjunto.
-  const rings = [0, 1].map((index) => {
-    const mesh = new three.Mesh(keep(new three.TorusGeometry(3.3 + index * 0.55, 0.008, 6, 160)), ring);
-    mesh.rotation.x = Math.PI / 2 + (index ? 0.35 : -0.18);
-    rig.add(mesh);
-    return mesh;
-  });
+  // Cascos con el acento.
+  const band = new three.Mesh(keep(new three.TorusGeometry(1.36, 0.07, 12, 64, Math.PI)), dark);
+  band.position.y = 0.05;
+  head.add(band);
+  for (const side of [-1, 1]) {
+    const cup = new three.Mesh(keep(new three.CylinderGeometry(0.36, 0.36, 0.26, 32)), dark);
+    cup.rotation.z = Math.PI / 2;
+    cup.position.set(side * 1.32, 0, 0);
+    head.add(cup);
+    const glowRing = new three.Mesh(keep(new three.TorusGeometry(0.3, 0.035, 8, 32)), accentMat);
+    glowRing.rotation.y = Math.PI / 2;
+    glowRing.position.set(side * 1.47, 0, 0);
+    head.add(glowRing);
+  }
 
-  // Campo de partículas.
+  // Cuello y sudadera.
+  const neck = new three.Mesh(keep(new three.CylinderGeometry(0.38, 0.45, 0.6, 24)), skinShade);
+  neck.position.y = -0.9;
+  character.add(neck);
+  const body = new three.Mesh(keep(new three.CapsuleGeometry(1.15, 0.6, 12, 32)), hoodie);
+  body.position.y = -2.1;
+  body.scale.set(1.35, 1, 0.85);
+  character.add(body);
+  for (const side of [-1, 1]) {
+    const cord = new three.Mesh(keep(new three.CylinderGeometry(0.035, 0.035, 0.6, 8)), accentMat);
+    cord.position.set(side * 0.28, -1.45, 0.88);
+    character.add(cord);
+  }
+
+  // Partículas y anillos alrededor.
+  const dustMaterial = keep(new three.PointsMaterial({ size: 0.04, transparent: true, opacity: 0.7, depthWrite: false }));
   const dustGeometry = keep(new three.BufferGeometry());
-  const count = 1400;
+  const count = 1600;
   const positions = new Float32Array(count * 3);
   for (let i = 0; i < count; i++) {
-    const radius = 4.5 + Math.random() * 6;
+    const radius = 3.6 + Math.random() * 7;
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(2 * Math.random() - 1);
-    positions.set([radius * Math.sin(phi) * Math.cos(theta), radius * Math.cos(phi) * 0.6, radius * Math.sin(phi) * Math.sin(theta)], i * 3);
+    positions.set([radius * Math.sin(phi) * Math.cos(theta), radius * Math.cos(phi) * 0.7, radius * Math.sin(phi) * Math.sin(theta) - 2], i * 3);
   }
   dustGeometry.setAttribute('position', new three.BufferAttribute(positions, 3));
-  const field = new three.Points(dustGeometry, dust);
+  const field = new three.Points(dustGeometry, dustMaterial);
   scene.add(field);
-
-  // Conexiones y paquetes de luz que las recorren.
-  const beams: { line: THREE.Line; from: THREE.Object3D; to: THREE.Object3D }[] = ROUTES.map(([from, to]) => {
-    const geometry = keep(new three.BufferGeometry().setFromPoints([new three.Vector3(), new three.Vector3()]));
-    const line = new three.Line(geometry, beam);
-    rig.add(line);
-    return { line, from: anchors[from], to: anchors[to] };
+  const ringMaterial = keep(new three.MeshBasicMaterial({ transparent: true, opacity: 0.4, depthWrite: false }));
+  const rings = [0, 1].map((index) => {
+    const ring = new three.Mesh(keep(new three.TorusGeometry(2.4 + index * 0.5, 0.01, 6, 160)), ringMaterial);
+    ring.rotation.x = Math.PI / 2 + (index ? 0.4 : -0.25);
+    ring.position.y = -0.4;
+    scene.add(ring);
+    return ring;
   });
-  const packets = beams.flatMap((route, index) => [0, 0.5].map((offset) => {
-    const sprite = new three.Sprite(glow);
-    sprite.scale.setScalar(0.55);
-    rig.add(sprite);
-    return { sprite, route, offset: offset + index * 0.17 };
-  }));
 
   let pointerX = 0;
   let pointerY = 0;
-  let spread = 0;
-  const target = { x: 0, y: 0 };
-  const from = new three.Vector3();
-  const to = new three.Vector3();
+  let lookX = 0;
+  let lookY = 0;
+  let lift = 0;
 
   function setPalette(next: ScenePalette): void {
     const accent = new three.Color(next.accent);
-    plateFill.color.set(next.surface);
-    plateFill.opacity = next.light ? 0.85 : 0.55;
-    plateEdge.color.copy(accent);
-    gridLine.color.set(next.line);
-    gridLine.opacity = next.light ? 0.5 : 0.18;
-    // Cubos de cristal teñidos del acento: brillan sobre negro y se leen sobre claro.
-    blockFill.color.copy(accent);
-    blockFill.opacity = next.light ? 0.35 : 0.22;
-    blockEdge.color.copy(accent);
-    beam.color.copy(accent);
-    ring.color.copy(accent);
-    dust.color.set(next.muted);
-    dust.opacity = next.light ? 0.5 : 0.7;
-    glow.color.copy(accent);
-    // Sobre fondo claro la suma de luz se pierde: allí se mezcla normal y más tenue.
-    const blending = next.light ? three.NormalBlending : three.AdditiveBlending;
-    glow.blending = blending;
-    glow.opacity = next.light ? 0.55 : 0.9;
-    dust.blending = blending;
-    for (const material of [glow, dust]) material.needsUpdate = true;
-    for (const layer of layers) recolorLabels(layer, next);
-    recolorLabels(satellite, next);
-  }
-
-  function recolorLabels(root: THREE.Object3D, next: ScenePalette): void {
-    root.traverse((child) => {
-      const update = child.userData['recolor'] as ((color: string) => void) | undefined;
-      if (update) update(child.userData['accent'] ? next.accentText : next.ink);
-    });
+    accentMat.color.copy(accent);
+    accentMat.emissive.copy(accent);
+    rim.color.copy(accent);
+    rim2.color.copy(accent);
+    ringMaterial.color.copy(accent);
+    ringMaterial.opacity = next.light ? 0.6 : 0.4;
+    dustMaterial.color.set(next.muted);
+    dustMaterial.blending = next.light ? three.NormalBlending : three.AdditiveBlending;
+    dustMaterial.needsUpdate = true;
+    hoodie.color.set(next.light ? 0x2a302c : 0x1e2320);
+    hemi.intensity = next.light ? 1.5 : 1.1;
   }
   setPalette(palette);
 
   function frame(t: number): void {
-    // Entrada: las capas caen desde arriba, una tras otra.
-    layers.forEach((layer, index) => {
-      const intro = animate ? easeOut(Math.min(1, Math.max(0, (t - index * 0.18) / 1.1))) : 1;
-      const y = (1 - index) * (LAYER_GAP + spread * 0.9);
-      layer.position.y = y + (1 - intro) * 4;
-      layer.rotation.y = (1 - intro) * 0.6;
-      layer.position.y += animate ? Math.sin(t * 0.8 + index) * 0.04 : 0;
-    });
-    const orbit = animate ? t * 0.5 : 0.8;
-    satellite.position.set(Math.cos(orbit) * 2.6, LAYER_GAP * 0.1 + Math.sin(t * 0.9) * 0.15, Math.sin(orbit) * 2.6);
-    satelliteCore.rotation.y = t;
-    rings[0].rotation.z = t * 0.12;
-    rings[1].rotation.z = -t * 0.08;
-    field.rotation.y = t * 0.02;
+    const intro = animate ? easeOutBack(Math.min(1, t / 1.2)) : 1;
+    character.scale.setScalar(0.6 + 0.4 * intro);
+    character.position.y = (animate ? Math.sin(t * 1.2) * 0.08 : 0) + lift * 1.2;
 
-    for (const route of beams) {
-      route.from.getWorldPosition(from);
-      route.to.getWorldPosition(to);
-      rig.worldToLocal(from);
-      rig.worldToLocal(to);
-      const points = route.line.geometry.attributes['position'] as THREE.BufferAttribute;
-      points.setXYZ(0, from.x, from.y, from.z);
-      points.setXYZ(1, to.x, to.y, to.z);
-      points.needsUpdate = true;
+    lookX += (pointerX - lookX) * 0.08;
+    lookY += (pointerY - lookY) * 0.08;
+    head.rotation.y = lookX * 0.55;
+    head.rotation.x = lookY * 0.3;
+    head.rotation.z = -lookX * 0.06;
+    character.rotation.y = lookX * 0.15;
+    for (const eye of eyes) {
+      eye.pupil.position.set(lookX * 0.07, -lookY * 0.06, 0);
     }
-    for (const packet of packets) {
-      packet.route.from.getWorldPosition(from);
-      packet.route.to.getWorldPosition(to);
-      rig.worldToLocal(from);
-      rig.worldToLocal(to);
-      const k = ((animate ? t * 0.45 : 0) + packet.offset) % 1;
-      packet.sprite.position.lerpVectors(from, to, k);
-      packet.sprite.material.opacity = Math.sin(k * Math.PI);
+    // Parpadeo cada ~4 s.
+    const blinkPhase = animate ? (t % 4.2) : 1;
+    const closed = blinkPhase < 0.14 ? Math.sin((blinkPhase / 0.14) * Math.PI) : 0;
+    for (const eye of eyes) {
+      eye.lid.rotation.x = -Math.PI / 2 + 0.35 + closed * 1.25;
     }
-
-    // El conjunto gira despacio y se inclina hacia el cursor.
-    target.x += (pointerY * 0.18 - target.x) * 0.05;
-    target.y += (pointerX * 0.35 - target.y) * 0.05;
-    rig.rotation.x = target.x;
-    rig.rotation.y = (animate ? t * 0.08 : 0) + target.y;
+    for (const brow of brows) {
+      brow.position.y = 0.5 + Math.max(0, -lookY) * 0.06;
+    }
+    rings[0].rotation.z = t * 0.15;
+    rings[1].rotation.z = -t * 0.1;
+    field.rotation.y = t * 0.025 + lookX * 0.1;
     renderer.render(scene, camera);
   }
 
@@ -255,18 +260,15 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     resize(width, height) {
       renderer.setSize(width, height, false);
       camera.aspect = width / Math.max(1, height);
-      // En pantallas estrechas se aleja la cámara para que quepa todo.
-      const distance = camera.aspect < 1 ? 1.45 : 1;
-      camera.position.set(5.4 * distance, 3.9 * distance, 6.4 * distance);
-      camera.lookAt(0, -0.2, 0);
+      camera.position.z = camera.aspect < 0.8 ? 11.5 : 9;
       camera.updateProjectionMatrix();
     },
     pointer(x, y) {
-      pointerX = x;
-      pointerY = y;
+      pointerX = Math.max(-1, Math.min(1, x));
+      pointerY = Math.max(-1, Math.min(1, y));
     },
     scroll(progress) {
-      spread = Math.min(1, Math.max(0, progress));
+      lift = Math.min(1, Math.max(0, progress));
     },
     dispose() {
       for (const item of disposables) item.dispose();
@@ -275,62 +277,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   };
 }
 
-function easeOut(x: number): number {
-  return 1 - (1 - x) ** 3;
-}
-
-function gridLines(three: typeof THREE, size: number, divisions: number): THREE.BufferGeometry {
-  const half = size / 2;
-  const points: THREE.Vector3[] = [];
-  for (let i = 1; i < divisions; i++) {
-    const p = -half + (size / divisions) * i;
-    points.push(new three.Vector3(p, 0, -half), new three.Vector3(p, 0, half), new three.Vector3(-half, 0, p), new three.Vector3(half, 0, p));
-  }
-  return new three.BufferGeometry().setFromPoints(points);
-}
-
-function radialTexture(three: typeof THREE): THREE.Texture {
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 128;
-  const context = canvas.getContext('2d')!;
-  const gradient = context.createRadialGradient(64, 64, 0, 64, 64, 64);
-  gradient.addColorStop(0, 'rgba(255,255,255,1)');
-  gradient.addColorStop(0.25, 'rgba(255,255,255,0.55)');
-  gradient.addColorStop(1, 'rgba(255,255,255,0)');
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, 128, 128);
-  return new three.CanvasTexture(canvas);
-}
-
-/** Rótulo de texto como sprite: siempre mira a la cámara. Se vuelve a pintar al cambiar de tema. */
-function labelSprite(three: typeof THREE, text: string, color: string, height: number, accent = false): THREE.Sprite & { dispose(): void } {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d')!;
-  const font = `${accent ? 700 : 600} 64px Inter, system-ui, sans-serif`;
-  context.font = font;
-  canvas.width = Math.ceil(context.measureText(text).width + 24);
-  canvas.height = 88;
-  const texture = new three.CanvasTexture(canvas);
-  texture.colorSpace = three.SRGBColorSpace;
-  // Los rótulos siempre encima: que una losa no tape el nombre de lo que hay en ella.
-  const material = new three.SpriteMaterial({ map: texture, transparent: true, depthWrite: false, depthTest: false });
-  const sprite = new three.Sprite(material) as THREE.Sprite & { dispose(): void };
-  const paint = (fill: string) => {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.font = font;
-    context.fillStyle = fill;
-    context.textBaseline = 'middle';
-    context.fillText(text, 12, 46);
-    texture.needsUpdate = true;
-  };
-  paint(color);
-  sprite.scale.set((height * canvas.width) / canvas.height, height, 1);
-  sprite.renderOrder = 10;
-  sprite.userData['recolor'] = paint;
-  sprite.userData['accent'] = accent;
-  sprite.dispose = () => {
-    texture.dispose();
-    material.dispose();
-  };
-  return sprite;
+function easeOutBack(x: number): number {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * (x - 1) ** 3 + c1 * (x - 1) ** 2;
 }
