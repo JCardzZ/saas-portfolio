@@ -320,6 +320,15 @@
   transition: opacity var(--duration-slow) var(--ease-standard);
 }
 
+/* Ficha «tipo carta» del globo: canto con degradado del acento, como las cartas de colección. */
+.stack-card {
+  border-color: transparent;
+  background-image: linear-gradient(rgb(var(--c-surface-1) / 0.92), rgb(var(--c-surface-1) / 0.92)),
+    linear-gradient(135deg, rgb(var(--c-accent-solid)), rgb(var(--c-accent-solid) / 0.15) 45%, rgb(var(--c-accent-solid) / 0.6));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
 .hero-role {
   font-size: clamp(1.375rem, 4.2vw, 3.5rem);
   line-height: 1;

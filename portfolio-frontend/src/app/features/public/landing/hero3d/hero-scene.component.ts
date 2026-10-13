@@ -6,6 +6,7 @@ import { LanguageService } from '../../../../core/i18n/language.service';
 import { ThemeService } from '../../../../core/theme/theme.service';
 import { TECH_ICONS, TechIconKey } from '../../../../shared/ui/tech-icons';
 import type { HeroScene, ScenePalette, SceneTech } from './hero-scene';
+import { STACK_CARDS } from './stack-cards';
 
 /**
  * Las fichas del mazo: con qué está hecha la plataforma y los servicios de nube que dibuja el
@@ -58,7 +59,21 @@ const DRAG_THRESHOLD = 6;
         (click)="activate($event)"
         (keydown)="key($event)"
       >
-        @if (ready()) {
+        @if (card(); as info) {
+          <!-- Ficha «tipo carta» de la tecnología traída al frente. -->
+          <span
+            class="stack-card pointer-events-none absolute bottom-[max(4.5rem,9dvh)] left-1/2 block w-[min(27rem,calc(100%-2rem))] -translate-x-1/2 animate-slide-up rounded-card border bg-surface-1/90 p-5 text-left shadow-floating backdrop-blur-xl group-focus-visible:ring-2 group-focus-visible:ring-accent-solid/40"
+            aria-hidden="true"
+          >
+            <span class="flex flex-wrap items-center justify-between gap-2">
+              <span class="ui-badge ui-badge-accent">{{ info.category }}</span>
+              <span class="font-mono text-mono-sm" [class]="info.platform ? 'text-status-ok' : 'text-ink-3'">{{ info.where }}</span>
+            </span>
+            <span class="mt-3 block text-title-2 font-black uppercase leading-tight tracking-tight text-ink-1">{{ info.title }}</span>
+            <span class="mt-2 block text-body-sm text-ink-2">{{ info.about }}</span>
+            <span class="mt-4 block font-mono text-mono-sm text-ink-3">{{ info.back }}</span>
+          </span>
+        } @else if (ready()) {
           <!-- El foco de teclado se ve en esta píldora, no como un marco alrededor de la escena. -->
           <span
             class="pointer-events-none absolute bottom-[max(7rem,15dvh)] left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full border border-line-subtle bg-surface-1/80 group-focus-visible:border-accent-solid group-focus-visible:ring-2 group-focus-visible:ring-accent-solid/40 px-3 py-1 font-mono text-mono-sm text-ink-2 backdrop-blur"
@@ -66,6 +81,8 @@ const DRAG_THRESHOLD = 6;
           >{{ hint() }}</span>
         }
       </button>
+      <!-- Lo que dice la ficha, también para lectores de pantalla. -->
+      <span class="sr-only" aria-live="polite">{{ card() ? card()!.title + '. ' + card()!.about : '' }}</span>
       </div>
     }
   `,
@@ -100,6 +117,22 @@ export class HeroSceneComponent {
   readonly failed = signal(false);
 
   readonly focused = signal<string | null>(null);
+  /** Ficha de la tecnología que está al frente, en el idioma activo. */
+  readonly card = computed(() => {
+    const title = this.focused();
+    const key = title ? STACK.find((item) => TECH_ICONS[item].title === title) : undefined;
+    const data = key ? STACK_CARDS[key] : undefined;
+    if (!title || !data) return null;
+    const en = this.i18n.lang() === 'en';
+    return {
+      category: this.i18n.t(data.category),
+      title: en ? `I'll help you build with ${title}` : `Te ayudo a construir con ${title}`,
+      about: this.i18n.t(data.about),
+      platform: data.where === 'platform',
+      where: data.where === 'platform' ? (en ? '✓ Used in this platform' : '✓ Usado en esta plataforma') : en ? 'Available in the Studio' : 'Disponible en el Estudio',
+      back: en ? 'Click to send it back' : 'Pulsa para devolverla',
+    };
+  });
   private readonly touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
   private press: { x: number; lastX: number; dragged: boolean } | null = null;
   private suppressClick = false;
