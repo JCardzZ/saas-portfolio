@@ -2,13 +2,37 @@
 // utilidades de Tailwind y las variables CSS de :root (tailwind.config.js), y lo que comprueba
 // tools/lib/design-tokens.test.mjs (contraste AA, mínimo de 12 px, rejilla de 4/8 px).
 
-const color = {
-  canvas: '#000000',
-  surface: { 1: '#0E0F12', 2: '#16181D', 3: '#1F2229' },
-  line: { subtle: '#23262D', strong: '#3A3F4A', control: '#6B7280' },
-  ink: { 1: '#F4F5F7', 2: '#A9AFBA', 3: '#858C99', disabled: '#565C68' },
-  accent: { text: '#6FA8FF', solid: '#2F6FE4', 'solid-hover': '#2861CC' },
-  status: { ok: '#4ADE9A', warn: '#F5B94A', danger: '#FF7B7B' },
+/**
+ * Dos temas con las mismas claves. El oscuro es el de siempre (negro, «terminal») y el claro, una
+ * galería gris clara; los une el mismo acento lima. `accent.on` es el texto sobre `accent.solid`.
+ * Las utilidades de Tailwind leen variables CSS, así que cambiar de tema es cambiar las variables.
+ */
+const themes = {
+  dark: {
+    canvas: '#000000',
+    surface: { 1: '#0C0E0D', 2: '#151816', 3: '#1E2320' },
+    line: { subtle: '#232824', strong: '#3A423C', control: '#6B766E' },
+    ink: { 1: '#EEF6EC', 2: '#A9B4AA', 3: '#88938A', disabled: '#566059' },
+    accent: { text: '#8FF06F', solid: '#7FEE64', 'solid-hover': '#9AF283', on: '#07120A' },
+    status: { ok: '#4ADE9A', warn: '#F5B94A', danger: '#FF7B7B' },
+  },
+  light: {
+    canvas: '#ECEDEA',
+    surface: { 1: '#F5F5F2', 2: '#FFFFFF', 3: '#E4E6E1' },
+    line: { subtle: '#D8DBD4', strong: '#B9BEB4', control: '#737A70' },
+    ink: { 1: '#0B0D0B', 2: '#454B44', 3: '#575E56', disabled: '#9AA097' },
+    accent: { text: '#2C6B1A', solid: '#7FEE64', 'solid-hover': '#6CDB51', on: '#07120A' },
+    status: { ok: '#17703F', warn: '#8A4D00', danger: '#B3261E' },
+  },
+};
+
+/** Paleta del tema oscuro: la de referencia para lo que no depende del tema. */
+const color = themes.dark;
+
+/** Sombra de lo que flota, por tema: sobre negro hace falta más. */
+const shadows = {
+  dark: { floating: '0 16px 40px rgb(0 0 0 / 0.6)' },
+  light: { floating: '0 16px 40px rgb(16 24 16 / 0.14)' },
 };
 
 /** Porcentaje del color de estado que tiñe el fondo de una insignia, sobre surface-2. */
@@ -42,7 +66,8 @@ const space = { 1: 4, 2: 8, 3: 12, 4: 16, 6: 24, 8: 32, 12: 48, 16: 64, 24: 96, 
 /** Rectángulo redondeado = acción o contenedor; píldora (full) = estado o etiqueta. */
 const radius = { mark: 4, control: 8, panel: 12, card: 16 };
 
-const shadow = { floating: '0 16px 40px rgb(0 0 0 / 0.6)' };
+/** En Tailwind la sombra lee su variable: cambia con el tema. */
+const shadow = { floating: 'var(--shadow-floating)' };
 
 const duration = { fast: 120, base: 200, slow: 320, layout: 480 };
 
@@ -55,30 +80,66 @@ const layer = { nav: 40, 'focus-backdrop': 42, 'focus-card': 43, theater: 45, di
 
 const rem = (px) => `${px / 16}rem`;
 
-/** Variables CSS de :root, para el CSS escrito a mano (SVG, estilos de componente). */
+const flat = (palette) => {
+  const out = {};
+  for (const [group, value] of Object.entries(palette)) {
+    if (typeof value === 'string') out[group] = value;
+    else for (const [step, hex] of Object.entries(value)) out[`${group}-${step}`] = hex;
+  }
+  return out;
+};
+
+const rgb = (hex) => [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16)).join(' ');
+
+/**
+ * Variables de color de un tema. `--c-<token>` son los canales («r g b», para que Tailwind pueda
+ * añadir opacidad) y las de siempre (`--bg-surface-1`, `--text-3`…) el color entero, para el CSS
+ * escrito a mano y los SVG.
+ */
+function themeVariables(name) {
+  const palette = themes[name];
+  const vars = { 'color-scheme': name, '--shadow-floating': shadows[name].floating };
+  for (const [token, hex] of Object.entries(flat(palette))) vars[`--c-${token}`] = rgb(hex);
+  vars['--bg-canvas'] = palette.canvas;
+  for (const [step, value] of Object.entries(palette.surface)) vars[`--bg-surface-${step}`] = value;
+  for (const [key, value] of Object.entries(palette.line)) vars[`--border-${key}`] = value;
+  for (const [key, value] of Object.entries(palette.ink)) vars[`--text-${key}`] = value;
+  for (const [key, value] of Object.entries(palette.accent)) vars[`--accent-${key}`] = value;
+  for (const [key, value] of Object.entries(palette.status)) vars[`--status-${key}`] = value;
+  return vars;
+}
+
+/** Variables CSS de :root: las del tema oscuro más las que no dependen del tema. */
 function cssVariables() {
   const vars = {
-    '--bg-canvas': color.canvas,
+    ...themeVariables('dark'),
     '--font-sans': fontFamily.sans.join(', '),
     '--font-mono': fontFamily.mono.join(', '),
-    '--shadow-floating': shadow.floating,
   };
-  for (const [step, value] of Object.entries(color.surface)) vars[`--bg-surface-${step}`] = value;
-  for (const [name, value] of Object.entries(color.line)) vars[`--border-${name}`] = value;
-  for (const [name, value] of Object.entries(color.ink)) vars[`--text-${name}`] = value;
-  for (const [name, value] of Object.entries(color.accent)) vars[`--accent-${name}`] = value;
-  for (const [name, value] of Object.entries(color.status)) vars[`--status-${name}`] = value;
   for (const [name, value] of Object.entries(radius)) vars[`--radius-${name}`] = `${value}px`;
   for (const [name, value] of Object.entries(duration)) vars[`--duration-${name}`] = `${value}ms`;
   for (const [name, value] of Object.entries(easing)) vars[`--ease-${name}`] = value;
   return vars;
 }
 
+/** Colores de Tailwind: cada token lee su variable, con la opacidad que pida la clase. */
+function tailwindColors() {
+  const out = {};
+  for (const [group, value] of Object.entries(color)) {
+    if (typeof value === 'string') {
+      out[group] = `rgb(var(--c-${group}) / <alpha-value>)`;
+    } else {
+      out[group] = Object.fromEntries(Object.keys(value).map((step) => [step, `rgb(var(--c-${group}-${step}) / <alpha-value>)`]));
+    }
+  }
+  return out;
+}
+
 /** La parte de `theme.extend` de Tailwind que sale de los tokens. */
 function tailwindTheme() {
   return {
     fontFamily,
-    colors: color,
+    colors: tailwindColors(),
     fontSize: Object.fromEntries(
       Object.entries(type).map(([role, [size, lineHeight, fontWeight, letterSpacing]]) => [
         role,
@@ -93,4 +154,4 @@ function tailwindTheme() {
   };
 }
 
-module.exports = { color, badgeTint, fontFamily, type, space, radius, shadow, duration, easing, layer, cssVariables, tailwindTheme };
+module.exports = { themes, color, shadows, themeVariables, badgeTint, fontFamily, type, space, radius, shadow, duration, easing, layer, cssVariables, tailwindTheme };

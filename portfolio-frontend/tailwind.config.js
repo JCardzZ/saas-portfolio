@@ -45,6 +45,12 @@ module.exports = {
   },
   plugins: [
     // Los mismos tokens como variables CSS, para SVG y estilos de componente.
-    plugin(({ addBase }) => addBase({ ':root': tokens.cssVariables() })),
+    // Oscuro por defecto; claro si lo pide el sistema o el visitante (`data-theme` en <html>).
+    plugin(({ addBase }) => addBase({
+      ':root': tokens.cssVariables(),
+      '@media (prefers-color-scheme: light)': { ':root:not([data-theme="dark"])': tokens.themeVariables('light') },
+      ':root[data-theme="light"]': tokens.themeVariables('light'),
+      ':root[data-theme="dark"]': tokens.themeVariables('dark'),
+    })),
   ],
 };
