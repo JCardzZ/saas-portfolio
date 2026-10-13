@@ -33,7 +33,7 @@ status() { # método ruta token [cuerpo]
 }
 
 ADMIN_TOKEN="$(login "$ADMIN_EMAIL" "$ADMIN_PASSWORD")"
-[[ -n "$ADMIN_TOKEN" ]] || { echo "No se pudo entrar como administrador en $API" >&2; exit 1; }
+[[ -n "$ADMIN_TOKEN" ]] || { echo "No se pudo entrar como administrador en $API (credenciales, o límite de 5 intentos por minuto: cada pasada hace 3)" >&2; exit 1; }
 
 ensure_user() { # correo nombre rol: lo crea o, si ya existe, le pone el rol y la contraseña de esta pasada
   local id
