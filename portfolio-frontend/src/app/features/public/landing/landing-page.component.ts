@@ -28,7 +28,7 @@ import { VectorMatrixComponent } from '../widgets/vector-matrix.component';
 import { FlagService } from '../../../core/flags/flag.service';
 import { McpSectionComponent } from '../mcp/mcp-section.component';
 import { HERO_ROLE_PLACEHOLDER } from './hero-content';
-import { HeroStackComponent } from './hero-stack.component';
+import { HeroSceneComponent } from './hero3d/hero-scene.component';
 
 @Component({
   selector: 'app-landing-page',
@@ -36,7 +36,7 @@ import { HeroStackComponent } from './hero-stack.component';
   imports: [
     RouterLink,
     SectionHeaderComponent,
-    HeroStackComponent,
+    HeroSceneComponent,
     PublicNavbarComponent,
     CvDownloadComponent,
     CvPickerComponent,

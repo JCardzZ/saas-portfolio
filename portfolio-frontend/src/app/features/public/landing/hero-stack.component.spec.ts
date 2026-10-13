@@ -15,3 +15,17 @@ describe('HeroStackComponent', () => {
     expect(element.querySelector('figcaption')!.textContent!.replace(/\s+/g, ' ').trim()).toBe('Angular → Spring Boot → PostgreSQL · Redis');
   });
 });
+
+describe('HeroSceneComponent', () => {
+  it('falls back to the CSS stack when 3D is off', async () => {
+    const { HeroSceneComponent } = await import('./hero3d/hero-scene.component');
+    const fixture = TestBed.createComponent(HeroSceneComponent);
+    fixture.componentRef.setInput('enabled', false);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-hero-stack')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('canvas')).toBeNull();
+  });
+});
