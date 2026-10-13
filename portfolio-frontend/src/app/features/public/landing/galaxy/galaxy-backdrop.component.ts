@@ -23,7 +23,7 @@ import type { GalaxyPalette, GalaxyScene } from './galaxy-scene';
     <svg class="doodles absolute inset-0 h-full w-full" aria-hidden="true">
       <defs>
         <pattern id="dev-doodles" width="240" height="240" patternUnits="userSpaceOnUse">
-          <g fill="none" stroke="var(--text-1)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <g fill="none" stroke="var(--text-1)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <!-- </> -->
             <path d="M22 30l-10 10 10 10M42 30l10 10-10 10M36 26l-8 28" />
             <!-- { } -->
@@ -52,7 +52,7 @@ import type { GalaxyPalette, GalaxyScene } from './galaxy-scene';
     </svg>
   `,
   styles: `
-    .doodles { opacity: 0.045; }
+    .doodles { opacity: 0.1; }
     :host-context([data-theme='light']) .doodles { opacity: 0.06; }
   `,
 })
