@@ -437,131 +437,196 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   lidLogo.position.set(0, 0.55, 0.03);
   hinge.add(lidLogo);
 
-  // Pantalla holográfica junto al portátil, de cara a quien mira: el código que el robot teclea.
+  // Holograma «del genio»: sale del portátil en una estela de luz que se retuerce y se abre en una
+  // pantalla plana donde se dibuja, paso a paso, una arquitectura de alto nivel (cliente, borde,
+  // API, datos, IA, mensajería, nube y CI/CD) en unos 2 s y se queda a la vista: en dos segundos se
+  // entiende a qué se dedica.
   const codeArt = document.createElement('canvas');
-  codeArt.width = 640;
-  codeArt.height = 400;
+  codeArt.width = 1024;
+  codeArt.height = 640;
   const codeTexture = keep(new three.CanvasTexture(codeArt));
   codeTexture.colorSpace = three.SRGBColorSpace;
-  const codeMat = keep(new three.MeshBasicMaterial({ map: codeTexture, transparent: true, depthWrite: false, side: three.DoubleSide }));
-  // Holograma proyectado desde el portátil: sube desde la tapa y flota a su izquierda, ligeramente
-  // girado hacia quien mira, unido a él por un haz de luz.
-  codeMat.blending = three.AdditiveBlending;
-  const CODE_HOME = new three.Vector3(-4.6, 0.7, 2.25);
-  // Pantalla curva (cóncava hacia quien mira), como un monitor envolvente.
-  const curved = (w: number, h: number, depth: number) => {
-    const geometry = keep(new three.PlaneGeometry(w, h, 48, 1));
-    const pos = geometry.getAttribute('position');
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i) / (w / 2);
-      pos.setZ(i, depth * x * x);
-    }
-    geometry.computeVertexNormals();
-    return geometry;
-  };
-  const codeScreen = new three.Mesh(curved(4.3, 2.68, 0.95), codeMat);
+  codeTexture.anisotropy = 4;
+  const codeMat = keep(new three.MeshBasicMaterial({ map: codeTexture, transparent: true, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
+  const CODE_HOME = new three.Vector3(-4.9, 0.4, 2.25);
+  const SCREEN_W = 4.9;
+  const SCREEN_H = 3.06;
+  const codeScreen = new three.Mesh(keep(new three.PlaneGeometry(SCREEN_W, SCREEN_H)), codeMat);
   codeScreen.position.copy(CODE_HOME);
-  codeScreen.rotation.set(-0.04, 0.38, 0);
+  codeScreen.rotation.set(-0.04, 0.22, 0);
   furniture.add(codeScreen);
-  // Halo: la misma curva, algo mayor, en luz aditiva tenue (resplandor del holograma).
   const haloMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.08, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
-  const halo = new three.Mesh(curved(4.6, 2.95, 1.0), haloMat);
-  halo.position.z = -0.03;
+  const halo = new three.Mesh(keep(new three.PlaneGeometry(SCREEN_W + 0.35, SCREEN_H + 0.3)), haloMat);
+  halo.position.z = -0.02;
   codeScreen.add(halo);
-  // Barrido: una franja de luz que recorre la pantalla de arriba abajo.
-  const sweepMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.35, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
-  const sweepBar = new three.Mesh(curved(4.25, 0.05, 0.95), sweepMat);
+  const sweepMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.3, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
+  const sweepBar = new three.Mesh(keep(new three.PlaneGeometry(SCREEN_W - 0.1, 0.05)), sweepMat);
   sweepBar.position.z = 0.01;
   codeScreen.add(sweepBar);
-  // Motas de luz que suben del portátil al holograma.
-  const moteGeometry = keep(new three.BufferGeometry());
-  const MOTES = 40;
+
+  // Estela del genio: sale de la tapa del portátil, se retuerce como humo y llega al borde inferior
+  // de la pantalla. Más fina abajo (la «lámpara») y más ancha arriba.
+  const LAMP = new three.Vector3(-0.45, -2.2, 2.35);
+  const screenFoot = CODE_HOME.clone().add(new three.Vector3(0.6, -SCREEN_H / 2 + 0.05, 0.25));
+  const geniePath = new three.CatmullRomCurve3([
+    LAMP,
+    new three.Vector3(-0.2, -1.45, 2.9),
+    new three.Vector3(-1.7, -1.15, 2.2),
+    new three.Vector3(-1.6, -0.3, 3.0),
+    new three.Vector3(-3.0, -0.65, 2.6),
+    screenFoot,
+  ]);
+  const TAIL_SEG = 120;
+  const tailGeometry = keep(new three.TubeGeometry(geniePath, TAIL_SEG, 1, 16, false));
+  {
+    // Ahusar: el radio crece a lo largo de la estela.
+    const pos = tailGeometry.getAttribute('position');
+    const centre = new three.Vector3();
+    const v = new three.Vector3();
+    for (let seg = 0; seg <= TAIL_SEG; seg++) {
+      const u = seg / TAIL_SEG;
+      geniePath.getPointAt(u, centre);
+      const radius = 0.04 + Math.pow(u, 1.6) * 0.42;
+      for (let r = 0; r <= 16; r++) {
+        const i = seg * 17 + r;
+        v.fromBufferAttribute(pos, i).sub(centre).multiplyScalar(radius).add(centre);
+        pos.setXYZ(i, v.x, v.y, v.z);
+      }
+    }
+    pos.needsUpdate = true;
+  }
+  const tailMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.16, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
+  const tail = new three.Mesh(tailGeometry, tailMat);
+  furniture.add(tail);
+  const TAIL_INDEX = tailGeometry.index ? tailGeometry.index.count : 0;
+  // Chispas que suben girando en espiral alrededor de la estela.
+  const MOTES = 70;
   const motePos = new Float32Array(MOTES * 3);
   const moteSeed = Array.from({ length: MOTES }, () => Math.random());
+  const moteGeometry = keep(new three.BufferGeometry());
   moteGeometry.setAttribute('position', new three.BufferAttribute(motePos, 3));
-  const moteMat = keep(new three.PointsMaterial({ color: 0x7fee64, size: 0.05, transparent: true, opacity: 0.8, depthWrite: false, blending: three.AdditiveBlending }));
+  const moteMat = keep(new three.PointsMaterial({ color: 0x7fee64, size: 0.06, transparent: true, opacity: 0.9, depthWrite: false, blending: three.AdditiveBlending }));
   const motes = new three.Points(moteGeometry, moteMat);
   furniture.add(motes);
-  const codeBeamMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.1, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
-  const codeBeamGeometry = keep(new three.BufferGeometry());
-  const codeBeamPos = new Float32Array(12);
-  codeBeamGeometry.setAttribute('position', new three.BufferAttribute(codeBeamPos, 3));
-  codeBeamGeometry.setIndex([0, 1, 2, 0, 2, 3]);
-  const codeBeam = new three.Mesh(codeBeamGeometry, codeBeamMat);
-  furniture.add(codeBeam);
-  const beamCorner = new three.Vector3();
-  /** Haz: de la tapa del portátil (abajo) a los dos bordes inferiores del holograma (arriba). */
-  function placeCodeBeam(): void {
-    const from = [new three.Vector3(-0.85, -2.25, 2.3), new three.Vector3(-0.2, -2.25, 2.3)];
-    const half = (4.3 * codeScreen.scale.x) / 2;
-    const to = [new three.Vector3(-half, -1.34 * codeScreen.scale.y, 0), new three.Vector3(half, -1.34 * codeScreen.scale.y, 0)].map((v) => {
-      beamCorner.copy(v).applyEuler(codeScreen.rotation).add(codeScreen.position);
-      return beamCorner.clone();
-    });
-    [from[0], from[1], to[1], to[0]].forEach((v, k) => codeBeamPos.set([v.x, v.y, v.z], k * 3));
-    codeBeamGeometry.getAttribute('position').needsUpdate = true;
-  }
-  const CODE = [
-    '@GetMapping("/projects")',
-    'public List<Project> list() {',
-    '  return cache.getOrLoad(KEY,',
-    '      repository::findAll);',
-    '}',
-    '',
-    'resource "aws_ecs_service" "api" {',
-    '  desired_count = 2',
-    '}',
-    '',
-    'const answer = await rag.ask(q);',
+  const motePoint = new three.Vector3();
+  const moteTan = new three.Vector3();
+  const moteSide = new three.Vector3();
+  const moteUp = new three.Vector3();
+
+  // Diagrama que se dibuja en la pantalla.
+  type ArchNode = { x: number; y: number; title: string; sub: string };
+  const ARCH: ArchNode[] = [
+    { x: 32, y: 110, title: 'Angular', sub: 'frontend' },
+    { x: 270, y: 110, title: 'CDN · WAF', sub: 'edge' },
+    { x: 508, y: 110, title: 'API Gateway', sub: 'OAuth2 · JWT' },
+    { x: 746, y: 110, title: 'Spring Boot', sub: 'hexagonal' },
+    { x: 32, y: 290, title: 'Redis', sub: 'cache' },
+    { x: 270, y: 290, title: 'PostgreSQL', sub: 'pgvector' },
+    { x: 508, y: 290, title: 'Gemini', sub: 'RAG · AI' },
+    { x: 746, y: 290, title: 'Kafka', sub: 'events' },
   ];
-  let codeChars = 0;
+  const EDGES: [number, number][] = [[0, 1], [1, 2], [2, 3], [3, 7], [3, 6], [3, 5], [3, 4]];
+  const NODE_W = 220;
+  const NODE_H = 116;
+  let archT = 0;
   let codeTick = 0;
   function paintCode(colors: ScenePalette): void {
     const ctx = codeArt.getContext('2d');
     if (!ctx) return;
-    const { width, height } = codeArt;
-    ctx.clearRect(0, 0, width, height);
-    // Holograma: fondo verdoso translúcido, líneas de barrido y canto de luz.
-    ctx.fillStyle = colors.light ? 'rgba(20,60,20,0.18)' : 'rgba(40,120,40,0.16)';
+    const W = codeArt.width;
+    const H = codeArt.height;
+    ctx.clearRect(0, 0, W, H);
+    // Marco del holograma: fondo verdoso, rejilla y líneas de barrido.
+    ctx.fillStyle = colors.light ? 'rgba(20,60,20,0.2)' : 'rgba(40,120,40,0.15)';
     ctx.beginPath();
-    ctx.roundRect(0, 0, width, height, 22);
+    ctx.roundRect(2, 2, W - 4, H - 4, 26);
     ctx.fill();
-    ctx.globalAlpha = 0.09;
+    ctx.globalAlpha = 0.06;
     ctx.fillStyle = colors.accent;
-    for (let y = 6; y < height; y += 6) ctx.fillRect(4, y, width - 8, 2);
+    for (let y = 8; y < H; y += 7) ctx.fillRect(6, y, W - 12, 2);
+    for (let x = 32; x < W; x += 32) ctx.fillRect(x, 60, 1, H - 70);
     ctx.globalAlpha = 1;
     ctx.strokeStyle = colors.accent;
     ctx.lineWidth = 4;
     ctx.stroke();
-    // Barra de ventana con sus tres puntos.
-    for (let k = 0; k < 3; k++) {
-      ctx.fillStyle = colors.muted;
+    // Cabecera: lo que se está diseñando, con cursor.
+    const cycle = archT % 9;
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = colors.accent;
+    ctx.font = '700 30px "JetBrains Mono", ui-monospace, monospace';
+    const heading = '> design --saas --cloud aws|azure|gcp';
+    const typed = heading.slice(0, Math.floor(Math.min(1, cycle / 0.5) * heading.length));
+    ctx.fillText(typed + (Math.floor(archT * 2) % 2 ? '▌' : ''), 34, 36);
+    // Conexiones (aparecen tras sus nodos), con un pulso que viaja por cada una.
+    const shownNodes = Math.floor(Math.max(0, cycle - 0.4) / 0.18);
+    const centre = (n: ArchNode) => ({ x: n.x + NODE_W / 2, y: n.y + NODE_H / 2 });
+    ctx.lineWidth = 3;
+    EDGES.forEach(([from, to], index) => {
+      if (Math.max(from, to) >= shownNodes) return;
+      const a = centre(ARCH[from]);
+      const b = centre(ARCH[to]);
+      const edgeT = Math.min(1, (cycle - 0.4 - Math.max(from, to) * 0.18) / 0.25);
+      const ex = a.x + (b.x - a.x) * edgeT;
+      const ey = a.y + (b.y - a.y) * edgeT;
+      ctx.strokeStyle = colors.accent;
       ctx.globalAlpha = 0.6;
       ctx.beginPath();
-      ctx.arc(30 + k * 24, 26, 7, 0, Math.PI * 2);
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      if (edgeT >= 1) {
+        const k = (archT * 0.8 + index * 0.17) % 1;
+        ctx.fillStyle = colors.accent;
+        ctx.beginPath();
+        ctx.arc(a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+    // Nodos.
+    ARCH.forEach((node, index) => {
+      if (index >= shownNodes) return;
+      const pop = Math.min(1, (cycle - 0.4 - index * 0.18) / 0.18);
+      ctx.globalAlpha = pop;
+      ctx.fillStyle = colors.light ? 'rgba(255,255,255,0.25)' : 'rgba(10,20,12,0.75)';
+      ctx.beginPath();
+      ctx.roundRect(node.x, node.y, NODE_W, NODE_H, 14);
       ctx.fill();
+      ctx.strokeStyle = colors.accent;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.fillStyle = colors.accent;
+      ctx.beginPath();
+      ctx.arc(node.x + 24, node.y + 38, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = colors.ink;
+      ctx.font = '800 32px Inter, system-ui, sans-serif';
+      ctx.fillText(node.title, node.x + 42, node.y + 38);
+      ctx.fillStyle = colors.accentText;
+      ctx.font = '600 24px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillText(node.sub, node.x + 24, node.y + 84);
+      ctx.globalAlpha = 1;
+    });
+    // Pie: la nube y la entrega, al final de cada ciclo.
+    if (cycle > 0.4 + ARCH.length * 0.18) {
+      const pop = Math.min(1, (cycle - 0.4 - ARCH.length * 0.18) / 0.3);
+      ctx.globalAlpha = pop;
+      ctx.strokeStyle = colors.accent;
+      ctx.setLineDash([10, 8]);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(18, 92, W - 36, 340, 20);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = colors.accentText;
+      ctx.font = '700 28px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillText('☁ AWS · Azure · GCP · Terraform', 40, 470);
+      ctx.fillText('⟳ CI/CD · Docker · rollback', 40, 516);
+      ctx.fillStyle = colors.ink;
+      ctx.font = '800 36px Inter, system-ui, sans-serif';
+      ctx.fillText('✓ Scalable · secure · observable', 40, 588);
       ctx.globalAlpha = 1;
     }
-    ctx.font = '700 31px "JetBrains Mono", ui-monospace, monospace';
-    ctx.textBaseline = 'top';
-    let left = codeChars;
-    const visible: string[] = [];
-    for (const line of CODE) {
-      if (left <= 0) break;
-      visible.push(line.slice(0, left));
-      left -= line.length + 1;
-    }
-    const lines = visible.slice(-9);
-    lines.forEach((line, k) => {
-      ctx.fillStyle = colors.muted;
-      ctx.fillText(String(k + 1).padStart(2, ' '), 18, 56 + k * 33);
-      ctx.fillStyle = /^(@|resource|const|public)/.test(line.trim()) ? colors.accentText : colors.ink;
-      ctx.fillText(line, 64, 56 + k * 33);
-    });
-    // Cursor.
-    const last = lines[lines.length - 1] ?? '';
-    ctx.fillStyle = colors.accent;
-    ctx.fillRect(64 + ctx.measureText(last).width + 2, 56 + (lines.length - 1) * 33, 12, 26);
     codeTexture.needsUpdate = true;
   }
 
@@ -1124,9 +1189,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     cubeMat.color.copy(accent);
     cubeMat.emissive.copy(accent);
     haloMat.color.copy(accent);
+    tailMat.color.copy(accent);
     sweepMat.color.copy(accent);
     moteMat.color.copy(accent);
-    codeBeamMat.color.copy(accent);
     rim.color.copy(accent);
     eyeLight.color.copy(accent);
     rim2.color.copy(accent);
@@ -1351,28 +1416,34 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const lidOpen = ph(0.55, 0.78);
     hinge.rotation.x = 0.22 + (1 - lidOpen) * 1.3;
     const holo = ph(0.72, 1);
-    codeScreen.scale.setScalar(Math.max(0.001, holo));
-    codeScreen.position.copy(CODE_HOME).add(new three.Vector3(3.6 * (1 - holo), -2.9 * (1 - holo), 0));
-    // Parpadeo de holograma: casi constante, con algún «glitch» breve.
+    // Efecto genio: la estela crece desde el portátil y la pantalla se abre girando desde su punta.
+    const tailGrow = ph(0.6, 0.85);
+    tailGeometry.setDrawRange(0, Math.floor(TAIL_INDEX * Math.max(0.001, settling ? tailGrow : 1)));
+    tailMat.opacity = (settling ? tailGrow : 1) * (0.13 + (animate ? Math.sin(t * 2.2) * 0.04 : 0));
+    const open = ph(0.78, 1);
+    codeScreen.scale.set(Math.max(0.001, open), Math.max(0.001, open * open), 1);
+    codeScreen.position.copy(screenFoot).lerp(CODE_HOME, open);
+    codeScreen.rotation.set(-0.04, 0.22 + (1 - open) * 1.4, (1 - open) * -0.6);
     const glitch = animate && Math.sin(t * 0.7) > 0.985 ? 0.6 : 1;
-    codeMat.opacity = holo * glitch * (0.94 + (animate ? Math.sin(t * 13) * 0.03 : 0));
-    codeBeamMat.opacity = holo * 0.2 * (settling ? 1.5 : 1);
-    codeBeam.visible = holo > 0.02;
-    placeCodeBeam();
-    // Barrido, resplandor que respira y motas que suben por el haz.
-    sweepBar.position.y = animate ? 1.3 - ((t * 0.45) % 1) * 2.6 : 0;
-    sweepMat.opacity = holo * 0.35;
-    haloMat.opacity = holo * (0.07 + (animate ? Math.sin(t * 2) * 0.025 : 0));
-    motes.visible = holo > 0.05;
+    codeMat.opacity = open * glitch * (0.94 + (animate ? Math.sin(t * 13) * 0.03 : 0));
+    sweepBar.position.y = animate ? SCREEN_H / 2 - ((t * 0.45) % 1) * SCREEN_H : 0;
+    sweepMat.opacity = open * 0.3;
+    haloMat.opacity = open * (0.07 + (animate ? Math.sin(t * 2) * 0.025 : 0));
+    // Chispas en espiral a lo largo de la estela.
+    motes.visible = tailGrow > 0.05;
     for (let i = 0; i < MOTES; i++) {
-      const k = animate ? (moteSeed[i] + t * (0.25 + moteSeed[i] * 0.3)) % 1 : moteSeed[i];
-      const from = 0.5 + (moteSeed[i] - 0.5) * 0.6;
-      motePos[i * 3] = -0.5 + (CODE_HOME.x + (moteSeed[(i + 7) % MOTES] - 0.5) * 3.6 + 0.5) * k + (from - 0.5) * (1 - k);
-      motePos[i * 3 + 1] = -2.25 + (CODE_HOME.y - 1.3 + 2.25) * k;
-      motePos[i * 3 + 2] = 2.3 + (CODE_HOME.z - 2.3) * k;
+      const u = animate ? (moteSeed[i] + t * (0.12 + moteSeed[i] * 0.1)) % 1 : moteSeed[i];
+      geniePath.getPointAt(u, motePoint);
+      geniePath.getTangentAt(u, moteTan);
+      moteSide.set(0, 1, 0).cross(moteTan).normalize();
+      moteUp.copy(moteTan).cross(moteSide).normalize();
+      const angle = u * 18 + t * 3 + moteSeed[i] * 6.28;
+      const radius = (0.06 + Math.pow(u, 1.6) * 0.45) * (0.7 + moteSeed[(i + 3) % MOTES] * 0.5);
+      motePoint.addScaledVector(moteSide, Math.cos(angle) * radius).addScaledVector(moteUp, Math.sin(angle) * radius);
+      motePos.set([motePoint.x, motePoint.y, motePoint.z], i * 3);
     }
     moteGeometry.getAttribute('position').needsUpdate = true;
-    moteMat.opacity = holo * 0.8;
+    moteMat.opacity = (settling ? tailGrow : 1) * 0.9;
     if (settling && st > 0.25 && st < 0.62) {
       // Las manos recorren la mesa, empujando a los lados para dejarlo todo en su sitio.
       const sweep = Math.sin(((st - 0.25) / 0.37) * Math.PI * 2);
@@ -1405,10 +1476,11 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     holoCube.position.y = 0.66 + (animate ? Math.sin(t * 1.8) * 0.04 : 0);
     beamMat.opacity = 0.09 + (animate ? Math.sin(t * 3) * 0.03 : 0);
     // La pantalla avanza mientras teclea; al terminar el fragmento, vuelve a empezar.
+    // El diagrama se dibuja en ciclos de 9 s (repinta a ~20 fps, solo si se ve).
+    archT += animate ? dt : 0;
     codeTick += dt;
-    if (talking && !stackOpen && codeTick > 0.06) {
+    if (codeTick > 0.05 && furniture.visible) {
       codeTick = 0;
-      codeChars = (codeChars + 1) % (CODE.join('\n').length + 30);
       paintCode(current);
     }
     placeTiles(dt);
