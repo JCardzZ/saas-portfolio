@@ -373,8 +373,28 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   const beam = new three.Mesh(keep(new three.CylinderGeometry(0.42, 0.36, 1.2, 48, 1, true)), beamMat);
   beam.position.y = 0.64;
   holo.add(beam);
-  const cubeMat = keep(new three.LineBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.9 }));
-  const holoCube = new three.LineSegments(keep(new three.EdgesGeometry(keep(new three.BoxGeometry(0.34, 0.34, 0.34)))), cubeMat);
+  // Etiqueta «</>» en 3D: tres trazos extruidos (dos chevrones y una barra) con bordes redondeados.
+  const cubeMat = keep(new three.MeshStandardMaterial({ color: 0x7fee64, emissive: 0x7fee64, emissiveIntensity: 1.2, roughness: 0.3 }));
+  const stroke = (points: [number, number][], width: number) => {
+    // Polilínea gruesa: un rectángulo por tramo, unidos en un solo grupo.
+    const group = new three.Group();
+    for (let k = 0; k < points.length - 1; k++) {
+      const [ax, ay] = points[k];
+      const [bx, by] = points[k + 1];
+      const length = Math.hypot(bx - ax, by - ay);
+      const bar = new three.Mesh(rounded(length + width, width, width, width / 2), cubeMat);
+      bar.position.set((ax + bx) / 2, (ay + by) / 2, 0);
+      bar.rotation.z = Math.atan2(by - ay, bx - ax);
+      group.add(bar);
+    }
+    return group;
+  };
+  const holoCube = new three.Group();
+  holoCube.add(
+    stroke([[-0.16, 0.13], [-0.3, 0], [-0.16, -0.13]], 0.05),
+    stroke([[0.16, 0.13], [0.3, 0], [0.16, -0.13]], 0.05),
+    stroke([[0.06, 0.17], [-0.06, -0.17]], 0.05),
+  );
   holoCube.position.y = 0.66;
   holo.add(holoCube);
 
@@ -876,6 +896,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     accentMat.emissive.copy(accent);
     beamMat.color.copy(accent);
     cubeMat.color.copy(accent);
+    cubeMat.emissive.copy(accent);
     rim.color.copy(accent);
     eyeLight.color.copy(accent);
     rim2.color.copy(accent);
@@ -980,7 +1001,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       // La mano mira al frente, con la palma un poco inclinada según el gesto.
       limb.hand.rotation.set(holding ? -0.35 : typingHands ? -1.3 : -0.1, 0, wave ? -limb.side * 0.3 + Math.sin((t - waveAt) * 14) * 0.35 : -limb.side * 0.15);
     }
-    holoCube.rotation.set(t * 0.7, t * 0.9, 0);
+    // Gira sobre su eje vertical, flotando un poco.
+    holoCube.rotation.set(0, animate ? t * 0.9 : 0.4, 0);
+    holoCube.position.y = 0.66 + (animate ? Math.sin(t * 1.8) * 0.04 : 0);
     beamMat.opacity = 0.09 + (animate ? Math.sin(t * 3) * 0.03 : 0);
     placeTiles(dt);
     placeInfo(follow);
