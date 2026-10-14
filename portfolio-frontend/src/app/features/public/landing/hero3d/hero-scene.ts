@@ -552,7 +552,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     shield();
     const ground = ctx.createLinearGradient(0, 0, W, H);
     ground.addColorStop(0, colors.surface);
-    ground.addColorStop(1, colors.light ? colors.surface : '#050607');
+    ground.addColorStop(1, colors.light ? colors.surface : 'black');
     ctx.fillStyle = ground;
     ctx.fill();
     ctx.save();
@@ -576,7 +576,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     shield();
     const rim = ctx.createLinearGradient(0, 0, W, H);
     rim.addColorStop(0, colors.accent);
-    rim.addColorStop(0.5, colors.light ? colors.line : '#1d2320');
+    rim.addColorStop(0.5, colors.line);
     rim.addColorStop(1, colors.accent);
     ctx.strokeStyle = rim;
     ctx.lineWidth = 8;
@@ -597,7 +597,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     ctx.roundRect(pad, 126, bw, 40, 20);
     ctx.fillStyle = info.live ? colors.accent : 'rgba(127,127,127,0.18)';
     ctx.fill();
-    ctx.fillStyle = info.live ? '#07120A' : colors.muted;
+    ctx.fillStyle = info.live ? 'black' : colors.muted;
     ctx.fillText(badge, pad + 16, 134);
     // Arriba a la derecha: el logo grande (el de la ficha al frente).
     const logo = focused;
