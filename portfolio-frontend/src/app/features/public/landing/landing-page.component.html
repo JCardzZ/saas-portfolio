@@ -19,11 +19,15 @@
         el acento. Un solo elemento gigante: si nombre y rol pesan igual, compiten y el bloque se satura.
       -->
       <p class="hero-greeting pointer-events-auto relative z-10 text-center font-normal text-ink-2">{{ i18n.t(copy.heroGreeting) }}</p>
-      <h1 id="hero-titulo" class="hero-name pointer-events-auto relative z-0 mt-2 text-center font-bold leading-[0.95] tracking-[-0.045em] text-ink-1">
-        {{ i18n.t(copy.heroTitle) }}
+      <!--
+        Nombre y rol en mayúsculas (Space Grotesk). Cada letra es un span para que el robot las mueva
+        al levantarse (variable --robot-lift); el texto completo va en aria-label.
+      -->
+      <h1 id="hero-titulo" class="hero-name hero-letters pointer-events-auto relative z-0 mt-2 text-center font-bold uppercase leading-[0.95] text-ink-1" [attr.aria-label]="i18n.t(copy.heroTitle)">
+        @for (letter of nameLetters(); track $index) {<span class="hero-letter" aria-hidden="true" [style.--i]="$index" [style.--n]="nameLetters().length">{{ letter }}</span>}
       </h1>
-      <p class="hero-role pointer-events-auto relative z-10 mx-auto mt-4 text-center font-medium tracking-[-0.02em] text-accent-text" data-testid="hero-role">
-        {{ heroRole() }}
+      <p class="hero-role hero-letters pointer-events-auto relative z-10 mx-auto mt-4 text-center font-medium uppercase text-accent-text" data-testid="hero-role" [attr.aria-label]="heroRole()">
+        @for (letter of roleLetters(); track $index) {<span class="hero-letter" aria-hidden="true" [style.--i]="$index" [style.--n]="roleLetters().length">{{ letter }}</span>}
       </p>
       <!-- Hueco para el robot: crece lo que haga falta para que la frase y los botones queden dentro de la pantalla. -->
       <div class="min-h-[12rem] flex-1 [@media(max-height:700px)]:min-h-[2rem]" aria-hidden="true"></div>

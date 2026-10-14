@@ -79,6 +79,8 @@ export interface HeroScene {
   fling(x: number, y: number): void;
   /** Suelta la ficha: sale con la velocidad del gesto, cae con gravedad, rebota y vuelve al globo. */
   release(): void;
+  /** Cuánto se está estirando ahora (0–1): la página mueve con ello el nombre, el rol y el bocadillo. */
+  stretchLevel(): number;
   /** Mientras `true`, teclea en el portátil (lo marca el texto que escribe el bocadillo). */
   talk(talking: boolean): void;
   /** Punto de la pantalla (px del lienzo) junto a la cabeza, de donde sale el bocadillo. */
@@ -1221,6 +1223,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   let last = 0;
   let browLift = 0;
   let stretchAt = -99;
+  let stretchNow = 0;
   /** Momento en que empezó a ordenar su puesto (al llegar a la silla; también al cargar). */
   let settleAt = animate ? 1.6 : -99;
   const SETTLE = 3.2;
@@ -1272,12 +1275,13 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const ease = (x: number) => x * x * (3 - 2 * x);
     const standing = stretching ? (sp < 0.22 ? ease(sp / 0.22) : sp > 0.8 ? ease((1 - sp) / 0.2) : 1) : 0;
     const rise = stretching && sp > 0.2 && sp < 0.82 ? Math.sin(Math.PI * (sp - 0.2) / 0.62) : 0;
+    stretchNow = rise;
     for (const leg of legs) {
       leg.hip.rotation.x = standing * Math.PI / 2;
       leg.knee.rotation.x = -standing * Math.PI / 2;
     }
     head.rotation.x -= rise * 0.45;
-    standLift = standing * 1.75 * character.scale.x;
+    standLift = standing * 1.15 * character.scale.x;
     character.position.y += standLift;
     character.position.z = -standing * 0.5 * character.scale.x;
     character.rotation.x = -rise * 0.06;
@@ -1387,9 +1391,10 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         if (talking && animate) limb.target.y += Math.max(0, Math.sin(t * 19 + (limb.side > 0 ? Math.PI : 0))) * 0.07;
       }
       if (stretching && rise > 0) {
-        // Brazos arriba, algo abiertos, y un balanceo lento de lado a lado.
-        const sway = Math.sin(sp * Math.PI * 2) * 0.25;
-        limb.target.lerp(new three.Vector3(limb.side * 1.0 + sway, 1.2 + rise * 1.4, 0.4), rise);
+        // De pie, abre los brazos y empuja con las palmas: la izquierda el holograma, la derecha el
+        // bocadillo, y por encima el nombre (que se mueve con la variable --robot-lift).
+        const push = Math.sin(sp * Math.PI * 4) * 0.25;
+        limb.target.lerp(new three.Vector3(limb.side * (2.6 + push), 0.9 + rise * 0.9, 1.4), rise);
       }
       if (waving && limb.side === 1) {
         limb.target.set(1.95, 0.55 + Math.sin((t - waveAt) * 14) * 0.18, 0.7 + Math.cos((t - waveAt) * 14) * 0.2);
@@ -1435,7 +1440,10 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     codeScreen.visible = open > 0.01;
     codeScreen.scale.set(Math.max(0.001, open), Math.max(0.001, open * open), 1);
     codeScreen.position.copy(screenFoot).lerp(CODE_HOME, open);
-    codeScreen.rotation.set(-0.04, 0.22 + (1 - open) * 1.4, (1 - open) * -0.6);
+    // Al estirarse, el robot empuja el holograma con la mano: se desplaza y se inclina un poco.
+    codeScreen.position.x -= stretchNow * 0.7;
+    codeScreen.position.y += stretchNow * 0.35;
+    codeScreen.rotation.set(-0.04, 0.22 + (1 - open) * 1.4 + stretchNow * 0.25, (1 - open) * -0.6 + stretchNow * 0.06);
     const glitch = animate && Math.sin(t * 0.7) > 0.985 ? 0.6 : 1;
     codeMat.opacity = open * glitch * (0.94 + (animate ? Math.sin(t * 13) * 0.03 : 0));
     sweepBar.position.y = animate ? SCREEN_H / 2 - ((t * 0.45) % 1) * SCREEN_H : 0;
@@ -1571,6 +1579,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       if (!stackOpen) return;
       if (animate) spinVelocity += direction * 1.6;
       else spin += direction * 0.4;
+    },
+    stretchLevel() {
+      return stretchNow;
     },
     stretch() {
       stretchAt = clock;

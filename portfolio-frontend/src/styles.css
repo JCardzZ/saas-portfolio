@@ -376,9 +376,11 @@ app-section-header::before {
 }
 
 .hero-role {
-  /* Segundo nivel: más grande que el saludo, en peso medio; solo el nombre va en negrita. */
-  font-size: clamp(1.375rem, 2.7vw, 2.4rem);
-  line-height: 1.1;
+  /* Segundo nivel: mayúsculas más pequeñas, con aire entre letras (como un rótulo). */
+  font-family: 'Space Grotesk', var(--font-sans);
+  font-size: clamp(1.05rem, 2vw, 1.8rem);
+  letter-spacing: 0.14em;
+  line-height: 1.15;
   text-wrap: balance;
 }
 .hero-greeting {
@@ -393,10 +395,16 @@ app-section-header::before {
 }
 
 .hero-name {
-  /* Peso 700 y mayúsculas solo iniciales: igual de grande, menos «gritón» y más legible que 900 en mayúsculas. */
-  font-size: clamp(2.75rem, 8.6vw, 7.75rem);
-  font-feature-settings: 'ss01', 'cv11';
+  /* Mayúsculas en Space Grotesk 700: más institucional; algo más pequeño porque las mayúsculas ocupan más. */
+  font-family: 'Space Grotesk', var(--font-sans);
+  font-size: clamp(2.4rem, 7.4vw, 6.75rem);
+  letter-spacing: -0.02em;
   text-wrap: balance;
+}
+/* Letras que el robot «empuja» al levantarse: una ola que sube y baja letra a letra. */
+.hero-letter {
+  display: inline-block;
+  transform: translateY(calc(var(--robot-lift, 0) * -16px * sin(var(--i) / var(--n) * 3.14)));
 }
 
 /* Markdown de las respuestas del asistente. Global porque el HTML se inyecta con [innerHTML]. */

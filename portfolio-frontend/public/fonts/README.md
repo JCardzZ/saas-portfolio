@@ -7,11 +7,13 @@ paquetes de Fontsource, que redistribuyen las fuentes publicadas en Google Fonts
 | Familia | Archivo | Origen | Versión | Licencia |
 |---|---|---|---|---|
 | Inter | `inter/inter-v20-latin-wght.woff2` | `@fontsource-variable/inter` 5.3.0 (`files/inter-latin-wght-normal.woff2`) · https://github.com/rsms/inter | v20 | SIL Open Font License 1.1 (`inter/OFL.txt`) |
+| Space Grotesk | `space-grotesk/space-grotesk-v22-latin-wght.woff2` | `@fontsource-variable/space-grotesk` 5.3.0 (`files/space-grotesk-latin-wght-normal.woff2`) · https://github.com/floriankarsten/space-grotesk | v22 | SIL Open Font License 1.1 (`space-grotesk/OFL.txt`) |
 | JetBrains Mono | `jetbrains-mono/jetbrains-mono-v24-latin-wght.woff2` | `@fontsource-variable/jetbrains-mono` 5.3.0 (`files/jetbrains-mono-latin-wght-normal.woff2`) · https://github.com/JetBrains/JetBrainsMono | v24 | SIL Open Font License 1.1 (`jetbrains-mono/OFL.txt`) |
 
 SHA-256:
 
 - `inter-v20-latin-wght.woff2`: `3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62`
+- `space-grotesk-v22-latin-wght.woff2`: `0640890476fc1198ab4de571fb658de443c4d85b66466ec09534a8737ab1ce9d` (añadida el 2026-10-14, para el nombre y el rol del hero)
 - `jetbrains-mono-v24-latin-wght.woff2`: `18be452724bfdc236c074ca94a249a7f41a86752c7d04ab258ce9ed5651f6a7e`
 
 ## Qué contienen

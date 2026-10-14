@@ -383,7 +383,7 @@ main :is(.bento-card, .theater-card, article) {
         (click)="activate($event)"
         (keydown)="key($event)"
         (dblclick)="stretch()"
-        (focus)="keyFocus.set(true)"
+        (focus)="keyFocus.set($any($event.target).matches(':focus-visible'))"
         (blur)="keyFocus.set(false)"
       >
         @if (ready() && (open() || keyFocus())) {
@@ -1033,11 +1033,16 @@ export class HeroSceneComponent {
         bubbleGuide = guide;
       }
       const at = bubbleAt;
-      el.style.transform = guide
+      // Al estirarse el robot, el bocadillo se aparta empujado por su mano, y el nombre y el rol
+      // (en la página) se mueven con la misma variable.
+      const lift = scene.stretchLevel();
+      document.documentElement.style.setProperty('--robot-lift', lift.toFixed(3));
+      const pushed = `translate3d(${Math.round(lift * 46)}px, ${Math.round(-lift * 18)}px, 0) rotate(${(lift * 2.5).toFixed(2)}deg)`;
+      el.style.transform = (guide
         ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-82%, calc(-100% - 14px))`
         : this.narrow
         ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-50%, -50%)`
-        : `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translateY(-50%)`;
+        : `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translateY(-50%)`) + (guide ? '' : ' ' + pushed);
     };
     // Máquina de escribir: escribe, espera, borra y pasa a la siguiente frase.
     let line = 0;
