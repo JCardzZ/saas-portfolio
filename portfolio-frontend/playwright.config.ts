@@ -109,7 +109,7 @@ export default defineConfig({
     // Escritorio, con ratón: los diagramas en su disposición de columnas (desktop.e2e.ts).
     ...(['chromium', 'webkit'] as Engine[]).map((engine) => ({
       name: `desktop-1440-${engine}`,
-      testMatch: ['**/desktop.e2e.ts', ...FLAGGED, ...EVERYWHERE],
+      testMatch: ['**/desktop.e2e.ts', '**/page-grab.e2e.ts', ...FLAGGED, ...EVERYWHERE],
       use: { browserName: engine, viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 },
     })),
   ],

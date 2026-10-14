@@ -82,13 +82,19 @@ export interface HeroScene {
   /** Mientras `true`, teclea en el portátil (lo marca el texto que escribe el bocadillo). */
   talk(talking: boolean): void;
   /** Punto de la pantalla (px del lienzo) junto a la cabeza, de donde sale el bocadillo. */
-  anchor(narrow: boolean): { x: number; y: number };
+  anchor(narrow: boolean, side?: 'left'): { x: number; y: number };
   /** Señala la ficha bajo el cursor (coordenadas normalizadas del lienzo, -1…1); devuelve su nombre. */
   pick(x: number, y: number): string | null;
   frame(t: number): void;
   resize(width: number, height: number): void;
   pointer(x: number, y: number): void;
-  scroll(progress: number): void;
+  /** Desplazamiento de la página en píxeles: el escritorio sube con ella (el lienzo es fijo). */
+  scroll(px: number): void;
+  /**
+   * Modo guía: el robot deja la silla y camina hasta (x, y) en píxeles del lienzo, a un tamaño que
+   * quepa en `widthPx`; si `point`, se encara al contenido y lo señala. `null` lo devuelve a la silla.
+   */
+  guide(target: { x: number; y: number; widthPx: number; point: boolean } | null): void;
   setPalette(palette: ScenePalette): void;
   dispose(): void;
 }
@@ -975,6 +981,19 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   let lookX = 0;
   let lookY = 0;
   let lift = 0;
+  // Modo guía.
+  let scrollPx = 0;
+  let scrollWorld = 0;
+  let scrollVel = 0;
+  let guideTarget: { x: number; y: number; widthPx: number; point: boolean } | null = null;
+  let guideActive = false;
+  let guideStand = 0;
+  let guideScale = 1;
+  let walkPhase = 0;
+  const guidePos = new three.Vector3();
+  const guideVel = new three.Vector3();
+  const guideGoal = new three.Vector3();
+  let facing = 0;
 
   function setPalette(next: ScenePalette): void {
     current = next;
@@ -1021,8 +1040,17 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const reacting = r < 1.3;
     const decay = reacting ? Math.exp(-r * 3) : 0;
     const hop = r < 0.55 ? Math.sin((r / 0.55) * Math.PI) : 0;
-    character.position.y = (animate ? Math.sin(t * 1.2) * 0.08 : 0) + lift * 1.2 + hop * 0.35 * fit;
-    furniture.position.set(0, lift * 1.2, 0);
+    // El lienzo es fijo: el escritorio sube con la página, píxel a píxel.
+    const worldPerPx = (2 * halfHeight) / Math.max(1, viewHeight);
+    const nextScroll = scrollPx * worldPerPx;
+    scrollVel += ((nextScroll - scrollWorld) / Math.max(dt, 0.001) - scrollVel) * 0.2;
+    scrollWorld = nextScroll;
+    character.position.y = (animate ? Math.sin(t * 1.2) * 0.08 : 0) + scrollWorld + hop * 0.35 * fit;
+    character.position.x = 0;
+    furniture.position.set(0, scrollWorld, 0);
+    // Cuando el hero ya quedó atrás, el escritorio no se dibuja (asomaría sobre las secciones).
+    furniture.visible = scrollPx < viewHeight * 1.05;
+    void lift;
     antenna.rotation.z = -0.25 + Math.sin(r * 22) * 0.5 * decay + (animate ? Math.sin(t * 1.7) * 0.05 : 0);
 
     // Si nadie mueve el cursor, mira alrededor por su cuenta.
@@ -1050,8 +1078,64 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     character.position.y += standLift;
     character.position.z = -standing * 0.5 * character.scale.x;
     character.rotation.x = -rise * 0.06;
+
+    // ---- Modo guía ----------------------------------------------------------------------
+    // Fuera del hero el robot se levanta, se encoge y camina (con un resorte amortiguado, sin
+    // tirones) hasta el margen; mientras la página se desplaza, camina en el sitio, y al llegar a una
+    // sección se vuelve hacia ella y la señala. Al subir, vuelve a su silla y se sienta.
+    const seat = new three.Vector3(0, character.position.y, 0);
+    if (guideTarget) {
+      guideGoal.set(
+        (guideTarget.x / Math.max(1, viewWidth)) * 2 * halfWidth - halfWidth,
+        camera.position.y + halfHeight - (guideTarget.y / Math.max(1, viewHeight)) * 2 * halfHeight,
+        0.6,
+      );
+      if (!guideActive) {
+        guideActive = true;
+        guidePos.copy(seat);
+        guideVel.set(0, 0, 0);
+      }
+    } else if (guideActive) {
+      guideGoal.copy(seat);
+    }
+    if (guideActive) {
+      // Primero se pone de pie; luego camina.
+      guideStand += ((guideTarget ? 1 : guidePos.distanceTo(seat) < 0.25 ? 0 : 1) - guideStand) * (1 - Math.exp(-dt * 5));
+      if (guideStand > 0.85 || !guideTarget) {
+        const stiffness = 9;
+        const damping = 2 * Math.sqrt(stiffness) * 0.95;
+        const accel = guideGoal.clone().sub(guidePos).multiplyScalar(stiffness).addScaledVector(guideVel, -damping);
+        guideVel.addScaledVector(accel, dt);
+        guidePos.addScaledVector(guideVel, dt);
+      }
+      const wantScale = guideTarget ? Math.min(fit, (guideTarget.widthPx * worldPerPx) / 3.7) : character.scale.x;
+      guideScale += ((guideTarget ? wantScale / fit : 1) - guideScale) * (1 - Math.exp(-dt * 3));
+      character.scale.setScalar(character.scale.x * guideScale);
+      // Ciclo de paso: avanza con lo que se mueve el robot y con lo que se desplaza la página.
+      const speed = Math.min(6, guideVel.length() + Math.abs(scrollVel) * 0.8);
+      walkPhase += dt * (4 + speed * 2.2) * Math.min(1, speed);
+      const stride = Math.min(1, speed / 2.5) * guideStand;
+      const bob = Math.abs(Math.sin(walkPhase)) * 0.12 * stride;
+      legs.forEach((leg, index) => {
+        const swing = Math.sin(walkPhase + index * Math.PI) * 0.5 * stride;
+        leg.hip.rotation.x = guideStand * (Math.PI / 2) + swing;
+        leg.knee.rotation.x = -guideStand * (Math.PI / 2) + Math.max(0, -Math.sin(walkPhase + index * Math.PI)) * 0.7 * stride;
+      });
+      standLift = guideStand * 1.75 * character.scale.x;
+      character.position.copy(guidePos);
+      character.position.y += standLift + bob * character.scale.x;
+      character.position.z = guidePos.z - guideStand * 0.5 * character.scale.x;
+      // Hacia dónde mira: de lado al caminar hacia los lados; hacia el contenido al señalar.
+      const wantFacing = Math.abs(guideVel.x) > 0.4 ? Math.sign(guideVel.x) * 0.9 : guideTarget?.point ? -0.55 : 0;
+      facing += (wantFacing - facing) * (1 - Math.exp(-dt * 4));
+      if (guideStand < 0.05 && !guideTarget && guidePos.distanceTo(seat) < 0.25) {
+        guideActive = false;
+        guideScale = 1;
+        facing = 0;
+      }
+    }
     head.rotation.z = -lookX * 0.06 + Math.sin(r * 9) * 0.22 * decay;
-    character.rotation.y = lookX * 0.15;
+    character.rotation.y = lookX * 0.15 + (guideActive ? facing : 0);
     eyeGroup.position.x = lookX * 0.18;
     eyeGroup.position.y = -0.02 - lookY * 0.12;
     const blinkPhase = animate ? t % 4.2 : 1;
@@ -1107,10 +1191,22 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         limb.target.set(1.95, 0.55 + Math.sin((t - waveAt) * 14) * 0.18, 0.7 + Math.cos((t - waveAt) * 14) * 0.2);
       }
     }
+    if (guideActive) {
+      // De pie: brazos que se balancean al andar (al revés que las piernas) y, al presentar una
+      // sección, el izquierdo la señala.
+      const stride = Math.min(1, (guideVel.length() + Math.abs(scrollVel) * 0.8) / 2.5) * guideStand;
+      for (const limb of arms) {
+        const swing = Math.sin(walkPhase + (limb.side > 0 ? 0 : Math.PI)) * 0.55 * stride;
+        limb.target.set(limb.side * 1.85, -3.4, 0.35 + swing);
+        if (guideTarget?.point && limb.side < 0 && stride < 0.3) {
+          limb.target.set(-3.0, -0.6 + Math.sin(t * 2) * 0.08, 1.1);
+        }
+      }
+    }
     placeArms(follow);
     for (const limb of arms) {
       const holding = !!(focused && stackOpen); // sostiene las dos cartas
-      const typingHands = !stackOpen;
+      const typingHands = !stackOpen && !guideActive;
       const wave = waving && limb.side === 1;
       const pressed = reacting ? Math.max(0, 1 - r * 2.5) : 0; // al tocarlo, aprieta un instante
       poseFingers(limb, wave ? 0 : Math.min(1, (holding ? 0.75 : typingHands ? 0.45 + (talking ? Math.max(0, Math.sin(t * 23 + limb.side)) * 0.35 : 0) : 0.15) + pressed * 0.4), wave ? 1 : stackOpen && !focused ? 0.6 : 0, t);
@@ -1163,12 +1259,13 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     talk(next) {
       talking = next;
     },
-    anchor(narrow) {
-      // Ancho: a la derecha de la cabeza, centrado a la altura de los ojos.
+    anchor(narrow, side) {
+      // Ancho: a la derecha de la cabeza, centrado a la altura de los ojos (a la izquierda en modo
+      // guía, porque el robot está en el margen derecho).
       // Estrecho: sobre el faldón del escritorio, bajo el robot (encima no cabe: está el rol).
-      const point = narrow ? new three.Vector3(0, -3.55, 3.1) : new three.Vector3(1.55, 0.1, 0);
+      const point = narrow ? new three.Vector3(0, -3.55, 3.1) : new three.Vector3(side === 'left' ? -1.55 : 1.55, 0.1, 0);
       (narrow ? character : head).localToWorld(point);
-      point.y -= standLift;
+      if (!guideActive) point.y -= standLift;
       point.project(camera);
       return { x: ((point.x + 1) / 2) * viewWidth, y: ((1 - point.y) / 2) * viewHeight };
     },
@@ -1235,7 +1332,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       halfWidth = halfHeight * camera.aspect;
       // El lienzo ocupa toda la pantalla: el robot, a escala de ella, queda en la mitad de abajo, bajo el nombre.
       // Robot entero con su escritorio (~6,2 de alto y de ancho) en la mitad baja, bajo el nombre.
-      fit = Math.min(halfHeight * 0.165, halfWidth * 0.29);
+      fit = Math.min(halfHeight * 0.18, halfWidth * 0.31);
       camera.position.y = -1.3 * fit + halfHeight * (camera.aspect < 0.8 ? 0.2 : 0.42);
       camera.updateProjectionMatrix();
     },
@@ -1244,8 +1341,11 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       pointerX = Math.max(-1, Math.min(1, x));
       pointerY = Math.max(-1, Math.min(1, y));
     },
-    scroll(progress) {
-      lift = Math.min(1, Math.max(0, progress));
+    scroll(px) {
+      scrollPx = Math.max(0, px);
+    },
+    guide(target) {
+      guideTarget = target;
     },
     dispose() {
       for (const item of disposables) item.dispose();

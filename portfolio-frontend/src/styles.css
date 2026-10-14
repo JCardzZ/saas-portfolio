@@ -358,6 +358,13 @@ app-section-header::before {
   pointer-events: none;
 }
 
+/* La manita: el fondo de la página se agarra para desplazarla (ver smooth-scroll.ts). */
+.page-grab :is(.dock-aware, .dock-aware > main, main > section, .bento-grid, main > section > div) { cursor: grab; }
+.page-grab :is(.dock-aware, .dock-aware > main, main > section, .bento-grid, main > section > div) > :not(.bento-grid, div, section, main) { cursor: auto; }
+.page-grabbing, .page-grabbing * { cursor: grabbing !important; user-select: none; }
+/* Con el robot 3D guiando, sobra el acompañante 2D. */
+.robot-guide app-scroll-buddy { display: none; }
+
 .hero-role {
   /* Segundo nivel: más grande que el saludo, en peso medio; solo el nombre va en negrita. */
   font-size: clamp(1.375rem, 2.7vw, 2.4rem);

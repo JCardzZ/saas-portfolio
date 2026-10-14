@@ -7,6 +7,8 @@ import { ThemeService } from '../../../../core/theme/theme.service';
 import { TECH_ICONS, TechIconKey } from '../../../../shared/ui/tech-icons';
 import type { HeroScene, ScenePalette, SceneTech } from './hero-scene';
 import { HERO_ROLE_PLACEHOLDER } from '../hero-content';
+import { PAGE_SECTIONS } from '../../navbar/page-sections';
+import { GUIDE_SCRIPT } from './guide-script';
 import { HeroSound, bestVoice, countVisit, greeting } from './hero-sound';
 import { hasFastWebGL } from '../../../../shared/ui/webgl-support';
 import type * as StackCardsModule from './stack-cards';
@@ -89,6 +91,22 @@ const DRAG_THRESHOLD = 6;
   animation: caret-blink 1s steps(1) infinite;
 }
 @keyframes caret-blink { 50% { opacity: 0; } }
+
+/* Bocadillo a la izquierda del robot (modo guía, robot en el margen derecho): cola a la derecha. */
+.speech-left .speech-body::after { left: auto; right: -7px; transform: rotate(-135deg); }
+.tour-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.4rem 0.35rem 1rem;
+  border-radius: 999px;
+  background: rgb(var(--c-canvas) / 0.92);
+  box-shadow: 0 0 0 1px var(--border-subtle), 0 12px 40px rgb(0 0 0 / 0.35);
+  backdrop-filter: blur(16px);
+  animation: island-count var(--duration-slow) var(--ease-emphasized);
+}
+.tour-progress { width: 7rem; height: 3px; border-radius: 2px; background: rgb(var(--c-ink-1) / 0.12); overflow: hidden; }
+.tour-progress > span { display: block; height: 100%; background: rgb(var(--c-accent-solid)); transition: width var(--duration-slow) var(--ease-emphasized); }
 
 /* Isla dinámica de los filtros del globo. */
 .island {
@@ -176,7 +194,11 @@ const DRAG_THRESHOLD = 6;
     <!-- Sin WebGL no hay avatar: el nombre gigante se basta solo. -->
     @if (!failed()) {
       <div #frame class="relative h-full w-full">
-      <canvas #canvas class="hero-canvas pointer-events-none absolute inset-0 block h-full w-full" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
+      <!--
+        El lienzo es fijo y queda detrás del contenido: así el robot puede dejar el hero y acompañar
+        al visitante por la página (modo guía, en pantallas anchas).
+      -->
+      <canvas #canvas class="pointer-events-none fixed inset-0 -z-[5] block h-dvh w-screen" [class.hero-canvas]="!guiding()" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
       <!--
         Bocadillo del robot: en cinco segundos, qué hago, escrito a máquina y rotando. Sigue a la
         cabeza (se posiciona escribiendo el estilo, sin detección de cambios). Se retira con el
@@ -184,12 +206,20 @@ const DRAG_THRESHOLD = 6;
       -->
       <div
         #bubble
-        class="speech pointer-events-none absolute left-0 top-0 z-10 transition-opacity duration-slow"
-        [class.opacity-0]="!ready() || open()"
-        [class.invisible]="!ready() || open()"
+        class="speech pointer-events-none fixed left-0 top-0 z-20 transition-opacity duration-slow"
+        [class.opacity-0]="!ready() || open() || (guiding() && !guideLine())"
+        [class.invisible]="!ready() || open() || (guiding() && !guideLine())"
         [class.speech-narrow]="narrow"
+        [class.speech-left]="guiding()"
       >
-        <div class="speech-body rounded-card border border-line-subtle bg-surface-1/85 px-4 py-3 shadow-floating backdrop-blur-xl">
+        @if (guideLine(); as g) {
+          <!-- En modo guía: la sección que se está viendo. -->
+          <div class="speech-body rounded-card border border-line-subtle bg-surface-1/90 px-4 py-3 shadow-floating backdrop-blur-xl" data-testid="guide-bubble">
+            <span class="block font-mono text-mono-sm text-accent-text">{{ g.title }}</span>
+            <span class="mt-1 block text-body font-medium text-ink-1">{{ g.text }}</span>
+          </div>
+        }
+        <div class="speech-body rounded-card border border-line-subtle bg-surface-1/85 px-4 py-3 shadow-floating backdrop-blur-xl" [class.hidden]="guiding()">
           <span class="flex items-start justify-between gap-2">
             <span class="min-w-0">
               <span class="block text-body-sm font-medium text-ink-2">{{ hello() }}</span>
@@ -225,8 +255,32 @@ const DRAG_THRESHOLD = 6;
             />
             <button type="submit" class="ui-btn-primary shrink-0">{{ i18n.lang() === 'en' ? 'Ask' : 'Preguntar' }}</button>
           </form>
+          @if (guideAvailable()) {
+            <button type="button" class="ui-btn-ghost pointer-events-auto mt-2 w-full justify-center" data-testid="tour-start" (click)="startTour()">
+              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>
+              {{ i18n.lang() === 'en' ? 'Take the guided tour' : 'Hacer el recorrido guiado' }}
+            </button>
+          }
         </div>
       </div>
+      @if (tour(); as current) {
+        <!-- Control del recorrido guiado: abajo, centrado; Esc o desplazarse a mano lo detienen. -->
+        <div class="tour-pill fixed bottom-[calc(1.25rem+var(--dock-bottom,0px)+env(safe-area-inset-bottom,0px))] left-1/2 z-30 -translate-x-1/2" data-testid="tour-controls" role="group" [attr.aria-label]="i18n.lang() === 'en' ? 'Guided tour' : 'Recorrido guiado'">
+          <span class="font-mono text-mono-sm text-ink-3">{{ i18n.lang() === 'en' ? 'Guided tour' : 'Recorrido' }} · {{ current.index + 1 }}/{{ current.total }}</span>
+          <span class="tour-progress" aria-hidden="true"><span [style.width.%]="((current.index + 1) / current.total) * 100"></span></span>
+          <button type="button" class="island-sound" [attr.aria-label]="current.paused ? (i18n.lang() === 'en' ? 'Resume' : 'Reanudar') : (i18n.lang() === 'en' ? 'Pause' : 'Pausar')" (click)="toggleTourPause()">
+            @if (current.paused) {
+              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>
+            } @else {
+              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" /></svg>
+            }
+          </button>
+          <button type="button" class="island-sound" [attr.aria-label]="i18n.lang() === 'en' ? 'End the tour' : 'Terminar el recorrido'" (click)="stopTour()">
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+      }
+      <p class="sr-only" aria-live="polite">{{ guideLine() ? guideLine()!.title + '. ' + guideLine()!.text : '' }}</p>
       <p class="sr-only">{{ pitch().lead }} {{ pitch().lines.join(' · ') }}</p>
       <!-- Zona pulsable: empieza bajo la barra fija para que esta no la tape. -->
       <button
@@ -310,6 +364,18 @@ export class HeroSceneComponent {
   readonly enabled = input(true);
 
   readonly ready = signal(false);
+  /** Modo guía disponible: pantalla ancha (el robot camina por el margen) y 3D activo. */
+  readonly guideAvailable = signal(false);
+  /** El robot ha dejado el hero y acompaña por la página. */
+  readonly guiding = signal(false);
+  /** Lo que dice ahora en modo guía (sección actual), o nada. */
+  readonly guideLine = signal<{ title: string; text: string } | null>(null);
+  /** Recorrido guiado en marcha. */
+  readonly tour = signal<{ index: number; total: number; paused: boolean } | null>(null);
+  private tourRun = 0;
+  private tourResume: (() => void) | null = null;
+  private guideSection: string | null = null;
+  private lineTimer = 0;
   /** Ya están los textos de las cartas (para recalcular la carta y los filtros). */
   private readonly cardsReady = signal(false);
   /** Avisa al hero de que el mazo se abre o se recoge (atenúa su texto). */
@@ -370,7 +436,7 @@ export class HeroSceneComponent {
 
   /** Bocadillo: dice cada frase cuando empieza a escribirla (si nadie está mirando el globo). */
   private narrateLine(line: string): void {
-    if (this.open()) return;
+    if (this.open() || this.guiding()) return;
     this.speakText(`${this.pitch().lead} ${line}.`, false);
   }
 
@@ -546,6 +612,83 @@ export class HeroSceneComponent {
     this.open.set(open);
   }
 
+  /** Secciones presentes en la página, en orden. */
+  private sections(): string[] {
+    const ids = [...PAGE_SECTIONS.map((section) => section.id), 'mcp'];
+    return ids
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => !!el)
+      .sort((a, b) => a.offsetTop - b.offsetTop)
+      .map((el) => el.id);
+  }
+
+  /** Dice (bocadillo y, con sonido, voz) lo de una sección. `long` en el recorrido. */
+  private present(id: string, long: boolean): Promise<void> {
+    const script = GUIDE_SCRIPT[id];
+    if (!script) return Promise.resolve();
+    const text = this.i18n.t(long ? script.long : script.short);
+    this.zone.run(() => this.guideLine.set({ title: this.i18n.t(script.title), text }));
+    clearTimeout(this.lineTimer);
+    if (!long) this.lineTimer = window.setTimeout(() => this.zone.run(() => this.guideLine.set(null)), 4500);
+    return new Promise((resolve) => {
+      const voice = globalThis.speechSynthesis;
+      if (!this.soundOn() || !voice) {
+        setTimeout(resolve, long ? Math.max(5000, text.length * 55) : 0);
+        return;
+      }
+      this.speakText(text);
+      const started = Date.now();
+      const wait = () => (voice.speaking && Date.now() - started < 30000 ? setTimeout(wait, 250) : setTimeout(resolve, 900));
+      setTimeout(wait, 600);
+    });
+  }
+
+  /** Recorrido guiado: baja sección a sección, se detiene y explica cada una. */
+  async startTour(): Promise<void> {
+    const ids = this.sections();
+    if (!ids.length) return;
+    const run = ++this.tourRun;
+    this.tour.set({ index: 0, total: ids.length, paused: false });
+    document.documentElement.classList.add('robot-touring');
+    for (let index = 0; index < ids.length; index++) {
+      if (run !== this.tourRun) return;
+      this.tour.set({ index, total: ids.length, paused: false });
+      const el = document.getElementById(ids[index]);
+      if (el) await animateScrollTo(el.getBoundingClientRect().top + scrollY - 88, 1500);
+      if (run !== this.tourRun) return;
+      this.guideSection = ids[index];
+      await this.present(ids[index], true);
+      while (this.tour()?.paused && run === this.tourRun) {
+        await new Promise<void>((resolve) => (this.tourResume = resolve));
+      }
+    }
+    if (run === this.tourRun) this.stopTour();
+  }
+
+  toggleTourPause(): void {
+    const current = this.tour();
+    if (!current) return;
+    this.tour.set({ ...current, paused: !current.paused });
+    if (current.paused) {
+      this.tourResume?.();
+      this.tourResume = null;
+    } else {
+      globalThis.speechSynthesis?.cancel();
+    }
+  }
+
+  stopTour(): void {
+    this.tourRun++;
+    document.documentElement.classList.remove('robot-touring');
+    this.tour.set(null);
+    this.tourResume?.();
+    this.tourResume = null;
+    globalThis.speechSynthesis?.cancel();
+    this.scene?.speak(false);
+    clearTimeout(this.lineTimer);
+    this.lineTimer = window.setTimeout(() => this.zone.run(() => this.guideLine.set(null)), 2500);
+  }
+
   /** Doble clic: se despereza (solo con el mazo recogido). */
   stretch(): void {
     if (this.open()) return;
@@ -652,7 +795,7 @@ export class HeroSceneComponent {
     const started = performance.now();
     const loop = () => {
       raf = 0;
-      if (!visible || document.hidden) {
+      if ((!visible && !this.guiding()) || document.hidden) {
         return;
       }
       scene.frame((performance.now() - started) / 1000);
@@ -671,8 +814,11 @@ export class HeroSceneComponent {
     const placeBubble = () => {
       const el = bubbleEl();
       if (!el) return;
-      const at = scene.anchor(this.narrow);
-      el.style.transform = this.narrow
+      const guide = this.guiding();
+      const at = scene.anchor(this.narrow && !guide, guide ? 'left' : undefined);
+      el.style.transform = guide
+        ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-100%, -50%)`
+        : this.narrow
         ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-50%, -50%)`
         : `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translateY(-50%)`;
     };
@@ -711,18 +857,76 @@ export class HeroSceneComponent {
       }
       target.textContent = text.slice(0, shown);
       // Habla mientras escribe (no mientras lee o borra), y calla con el mazo abierto.
-      scene.talk(!erasing && hold === 0 && shown < text.length && !this.open());
+      scene.talk(!erasing && hold === 0 && shown < text.length && !this.open() && !this.guiding());
     };
     const typing = setInterval(type, reduced ? 3500 : 55);
     type();
 
     const resize = () => {
-      const box = frame.getBoundingClientRect();
+      const box = canvas.getBoundingClientRect();
       scene.resize(Math.max(1, box.width), Math.max(1, box.height));
+      this.zone.run(() => this.guideAvailable.set(innerWidth >= 1280));
+      updateGuide();
       kick();
     };
     const sizes = new ResizeObserver(resize);
-    sizes.observe(frame);
+    sizes.observe(canvas);
+
+    // ---- Modo guía -------------------------------------------------------------------------
+    // Con la página desplazada más allá del hero, el robot va al margen derecho (entre el contenido
+    // y el borde, o el inspector acoplado) y presenta la sección que se está leyendo.
+    let settleTimer = 0;
+    let pointing = false;
+    const visibleSections = new Map<string, number>();
+    const sectionsSeen = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) visibleSections.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0);
+        const best = [...visibleSections.entries()].sort((a, b) => b[1] - a[1])[0];
+        const id = best && best[1] > 0.12 ? best[0] : null;
+        if (this.guiding() && id && id !== this.guideSection && !this.tour()) {
+          this.guideSection = id;
+          void this.present(id, false);
+        }
+      },
+      { threshold: [0, 0.15, 0.3, 0.6] },
+    );
+    const watchSections = () => {
+      for (const id of [...PAGE_SECTIONS.map((section) => section.id), 'mcp']) {
+        const el = document.getElementById(id);
+        if (el) sectionsSeen.observe(el);
+      }
+    };
+    watchSections();
+    const rewatch = setInterval(watchSections, 3000);
+    const updateGuide = () => {
+      const on = this.guideAvailable() && scrollY > innerHeight * 0.55 && !this.open();
+      if (on !== this.guiding()) {
+        this.zone.run(() => {
+          this.guiding.set(on);
+          if (!on) {
+            this.guideLine.set(null);
+            this.guideSection = null;
+          } else if (!this.tour()) {
+            // Al llegar al margen, presenta la sección que ya se está viendo.
+            const best = [...visibleSections.entries()].sort((a, b) => b[1] - a[1])[0];
+            if (best && best[1] > 0.12) {
+              this.guideSection = best[0];
+              void this.present(best[0], false);
+            }
+          }
+        });
+        document.documentElement.classList.toggle('robot-guide', on);
+      }
+      if (!on) {
+        scene.guide(null);
+        return;
+      }
+      const dockRight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-right')) || 0;
+      const width = innerWidth - dockRight;
+      const gutter = Math.max(120, (width - 1152) / 2);
+      const dockBottom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-bottom')) || 0;
+      scene.guide({ x: width - gutter * 0.56, y: (innerHeight - dockBottom) * 0.6, widthPx: gutter * 0.95, point: pointing || !!this.tour() });
+    };
     resize();
 
     this.kickFrame = kick;
@@ -739,9 +943,27 @@ export class HeroSceneComponent {
       if (reduced) kick();
     };
     const onScroll = () => {
-      scene.scroll(scrollY / Math.max(1, innerHeight * 0.8));
+      scene.scroll(scrollY);
+      // Mientras se desplaza, camina; al detenerse, señala la sección.
+      pointing = false;
+      clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(() => {
+        pointing = true;
+        updateGuide();
+      }, 450);
+      updateGuide();
       kick();
     };
+    // Desplazarse a mano (rueda, toque, teclado) detiene el recorrido guiado.
+    const interrupt = (event: Event) => {
+      if (!this.tour()) return;
+      if (event instanceof KeyboardEvent && !['Escape', 'ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', ' ', 'Home', 'End'].includes(event.key)) return;
+      if ((event.target as HTMLElement | null)?.closest?.('[data-testid="tour-controls"]')) return;
+      this.zone.run(() => this.stopTour());
+    };
+    addEventListener('wheel', interrupt, { passive: true });
+    addEventListener('touchstart', interrupt, { passive: true });
+    addEventListener('keydown', interrupt);
     const onVisibility = () => kick();
     addEventListener('pointermove', onPointer, { passive: true });
     addEventListener('scroll', onScroll, { passive: true });
@@ -759,6 +981,13 @@ export class HeroSceneComponent {
     destroyRef.onDestroy(() => {
       cancelAnimationFrame(raf);
       clearInterval(typing);
+      clearInterval(rewatch);
+      sectionsSeen.disconnect();
+      removeEventListener('wheel', interrupt);
+      removeEventListener('touchstart', interrupt);
+      removeEventListener('keydown', interrupt);
+      document.documentElement.classList.remove('robot-guide');
+      this.tourRun++;
       sizes.disconnect();
       seen.disconnect();
       removeEventListener('pointermove', onPointer);
@@ -786,4 +1015,25 @@ function readPalette(): ScenePalette {
     light: css.getPropertyValue('color-scheme').trim() === 'light' || document.documentElement.getAttribute('data-theme') === 'light'
       || (!document.documentElement.hasAttribute('data-theme') && matchMedia('(prefers-color-scheme: light)').matches),
   };
+}
+
+/** Desplaza la página hasta `top` con una curva suave (ease-in-out), en `duration` ms. */
+function animateScrollTo(top: number, duration: number): Promise<void> {
+  const from = scrollY;
+  const to = Math.max(0, Math.min(top, document.documentElement.scrollHeight - innerHeight));
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || Math.abs(to - from) < 2) {
+    scrollTo(0, to);
+    return Promise.resolve();
+  }
+  const started = performance.now();
+  return new Promise((resolve) => {
+    const step = (now: number) => {
+      const p = Math.min(1, (now - started) / duration);
+      const eased = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      scrollTo(0, from + (to - from) * eased);
+      if (p < 1) requestAnimationFrame(step);
+      else resolve();
+    };
+    requestAnimationFrame(step);
+  });
 }
