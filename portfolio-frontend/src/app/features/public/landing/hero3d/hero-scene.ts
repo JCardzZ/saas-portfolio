@@ -447,10 +447,10 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   // Holograma proyectado desde el portátil: sube desde la tapa y flota a su izquierda, ligeramente
   // girado hacia quien mira, unido a él por un haz de luz.
   codeMat.blending = three.AdditiveBlending;
-  const CODE_HOME = new three.Vector3(-3.15, -1.15, 2.25);
-  const codeScreen = new three.Mesh(keep(new three.PlaneGeometry(3.4, 2.12)), codeMat);
+  const CODE_HOME = new three.Vector3(-4.6, -0.2, 2.25);
+  const codeScreen = new three.Mesh(keep(new three.PlaneGeometry(4.3, 2.68)), codeMat);
   codeScreen.position.copy(CODE_HOME);
-  codeScreen.rotation.set(-0.05, 0.32, 0);
+  codeScreen.rotation.set(-0.04, 0.38, 0);
   furniture.add(codeScreen);
   const codeBeamMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.1, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
   const codeBeamGeometry = keep(new three.BufferGeometry());
@@ -463,8 +463,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   /** Haz: de la tapa del portátil (abajo) a los dos bordes inferiores del holograma (arriba). */
   function placeCodeBeam(): void {
     const from = [new three.Vector3(-0.85, -2.25, 2.3), new three.Vector3(-0.2, -2.25, 2.3)];
-    const half = (3.4 * codeScreen.scale.x) / 2;
-    const to = [new three.Vector3(-half, -1.06 * codeScreen.scale.y, 0), new three.Vector3(half, -1.06 * codeScreen.scale.y, 0)].map((v) => {
+    const half = (4.3 * codeScreen.scale.x) / 2;
+    const to = [new three.Vector3(-half, -1.34 * codeScreen.scale.y, 0), new three.Vector3(half, -1.34 * codeScreen.scale.y, 0)].map((v) => {
       beamCorner.copy(v).applyEuler(codeScreen.rotation).add(codeScreen.position);
       return beamCorner.clone();
     });
@@ -1318,7 +1318,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     hinge.rotation.x = 0.22 + (1 - lidOpen) * 1.3;
     const holo = ph(0.72, 1);
     codeScreen.scale.setScalar(Math.max(0.001, holo));
-    codeScreen.position.copy(CODE_HOME).add(new three.Vector3(1.9 * (1 - holo), -1.0 * (1 - holo), 0));
+    codeScreen.position.copy(CODE_HOME).add(new three.Vector3(3.6 * (1 - holo), -2.0 * (1 - holo), 0));
     codeMat.opacity = holo * (0.92 + (animate ? Math.sin(t * 13) * 0.04 : 0));
     codeBeamMat.opacity = holo * 0.2 * (settling ? 1.5 : 1);
     codeBeam.visible = holo > 0.02;
