@@ -93,7 +93,7 @@ const DRAG_THRESHOLD = 6;
 @keyframes caret-blink { 50% { opacity: 0; } }
 
 /* Bocadillo a la izquierda del robot (modo guía, robot en el margen derecho): cola a la derecha. */
-.speech-left .speech-body::after { left: auto; right: -7px; transform: rotate(-135deg); }
+.speech-top .speech-body::after { left: 78%; top: auto; bottom: -7px; transform: rotate(-45deg); }
 .tour-pill {
   display: flex;
   align-items: center;
@@ -133,14 +133,14 @@ const DRAG_THRESHOLD = 6;
 @keyframes laser-ring { from { transform: scale(1); opacity: 0.9; } to { transform: scale(4); opacity: 0; } }
 /* La tarjeta que el robot «toca»: se ilumina y se desplaza como si la empujara con el láser. */
 .robot-touch {
-  transition: transform 600ms var(--ease-emphasized), box-shadow 600ms var(--ease-standard) !important;
-  box-shadow: 0 0 0 1px rgb(var(--c-accent-solid) / 0.8), 0 0 48px rgb(var(--c-accent-solid) / 0.25) !important;
-  animation: robot-nudge 2.4s var(--ease-standard) infinite;
+  /* Como una lámina: bisagra en el borde izquierdo, el derecho (donde la agarra) sube hacia él. */
+  transform-origin: left center;
+  box-shadow: 0 0 0 1px rgb(var(--c-accent-solid) / 0.8), 0 30px 60px rgb(0 0 0 / 0.45), 0 0 48px rgb(var(--c-accent-solid) / 0.22) !important;
+  animation: robot-lamina 3.2s var(--ease-standard) infinite;
 }
-@keyframes robot-nudge {
-  0%, 100% { transform: perspective(1200px) translateX(0) rotateY(0); }
-  35% { transform: perspective(1200px) translateX(-14px) rotateY(-2.5deg); }
-  65% { transform: perspective(1200px) translateX(-6px) rotateY(-1deg); }
+@keyframes robot-lamina {
+  0%, 100% { transform: perspective(1800px) rotateY(-3deg) translateZ(8px); }
+  50% { transform: perspective(1800px) rotateY(-5.5deg) translateZ(18px); }
 }
 @media (prefers-reduced-motion: reduce) { .robot-touch { animation: none; } .laser-on .laser-ring { animation: none; } }
 
@@ -234,7 +234,7 @@ const DRAG_THRESHOLD = 6;
         El lienzo es fijo y queda detrás del contenido: así el robot puede dejar el hero y acompañar
         al visitante por la página (modo guía, en pantallas anchas).
       -->
-      <canvas #canvas class="pointer-events-none fixed inset-0 -z-[5] block h-dvh w-screen" [class.hero-canvas]="!guiding()" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
+      <canvas #canvas class="pointer-events-none fixed inset-0 block h-dvh w-screen" [style.z-index]="guiding() ? 15 : -5" [class.hero-canvas]="!guiding()" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
       <!--
         Bocadillo del robot: en cinco segundos, qué hago, escrito a máquina y rotando. Sigue a la
         cabeza (se posiciona escribiendo el estilo, sin detección de cambios). Se retira con el
@@ -246,7 +246,7 @@ const DRAG_THRESHOLD = 6;
         [class.opacity-0]="!ready() || open() || (guiding() && !guideLine())"
         [class.invisible]="!ready() || open() || (guiding() && !guideLine())"
         [class.speech-narrow]="narrow"
-        [class.speech-left]="guiding()"
+        [class.speech-top]="guiding()"
       >
         @if (guideLine(); as g) {
           <!-- En modo guía: la sección que se está viendo. -->
@@ -933,13 +933,15 @@ export class HeroSceneComponent {
       const section = this.touchSection ? document.getElementById(this.touchSection) : null;
       let target: HTMLElement | null = null;
       if (tip && section) {
-        const candidates = section.querySelectorAll<HTMLElement>('.bento-card, .theater-card, article, app-section-header');
-        let best = 0;
+        const candidates = section.querySelectorAll<HTMLElement>('.bento-card, .theater-card, article');
+        // La tarjeta bien visible más cercana al robot (el de más a la derecha): así el brazo no
+        // cruza otras tarjetas para llegar.
+        let right = -Infinity;
         for (const el of Array.from(candidates)) {
           const r = el.getBoundingClientRect();
           const visible = Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0));
-          if (visible > best + 40) {
-            best = visible;
+          if (visible >= Math.min(160, r.height * 0.6) && r.right > right + 8 && !el.closest('.robot-touch:not(:scope)')) {
+            right = r.right;
             target = el;
           }
         }
@@ -950,10 +952,19 @@ export class HeroSceneComponent {
         this.touched = target;
       }
       svg.classList.toggle('laser-on', !!(tip && target));
-      if (!tip || !target) return;
+      if (!tip || !target) {
+        scene.reach(null);
+        return;
+      }
       const r = target.getBoundingClientRect();
-      const hx = Math.min(r.right - 12, tip.x - 40);
-      const hy = Math.max(r.top + 24, Math.min(r.bottom - 24, tip.y + Math.sin(performance.now() / 600) * 18));
+      // La mano agarra el borde derecho de la tarjeta, a la altura de su parte visible.
+      const top = Math.max(r.top, 70);
+      const bottom = Math.min(r.bottom, innerHeight - 60);
+      scene.reach({ x: r.right - 6, y: top + Math.min(140, (bottom - top) * 0.35) });
+      // El láser escanea la tarjeta por dentro, de un lado a otro, mientras la explica.
+      const now = performance.now();
+      const hx = r.left + 32 + (r.width - 64) * (0.5 + 0.5 * Math.sin(now / 900));
+      const hy = top + 30 + (bottom - top - 60) * (0.5 + 0.5 * Math.sin(now / 1700));
       for (const line of [this.laserCore()?.nativeElement, this.laserGlow()?.nativeElement]) {
         line?.setAttribute('x1', String(tip.x));
         line?.setAttribute('y1', String(tip.y));
@@ -977,7 +988,7 @@ export class HeroSceneComponent {
       const el = bubbleEl();
       if (!el) return;
       const guide = this.guiding();
-      const raw = scene.anchor(this.narrow && !guide, guide ? 'left' : undefined);
+      const raw = scene.anchor(this.narrow && !guide, guide ? 'top' : undefined);
       // Margen muerto: la respiración del robot no debe hacer temblar el bocadillo (ni sus botones).
       if (Math.hypot(raw.x - bubbleAt.x, raw.y - bubbleAt.y) > 6 || guide !== bubbleGuide) {
         bubbleAt.x = raw.x;
@@ -986,7 +997,7 @@ export class HeroSceneComponent {
       }
       const at = bubbleAt;
       el.style.transform = guide
-        ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-100%, -50%)`
+        ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-82%, calc(-100% - 14px))`
         : this.narrow
         ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-50%, -50%)`
         : `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translateY(-50%)`;
