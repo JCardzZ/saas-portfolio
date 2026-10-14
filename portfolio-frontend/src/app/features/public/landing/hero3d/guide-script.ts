@@ -2,10 +2,11 @@ import type { Localized } from '../../../../core/i18n/language.service';
 
 /**
  * Lo que dice el robot de cada sección: `short` mientras se baja con el scroll; `long` en el
- * recorrido guiado. Describe lo que hay en la página (y que es real o simulado), sin inventar datos.
+ * recorrido guiado; `items`, los puntos de la lámina holográfica que sostiene. Describe lo que hay en la página (y que es real o simulado), sin inventar datos.
  */
-export const GUIDE_SCRIPT: Record<string, { title: Localized; short: Localized; long: Localized }> = {
+export const GUIDE_SCRIPT: Record<string, { title: Localized; short: Localized; long: Localized; items: { en: string[]; es: string[] } }> = {
   plataforma: {
+    items: { en: ['C4 · 4 levels', 'Hexagonal', 'Cache-aside', 'RAG engine'], es: ['C4 · 4 niveles', 'Hexagonal', 'Cache-aside', 'Motor RAG'] },
     title: { en: 'Architecture', es: 'Arquitectura' },
     short: { en: 'This is how it’s built inside.', es: 'Así está hecha por dentro.' },
     long: {
@@ -14,6 +15,7 @@ export const GUIDE_SCRIPT: Record<string, { title: Localized; short: Localized; 
     },
   },
   entrega: {
+    items: { en: ['Topology', 'CI/CD pipeline', 'Deploys', 'Rollback'], es: ['Topología', 'Pipeline CI/CD', 'Despliegues', 'Rollback'] },
     title: { en: 'Delivery', es: 'Entrega' },
     short: { en: 'What’s live, and how it ships.', es: 'Lo que está en producción y cómo llega.' },
     long: {
@@ -22,6 +24,7 @@ export const GUIDE_SCRIPT: Record<string, { title: Localized; short: Localized; 
     },
   },
   cloud: {
+    items: { en: ['AWS · GCP · Azure', 'Security checks', 'FinOps', 'Terraform'], es: ['AWS · GCP · Azure', 'Seguridad', 'FinOps', 'Terraform'] },
     title: { en: 'Cloud studio', es: 'Estudio cloud' },
     short: { en: 'Draw it on any cloud.', es: 'Dibújala en cualquier nube.' },
     long: {
@@ -30,6 +33,7 @@ export const GUIDE_SCRIPT: Record<string, { title: Localized; short: Localized; 
     },
   },
   mcp: {
+    items: { en: ['MCP server', 'Tools', 'Live status', 'Read-only'], es: ['Servidor MCP', 'Herramientas', 'Estado en vivo', 'Solo lectura'] },
     title: { en: 'MCP server', es: 'Servidor MCP' },
     short: { en: 'Use it from your own AI.', es: 'Úsala desde tu propia IA.' },
     long: {
@@ -38,6 +42,7 @@ export const GUIDE_SCRIPT: Record<string, { title: Localized; short: Localized; 
     },
   },
   proyectos: {
+    items: { en: ['Real code', 'Stack per project', 'Ask the AI'], es: ['Código real', 'Stack por proyecto', 'Pregúntale a la IA'] },
     title: { en: 'Projects', es: 'Proyectos' },
     short: { en: 'Real work, with its code.', es: 'Trabajo real, con su código.' },
     long: {
@@ -46,6 +51,7 @@ export const GUIDE_SCRIPT: Record<string, { title: Localized; short: Localized; 
     },
   },
   tecnologias: {
+    items: { en: ['Backend', 'Data', 'Cloud', 'DevOps'], es: ['Backend', 'Datos', 'Cloud', 'DevOps'] },
     title: { en: 'Technologies', es: 'Tecnologías' },
     short: { en: 'My stack, by area.', es: 'Mi stack, por área.' },
     long: {
@@ -54,6 +60,7 @@ export const GUIDE_SCRIPT: Record<string, { title: Localized; short: Localized; 
     },
   },
   articulos: {
+    items: { en: ['Technical notes', 'Cited by the AI'], es: ['Notas técnicas', 'Citadas por la IA'] },
     title: { en: 'Articles', es: 'Artículos' },
     short: { en: 'Notes I’ve written.', es: 'Notas que he escrito.' },
     long: {
@@ -62,6 +69,7 @@ export const GUIDE_SCRIPT: Record<string, { title: Localized; short: Localized; 
     },
   },
   trayectoria: {
+    items: { en: ['Banking', 'Modernisation', 'Cloud', 'CV'], es: ['Banca', 'Modernización', 'Cloud', 'CV'] },
     title: { en: 'Career', es: 'Trayectoria' },
     short: { en: 'Where I’ve been.', es: 'Por dónde he pasado.' },
     long: {
