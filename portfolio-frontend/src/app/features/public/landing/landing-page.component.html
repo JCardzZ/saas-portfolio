@@ -15,11 +15,11 @@
         Jerarquía de tres niveles, de más a menos: saludo pequeño, nombre enorme (h1) y rol mediano en
         el acento. Un solo elemento gigante: si nombre y rol pesan igual, compiten y el bloque se satura.
       -->
-      <p class="pointer-events-auto relative z-10 text-center text-title-2 font-medium text-ink-2">{{ i18n.t(copy.heroGreeting) }}</p>
-      <h1 id="hero-titulo" class="hero-name pointer-events-auto relative z-0 mt-1 text-center font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink-1">
+      <p class="hero-greeting pointer-events-auto relative z-10 text-center font-normal text-ink-2">{{ i18n.t(copy.heroGreeting) }}</p>
+      <h1 id="hero-titulo" class="hero-name pointer-events-auto relative z-0 mt-2 text-center font-bold leading-[0.95] tracking-[-0.045em] text-ink-1">
         {{ i18n.t(copy.heroTitle) }}
       </h1>
-      <p class="hero-role pointer-events-auto relative z-10 mx-auto mt-5 text-center font-semibold tracking-[-0.01em] text-accent-text" data-testid="hero-role">
+      <p class="hero-role pointer-events-auto relative z-10 mx-auto mt-4 text-center font-medium tracking-[-0.02em] text-accent-text" data-testid="hero-role">
         {{ heroRole() }}
       </p>
       <!-- Hueco para el robot: crece lo que haga falta para que la frase y los botones queden dentro de la pantalla. -->

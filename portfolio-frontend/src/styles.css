@@ -424,9 +424,15 @@
 }
 
 .hero-role {
-  font-size: clamp(1.25rem, 2.6vw, 2.25rem);
-  line-height: 1;
+  /* Segundo nivel: más grande que el saludo, en peso medio; solo el nombre va en negrita. */
+  font-size: clamp(1.375rem, 2.7vw, 2.4rem);
+  line-height: 1.1;
   text-wrap: balance;
+}
+.hero-greeting {
+  /* Escala ~1:4 respecto al nombre (antes 1:6, se perdía). */
+  font-size: clamp(1.25rem, 2.1vw, 1.9rem);
+  line-height: 1.2;
 }
 /* La escena del hero se funde con la galaxia por abajo: sin corte ni línea al final. */
 .hero-canvas {
@@ -435,8 +441,9 @@
 }
 
 .hero-name {
-  /* «MANUEL CARDOZA» tiene que caber en una línea dentro de la columna (máx. 72 rem): 8,2vw. */
-  font-size: clamp(2.5rem, 8.2vw, 7.4rem);
+  /* Peso 700 y mayúsculas solo iniciales: igual de grande, menos «gritón» y más legible que 900 en mayúsculas. */
+  font-size: clamp(2.75rem, 8.6vw, 7.75rem);
+  font-feature-settings: 'ss01', 'cv11';
   text-wrap: balance;
 }
 
