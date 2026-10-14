@@ -1109,7 +1109,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       // El lienzo ocupa toda la pantalla: el robot, a escala de ella, queda en la mitad de abajo, bajo el nombre.
       // Robot entero con su escritorio (~6,2 de alto y de ancho) en la mitad baja, bajo el nombre.
       fit = Math.min(halfHeight * 0.165, halfWidth * 0.29);
-      camera.position.y = -1.3 * fit + halfHeight * (camera.aspect < 0.8 ? 0.16 : 0.34);
+      camera.position.y = -1.3 * fit + halfHeight * (camera.aspect < 0.8 ? 0.2 : 0.42);
       camera.updateProjectionMatrix();
     },
     pointer(x, y) {
