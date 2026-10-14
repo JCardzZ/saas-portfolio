@@ -95,7 +95,7 @@ export function countVisit(): number {
 }
 
 /**
- * La voz más natural disponible para el idioma: las voces neuronales o «premium» del sistema y del
+ * La voz de hombre más natural disponible para el idioma: las voces neuronales o «premium» del sistema y del
  * navegador suenan humanas; las básicas, robóticas. Se puntúa por nombre y se elige la mejor.
  */
 export function bestVoice(lang: 'en' | 'es'): SpeechSynthesisVoice | null {
@@ -107,7 +107,9 @@ export function bestVoice(lang: 'en' | 'es'): SpeechSynthesisVoice | null {
     if (/natural|neural|online/.test(name)) points += 50; // Edge, Windows: voces neuronales
     if (/premium|enhanced|siri/.test(name)) points += 40; // macOS e iOS: voces mejoradas
     if (/google/.test(name)) points += 25; // Chrome: voces en la nube, bastante naturales
-    if (/samantha|ava|allison|zoe|evan|nathan|paulina|m[oó]nica|jorge|diego|marisol|sof[ií]a|elena/.test(name)) points += 10;
+    // Voz de hombre: se premian voces masculinas conocidas y se descartan las femeninas.
+    if (/\bmale\b|daniel|alex|aaron|evan|nathan|tom\b|oliver|arthur|rishi|guy|andrew|brian|christopher|eric|roger|steffan|davis|jorge|diego|juan|carlos|pablo|alvaro|álvaro|gerardo|jos[eé]|ra[uú]l|tom[aá]s|liam/.test(name)) points += 30;
+    if (/female|samantha|ava|allison|zoe|susan|karen|victoria|moira|tessa|fiona|serena|kate|aria|jenny|emma|michelle|sonia|libby|paulina|m[oó]nica|marisol|sof[ií]a|elena|helena|laura|lucia|luc[ií]a|elvira|dalia|camila|google espa[nñ]ol|google us english\b/.test(name)) points -= 60;
     if (!voice.localService) points += 5;
     if (/compact|espeak|novelty|bad news|bells|whisper|zarvox|trinoids|albert/.test(name)) points -= 100;
     if (lang === 'es' && /es-(mx|us|419)/i.test(voice.lang)) points += 3; // acento latinoamericano
