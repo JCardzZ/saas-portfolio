@@ -109,7 +109,7 @@ test('cada token sale como variable CSS y como utilidad de Tailwind', () => {
 test('las fuentes están en el repositorio, con su licencia, y son las que se precargan', () => {
   const css = readFileSync(join(root, 'src/styles/fonts.css'), 'utf8');
   const files = [...css.matchAll(/url\('(\/fonts\/[^']+)'\)/g)].map((match) => match[1]);
-  assert.equal(files.length, 2);
+  assert.equal(files.length, 3);
   for (const file of files) {
     assert.ok(existsSync(join(root, 'public', file)), `falta ${file}`);
     assert.ok(existsSync(join(root, 'public', dirname(file), 'OFL.txt')), `falta la licencia de ${file}`);

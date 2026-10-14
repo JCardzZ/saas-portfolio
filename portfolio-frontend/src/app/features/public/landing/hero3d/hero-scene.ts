@@ -79,6 +79,8 @@ export interface HeroScene {
   fling(x: number, y: number): void;
   /** Suelta la ficha: sale con la velocidad del gesto, cae con gravedad, rebota y vuelve al globo. */
   release(): void;
+  /** Cuánto se está estirando ahora (0–1): la página mueve con ello el nombre, el rol y el bocadillo. */
+  stretchLevel(): number;
   /** Mientras `true`, teclea en el portátil (lo marca el texto que escribe el bocadillo). */
   talk(talking: boolean): void;
   /** Punto de la pantalla (px del lienzo) junto a la cabeza, de donde sale el bocadillo. */
@@ -437,76 +439,205 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   lidLogo.position.set(0, 0.55, 0.03);
   hinge.add(lidLogo);
 
-  // Pantalla holográfica junto al portátil, de cara a quien mira: el código que el robot teclea.
+  // Holograma «del genio»: sale del portátil en una estela de luz que se retuerce y se abre en una
+  // pantalla plana donde se dibuja, paso a paso, una arquitectura de alto nivel (cliente, borde,
+  // API, datos, IA, mensajería, nube y CI/CD) en unos 2 s y se queda a la vista: en dos segundos se
+  // entiende a qué se dedica.
   const codeArt = document.createElement('canvas');
-  codeArt.width = 640;
-  codeArt.height = 400;
+  codeArt.width = 1024;
+  codeArt.height = 640;
   const codeTexture = keep(new three.CanvasTexture(codeArt));
   codeTexture.colorSpace = three.SRGBColorSpace;
-  const codeMat = keep(new three.MeshBasicMaterial({ map: codeTexture, transparent: true, depthWrite: false, side: three.DoubleSide }));
-  const codeScreen = new three.Mesh(keep(new three.PlaneGeometry(2.5, 1.56)), codeMat);
-  codeScreen.position.set(-2.95, -1.85, 2.05);
-  codeScreen.rotation.y = 0.3;
+  codeTexture.anisotropy = 4;
+  const codeMat = keep(new three.MeshBasicMaterial({ map: codeTexture, transparent: true, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
+  const CODE_HOME = new three.Vector3(-4.9, 0.4, 2.25);
+  const SCREEN_W = 4.9;
+  const SCREEN_H = 3.06;
+  const codeScreen = new three.Mesh(keep(new three.PlaneGeometry(SCREEN_W, SCREEN_H)), codeMat);
+  codeScreen.position.copy(CODE_HOME);
+  codeScreen.rotation.set(-0.04, 0.22, 0);
   furniture.add(codeScreen);
-  const codeStand = new three.Mesh(rounded(0.08, 0.5, 0.08, 0.03), metal);
-  codeStand.position.set(-2.95, -2.6, 1.95);
-  furniture.add(codeStand);
-  const CODE = [
-    '@GetMapping("/projects")',
-    'public List<Project> list() {',
-    '  return cache.getOrLoad(KEY,',
-    '      repository::findAll);',
-    '}',
-    '',
-    'resource "aws_ecs_service" "api" {',
-    '  desired_count = 2',
-    '}',
-    '',
-    'const answer = await rag.ask(q);',
+  const haloMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.08, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
+  const halo = new three.Mesh(keep(new three.PlaneGeometry(SCREEN_W + 0.35, SCREEN_H + 0.3)), haloMat);
+  halo.position.z = -0.02;
+  codeScreen.add(halo);
+  const sweepMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.3, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
+  const sweepBar = new three.Mesh(keep(new three.PlaneGeometry(SCREEN_W - 0.1, 0.05)), sweepMat);
+  sweepBar.position.z = 0.01;
+  codeScreen.add(sweepBar);
+
+  // Estela del genio: sale de la tapa del portátil, se retuerce como humo y llega al borde inferior
+  // de la pantalla. Más fina abajo (la «lámpara») y más ancha arriba.
+  const LAMP = new three.Vector3(-0.45, -2.2, 2.35);
+  const screenFoot = CODE_HOME.clone().add(new three.Vector3(0.6, -SCREEN_H / 2 + 0.05, 0.25));
+  const geniePath = new three.CatmullRomCurve3([
+    LAMP,
+    new three.Vector3(-0.2, -1.45, 2.9),
+    new three.Vector3(-1.7, -1.15, 2.2),
+    new three.Vector3(-1.6, -0.3, 3.0),
+    new three.Vector3(-3.0, -0.65, 2.6),
+    screenFoot,
+  ]);
+  const TAIL_SEG = 120;
+  const tailGeometry = keep(new three.TubeGeometry(geniePath, TAIL_SEG, 1, 16, false));
+  {
+    // Ahusar: el radio crece a lo largo de la estela.
+    const pos = tailGeometry.getAttribute('position');
+    const centre = new three.Vector3();
+    const v = new three.Vector3();
+    for (let seg = 0; seg <= TAIL_SEG; seg++) {
+      const u = seg / TAIL_SEG;
+      geniePath.getPointAt(u, centre);
+      const radius = 0.04 + Math.pow(u, 1.6) * 0.42;
+      for (let r = 0; r <= 16; r++) {
+        const i = seg * 17 + r;
+        v.fromBufferAttribute(pos, i).sub(centre).multiplyScalar(radius).add(centre);
+        pos.setXYZ(i, v.x, v.y, v.z);
+      }
+    }
+    pos.needsUpdate = true;
+  }
+  const tailMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.16, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
+  const tail = new three.Mesh(tailGeometry, tailMat);
+  furniture.add(tail);
+  const TAIL_INDEX = tailGeometry.index ? tailGeometry.index.count : 0;
+  // Chispas que suben girando en espiral alrededor de la estela.
+  const MOTES = 70;
+  const motePos = new Float32Array(MOTES * 3);
+  const moteSeed = Array.from({ length: MOTES }, () => Math.random());
+  const moteGeometry = keep(new three.BufferGeometry());
+  moteGeometry.setAttribute('position', new three.BufferAttribute(motePos, 3));
+  const moteMat = keep(new three.PointsMaterial({ color: 0x7fee64, size: 0.06, transparent: true, opacity: 0.9, depthWrite: false, blending: three.AdditiveBlending }));
+  const motes = new three.Points(moteGeometry, moteMat);
+  furniture.add(motes);
+  const motePoint = new three.Vector3();
+  const moteTan = new three.Vector3();
+  const moteSide = new three.Vector3();
+  const moteUp = new three.Vector3();
+
+  // Diagrama que se dibuja en la pantalla.
+  type ArchNode = { x: number; y: number; title: string; sub: string };
+  const ARCH: ArchNode[] = [
+    { x: 32, y: 110, title: 'Angular', sub: 'frontend' },
+    { x: 270, y: 110, title: 'CDN · WAF', sub: 'edge' },
+    { x: 508, y: 110, title: 'API Gateway', sub: 'OAuth2 · JWT' },
+    { x: 746, y: 110, title: 'Spring Boot', sub: 'hexagonal' },
+    { x: 32, y: 290, title: 'Redis', sub: 'cache' },
+    { x: 270, y: 290, title: 'PostgreSQL', sub: 'pgvector' },
+    { x: 508, y: 290, title: 'Gemini', sub: 'RAG · AI' },
+    { x: 746, y: 290, title: 'Kafka', sub: 'events' },
   ];
-  let codeChars = 0;
+  const EDGES: [number, number][] = [[0, 1], [1, 2], [2, 3], [3, 7], [3, 6], [3, 5], [3, 4]];
+  const NODE_W = 220;
+  const NODE_H = 116;
+  let archT = 0;
   let codeTick = 0;
+  let genieOut = 1;
   function paintCode(colors: ScenePalette): void {
     const ctx = codeArt.getContext('2d');
     if (!ctx) return;
-    const { width, height } = codeArt;
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = colors.light ? 'rgba(255,255,255,0.82)' : 'rgba(8,10,9,0.78)';
+    const W = codeArt.width;
+    const H = codeArt.height;
+    ctx.clearRect(0, 0, W, H);
+    // Marco del holograma: fondo verdoso, rejilla y líneas de barrido.
+    ctx.fillStyle = colors.light ? 'rgba(20,60,20,0.2)' : 'rgba(40,120,40,0.15)';
     ctx.beginPath();
-    ctx.roundRect(0, 0, width, height, 22);
+    ctx.roundRect(2, 2, W - 4, H - 4, 26);
     ctx.fill();
+    ctx.globalAlpha = 0.06;
+    ctx.fillStyle = colors.accent;
+    for (let y = 8; y < H; y += 7) ctx.fillRect(6, y, W - 12, 2);
+    for (let x = 32; x < W; x += 32) ctx.fillRect(x, 60, 1, H - 70);
+    ctx.globalAlpha = 1;
     ctx.strokeStyle = colors.accent;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
     ctx.stroke();
-    // Barra de ventana con sus tres puntos.
-    for (let k = 0; k < 3; k++) {
-      ctx.fillStyle = colors.muted;
+    // Cabecera: lo que se está diseñando, con cursor.
+    const cycle = archT % 9;
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = colors.light ? colors.accentText : colors.ink;
+    ctx.shadowColor = colors.accent;
+    ctx.shadowBlur = 14;
+    ctx.font = '800 32px "JetBrains Mono", ui-monospace, monospace';
+    const heading = '> design --saas --cloud aws|azure|gcp';
+    const typed = heading.slice(0, Math.floor(Math.min(1, cycle / 0.5) * heading.length));
+    ctx.fillText(typed + (Math.floor(archT * 2) % 2 ? '▌' : ''), 34, 36);
+    ctx.shadowBlur = 0;
+    // Conexiones (aparecen tras sus nodos), con un pulso que viaja por cada una.
+    const shownNodes = Math.floor(Math.max(0, cycle - 0.4) / 0.18);
+    const centre = (n: ArchNode) => ({ x: n.x + NODE_W / 2, y: n.y + NODE_H / 2 });
+    ctx.lineWidth = 3;
+    EDGES.forEach(([from, to], index) => {
+      if (Math.max(from, to) >= shownNodes) return;
+      const a = centre(ARCH[from]);
+      const b = centre(ARCH[to]);
+      const edgeT = Math.min(1, (cycle - 0.4 - Math.max(from, to) * 0.18) / 0.25);
+      const ex = a.x + (b.x - a.x) * edgeT;
+      const ey = a.y + (b.y - a.y) * edgeT;
+      ctx.strokeStyle = colors.accent;
       ctx.globalAlpha = 0.6;
       ctx.beginPath();
-      ctx.arc(30 + k * 24, 26, 7, 0, Math.PI * 2);
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      if (edgeT >= 1) {
+        const k = (archT * 0.8 + index * 0.17) % 1;
+        ctx.fillStyle = colors.accent;
+        ctx.beginPath();
+        ctx.arc(a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+    // Nodos.
+    ARCH.forEach((node, index) => {
+      if (index >= shownNodes) return;
+      const pop = Math.min(1, (cycle - 0.4 - index * 0.18) / 0.18);
+      ctx.globalAlpha = pop;
+      ctx.fillStyle = colors.light ? 'rgba(255,255,255,0.25)' : 'rgba(10,20,12,0.75)';
+      ctx.beginPath();
+      ctx.roundRect(node.x, node.y, NODE_W, NODE_H, 14);
       ctx.fill();
+      ctx.strokeStyle = colors.accent;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.fillStyle = colors.accent;
+      ctx.beginPath();
+      ctx.arc(node.x + 24, node.y + 38, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = colors.ink;
+      // El título cabe siempre en su caja: la letra baja hasta que entra.
+      let size = 32;
+      do {
+        ctx.font = `800 ${size}px Inter, system-ui, sans-serif`;
+        size -= 1;
+      } while (ctx.measureText(node.title).width > NODE_W - 54 && size > 18);
+      ctx.fillText(node.title, node.x + 42, node.y + 38);
+      ctx.fillStyle = colors.accentText;
+      ctx.font = '600 24px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillText(node.sub, node.x + 24, node.y + 84);
+      ctx.globalAlpha = 1;
+    });
+    // Pie: la nube y la entrega, al final de cada ciclo.
+    if (cycle > 0.4 + ARCH.length * 0.18) {
+      const pop = Math.min(1, (cycle - 0.4 - ARCH.length * 0.18) / 0.3);
+      ctx.globalAlpha = pop;
+      ctx.strokeStyle = colors.accent;
+      ctx.setLineDash([10, 8]);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(18, 92, W - 36, 340, 20);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = colors.accentText;
+      ctx.font = '700 28px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillText('☁ AWS · Azure · GCP · Terraform', 40, 470);
+      ctx.fillText('⟳ CI/CD · Docker · rollback', 40, 516);
+      ctx.fillStyle = colors.ink;
+      ctx.font = '800 36px Inter, system-ui, sans-serif';
+      ctx.fillText('✓ Scalable · secure · observable', 40, 588);
       ctx.globalAlpha = 1;
     }
-    ctx.font = '700 27px "JetBrains Mono", ui-monospace, monospace';
-    ctx.textBaseline = 'top';
-    let left = codeChars;
-    const visible: string[] = [];
-    for (const line of CODE) {
-      if (left <= 0) break;
-      visible.push(line.slice(0, left));
-      left -= line.length + 1;
-    }
-    const lines = visible.slice(-9);
-    lines.forEach((line, k) => {
-      ctx.fillStyle = colors.muted;
-      ctx.fillText(String(k + 1).padStart(2, ' '), 18, 56 + k * 33);
-      ctx.fillStyle = /^(@|resource|const|public)/.test(line.trim()) ? colors.accentText : colors.ink;
-      ctx.fillText(line, 64, 56 + k * 33);
-    });
-    // Cursor.
-    const last = lines[lines.length - 1] ?? '';
-    ctx.fillStyle = colors.accent;
-    ctx.fillRect(64 + ctx.measureText(last).width + 2, 56 + (lines.length - 1) * 33, 12, 26);
     codeTexture.needsUpdate = true;
   }
 
@@ -1068,6 +1199,10 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     beamMat.color.copy(accent);
     cubeMat.color.copy(accent);
     cubeMat.emissive.copy(accent);
+    haloMat.color.copy(accent);
+    tailMat.color.copy(accent);
+    sweepMat.color.copy(accent);
+    moteMat.color.copy(accent);
     rim.color.copy(accent);
     eyeLight.color.copy(accent);
     rim2.color.copy(accent);
@@ -1088,6 +1223,10 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   let last = 0;
   let browLift = 0;
   let stretchAt = -99;
+  let stretchNow = 0;
+  /** Momento en que empezó a ordenar su puesto (al llegar a la silla; también al cargar). */
+  let settleAt = animate ? 1.6 : -99;
+  const SETTLE = 3.2;
   /** Cuánto ha subido al ponerse de pie: el bocadillo no le sigue (pisaría el rol). */
   let standLift = 0;
   const HEAD_Y = head.position.y;
@@ -1136,12 +1275,13 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const ease = (x: number) => x * x * (3 - 2 * x);
     const standing = stretching ? (sp < 0.22 ? ease(sp / 0.22) : sp > 0.8 ? ease((1 - sp) / 0.2) : 1) : 0;
     const rise = stretching && sp > 0.2 && sp < 0.82 ? Math.sin(Math.PI * (sp - 0.2) / 0.62) : 0;
+    stretchNow = rise;
     for (const leg of legs) {
       leg.hip.rotation.x = standing * Math.PI / 2;
       leg.knee.rotation.x = -standing * Math.PI / 2;
     }
     head.rotation.x -= rise * 0.45;
-    standLift = standing * 1.75 * character.scale.x;
+    standLift = standing * 1.15 * character.scale.x;
     character.position.y += standLift;
     character.position.z = -standing * 0.5 * character.scale.x;
     character.rotation.x = -rise * 0.06;
@@ -1199,6 +1339,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         guideActive = false;
         guideScale = 1;
         facing = 0;
+        settleAt = t; // de vuelta en su silla: ordena el puesto
       }
     }
     head.rotation.z = -lookX * 0.06 + Math.sin(r * 9) * 0.22 * decay;
@@ -1250,9 +1391,10 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         if (talking && animate) limb.target.y += Math.max(0, Math.sin(t * 19 + (limb.side > 0 ? Math.PI : 0))) * 0.07;
       }
       if (stretching && rise > 0) {
-        // Brazos arriba, algo abiertos, y un balanceo lento de lado a lado.
-        const sway = Math.sin(sp * Math.PI * 2) * 0.25;
-        limb.target.lerp(new three.Vector3(limb.side * 1.0 + sway, 1.2 + rise * 1.4, 0.4), rise);
+        // De pie, abre los brazos y empuja con las palmas: la izquierda el holograma, la derecha el
+        // bocadillo, y por encima el nombre (que se mueve con la variable --robot-lift).
+        const push = Math.sin(sp * Math.PI * 4) * 0.25;
+        limb.target.lerp(new three.Vector3(limb.side * (2.6 + push), 0.9 + rise * 0.9, 1.4), rise);
       }
       if (waving && limb.side === 1) {
         limb.target.set(1.95, 0.55 + Math.sin((t - waveAt) * 14) * 0.18, 0.7 + Math.cos((t - waveAt) * 14) * 0.2);
@@ -1276,6 +1418,59 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
           limb.target.set(-3.0, -0.6 + Math.sin(t * 2) * 0.08, 1.1);
         }
       }
+    }
+    // Ordenar el puesto (3,2 s): la silla se acerca y se endereza, las manos alinean lo que hay en la
+    // mesa, abre el portátil y el holograma sale de él.
+    const st = animate && !guideActive && !stackOpen ? (t - settleAt) / SETTLE : 2;
+    const settling = st >= 0 && st < 1;
+    const ph = (a: number, b: number) => (settling ? ease(Math.min(1, Math.max(0, (st - a) / (b - a)))) : 1);
+    const chairIn = ph(0, 0.35);
+    chair.position.z = -1.2 - (1 - chairIn) * 0.9;
+    chair.rotation.y = (1 - chairIn) * 0.45;
+    const lidOpen = ph(0.55, 0.78);
+    hinge.rotation.x = 0.22 + (1 - lidOpen) * 1.3;
+    const holo = ph(0.72, 1);
+    // Efecto genio: la estela crece desde el portátil y la pantalla se abre girando desde su punta.
+    // Con el globo de cartas abierto, el genio vuelve a la lámpara (se recoge) y sale al cerrarlo.
+    genieOut += ((stackOpen ? 0 : 1) - genieOut) * (1 - Math.exp(-dt * (stackOpen ? 6 : 3)));
+    const tailGrow = Math.min(settling ? ph(0.6, 0.85) : 1, Math.min(1, genieOut * 1.6));
+    tailGeometry.setDrawRange(0, Math.floor(TAIL_INDEX * Math.max(0.001, tailGrow)));
+    tailMat.opacity = tailGrow * (0.13 + (animate ? Math.sin(t * 2.2) * 0.04 : 0));
+    const open = Math.min(ph(0.78, 1), Math.max(0, genieOut * 1.6 - 0.6));
+    codeScreen.visible = open > 0.01;
+    codeScreen.scale.set(Math.max(0.001, open), Math.max(0.001, open * open), 1);
+    codeScreen.position.copy(screenFoot).lerp(CODE_HOME, open);
+    // Al estirarse, el robot empuja el holograma con la mano: se desplaza y se inclina un poco.
+    codeScreen.position.x -= stretchNow * 0.7;
+    codeScreen.position.y += stretchNow * 0.35;
+    codeScreen.rotation.set(-0.04, 0.22 + (1 - open) * 1.4 + stretchNow * 0.25, (1 - open) * -0.6 + stretchNow * 0.06);
+    const glitch = animate && Math.sin(t * 0.7) > 0.985 ? 0.6 : 1;
+    codeMat.opacity = open * glitch * (0.94 + (animate ? Math.sin(t * 13) * 0.03 : 0));
+    sweepBar.position.y = animate ? SCREEN_H / 2 - ((t * 0.45) % 1) * SCREEN_H : 0;
+    sweepMat.opacity = open * 0.3;
+    haloMat.opacity = open * (0.07 + (animate ? Math.sin(t * 2) * 0.025 : 0));
+    // Chispas en espiral a lo largo de la estela.
+    motes.visible = tailGrow > 0.05;
+    for (let i = 0; i < MOTES; i++) {
+      const u = animate ? (moteSeed[i] + t * (0.12 + moteSeed[i] * 0.1)) % 1 : moteSeed[i];
+      geniePath.getPointAt(u, motePoint);
+      geniePath.getTangentAt(u, moteTan);
+      moteSide.set(0, 1, 0).cross(moteTan).normalize();
+      moteUp.copy(moteTan).cross(moteSide).normalize();
+      const angle = u * 18 + t * 3 + moteSeed[i] * 6.28;
+      const radius = (0.06 + Math.pow(u, 1.6) * 0.45) * (0.7 + moteSeed[(i + 3) % MOTES] * 0.5);
+      motePoint.addScaledVector(moteSide, Math.cos(angle) * radius).addScaledVector(moteUp, Math.sin(angle) * radius);
+      motePos.set([motePoint.x, motePoint.y, motePoint.z], i * 3);
+    }
+    moteGeometry.getAttribute('position').needsUpdate = true;
+    moteMat.opacity = tailGrow * 0.9;
+    if (settling && st > 0.25 && st < 0.62) {
+      // Las manos recorren la mesa, empujando a los lados para dejarlo todo en su sitio.
+      const sweep = Math.sin(((st - 0.25) / 0.37) * Math.PI * 2);
+      for (const limb of arms) limb.target.set(limb.side * (1.3 + sweep * 0.5 * limb.side), -2.6, 2.2 + Math.abs(sweep) * 0.2);
+    } else if (settling && st >= 0.62 && st < 0.78) {
+      // La mano derecha levanta la tapa.
+      arms[1].target.set(0.5, -2.2 + lidOpen * 0.6, 2.4);
     }
     placeArms(follow);
     for (const limb of arms) {
@@ -1301,10 +1496,11 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     holoCube.position.y = 0.66 + (animate ? Math.sin(t * 1.8) * 0.04 : 0);
     beamMat.opacity = 0.09 + (animate ? Math.sin(t * 3) * 0.03 : 0);
     // La pantalla avanza mientras teclea; al terminar el fragmento, vuelve a empezar.
+    // El diagrama se dibuja en ciclos de 9 s (repinta a ~20 fps, solo si se ve).
+    archT += animate ? dt : 0;
     codeTick += dt;
-    if (talking && !stackOpen && codeTick > 0.06) {
+    if (codeTick > 0.05 && furniture.visible) {
       codeTick = 0;
-      codeChars = (codeChars + 1) % (CODE.join('\n').length + 30);
       paintCode(current);
     }
     placeTiles(dt);
@@ -1383,6 +1579,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       if (!stackOpen) return;
       if (animate) spinVelocity += direction * 1.6;
       else spin += direction * 0.4;
+    },
+    stretchLevel() {
+      return stretchNow;
     },
     stretch() {
       stretchAt = clock;

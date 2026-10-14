@@ -101,6 +101,9 @@ export class LandingPageComponent implements OnInit {
   }
   readonly copy = LANDING_COPY;
   readonly heroRole = computed(() => this.i18n.t(HERO_ROLE_PLACEHOLDER));
+  /** Letras del nombre y del rol (los espacios, sin romper la línea). */
+  readonly nameLetters = computed(() => [...this.i18n.t(this.copy.heroTitle)].map((c) => (c === ' ' ? '\u00a0' : c)));
+  readonly roleLetters = computed(() => [...this.heroRole()].map((c) => (c === ' ' ? '\u00a0' : c)));
 
   /** Clase de la tarjeta «¿Cómo está construido?», que cierra la rejilla de proyectos. */
   readonly askSpan = computed(() => ASK_SPAN[askCardColumns(this.catalog.projects().length)]);
