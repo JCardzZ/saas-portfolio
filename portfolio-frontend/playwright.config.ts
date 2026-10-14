@@ -88,6 +88,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     locale: 'es-ES',
+    // El sitio arranca en inglés; las pruebas están escritas contra los textos en español.
+    storageState: { cookies: [], origins: [{ origin: `http://localhost:${PORT}`, localStorage: [{ name: 'site-lang', value: 'es' }] }] },
     trace: 'retain-on-failure',
   },
   webServer: {
