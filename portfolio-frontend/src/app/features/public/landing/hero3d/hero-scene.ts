@@ -346,17 +346,17 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   }
   // Asiento de la silla, columna y base de cinco radios.
   const seat = new three.Mesh(rounded(2.5, 0.32, 2.2, 0.14), chairMat);
-  seat.position.set(0, -3.55, 0.15);
-  furniture.add(seat);
+  seat.position.set(0, -3.55, 1.35);
+  chair.add(seat);
   const column = new three.Mesh(keep(new three.CylinderGeometry(0.1, 0.12, 1.35, 20)), metal);
-  column.position.set(0, -4.4, 0.15);
-  furniture.add(column);
+  column.position.set(0, -4.4, 1.35);
+  chair.add(column);
   for (let spoke = 0; spoke < 5; spoke++) {
     const angle = (spoke / 5) * Math.PI * 2 + 0.3;
     const arm = new three.Mesh(rounded(1.15, 0.08, 0.14, 0.04), chairMat);
-    arm.position.set(Math.cos(angle) * 0.55, -5.1, 0.15 + Math.sin(angle) * 0.55);
+    arm.position.set(Math.cos(angle) * 0.55, -5.1, 1.35 + Math.sin(angle) * 0.55);
     arm.rotation.y = -angle;
-    furniture.add(arm);
+    chair.add(arm);
   }
   // Cadera y piernas del robot, sentado: muslos hacia delante bajo la mesa y pies en el suelo.
   const pelvis = new three.Mesh(rounded(2.1, 0.75, 1.5, 0.35), shell);
@@ -1224,6 +1224,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   let browLift = 0;
   let stretchAt = -99;
   let stretchNow = 0;
+  let emptyChair = 0;
+  let leftAt = -99;
   /** Momento en que empezó a ordenar su puesto (al llegar a la silla; también al cargar). */
   let settleAt = animate ? 1.6 : -99;
   const SETTLE = 3.2;
@@ -1255,7 +1257,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     furniture.position.set(0, scrollWorld, 0);
     // Cuando el hero ya quedó atrás, el escritorio no se dibuja (asomaría sobre las secciones).
     // Guiando (lienzo por delante del contenido) no se dibuja: asomaría sobre la barra y las secciones.
-    furniture.visible = scrollPx < viewHeight * 1.05 && !guideActive;
+    // Mientras el hero sigue a la vista se ve el puesto (y la silla vacía); más abajo, guiando con el
+    // lienzo por delante del contenido, no se dibuja: asomaría sobre la barra y las secciones.
+    furniture.visible = scrollPx < viewHeight * (guideActive ? 0.85 : 1.05);
     void lift;
     antenna.rotation.z = -0.25 + Math.sin(r * 22) * 0.5 * decay + (animate ? Math.sin(t * 1.7) * 0.05 : 0);
 
@@ -1299,6 +1303,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       );
       if (!guideActive) {
         guideActive = true;
+        leftAt = t;
         guidePos.copy(seat);
         guideVel.set(0, 0, 0);
       }
@@ -1427,6 +1432,14 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const chairIn = ph(0, 0.35);
     chair.position.z = -1.2 - (1 - chairIn) * 0.9;
     chair.rotation.y = (1 - chairIn) * 0.45;
+    // Silla vacía: al levantarse la empuja hacia atrás y queda girada, balanceándose hasta pararse,
+    // como cuando alguien se levanta de su escritorio. Al volver, el ritual la acerca de nuevo.
+    emptyChair += ((guideActive && guideStand > 0.3 ? 1 : 0) - emptyChair) * (1 - Math.exp(-dt * 2.5));
+    if (emptyChair > 0.001) {
+      const sinceLeft = t - leftAt;
+      chair.position.z -= emptyChair * 0.75;
+      chair.rotation.y += emptyChair * (0.42 + Math.sin(sinceLeft * 3.2) * 0.22 * Math.exp(-sinceLeft * 0.9));
+    }
     const lidOpen = ph(0.55, 0.78);
     hinge.rotation.x = 0.22 + (1 - lidOpen) * 1.3;
     const holo = ph(0.72, 1);

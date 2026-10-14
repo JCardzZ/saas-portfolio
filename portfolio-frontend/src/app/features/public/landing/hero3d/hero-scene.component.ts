@@ -62,7 +62,7 @@ const DRAG_THRESHOLD = 6;
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   // Al guiar, el componente entero sube de capa: su `z-0` limitaría el lienzo y el láser bajo las tarjetas.
-  host: { class: 'block', '[style.z-index]': 'guiding() ? 44 : null' },
+  host: { class: 'block', '[style.z-index]': 'inFront() ? 44 : null' },
   // Estilos del bocadillo, la isla de filtros y la píldora: viajan con la escena, que se carga aparte.
   encapsulation: ViewEncapsulation.None,
   styles: `
@@ -245,7 +245,7 @@ main :is(.bento-card, .theater-card, article) {
         El lienzo es fijo y queda detrás del contenido: así el robot puede dejar el hero y acompañar
         al visitante por la página (modo guía, en pantallas anchas).
       -->
-      <canvas #canvas class="pointer-events-none fixed inset-0 block h-dvh w-screen" [style.z-index]="guiding() ? 44 : -5" [class.hero-canvas]="!guiding()" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
+      <canvas #canvas class="pointer-events-none fixed inset-0 block h-dvh w-screen" [style.z-index]="inFront() ? 44 : -5" [class.hero-canvas]="!guiding()" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
       <!--
         Bocadillo del robot: en cinco segundos, qué hago, escrito a máquina y rotando. Sigue a la
         cabeza (se posiciona escribiendo el estilo, sin detección de cambios). Se retira con el
@@ -462,6 +462,11 @@ export class HeroSceneComponent {
   private refreshGuide: (() => void) | null = null;
   /** El robot ha dejado el hero y acompaña por la página. */
   readonly guiding = signal(false);
+  /**
+   * El lienzo pasa por delante del contenido solo cuando el hero (y el escritorio) ya no se ven:
+   * mientras tanto el robot se levanta y se aleja por detrás, dejando la silla vacía a la vista.
+   */
+  readonly inFront = signal(false);
   /** Lo que dice ahora en modo guía (sección actual), o nada. */
   readonly guideLine = signal<{ title: string; text: string } | null>(null);
   /** Recorrido guiado en marcha. */
@@ -1141,6 +1146,8 @@ export class HeroSceneComponent {
         });
         document.documentElement.classList.toggle('robot-guide', on);
       }
+      const front = on && scrollY > innerHeight * 0.85;
+      if (front !== this.inFront()) this.zone.run(() => this.inFront.set(front));
       if (!on) {
         scene.guide(null);
         return;
