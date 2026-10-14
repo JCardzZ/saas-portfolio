@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
 import { TheaterDirective } from '../../../shared/ui/theater.directive';
@@ -19,14 +20,14 @@ interface Fact {
 @Component({
   selector: 'app-production-architecture',
   standalone: true,
-  imports: [StageGraphComponent, TheaterToggleComponent],
+  imports: [TranslatePipe, StageGraphComponent, TheaterToggleComponent],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   template: `
     <app-theater-toggle name="Arquitectura en producción" />
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pr-10">
-      <h3 class="text-xl font-semibold tracking-tight text-ink-1">Arquitectura en producción</h3>
-      <p class="text-xs text-ink-3">La de hoy, generada de <code class="break-all font-mono">deploy/topology.json</code></p>
+      <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Arquitectura en producción' | t }}</h3>
+      <p class="text-xs text-ink-3">{{ 'La de hoy, generada de' | t }} <code class="break-all font-mono">deploy/topology.json</code></p>
     </div>
 
     <app-stage-graph
@@ -40,9 +41,9 @@ interface Fact {
       (picked)="pick($event)"
     />
 
-    <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2" aria-label="Leyenda">
-      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-ok" aria-hidden="true"></span>En producción</li>
-      <li class="inline-flex items-center gap-2"><span class="w-4 border-t border-dashed border-line-control" aria-hidden="true"></span>Planificado</li>
+    <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2" [attr.aria-label]="'Leyenda' | t">
+      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-ok" aria-hidden="true"></span>{{ 'En producción' | t }}</li>
+      <li class="inline-flex items-center gap-2"><span class="w-4 border-t border-dashed border-line-control" aria-hidden="true"></span>{{ 'Planificado' | t }}</li>
     </ul>
 
     <div #detail class="mt-4 min-h-[7rem] scroll-mb-24 scroll-mt-24 rounded-panel border border-line-subtle bg-surface-2 p-4" aria-live="polite">
@@ -51,11 +52,11 @@ interface Fact {
           {{ node.label }}
           <span class="rounded-full border px-2 py-0.5 text-xs font-medium"
             [class]="node.status === 'live' ? 'border-status-ok/40 text-status-ok' : 'border-dashed border-line-control text-ink-2'">
-            {{ node.status === 'live' ? 'en producción' : 'planificado' }}
+            {{ node.status === 'live' ? ('en producción' | t) : 'planificado' }}
           </span>
         </p>
         <p class="mt-1 text-sm text-ink-2">{{ node.what }}</p>
-        <p class="mt-1 text-sm text-ink-2"><span class="text-ink-2">Por qué:</span> {{ node.why }}</p>
+        <p class="mt-1 text-sm text-ink-2"><span class="text-ink-2">{{ 'Por qué:' | t }}</span> {{ node.why }}</p>
         @if (facts().length > 0) {
           <dl class="mt-3 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
             @for (fact of facts(); track fact.label) {
@@ -63,10 +64,10 @@ interface Fact {
             }
           </dl>
         } @else if (node.status === 'planned') {
-          <p class="mt-3 text-xs text-ink-3">Sin datos de despliegue: todavía no existe en producción.</p>
+          <p class="mt-3 text-xs text-ink-3">{{ 'Sin datos de despliegue: todavía no existe en producción.' | t }}</p>
         }
       } @else {
-        <p class="text-sm text-ink-2">Toca una pieza para ver qué es, por qué se eligió y sus datos reales.</p>
+        <p class="text-sm text-ink-2">{{ 'Toca una pieza para ver qué es, por qué se eligió y sus datos reales.' | t }}</p>
       }
     </div>
   `,

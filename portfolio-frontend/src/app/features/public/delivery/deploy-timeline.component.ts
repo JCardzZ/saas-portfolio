@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
 import { TheaterDirective } from '../../../shared/ui/theater.directive';
@@ -27,24 +28,24 @@ const SIMULATION_MS = 900;
 @Component({
   selector: 'app-deploy-timeline',
   standalone: true,
-  imports: [TheaterToggleComponent],
+  imports: [TranslatePipe, TheaterToggleComponent],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   template: `
     <app-theater-toggle name="Despliegues y rollback" />
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pr-10">
-      <h3 class="text-xl font-semibold tracking-tight text-ink-1">Despliegues y rollback</h3>
-      <p class="text-xs text-ink-3">Solo lectura · datos del CD</p>
+      <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Despliegues y rollback' | t }}</h3>
+      <p class="text-xs text-ink-3">{{ 'Solo lectura · datos del CD' | t }}</p>
     </div>
 
     <div class="mt-6 grid gap-8 md:grid-cols-2 [&>*]:min-w-0">
       @for (lane of lanes; track lane.target) {
-        <section [attr.aria-label]="'Despliegues de ' + lane.title">
+        <section [attr.aria-label]="('Despliegues de ' | t) + lane.title">
           <p class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.06em] text-ink-3">
             {{ lane.title }}
             <span class="normal-case tracking-normal text-ink-3">{{ lane.where }}</span>
             @if (lane.planned) {
-              <span class="rounded-full border border-dashed border-line-control px-2 py-0.5 normal-case tracking-normal text-ink-2">planificado</span>
+              <span class="rounded-full border border-dashed border-line-control px-2 py-0.5 normal-case tracking-normal text-ink-2">{{ 'planificado' | t }}</span>
             }
           </p>
 
@@ -64,7 +65,7 @@ const SIMULATION_MS = 900;
                         @if (index === currentIndex(lane.target)) {
                           <span class="rounded-full border px-2 py-0.5 text-xs font-medium"
                             [class]="simulating() && lane.target === 'frontend' ? 'border-status-warn/50 text-status-warn' : 'border-status-ok/40 text-status-ok'">
-                            {{ simulating() && lane.target === 'frontend' ? 'en producción · simulación' : 'en producción' }}
+                            {{ simulating() && lane.target === 'frontend' ? ('en producción · simulación' | t) : ('en producción' | t) }}
                           </span>
                         }
                       </p>
@@ -73,7 +74,7 @@ const SIMULATION_MS = 900;
                       </p>
                       <p class="mt-0.5 flex items-center gap-1.5 text-xs" [class]="deployment.healthy === false ? 'text-status-danger' : 'text-ink-2'">
                         <span class="h-2 w-2 rounded-full" [class]="deployment.healthy === true ? 'bg-status-ok' : deployment.healthy === false ? 'bg-status-danger' : 'border border-line-control'" aria-hidden="true"></span>
-                        {{ deployment.healthy === true ? 'Salud comprobada' : deployment.healthy === false ? 'No pasó la comprobación de salud' : 'Salud sin comprobar' }}
+                        {{ deployment.healthy === true ? ('Salud comprobada' | t) : deployment.healthy === false ? ('No pasó la comprobación de salud' | t) : ('Salud sin comprobar' | t) }}
                       </p>
                     </div>
                   </li>
@@ -81,7 +82,7 @@ const SIMULATION_MS = 900;
               </ol>
             } @else {
               <p class="mt-3 rounded-control border border-dashed border-line-strong p-4 text-sm text-ink-2">
-                {{ lane.planned ? 'Sin despliegues: todavía no existe en producción. Cuando exista, su historial y su rollback aparecerán aquí.' : (loaded() ? 'Aún no hay despliegues publicados.' : 'Cargando…') }}
+                {{ lane.planned ? ('Sin despliegues: todavía no existe en producción. Cuando exista, su historial y su rollback aparecerán aquí.' | t) : (loaded() ? ('Aún no hay despliegues publicados.' | t) : ('Cargando…' | t)) }}
               </p>
             }
           }
@@ -95,10 +96,10 @@ const SIMULATION_MS = 900;
         class="focus-ring rounded-control border border-line-strong px-4 py-1.5 text-sm font-medium text-ink-1 transition duration-200 ease-out hover:bg-surface-3 disabled:opacity-40"
         [disabled]="!canSimulate() || animating()"
         (click)="simulating() ? reset() : simulate()"
-      >{{ simulating() ? 'Deshacer la simulación' : 'Simular rollback' }}</button>
+      >{{ simulating() ? ('Deshacer la simulación' | t) : ('Simular rollback' | t) }}</button>
       <p class="min-w-0 flex-1 text-xs text-ink-3" aria-live="polite">
         @if (simulating()) {
-          <span class="mr-1 rounded-full border border-status-warn/50 px-2 py-0.5 font-medium text-status-warn">Simulación</span>
+          <span class="mr-1 rounded-full border border-status-warn/50 px-2 py-0.5 font-medium text-status-warn">{{ 'Simulación' | t }}</span>
           Producción no ha cambiado: el marcador se movió solo en esta pantalla.
         } @else {
           Desde aquí no se puede revertir producción. El rollback real es un workflow manual, con aprobación.
@@ -112,14 +113,14 @@ const SIMULATION_MS = 900;
     .entry:last-child { padding-bottom: 0; }
     /* La línea que une un despliegue con el anterior. */
     .entry:not(:last-child)::before {
-      content: ''; position: absolute; left: 3.5px; top: 14px; bottom: -4px; width: 1px; background: rgb(255 255 255 / 0.14);
+      content: ''; position: absolute; left: 3.5px; top: 14px; bottom: -4px; width: 1px; background: rgb(var(--c-ink-1) / 0.14);
     }
     .mark {
       flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 9999px;
       background: var(--bg-surface-2); box-shadow: inset 0 0 0 1px var(--text-3);
       transition: background-color 0.3s ease-out, box-shadow 0.3s ease-out, transform 0.3s ease-out;
     }
-    .entry.current .mark { background: var(--status-ok); box-shadow: 0 0 0 3px rgb(52 211 153 / 0.18); }
+    .entry.current .mark { background: var(--status-ok); box-shadow: 0 0 0 3px rgb(var(--c-status-ok) / 0.18); }
     .entry.simulated .mark { background: var(--status-warn); box-shadow: 0 0 0 3px rgb(245 185 74 / 0.2); transform: scale(1.15); }
     .entry:not(.current) { opacity: 0.72; }
     @media (prefers-reduced-motion: reduce) {

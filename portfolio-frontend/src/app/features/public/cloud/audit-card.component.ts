@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { runtimeConfig } from '../../../core/config/runtime-config';
@@ -17,16 +18,16 @@ import { AUDIT_AREAS, Recommendation, auditPrompt } from './topology-auditor';
 @Component({
   selector: 'app-audit-card',
   standalone: true,
-  imports: [MarkdownComponent, AutofocusDirective],
+  imports: [TranslatePipe, MarkdownComponent, AutofocusDirective],
   host: { class: 'block', '(keydown.escape)': 'closed.emit(); $event.stopPropagation()' },
   template: `
     <section class="flex max-h-[34rem] animate-scale-up border border-line-strong bg-surface-1/95 backdrop-blur-2xl flex-col overflow-hidden rounded-card shadow-2xl" role="dialog" aria-labelledby="audit-title">
       <header class="flex items-start gap-3 border-b border-line-subtle px-4 py-3">
         <div class="min-w-0 flex-1">
-          <h4 id="audit-title" class="text-sm font-semibold text-ink-1">Auditoría de la topología</h4>
-          <p class="text-xs text-ink-2">{{ providerName() }} · {{ actions() }} {{ actions() === 1 ? 'recomendación' : 'recomendaciones' }} · {{ covered() }} ya cubiertas</p>
+          <h4 id="audit-title" class="text-sm font-semibold text-ink-1">{{ 'Auditoría de la topología' | t }}</h4>
+          <p class="text-xs text-ink-2">{{ providerName() }} · {{ actions() }} {{ actions() === 1 ? ('recomendación' | t) : 'recomendaciones' }} · {{ covered() }} ya cubiertas</p>
         </div>
-        <button type="button" appAutofocus class="focus-ring rounded-control px-2 text-lg leading-none text-ink-2 hover:text-ink-1" aria-label="Cerrar la auditoría" (click)="closed.emit()">×</button>
+        <button type="button" appAutofocus class="focus-ring rounded-control px-2 text-lg leading-none text-ink-2 hover:text-ink-1" [attr.aria-label]="'Cerrar la auditoría' | t" (click)="closed.emit()">×</button>
       </header>
 
       <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3">
@@ -39,7 +40,7 @@ import { AUDIT_AREAS, Recommendation, auditPrompt } from './topology-auditor';
                   <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" [class]="item.level === 'ok' ? 'bg-status-ok' : 'bg-status-warn'" aria-hidden="true"></span>
                   <p class="text-xs leading-snug text-ink-2">
                     <span class="font-medium text-ink-1">{{ item.title }}.</span>
-                    <span class="sr-only">{{ item.level === 'ok' ? ' Cubierto. ' : ' A revisar. ' }}</span>
+                    <span class="sr-only">{{ item.level === 'ok' ? (' Cubierto. ' | t) : (' A revisar. ' | t) }}</span>
                     {{ item.detail }}
                   </p>
                 </li>
@@ -48,27 +49,26 @@ import { AUDIT_AREAS, Recommendation, auditPrompt } from './topology-auditor';
           </section>
         }
 
-        <section class="rounded-panel border border-line-subtle bg-surface-2 p-3" aria-label="Contraste con la plataforma real" aria-live="polite">
+        <section class="rounded-panel border border-line-subtle bg-surface-2 p-3" [attr.aria-label]="'Contraste con la plataforma real' | t" aria-live="polite">
           <h5 class="text-xs font-medium uppercase tracking-wider text-ink-3">
-            Contraste con la plataforma real · asistente RAG (Gemini){{ demo ? ' · respuesta simulada' : '' }}
+            Contraste con la plataforma real · asistente RAG (Gemini){{ demo ? (' · respuesta simulada' | t) : '' }}
           </h5>
           @if (pending()) {
-            <p class="mt-2 animate-pulse text-xs text-ink-2">Consultando el código y la documentación indexados…</p>
+            <p class="mt-2 animate-pulse text-xs text-ink-2">{{ 'Consultando el código y la documentación indexados…' | t }}</p>
           } @else if (error()) {
             <p class="mt-2 text-xs text-status-warn">{{ error() }}</p>
-            <button type="button" class="focus-ring mt-2 rounded-control border border-line-strong px-3 py-1 text-xs text-ink-1 hover:bg-surface-3" (click)="ask()">Reintentar</button>
+            <button type="button" class="focus-ring mt-2 rounded-control border border-line-strong px-3 py-1 text-xs text-ink-1 hover:bg-surface-3" (click)="ask()">{{ 'Reintentar' | t }}</button>
           } @else {
             <app-markdown class="mt-2 block text-xs leading-relaxed text-ink-2" [text]="answer()" />
             @if (sources() > 0) {
-              <p class="mt-2 text-xs text-ink-3">{{ sources() }} {{ sources() === 1 ? 'fuente citada' : 'fuentes citadas' }} del índice.</p>
+              <p class="mt-2 text-xs text-ink-3">{{ sources() }} {{ sources() === 1 ? ('fuente citada' | t) : ('fuentes citadas' | t) }} del índice.</p>
             }
           }
         </section>
       </div>
 
       <footer class="border-t border-line-subtle px-4 py-2 text-xs leading-snug text-ink-3">
-        Las recomendaciones salen de reglas aplicadas al diagrama, no de un modelo. El asistente solo responde con lo
-        que hay indexado de la plataforma real.
+        {{ 'Las recomendaciones salen de reglas aplicadas al diagrama, no de un modelo. El asistente solo responde con lo que hay indexado de la plataforma real.' | t }}
       </footer>
     </section>
   `,

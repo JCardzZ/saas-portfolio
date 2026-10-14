@@ -175,7 +175,10 @@ test.describe('página pública en móviles y tabletas', () => {
       };
       const pinned = [...document.querySelectorAll('body *')].filter((element) => {
         const position = getComputedStyle(element).position;
-        return (position === 'fixed' || position === 'sticky') && visible(element);
+        // Un fondo decorativo fijo con z-index negativo (la galaxia) queda detrás de todo y no recibe
+        // clics: no tapa nada.
+        const behind = Number(getComputedStyle(element).zIndex) < 0;
+        return (position === 'fixed' || position === 'sticky') && visible(element) && !behind;
       });
       const label = (element: Element): string =>
         `<${element.tagName.toLowerCase()}> "${(element.getAttribute('aria-label') ?? element.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40)}"`;
@@ -481,8 +484,10 @@ test.describe('página pública en móviles y tabletas', () => {
           return 0.2126 * r + 0.7152 * g + 0.0722 * b;
         };
         const heading = document.querySelector('h1')!;
-        let background = 'rgb(255, 255, 255)';
-        for (let element: Element | null = heading; element; element = element.parentElement) {
+        // Sin fondo propio en el camino, el que se ve es el de la capa fija de detrás (la galaxia).
+        const backdrop = document.querySelector('app-galaxy-backdrop');
+        let background = backdrop ? getComputedStyle(backdrop).backgroundColor : 'rgb(255, 255, 255)';
+        for (let element: Element | null = heading; element && element !== document.body; element = element.parentElement) {
           const color = getComputedStyle(element).backgroundColor;
           if (color && !/rgba\(.*,\s*0\)|transparent/.test(color)) {
             background = color;

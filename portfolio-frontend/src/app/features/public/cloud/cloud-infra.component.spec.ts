@@ -24,6 +24,13 @@ import { CLOUD_NODES } from './cloud-topology.data';
 import { referenceProject, serializeProject } from './studio-project';
 import { defaultSystemDesign } from './system/system-design';
 
+/** El color de un token del tema activo, como lo devuelve getComputedStyle («rgb(r, g, b)»). */
+function tokenColor(name: string): string {
+  const hex = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return `rgb(${[1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16)).join(', ')})`;
+}
+
+
 describe('CloudInfraComponent', () => {
   beforeEach(() => {
     localStorage.removeItem('architecture-studio-project');
@@ -207,16 +214,16 @@ describe('CloudInfraComponent', () => {
         // La API tiene cuatro conexiones: balanceador, PostgreSQL, Redis y Gemini.
         const active = Array.from(element.querySelectorAll<SVGPathElement>('path.wire-active'));
         expect(active.length).toBe(4);
-        expect(active.every((wire) => getComputedStyle(wire).stroke === 'rgb(111, 168, 255)')).toBeTrue();
+        expect(active.every((wire) => getComputedStyle(wire).stroke === tokenColor('--accent-text'))).toBeTrue();
         expect(getComputedStyle(active[0]).filter).toBe('none');
         // Dos partículas por conexión con el tráfico normal.
         expect(element.querySelectorAll('path.pulse-active').length).toBe(8);
-        expect(getComputedStyle(element.querySelector<SVGPathElement>('path.wire:not(.wire-active)')!).stroke).toBe('rgb(58, 63, 74)');
+        expect(getComputedStyle(element.querySelector<SVGPathElement>('path.wire:not(.wire-active)')!).stroke).toBe(tokenColor('--border-strong'));
 
         click(element, 'ElastiCache');
         fixture.detectChanges();
         expect(element.querySelectorAll('path.wire-active').length).toBe(1);
-        expect(getComputedStyle(element.querySelector<SVGPathElement>('path.wire-active')!).stroke).toBe('rgb(111, 168, 255)');
+        expect(getComputedStyle(element.querySelector<SVGPathElement>('path.wire-active')!).stroke).toBe(tokenColor('--accent-text'));
       });
     });
 

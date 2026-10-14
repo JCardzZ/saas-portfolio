@@ -31,38 +31,45 @@ function over(foreground, background, alpha) {
   return `#${f.map((value, index) => Math.round(value * alpha + b[index] * (1 - alpha)).toString(16).padStart(2, '0')).join('')}`;
 }
 
-const surfaces = { canvas: color.canvas, 'surface-1': color.surface[1], 'surface-2': color.surface[2], 'surface-3': color.surface[3] };
-const texts = {
-  'ink-1': color.ink[1], 'ink-2': color.ink[2], 'ink-3': color.ink[3], 'accent-text': color.accent.text,
-  'status-ok': color.status.ok, 'status-warn': color.status.warn, 'status-danger': color.status.danger,
-};
+for (const [themeName, color] of Object.entries(tokens.themes)) {
+  const surfaces = { canvas: color.canvas, 'surface-1': color.surface[1], 'surface-2': color.surface[2], 'surface-3': color.surface[3] };
+  const texts = {
+    'ink-1': color.ink[1], 'ink-2': color.ink[2], 'ink-3': color.ink[3], 'accent-text': color.accent.text,
+    'status-ok': color.status.ok, 'status-warn': color.status.warn, 'status-danger': color.status.danger,
+  };
 
-test('todo color de texto cumple AA (4,5:1) sobre cualquier superficie', () => {
-  for (const [textName, text] of Object.entries(texts)) {
-    for (const [surfaceName, surface] of Object.entries(surfaces)) {
-      const ratio = contrast(text, surface);
-      assert.ok(ratio >= 4.5, `${textName} sobre ${surfaceName}: ${ratio.toFixed(2)}`);
+  test(`${themeName}: todo color de texto cumple AA (4,5:1) sobre cualquier superficie`, () => {
+    for (const [textName, text] of Object.entries(texts)) {
+      for (const [surfaceName, surface] of Object.entries(surfaces)) {
+        const ratio = contrast(text, surface);
+        assert.ok(ratio >= 4.5, `${textName} sobre ${surfaceName}: ${ratio.toFixed(2)}`);
+      }
     }
-  }
-});
+  });
 
-test('el texto blanco del botón primario cumple AA, también en hover', () => {
-  assert.ok(contrast('#FFFFFF', color.accent.solid) >= 4.5);
-  assert.ok(contrast('#FFFFFF', color.accent['solid-hover']) >= 4.5);
-});
+  test(`${themeName}: el texto del botón primario cumple AA, también en hover`, () => {
+    assert.ok(contrast(color.accent.on, color.accent.solid) >= 4.5);
+    assert.ok(contrast(color.accent.on, color.accent['solid-hover']) >= 4.5);
+  });
 
-test('el texto de una insignia de color cumple AA sobre su propio tinte', () => {
-  for (const tone of [color.accent.text, color.status.ok, color.status.warn, color.status.danger]) {
-    const background = over(tone, color.surface[2], badgeTint);
-    assert.ok(contrast(tone, background) >= 4.5, `${tone} sobre ${background}`);
-  }
-});
+  test(`${themeName}: el texto de una insignia de color cumple AA sobre su propio tinte`, () => {
+    for (const tone of [color.accent.text, color.status.ok, color.status.warn, color.status.danger]) {
+      const background = over(tone, color.surface[2], badgeTint);
+      assert.ok(contrast(tone, background) >= 4.5, `${tone} sobre ${background}`);
+    }
+  });
 
-test('el borde de los controles y el anillo de foco se distinguen del fondo (3:1)', () => {
-  for (const [surfaceName, surface] of Object.entries(surfaces)) {
-    assert.ok(contrast(color.line.control, surface) >= 3, `border-control sobre ${surfaceName}`);
-    assert.ok(contrast(color.accent.text, surface) >= 3, `foco sobre ${surfaceName}`);
-  }
+  test(`${themeName}: el borde de los controles y el anillo de foco se distinguen del fondo (3:1)`, () => {
+    for (const [surfaceName, surface] of Object.entries(surfaces)) {
+      assert.ok(contrast(color.line.control, surface) >= 3, `border-control sobre ${surfaceName}`);
+      assert.ok(contrast(color.accent.text, surface) >= 3, `foco sobre ${surfaceName}`);
+    }
+  });
+}
+
+test('los dos temas tienen exactamente los mismos tokens', () => {
+  const keys = (palette) => JSON.stringify(Object.fromEntries(Object.entries(palette).map(([k, v]) => [k, typeof v === 'string' ? '' : Object.keys(v)])));
+  assert.equal(keys(tokens.themes.light), keys(tokens.themes.dark));
 });
 
 test('ningún rol tipográfico baja de 12 px y la interlínea es mayor que el tamaño', () => {
@@ -87,6 +94,9 @@ test('los radios forman una escala creciente y las duraciones también', () => {
 test('cada token sale como variable CSS y como utilidad de Tailwind', () => {
   const variables = tokens.cssVariables();
   assert.equal(variables['--bg-surface-1'], color.surface[1]);
+  assert.equal(variables['--c-surface-1'], '12 14 13');
+  assert.equal(tokens.themeVariables('light')['--bg-surface-2'], '#FFFFFF');
+  assert.equal(tokens.tailwindTheme().colors.surface[2], 'rgb(var(--c-surface-2) / <alpha-value>)');
   assert.equal(variables['--text-3'], color.ink[3]);
   assert.equal(variables['--accent-solid-hover'], color.accent['solid-hover']);
   assert.equal(variables['--radius-control'], '8px');

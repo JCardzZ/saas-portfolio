@@ -1,6 +1,6 @@
 <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-  <h3 class="text-xl font-semibold tracking-tight text-ink-1">Simulador de ingesta RAG</h3>
-  <p class="text-xs text-ink-3">Pega un texto o elige una plantilla</p>
+  <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Simulador de ingesta RAG' | t }}</h3>
+  <p class="text-xs text-ink-3">{{ 'Pega un texto o elige una plantilla' | t }}</p>
 </div>
 
 <div class="mt-4 grid gap-6 lg:grid-cols-2">
@@ -19,12 +19,12 @@
       }
     </div>
 
-    <label class="sr-only" for="ingestion-input">Texto a indexar</label>
+    <label class="sr-only" for="ingestion-input">{{ 'Texto a indexar' | t }}</label>
     <textarea
       id="ingestion-input"
       class="focus-ring min-h-[14rem] flex-1 resize-y rounded-panel border border-line-subtle bg-surface-2 p-3 font-mono text-xs leading-relaxed text-ink-1 placeholder:text-ink-3"
       spellcheck="false"
-      placeholder="Pega aquí código o texto…"
+      [placeholder]="'Pega aquí código o texto…' | t"
       [formControl]="input"
       [attr.maxlength]="maxInput"
     ></textarea>
@@ -32,14 +32,14 @@
     <div class="flex flex-wrap items-center gap-4">
       <button
         type="button"
-        class="focus-ring rounded-control bg-accent-solid px-5 py-2 text-sm font-medium text-white transition duration-300 ease-spring hover:bg-accent-solid-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+        class="focus-ring rounded-control bg-accent-solid px-5 py-2 text-sm font-medium text-accent-on transition duration-300 ease-spring hover:bg-accent-solid-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         [disabled]="!input.value.trim()"
         (click)="process()"
       >
-        Procesar ingesta
+        {{ 'Procesar ingesta' | t }}
       </button>
 
-      <ol class="flex flex-wrap items-center gap-2 text-xs" aria-label="Pasos de la ingesta">
+      <ol class="flex flex-wrap items-center gap-2 text-xs" [attr.aria-label]="'Pasos de la ingesta' | t">
         @for (name of steps; track name; let index = $index) {
           <li
             class="flex items-center gap-1.5 transition-colors duration-500 ease-spring"
@@ -48,7 +48,7 @@
           >
             <span
               class="flex h-5 w-5 items-center justify-center rounded-full border text-xs transition-colors duration-500 ease-spring"
-              [class]="step() > index ? 'border-accent-text bg-accent-solid text-white' : 'border-line-strong'"
+              [class]="step() > index ? 'border-accent-text bg-accent-solid text-accent-on' : 'border-line-strong'"
             >{{ index + 1 }}</span>
             {{ name }}
           </li>
@@ -59,7 +59,7 @@
 
   <div class="min-w-0 space-y-5" aria-live="polite">
     @if (step() === 0) {
-      <p class="text-sm text-ink-3">Pulsa «Procesar ingesta» para ver los tres pasos.</p>
+      <p class="text-sm text-ink-3">{{ 'Pulsa «Procesar ingesta» para ver los tres pasos.' | t }}</p>
     }
 
     @if (step() >= 1) {
@@ -72,7 +72,7 @@
             <button
               type="button"
               class="focus-ring block w-full animate-slide-up rounded-panel border p-2.5 text-left backdrop-blur-md transition duration-300 ease-spring"
-              [class]="chunkStyle($index) + (selectedIndex() === $index ? ' ring-1 ring-white/60' : ' opacity-70 hover:opacity-100')"
+              [class]="chunkStyle($index) + (selectedIndex() === $index ? ' ring-1 ring-ink-1/60' : ' opacity-70 hover:opacity-100')"
               [style.animation-delay.ms]="$index * 90"
               [attr.aria-pressed]="selectedIndex() === $index"
               (click)="selectedIndex.set($index)"
@@ -103,7 +103,7 @@
         <h4 class="text-xs font-medium uppercase tracking-wider text-ink-3">
           3 · Embedding · {{ shownDimensions }} de {{ totalDimensions }} dimensiones
         </h4>
-        <div class="mt-2 grid grid-cols-8 gap-1 sm:grid-cols-12" role="img" [attr.aria-label]="'Vector ilustrativo del chunk ' + selectedIndex()">
+        <div class="mt-2 grid grid-cols-8 gap-1 sm:grid-cols-12" role="img" [attr.aria-label]="('Vector ilustrativo del chunk ' | t) + selectedIndex()">
           @for (value of embedding(); track selectedIndex() + '-' + $index) {
             <span
               class="animate-scale-up rounded-control py-1 text-center font-mono text-xs tabular-nums text-ink-1"
@@ -113,8 +113,7 @@
           }
         </div>
         <p class="mt-2 text-xs leading-snug text-ink-3">
-          Vector ilustrativo calculado en tu navegador a partir del texto; no es la salida de Gemini. El troceo sí es el
-          algoritmo real, con límites reducidos para la demo.
+          {{ 'Vector ilustrativo calculado en tu navegador a partir del texto; no es la salida de Gemini. El troceo sí es el algoritmo real, con límites reducidos para la demo.' | t }}
         </p>
       </section>
     }

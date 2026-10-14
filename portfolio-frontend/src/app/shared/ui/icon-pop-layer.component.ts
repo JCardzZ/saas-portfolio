@@ -163,7 +163,7 @@ const SPARKS = Array.from({ length: 14 }, (_, index) => (360 / 14) * index);
       background: linear-gradient(
         115deg,
         transparent 32%,
-        rgb(255 255 255 / 0.9) 46%,
+        rgb(var(--c-ink-1) / 0.9) 46%,
         color-mix(in srgb, var(--brand) 40%, #fff) 52%,
         transparent 66%
       );

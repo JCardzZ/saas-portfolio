@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { CloudProviderId } from './cloud-topology.data';
 import { CardSide, ServiceCard } from './service-card';
@@ -15,6 +16,7 @@ export const SHEET_DISMISS_PX = 80;
 @Component({
   selector: 'app-service-info-card',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <section
       role="dialog"
@@ -50,12 +52,12 @@ export const SHEET_DISMISS_PX = 80;
             <p class="text-body-sm text-ink-2">{{ card().officialName }}</p>
           }
         </div>
-        <button type="button" class="ui-btn-ghost shrink-0" data-testid="card-close" (click)="closed.emit()">Cerrar</button>
+        <button type="button" class="ui-btn-ghost shrink-0" data-testid="card-close" (click)="closed.emit()">{{ 'Cerrar' | t }}</button>
       </header>
 
       <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
         <div>
-          <h4 class="text-overline uppercase text-ink-3">Qué es</h4>
+          <h4 class="text-overline uppercase text-ink-3">{{ 'Qué es' | t }}</h4>
           <p class="mt-1 text-body-sm text-ink-1">{{ card().what }}</p>
           @if (card().note; as note) {
             <p class="mt-1 text-body-sm text-ink-2">{{ note }}</p>
@@ -64,7 +66,7 @@ export const SHEET_DISMISS_PX = 80;
 
         @if (card().uses.length) {
           <div>
-            <h4 class="text-overline uppercase text-ink-3">Para qué se usa</h4>
+            <h4 class="text-overline uppercase text-ink-3">{{ 'Para qué se usa' | t }}</h4>
             <ul class="mt-1 list-disc space-y-0.5 pl-5 text-body-sm text-ink-1">
               @for (use of card().uses; track use) {
                 <li>{{ use }}</li>
@@ -75,22 +77,22 @@ export const SHEET_DISMISS_PX = 80;
 
         @if (!card().equivalence.direct) {
           <div class="rounded-control border border-status-warn/40 bg-status-warn/10 px-3 py-2" data-testid="card-no-equivalent">
-            <span class="ui-badge ui-badge-warn">Sin equivalente directo</span>
+            <span class="ui-badge ui-badge-warn">{{ 'Sin equivalente directo' | t }}</span>
             <p class="mt-1.5 text-body-sm text-ink-1">{{ card().equivalence.tradeoff }}</p>
           </div>
         }
 
         <div>
-          <h4 class="text-overline uppercase text-ink-3">En este diagrama</h4>
+          <h4 class="text-overline uppercase text-ink-3">{{ 'En este diagrama' | t }}</h4>
           @if (card().context.why; as why) {
             <p class="mt-1 text-body-sm text-ink-1" data-testid="card-why">{{ why }}</p>
           }
           <dl class="mt-1 space-y-1 text-body-sm">
-            <div class="flex gap-2"><dt class="w-24 shrink-0 text-ink-3">Recibe de</dt><dd class="min-w-0 text-ink-1">{{ card().context.receivesFrom.join(', ') || 'Nadie' }}</dd></div>
-            <div class="flex gap-2"><dt class="w-24 shrink-0 text-ink-3">Envía a</dt><dd class="min-w-0 text-ink-1">{{ card().context.sendsTo.join(', ') || 'Nadie' }}</dd></div>
-            <div class="flex gap-2"><dt class="w-24 shrink-0 text-ink-3">Zona</dt><dd class="min-w-0 text-ink-1">{{ card().context.zone }}</dd></div>
+            <div class="flex gap-2"><dt class="w-24 shrink-0 text-ink-3">{{ 'Recibe de' | t }}</dt><dd class="min-w-0 text-ink-1">{{ card().context.receivesFrom.join(', ') || 'Nadie' }}</dd></div>
+            <div class="flex gap-2"><dt class="w-24 shrink-0 text-ink-3">{{ 'Envía a' | t }}</dt><dd class="min-w-0 text-ink-1">{{ card().context.sendsTo.join(', ') || 'Nadie' }}</dd></div>
+            <div class="flex gap-2"><dt class="w-24 shrink-0 text-ink-3">{{ 'Zona' | t }}</dt><dd class="min-w-0 text-ink-1">{{ card().context.zone }}</dd></div>
             <div class="flex gap-2">
-              <dt class="w-24 shrink-0 text-ink-3">Coste</dt>
+              <dt class="w-24 shrink-0 text-ink-3">{{ 'Coste' | t }}</dt>
               <dd class="flex min-w-0 flex-wrap items-center gap-2 text-ink-1">
                 @if (card().cost.kind !== 'none') {
                   <span class="font-mono text-mono">{{ card().cost.label }}</span>
@@ -110,7 +112,7 @@ export const SHEET_DISMISS_PX = 80;
 
         @if (card().equivalents.length) {
           <div>
-            <h4 class="text-overline uppercase text-ink-3">En las otras nubes</h4>
+            <h4 class="text-overline uppercase text-ink-3">{{ 'En las otras nubes' | t }}</h4>
             <ul class="mt-1.5 flex flex-wrap gap-2">
               @for (equivalent of card().equivalents; track equivalent.provider) {
                 <li>
@@ -118,7 +120,7 @@ export const SHEET_DISMISS_PX = 80;
                     type="button"
                     class="ui-focus tap inline-flex max-w-full items-center gap-1.5 rounded-full border border-line-strong px-3 py-1 text-left text-body-sm text-ink-1 transition-colors duration-fast ease-standard hover:border-line-control"
                     [attr.data-provider]="equivalent.provider"
-                    [attr.aria-label]="'Ver en ' + equivalent.cloud + ': ' + equivalent.name + (equivalent.direct ? '' : ' (sin equivalente directo)')"
+                    [attr.aria-label]="('Ver en ' | t) + equivalent.cloud + ': ' + equivalent.name + (equivalent.direct ? '' : (' (sin equivalente directo)' | t))"
                     (click)="providerChosen.emit(equivalent.provider)"
                   >
                     <span class="shrink-0 text-ink-3">{{ equivalent.cloud }}</span>
@@ -132,16 +134,16 @@ export const SHEET_DISMISS_PX = 80;
             </ul>
           </div>
         } @else if (card().cloudAgnostic && card().docs) {
-          <p class="text-body-sm text-ink-2">Es el mismo producto en cualquier nube.</p>
+          <p class="text-body-sm text-ink-2">{{ 'Es el mismo producto en cualquier nube.' | t }}</p>
         }
       </div>
 
       @if (card().docs; as docs) {
         <footer class="shrink-0 border-t border-line-subtle px-4 py-3">
           <a class="ui-focus tap inline-flex flex-wrap items-center gap-x-1.5 rounded-mark text-body-sm text-accent-text hover:underline" [href]="docs.url" target="_blank" rel="noopener noreferrer">
-            <span class="whitespace-nowrap">Documentación oficial</span>
+            <span class="whitespace-nowrap">{{ 'Documentación oficial' | t }}</span>
             <span class="whitespace-nowrap text-ink-3">· {{ docs.host }}</span>
-            <span class="sr-only">(se abre en otra pestaña)</span>
+            <span class="sr-only">{{ '(se abre en otra pestaña)' | t }}</span>
           </a>
         </footer>
       }

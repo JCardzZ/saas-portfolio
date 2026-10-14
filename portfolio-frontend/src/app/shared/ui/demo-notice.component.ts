@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, Injectable, booleanAttribute, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injectable, booleanAttribute, computed, inject, input, signal } from '@angular/core';
 
 import { runtimeConfig } from '../../core/config/runtime-config';
+import { LanguageService } from '../../core/i18n/language.service';
 
 /**
  * Quién enseña el aviso de modo demo. En la página pública es un segmento de la barra del
@@ -19,12 +20,12 @@ export class DemoNoticeHost {
   standalone: true,
   host: { class: 'inline-flex min-w-0' },
   template: `
-    <span class="ui-badge ui-badge-warn" data-testid="demo-notice" [attr.title]="short() ? full : null">
+    <span class="ui-badge ui-badge-warn" data-testid="demo-notice" [attr.title]="short() ? full() : null">
       <span class="ui-badge-dot" aria-hidden="true"></span>
       @if (short()) {
-        Modo demo<span class="sr-only">{{ reason }} · datos simulados</span>
+        {{ text().demo }}<span class="sr-only">{{ text().reason }} · {{ text().simulated }}</span>
       } @else {
-        Modo demo<span class="hidden sm:inline">{{ reason }}</span> · datos simulados
+        {{ text().demo }}<span class="hidden sm:inline">{{ text().reason }}</span> · {{ text().simulated }}
       }
     </span>
   `,
@@ -33,6 +34,12 @@ export class DemoNoticeHost {
 export class DemoNoticeComponent {
   readonly short = input(false, { transform: booleanAttribute });
   /** El motivo solo se escribe si hay sitio: en un móvil la insignia tiene que ser corta. */
-  readonly reason = runtimeConfig.demoReason === 'backend-unavailable' ? ' · el servidor no responde' : '';
-  readonly full = `Modo demo${this.reason} · datos simulados`;
+  private readonly language = inject(LanguageService);
+  private readonly down = runtimeConfig.demoReason === 'backend-unavailable';
+  readonly text = computed(() =>
+    this.language.lang() === 'en'
+      ? { demo: 'Demo mode', reason: this.down ? ' · the server is not responding' : '', simulated: 'simulated data' }
+      : { demo: 'Modo demo', reason: this.down ? ' · el servidor no responde' : '', simulated: 'datos simulados' },
+  );
+  readonly full = computed(() => `${this.text().demo}${this.text().reason} · ${this.text().simulated}`);
 }

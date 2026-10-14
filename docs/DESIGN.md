@@ -19,6 +19,8 @@ Este sistema es propio. Las referencias revisadas (sección 12) se usaron para p
 
 Los valores son propios y están comprobados con la fórmula de contraste de WCAG 2.1 (`tools/lib/design-tokens.test.mjs` lo exige en la CI). La única fuente es `portfolio-frontend/design-tokens.js`: de ahí salen las utilidades de Tailwind y las variables CSS de `:root` (sección 11.1). **Ningún componente escribe un hex.**
 
+> **Actualización 2026-10-13: dos temas y acento lima.** `design-tokens.js` define `themes.dark` (negro, «terminal», inspirado en Modal) y `themes.light` (galería gris clara, inspirada en Twomuch Studio), con las mismas claves y el mismo acento lima (`accent.solid` #7FEE64, texto encima `accent.on`). El oscuro es el de siempre por defecto; el claro se aplica si lo pide el sistema o el visitante (botón de tema en la barra, `ThemeService`, `data-theme` en `<html>`). Las utilidades de Tailwind leen variables (`rgb(var(--c-…) / α)`), así que un componente no sabe en qué tema está. Las tablas de abajo describen la paleta anterior (azul); los valores vigentes son los de `design-tokens.js`, y el test de contraste comprueba los dos temas. La administración sigue clara y no usa estos tokens.
+
 ### 2.1 Neutros
 
 | Token | Valor | Uso |
@@ -394,3 +396,11 @@ También revisados, sin adoptar nada concreto: vercel.com, resend.com, railway.c
 7. **Aviso de modo demo**: segmento de la barra del Inspector de traza (sección 8.4).
 8. **Rol del hero**: marcador temporal hasta que cierre la revisión del CV.
 9. **Paleta de comandos** (2026-10-11): la caja de búsqueda en píldora y los accesos circulares son una excepción acotada a la regla 2 (sección 9.9).
+10. **Tema claro y oscuro, acento lima** (2026-10-13): sustituye a «el sitio público es solo oscuro». Mismo acento en los dos temas; en el claro el lima va solo como relleno con texto oscuro (como texto no da AA).
+11. **Hero en 3D** (2026-10-13, revisada el mismo día): sustituye a las losas isométricas en CSS. Escena Three.js a pantalla completa (`landing/hero3d`, cargada con `import()`; sin WebGL no se pinta y el hero se basta solo):
+    - **Jerarquía del texto**: saludo pequeño, nombre enorme (único elemento gigante, `h1`), rol mediano en el acento. Nombre y rol no pesan igual: si compiten, el bloque se satura.
+    - **Robot genérico** (no un avatar de la persona): mira al cursor, parpadea, mira alrededor si nadie lo mueve, salta y sonríe al tocarlo, saluda al abrir el mazo; boca de luz que «habla» mientras el bocadillo escribe; manos con dedos articulados.
+    - **Bocadillo** junto a la cabeza: «Te puedo ayudar a…» con cinco servicios escritos a máquina, rotando. En móvil sustituye a la frase de debajo del rol.
+    - **Mazo y globo de tecnologías**: 51 fichas (plataforma y servicios principales de AWS, Azure y Google Cloud, con sus iconos oficiales sin modificar y con nombre). Al pulsar el robot salen a un globo de Fibonacci que se gira arrastrando, con inercia; filtros Plataforma · AWS · Azure · Google Cloud · Todo (abre en Plataforma). Una ficha pulsada la sostiene el robot en la mano izquierda y, en la derecha, una carta con «qué es» y «cómo ayudo a tu empresa» (`stack-cards.ts`; «Usado en esta plataforma» solo donde es verdad). Con el globo abierto, el texto del hero se atenúa (transparencia que se mantiene a propósito).
+    - **Fondo de todo el sitio** (`landing/galaxy`): galaxia 3D fija detrás del contenido (no se dibuja en móvil ni con ahorro de datos) y una marca de agua de iconos de desarrollo en trazo fino, quieta.
+    - Movimiento reducido: una sola imagen quieta y el bocadillo sin máquina de escribir. Pruebas: `e2e/hero-globe.e2e.ts`.

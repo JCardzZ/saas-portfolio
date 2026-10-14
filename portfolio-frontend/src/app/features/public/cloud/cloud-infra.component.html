@@ -1,6 +1,6 @@
 <app-theater-toggle name="Estudio de arquitectura" />
 
-<h3 class="pr-10 text-title-2 text-ink-1">Estudio de arquitectura</h3>
+<h3 class="pr-10 text-title-2 text-ink-1">{{ 'Estudio de arquitectura' | t }}</h3>
 
 <!-- Barra con jerarquía (docs/DESIGN.md §9.5): contexto a la izquierda, menús agrupados en el centro
      y, a la derecha, las dos acciones principales. Los menús están siempre en el DOM y se ocultan con
@@ -8,13 +8,13 @@
 @if (systemDesign()) {
   <!-- Las dos vistas del mismo proyecto: lo que se construye y dónde corre. Van en su propia fila,
        encima de la barra, para no desplazar los menús de esta. -->
-  <div class="mt-4 ui-segmented" role="tablist" aria-label="Vista del proyecto">
-    <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'infra'" (click)="view.set('infra')">Infraestructura</button>
-    <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'app'" (click)="view.set('app')">Aplicación</button>
+  <div class="mt-4 ui-segmented" role="tablist" [attr.aria-label]="'Vista del proyecto' | t">
+    <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'infra'" (click)="view.set('infra')">{{ 'Infraestructura' | t }}</button>
+    <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'app'" (click)="view.set('app')">{{ 'Aplicación' | t }}</button>
   </div>
 }
-<div [class.mt-4]="!systemDesign()" [class.mt-2]="systemDesign()" class="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Estudio de arquitectura">
-  <div class="ui-segmented" role="radiogroup" aria-label="Proveedor de nube">
+<div [class.mt-4]="!systemDesign()" [class.mt-2]="systemDesign()" class="flex flex-wrap items-center gap-2" role="toolbar" [attr.aria-label]="'Estudio de arquitectura' | t">
+  <div class="ui-segmented" role="radiogroup" [attr.aria-label]="'Proveedor de nube' | t">
     @for (provider of providers(); track provider.id) {
       <button type="button" role="radio" class="ui-segment gap-2" [attr.aria-checked]="provider.id === selectedId()" (click)="select(provider.id)">
         <app-tech-icon [icon]="icons[provider.id]" [size]="16" />
@@ -25,26 +25,26 @@
 
   <div class="relative" data-menu>
     <button type="button" class="ui-btn-secondary" [attr.aria-expanded]="menu() === 'project'" aria-controls="menu-project" (click)="menu.set(menu() === 'project' ? null : 'project')">
-      Proyecto <span aria-hidden="true">▾</span>
+      {{ 'Proyecto' | t }} <span aria-hidden="true">▾</span>
     </button>
     <ul id="menu-project" class="project-menu w-64" [hidden]="menu() !== 'project'">
-      <li><button type="button" class="project-item" [attr.aria-expanded]="menu() === 'presets'" aria-controls="menu-presets" (click)="menu.set(menu() === 'presets' ? null : 'presets')">Plantillas<span class="float-right text-ink-3" aria-hidden="true">›</span></button></li>
-      <li><button type="button" class="project-item" [disabled]="exporting()" [attr.aria-expanded]="menu() === 'export'" aria-controls="menu-export" (click)="menu.set(menu() === 'export' ? null : 'export')">{{ exporting() ? 'Exportando…' : 'Exportar diagrama' }}<span class="float-right text-ink-3" aria-hidden="true">›</span></button></li>
-      <li><button type="button" class="project-item" [attr.aria-expanded]="menu() === 'cloud'" aria-controls="menu-cloud" (click)="menu.set(menu() === 'cloud' ? null : 'cloud')">Guardar en la nube<span class="float-right text-ink-3" aria-hidden="true">›</span></button></li>
+      <li><button type="button" class="project-item" [attr.aria-expanded]="menu() === 'presets'" aria-controls="menu-presets" (click)="menu.set(menu() === 'presets' ? null : 'presets')">{{ 'Plantillas' | t }}<span class="float-right text-ink-3" aria-hidden="true">›</span></button></li>
+      <li><button type="button" class="project-item" [disabled]="exporting()" [attr.aria-expanded]="menu() === 'export'" aria-controls="menu-export" (click)="menu.set(menu() === 'export' ? null : 'export')">{{ exporting() ? ('Exportando…' | t) : ('Exportar diagrama' | t) }}<span class="float-right text-ink-3" aria-hidden="true">›</span></button></li>
+      <li><button type="button" class="project-item" [attr.aria-expanded]="menu() === 'cloud'" aria-controls="menu-cloud" (click)="menu.set(menu() === 'cloud' ? null : 'cloud')">{{ 'Guardar en la nube' | t }}<span class="float-right text-ink-3" aria-hidden="true">›</span></button></li>
       <li>
         <label class="project-item cursor-pointer">
-          Importar proyecto
+          {{ 'Importar proyecto' | t }}
           <input type="file" class="sr-only" accept=".json,application/json" (change)="importProject($event)" />
         </label>
       </li>
       @if (modified()) {
-        <li class="mt-1 border-t border-line-subtle pt-1"><button type="button" class="project-item text-status-danger" (click)="reset()">Restablecer</button></li>
+        <li class="mt-1 border-t border-line-subtle pt-1"><button type="button" class="project-item text-status-danger" (click)="reset()">{{ 'Restablecer' | t }}</button></li>
       }
     </ul>
     @if (menu() === 'presets') {
       <ul id="menu-presets" class="project-menu max-h-[26rem] w-96 overflow-y-auto" [style.max-width.px]="presetsMaxWidth()">
         @if (systemTemplates().length) {
-          <li class="px-2 pb-1 pt-1 text-xs font-medium uppercase tracking-wider text-ink-3" id="system-templates-title">Sistemas completos</li>
+          <li class="px-2 pb-1 pt-1 text-xs font-medium uppercase tracking-wider text-ink-3" id="system-templates-title">{{ 'Sistemas completos' | t }}</li>
           @for (entry of systemTemplates(); track entry.template.id) {
             <li>
               <button type="button" class="project-item" data-testid="system-template" (click)="loadSystemTemplate(entry.template)">
@@ -70,7 +70,7 @@
               <span class="block font-medium text-ink-1">
                 {{ preset.name }}
                 @if (preset.kind === 'saved') {
-                  <span class="ml-1 rounded-full bg-surface-3 px-1.5 py-0.5 text-xs font-normal text-ink-2">guardado</span>
+                  <span class="ml-1 rounded-full bg-surface-3 px-1.5 py-0.5 text-xs font-normal text-ink-2">{{ 'guardado' | t }}</span>
                 }
               </span>
               <span class="block text-xs text-ink-2">{{ preset.summary }}</span>
@@ -78,40 +78,39 @@
           </li>
         }
         <li class="px-2 pb-1 pt-2 text-xs leading-snug text-ink-3">
-          {{ presetsFromServer() ? 'Plantillas y proyectos servidos por el backend.' : 'Plantillas incluidas en el estudio.' }}
+          {{ presetsFromServer() ? ('Plantillas y proyectos servidos por el backend.' | t) : ('Plantillas incluidas en el estudio.' | t) }}
           Los escenarios son ilustrativos de un tipo de sistema: no describen la infraestructura real de ninguna entidad.
         </li>
       </ul>
     }
     @if (menu() === 'export') {
       <ul id="menu-export" class="project-menu w-72">
-        <li><button type="button" class="project-item" (click)="exportImage('png', darkBackground())"><span class="font-medium text-ink-1">PNG · fondo oscuro</span><span class="block text-xs text-ink-2">Alta resolución (3×)</span></button></li>
-        <li><button type="button" class="project-item" (click)="exportImage('png', null)"><span class="font-medium text-ink-1">PNG · fondo transparente</span><span class="block text-xs text-ink-2">Alta resolución (3×)</span></button></li>
-        <li><button type="button" class="project-item" (click)="exportImage('svg', darkBackground())"><span class="font-medium text-ink-1">SVG</span><span class="block text-xs text-ink-2">Vectorial, con los iconos incrustados</span></button></li>
-        <li><button type="button" class="project-item" (click)="exportTerraform()"><span class="font-medium text-ink-1">Terraform (.zip)</span><span class="block text-xs text-ink-2">main.tf y variables.tf · esqueleto</span></button></li>
-        <li><button type="button" class="project-item" (click)="exportProject()"><span class="font-medium text-ink-1">Proyecto (.architecture.json)</span><span class="block text-xs text-ink-2">Para volver a abrirlo o compartirlo</span></button></li>
+        <li><button type="button" class="project-item" (click)="exportImage('png', darkBackground())"><span class="font-medium text-ink-1">{{ 'PNG · fondo oscuro' | t }}</span><span class="block text-xs text-ink-2">{{ 'Alta resolución (3×)' | t }}</span></button></li>
+        <li><button type="button" class="project-item" (click)="exportImage('png', null)"><span class="font-medium text-ink-1">{{ 'PNG · fondo transparente' | t }}</span><span class="block text-xs text-ink-2">{{ 'Alta resolución (3×)' | t }}</span></button></li>
+        <li><button type="button" class="project-item" (click)="exportImage('svg', darkBackground())"><span class="font-medium text-ink-1">SVG</span><span class="block text-xs text-ink-2">{{ 'Vectorial, con los iconos incrustados' | t }}</span></button></li>
+        <li><button type="button" class="project-item" (click)="exportTerraform()"><span class="font-medium text-ink-1">Terraform (.zip)</span><span class="block text-xs text-ink-2">{{ 'main.tf y variables.tf · esqueleto' | t }}</span></button></li>
+        <li><button type="button" class="project-item" (click)="exportProject()"><span class="font-medium text-ink-1">{{ 'Proyecto (.architecture.json)' | t }}</span><span class="block text-xs text-ink-2">{{ 'Para volver a abrirlo o compartirlo' | t }}</span></button></li>
       </ul>
     }
     @if (menu() === 'cloud') {
       <div id="menu-cloud" class="project-menu w-80 !p-3 text-xs">
         @if (canSaveToCloud()) {
-          <label class="block text-ink-2" for="cloud-title">Título del proyecto</label>
+          <label class="block text-ink-2" for="cloud-title">{{ 'Título del proyecto' | t }}</label>
           <input id="cloud-title" type="text" maxlength="120" class="focus-ring mt-1 w-full rounded-control border border-line-strong bg-surface-2 px-2.5 py-1.5 text-sm text-ink-1" [value]="cloudTitle()" (input)="cloudTitle.set($any($event.target).value)" (keydown.enter)="saveToCloud(!cloudProject())" />
           <div class="mt-2 flex flex-wrap gap-2">
             @if (cloudProject(); as current) {
               <button type="button" class="project-button" [disabled]="saving() || !cloudTitle().trim()" (click)="saveToCloud(false)">Actualizar «{{ current.title }}»</button>
             }
             <button type="button" class="project-button" [disabled]="saving() || !cloudTitle().trim()" (click)="saveToCloud(true)">
-              {{ saving() ? 'Guardando…' : cloudProject() ? 'Guardar como nuevo' : 'Guardar' }}
+              {{ saving() ? ('Guardando…' | t) : cloudProject() ? ('Guardar como nuevo' | t) : ('Guardar' | t) }}
             </button>
           </div>
-          <p class="mt-2 text-xs leading-snug text-ink-3">Lo guardado aparece en «Plantillas» para todos los visitantes.</p>
+          <p class="mt-2 text-xs leading-snug text-ink-3">{{ 'Lo guardado aparece en «Plantillas» para todos los visitantes.' | t }}</p>
         } @else {
           <p class="leading-snug text-ink-2">
-            Guardar en el servidor es cosa del administrador, porque lo guardado se muestra a todos los visitantes.
-            Tus cambios ya se guardan en este navegador y puedes exportarlos como archivo.
+            {{ 'Guardar en el servidor es cosa del administrador, porque lo guardado se muestra a todos los visitantes. Tus cambios ya se guardan en este navegador y puedes exportarlos como archivo.' | t }}
           </p>
-          <a class="project-button mt-2" href="login">Iniciar sesión</a>
+          <a class="project-button mt-2" href="login">{{ 'Iniciar sesión' | t }}</a>
         }
       </div>
     }
@@ -119,32 +118,32 @@
 
   <div class="relative" data-menu>
     <button type="button" class="ui-btn-secondary" [attr.aria-expanded]="menu() === 'view'" aria-controls="menu-view" (click)="menu.set(menu() === 'view' ? null : 'view')">
-      Ver <span aria-hidden="true">▾</span>
+      {{ 'Ver' | t }} <span aria-hidden="true">▾</span>
     </button>
     <ul id="menu-view" class="project-menu w-64" [hidden]="menu() !== 'view'">
       <li>
         <button type="button" class="project-item" [attr.aria-expanded]="codeOpen()" aria-controls="main-tf-panel" (click)="codeOpen.set(!codeOpen()); menu.set(null)">
           <span class="font-mono">main.tf</span>
-          <span class="block text-caption font-normal text-ink-2">{{ codeOpen() ? 'Ocultar el esqueleto de Terraform' : 'El esqueleto de Terraform, en vivo' }}</span>
+          <span class="block text-caption font-normal text-ink-2">{{ codeOpen() ? ('Ocultar el esqueleto de Terraform' | t) : ('El esqueleto de Terraform, en vivo' | t) }}</span>
         </button>
       </li>
       <li>
         <button type="button" class="project-item" (click)="inspector.selectGraph(); menu.set(null)">
-          Grafo
-          <span class="block text-caption font-normal text-ink-2">Diff del JSON del lienzo, en el inspector</span>
+          {{ 'Grafo' | t }}
+          <span class="block text-caption font-normal text-ink-2">{{ 'Diff del JSON del lienzo, en el inspector' | t }}</span>
         </button>
       </li>
       <li>
         <button type="button" class="project-item" [disabled]="nodes().length === 0" (click)="autoArrange(); menu.set(null)">
-          Auto-ordenar
-          <span class="block text-caption font-normal text-ink-2">Recoloca los nodos por capas, en la rejilla</span>
+          {{ 'Auto-ordenar' | t }}
+          <span class="block text-caption font-normal text-ink-2">{{ 'Recoloca los nodos por capas, en la rejilla' | t }}</span>
         </button>
       </li>
       @if (smartRules()) {
         <li>
           <button type="button" class="project-item" [attr.aria-pressed]="fitted()" (click)="fitted.set(!fitted()); menu.set(null)">
-            {{ fitted() ? 'Ver el lienzo completo' : 'Ajustar a pantalla' }}
-            <span class="block text-caption font-normal text-ink-2">{{ fitted() ? 'Vuelve al tamaño de trabajo' : 'El diagrama entero, sin desplazar' }}</span>
+            {{ fitted() ? ('Ver el lienzo completo' | t) : ('Ajustar a pantalla' | t) }}
+            <span class="block text-caption font-normal text-ink-2">{{ fitted() ? ('Vuelve al tamaño de trabajo' | t) : ('El diagrama entero, sin desplazar' | t) }}</span>
           </button>
         </li>
       }
@@ -153,44 +152,44 @@
 
   <div class="relative" data-menu>
     <button type="button" class="ui-btn-secondary" [attr.aria-expanded]="menu() === 'analyze'" aria-controls="menu-analyze" (click)="menu.set(menu() === 'analyze' ? null : 'analyze')">
-      Analizar <span aria-hidden="true">▾</span>
+      {{ 'Analizar' | t }} <span aria-hidden="true">▾</span>
     </button>
     <ul id="menu-analyze" class="project-menu w-72" [hidden]="menu() !== 'analyze'">
       <li>
         <button type="button" class="project-item" [attr.aria-expanded]="chaosOpen()" aria-controls="chaos-panel" (click)="chaosOpen.set(!chaosOpen()); menu.set(null)">
-          Simular caos
-          <span class="block text-caption font-normal text-ink-2">Fallo, fallback y recuperación sobre el diagrama</span>
+          {{ 'Simular caos' | t }}
+          <span class="block text-caption font-normal text-ink-2">{{ 'Fallo, fallback y recuperación sobre el diagrama' | t }}</span>
         </button>
       </li>
       <li>
         <button type="button" class="project-item" [attr.aria-expanded]="auditOpen()" (click)="auditOpen() ? auditOpen.set(false) : openAudit(); menu.set(null)">
-          Auditar topología con IA
-          <span class="block text-caption font-normal text-ink-2">Disponibilidad, seguridad y coste, por reglas</span>
+          {{ 'Auditar topología con IA' | t }}
+          <span class="block text-caption font-normal text-ink-2">{{ 'Disponibilidad, seguridad y coste, por reglas' | t }}</span>
         </button>
       </li>
     </ul>
   </div>
 
-  <div class="flex items-center gap-1" role="group" aria-label="Historial">
-    <button type="button" class="ui-btn-ghost ui-btn-icon" aria-label="Deshacer" title="Deshacer (Ctrl+Z)" [disabled]="!canUndo()" (click)="undo()">
+  <div class="flex items-center gap-1" role="group" [attr.aria-label]="'Historial' | t">
+    <button type="button" class="ui-btn-ghost ui-btn-icon" [attr.aria-label]="'Deshacer' | t" [attr.title]="'Deshacer (Ctrl+Z)' | t" [disabled]="!canUndo()" (click)="undo()">
       <svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 3 6.5l3 3M3 6.5h6a4 4 0 0 1 0 8H7" /></svg>
     </button>
-    <button type="button" class="ui-btn-ghost ui-btn-icon" aria-label="Rehacer" title="Rehacer (Ctrl+Y)" [disabled]="!canRedo()" (click)="redo()">
+    <button type="button" class="ui-btn-ghost ui-btn-icon" [attr.aria-label]="'Rehacer' | t" [attr.title]="'Rehacer (Ctrl+Y)' | t" [disabled]="!canRedo()" (click)="redo()">
       <svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 3.5 3 3-3 3M13 6.5H7a4 4 0 0 0 0 8h2" /></svg>
     </button>
   </div>
 
   <!-- Las dos acciones principales, a la derecha. -->
   <div class="ml-auto flex flex-wrap items-center gap-2">
-    <button type="button" class="ui-btn-secondary" [attr.aria-expanded]="copilotOpen()" (click)="toggleCopilot()">Co-piloto IA</button>
+    <button type="button" class="ui-btn-secondary" [attr.aria-expanded]="copilotOpen()" (click)="toggleCopilot()">{{ 'Co-piloto IA' | t }}</button>
     <!-- Editar necesita el lienzo de trabajo: en estrecho el diagrama es de solo lectura. -->
     @if (!compact()) {
-      <button type="button" class="ui-btn-primary" [attr.aria-pressed]="editing()" (click)="toggleEditing()">{{ editing() ? 'Listo' : 'Editar arquitectura' }}</button>
+      <button type="button" class="ui-btn-primary" [attr.aria-pressed]="editing()" (click)="toggleEditing()">{{ editing() ? ('Listo' | t) : ('Editar arquitectura' | t) }}</button>
     }
   </div>
 
   @if (modified()) {
-    <p class="w-full text-caption font-normal text-ink-3" role="status">Guardado en este navegador</p>
+    <p class="w-full text-caption font-normal text-ink-3" role="status">{{ 'Guardado en este navegador' | t }}</p>
   }
   @if (cloudNotice(); as notice) {
     <p class="w-full text-caption font-normal text-status-ok" role="status">{{ notice }}</p>
@@ -200,7 +199,7 @@
 @if (projectError(); as message) {
   <p class="mt-2 rounded-panel border border-status-danger/40 bg-status-danger/10 px-3 py-1.5 text-xs text-status-danger" role="alert">
     {{ message }}
-    <button type="button" class="focus-ring ml-2 underline" (click)="projectError.set(null)">Cerrar</button>
+    <button type="button" class="focus-ring ml-2 underline" (click)="projectError.set(null)">{{ 'Cerrar' | t }}</button>
   </p>
 }
 
@@ -211,18 +210,18 @@
 <!-- La vista de Infraestructura sigue montada debajo de la de Aplicación: es el mismo proyecto. -->
 <div [hidden]="appView()" data-testid="infra-view">
 @if (editing()) {
-  <div class="mt-3 flex animate-slide-up flex-wrap items-center gap-x-4 gap-y-2 rounded-panel border border-accent-text/40 bg-accent-text/10 px-3 py-2" role="toolbar" aria-label="Edición de la arquitectura">
+  <div class="mt-3 flex animate-slide-up flex-wrap items-center gap-x-4 gap-y-2 rounded-panel border border-accent-text/40 bg-accent-text/10 px-3 py-2" role="toolbar" [attr.aria-label]="'Edición de la arquitectura' | t">
     <button
       type="button"
       class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs font-medium text-ink-1 transition hover:bg-surface-3"
       [attr.aria-pressed]="catalogDocked()"
       (click)="catalogDocked.set(!catalogDocked())"
     >
-      {{ catalogDocked() ? 'Ocultar catálogo' : 'Mostrar catálogo' }}
+      {{ catalogDocked() ? ('Ocultar catálogo' | t) : ('Mostrar catálogo' | t) }}
     </button>
     <div class="relative" data-menu>
       <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs font-medium text-ink-1 transition hover:bg-surface-3" [attr.aria-expanded]="menu() === 'zones'" aria-controls="menu-zones" (click)="menu.set(menu() === 'zones' ? null : 'zones')">
-        Añadir zona <span aria-hidden="true">▾</span>
+        {{ 'Añadir zona' | t }} <span aria-hidden="true">▾</span>
       </button>
       @if (menu() === 'zones') {
         <ul id="menu-zones" class="project-menu w-64">
@@ -233,39 +232,36 @@
       }
     </div>
     @if (activeZone(); as zone) {
-      <div class="flex items-center gap-2" role="group" aria-label="Zona seleccionada">
-        <label class="sr-only" for="zone-label">Nombre de la zona</label>
+      <div class="flex items-center gap-2" role="group" [attr.aria-label]="'Zona seleccionada' | t">
+        <label class="sr-only" for="zone-label">{{ 'Nombre de la zona' | t }}</label>
         <input id="zone-label" type="text" maxlength="60" class="focus-ring w-44 rounded-control border border-line-strong bg-surface-2 px-3 py-1 text-xs text-ink-1 placeholder:text-ink-3" [placeholder]="zoneLabelOf(zone)" [value]="zone.label ?? ''" (input)="renameZone(zone, $any($event.target).value)" />
-        <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs text-ink-1 hover:bg-surface-3" (click)="removeZone(zone)">Quitar zona</button>
+        <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs text-ink-1 hover:bg-surface-3" (click)="removeZone(zone)">{{ 'Quitar zona' | t }}</button>
       </div>
     }
     @if (connectingNode(); as source) {
-      <p class="flex items-center gap-2 rounded-full bg-accent-solid px-3 py-1 text-xs font-medium text-white" role="status">
+      <p class="flex items-center gap-2 rounded-full bg-accent-solid px-3 py-1 text-xs font-medium text-accent-on" role="status">
         Pulsa el nodo de destino para conectar «{{ serviceOf(source) }}»
-        <button type="button" class="focus-ring rounded-control border border-line-control px-2 text-xs" (click)="cancelConnection()">Cancelar</button>
+        <button type="button" class="focus-ring rounded-control border border-line-control px-2 text-xs" (click)="cancelConnection()">{{ 'Cancelar' | t }}</button>
       </p>
     }
     @if (connectionRefusal(); as refusal) {
       <p class="flex w-full flex-wrap items-center gap-2 rounded-panel border border-status-warn/30 bg-status-warn/10 px-3 py-1.5 text-xs text-status-warn" role="alert" data-testid="connection-refusal">
         <span>Conexión no creada. {{ refusal.reason }} <strong class="font-semibold">{{ refusal.suggestion }}</strong></span>
-        <button type="button" class="focus-ring rounded-control border border-status-warn/40 px-2 text-xs" (click)="connectionRefusal.set(null)">Entendido</button>
+        <button type="button" class="focus-ring rounded-control border border-status-warn/40 px-2 text-xs" (click)="connectionRefusal.set(null)">{{ 'Entendido' | t }}</button>
       </p>
     }
     <p class="order-last w-full text-xs leading-snug text-ink-2">
-      Pulsa un servicio o arrástralo al lienzo. Mueve los nodos arrastrándolos (o con las flechas), abre sus propiedades
-      con doble clic o Intro, conéctalos arrastrando la flecha de su borde y quítalos con la ✕ o Supr. Las zonas se
-      mueven por su franja superior y se redimensionan desde las esquinas. Editas una copia: no cambia la plataforma real.
+      {{ 'Pulsa un servicio o arrástralo al lienzo. Mueve los nodos arrastrándolos (o con las flechas), abre sus propiedades con doble clic o Intro, conéctalos arrastrando la flecha de su borde y quítalos con la ✕ o Supr. Las zonas se mueven por su franja superior y se redimensionan desde las esquinas. Editas una copia: no cambia la plataforma real.' | t }}
     </p>
   </div>
 } @else {
   <p class="mt-3 text-sm text-ink-2">
-    Cómo se desplegaría esta plataforma en <span class="font-medium text-ink-1">{{ selected().name }}</span>. La forma es
-    la misma en las tres nubes; cambia el servicio que cubre cada pieza.
+    {{ 'Cómo se desplegaría esta plataforma en' | t }} <span class="font-medium text-ink-1">{{ selected().name }}</span>{{ '. La forma es la misma en las tres nubes; cambia el servicio que cubre cada pieza.' | t }}
   </p>
 }
 
 @if (chaosOpen()) {
-  <section id="chaos-panel" class="mt-3 animate-slide-up rounded-panel border border-status-danger/30 bg-status-danger/[0.06] p-3" aria-label="Simulador de caos">
+  <section id="chaos-panel" class="mt-3 animate-slide-up rounded-panel border border-status-danger/30 bg-status-danger/[0.06] p-3" [attr.aria-label]="'Simulador de caos' | t">
     <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
       @for (scenario of scenarios; track scenario.id) {
         <button
@@ -274,7 +270,7 @@
           [class]="chaos()?.scenario === scenario ? 'border-status-danger/70 bg-status-danger/15' : 'border-line-subtle bg-surface-2 hover:border-line-strong hover:bg-surface-2'"
           [disabled]="!canRun(scenario)"
           [attr.aria-pressed]="chaos()?.scenario === scenario"
-          [title]="canRun(scenario) ? scenario.basis : 'Falta en el lienzo algún nodo que este escenario necesita'"
+          [title]="canRun(scenario) ? scenario.basis : ('Falta en el lienzo algún nodo que este escenario necesita' | t)"
           (click)="runChaos(scenario)"
         >
           <span class="block text-[13px] font-medium text-ink-1">{{ scenario.name }}</span>
@@ -285,7 +281,7 @@
 
     <div class="mt-2 flex min-h-[2.5rem] flex-wrap items-center gap-x-3 gap-y-1.5" role="status">
       @if (chaos(); as running) {
-        <ol class="flex gap-1" aria-label="Fases del escenario">
+        <ol class="flex gap-1" [attr.aria-label]="'Fases del escenario' | t">
           @for (phase of running.scenario.phases; track phase.step) {
             <li
               class="rounded-full border px-2 py-0.5 font-mono text-xs transition duration-500"
@@ -297,12 +293,11 @@
           }
         </ol>
         <p class="min-w-0 flex-1 text-xs text-ink-1">{{ chaosCaption() }}</p>
-        <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs text-ink-1 hover:bg-surface-3" (click)="stopChaos()">Detener</button>
+        <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs text-ink-1 hover:bg-surface-3" (click)="stopChaos()">{{ 'Detener' | t }}</button>
         <p class="w-full text-xs leading-snug text-ink-3">{{ running.scenario.basis }}</p>
       } @else {
         <p class="text-xs leading-snug text-ink-2">
-          Elige un fallo para ver cómo responde la plataforma: el fallo, el fallback, la prueba de recuperación y la
-          vuelta a la normalidad. Es una simulación sobre el diagrama; no se toca ninguna infraestructura.
+          {{ 'Elige un fallo para ver cómo responde la plataforma: el fallo, el fallback, la prueba de recuperación y la vuelta a la normalidad. Es una simulación sobre el diagrama; no se toca ninguna infraestructura.' | t }}
         </p>
       }
     </div>
@@ -330,7 +325,7 @@
       [class.canvas-editing]="editing()"
       role="group"
       [style.--provider]="providerColor()"
-      [attr.aria-label]="'Arquitectura de referencia en ' + selected().name + (editing() ? ', en edición' : '')"
+      [attr.aria-label]="('Arquitectura de referencia en ' | t) + selected().name + (editing() ? (', en edición' | t) : '')"
       (dragover)="onCanvasDragOver($event)"
       (drop)="onCanvasDrop($event)"
     >
@@ -361,7 +356,7 @@
               class="zone-grip"
               tabindex="0"
               role="button"
-              [attr.aria-label]="'Zona ' + zoneLabelOf(zone) + '. Arrastra o usa las flechas para moverla, Mayúsculas y flechas para redimensionarla, Suprimir para quitarla'"
+              [attr.aria-label]="('Zona ' | t) + zoneLabelOf(zone) + ('. Arrastra o usa las flechas para moverla, Mayúsculas y flechas para redimensionarla, Suprimir para quitarla' | t)"
               [attr.aria-pressed]="zone.id === activeZoneId()"
               [attr.x]="zone.x" [attr.y]="zone.y" [attr.width]="zone.w" [attr.height]="touch ? touchTarget : 26" rx="8"
               (pointerdown)="onZonePointerDown($event, zone, 'move')"
@@ -389,7 +384,7 @@
         }
       }
       @if (hasCloudZone()) {
-        <text class="zone-sub" x="935" y="170" text-anchor="middle">Servicios gestionados</text>
+        <text class="zone-sub" x="935" y="170" text-anchor="middle">{{ 'Servicios gestionados' | t }}</text>
       }
 
       @for (wire of wires(); track wire.from + '>' + wire.to) {
@@ -436,7 +431,7 @@
           [style.--brand]="iconOf(node)?.color"
           tabindex="0"
           role="button"
-          [attr.aria-label]="serviceOf(node) + ': ' + node.role + (chaosOf(node) ? '. Estado: ' + chaosOf(node)!.label : '') + (editing() ? '. Flechas para mover, Intro para sus propiedades, Suprimir para quitar' : '. Intro para su ficha, flechas para ir a otro nodo')"
+          [attr.aria-label]="serviceOf(node) + ': ' + node.role + (chaosOf(node) ? '. Estado: ' + chaosOf(node)!.label : '') + (editing() ? '. Flechas para mover, Intro para sus propiedades, Suprimir para quitar' : ('. Intro para su ficha, flechas para ir a otro nodo' | t))"
           [attr.aria-pressed]="node.id === activeId()"
           [attr.aria-describedby]="tooltip()?.id === node.id ? 'node-tooltip' : null"
           [attr.aria-haspopup]="editing() ? null : 'dialog'"
@@ -500,7 +495,7 @@
             class="remove"
             tabindex="0"
             role="button"
-            [attr.aria-label]="'Quitar ' + serviceOf(node)"
+            [attr.aria-label]="('Quitar ' | t) + serviceOf(node)"
             (click)="remove(node)"
             (keydown.enter)="remove(node)"
             (keydown.space)="remove(node); $event.preventDefault()"
@@ -519,7 +514,7 @@
             role="button"
             data-info-open
             aria-haspopup="dialog"
-            [attr.aria-label]="'Ficha de ' + serviceOf(node)"
+            [attr.aria-label]="('Ficha de ' | t) + serviceOf(node)"
             (pointerdown)="$event.stopPropagation()"
             (click)="$event.stopPropagation(); openInfo(node)"
             (keydown.enter)="$event.stopPropagation(); openInfo(node)"
@@ -536,7 +531,7 @@
             class="connect"
             tabindex="0"
             role="button"
-            [attr.aria-label]="'Conectar ' + serviceOf(node) + ' con otro nodo'"
+            [attr.aria-label]="('Conectar ' | t) + serviceOf(node) + (' con otro nodo' | t)"
             [attr.aria-pressed]="connectingFrom() === node.id"
             (pointerdown)="startConnection(node, $event)"
             (pointermove)="onLinkPointerMove($event)"
@@ -663,13 +658,13 @@
     @for (why of [node.why]; track why + selectedId()) {
       <p class="animate-slide-up text-sm text-ink-2">{{ why }}</p>
     }
-    <button type="button" class="ui-btn-ghost" data-info-open aria-haspopup="dialog" [attr.aria-expanded]="infoId() === node.id" (click)="infoId() === node.id ? closeInfo(false) : openInfo(node)">Ver ficha</button>
+    <button type="button" class="ui-btn-ghost" data-info-open aria-haspopup="dialog" [attr.aria-expanded]="infoId() === node.id" (click)="infoId() === node.id ? closeInfo(false) : openInfo(node)">{{ 'Ver ficha' | t }}</button>
   }
 </div>
 
 <!-- Tráfico simulado y fallos sobre el nodo seleccionado. -->
 <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
-  <div class="ui-segmented" role="radiogroup" aria-label="Tráfico simulado">
+  <div class="ui-segmented" role="radiogroup" [attr.aria-label]="'Tráfico simulado' | t">
     @for (profile of trafficProfiles; track profile.id) {
       <button
         type="button"
@@ -684,19 +679,19 @@
   </div>
 
   @if (!editing() && active(); as node) {
-    <div class="flex flex-wrap items-center gap-2" role="group" [attr.aria-label]="'Inyectar un fallo en ' + serviceOf(node)">
+    <div class="flex flex-wrap items-center gap-2" role="group" [attr.aria-label]="('Inyectar un fallo en ' | t) + serviceOf(node)">
       @if (activeFault()) {
         <button type="button" class="project-button" (click)="clearFault(node.id, true)">Restaurar {{ serviceOf(node) }}</button>
       } @else {
-        <button type="button" class="project-button" (click)="injectFault(node, 'down')">💥 Tumbar servicio</button>
-        <button type="button" class="project-button" (click)="injectFault(node, 'cpu')">⚡ Cargar 100 % CPU</button>
+        <button type="button" class="project-button" (click)="injectFault(node, 'down')">{{ '💥 Tumbar servicio' | t }}</button>
+        <button type="button" class="project-button" (click)="injectFault(node, 'cpu')">{{ '⚡ Cargar 100 % CPU' | t }}</button>
       }
     </div>
   }
 </div>
 
 @if (violations().length) {
-  <ul class="mt-3 space-y-1" aria-label="Avisos del grafo" data-testid="graph-warnings">
+  <ul class="mt-3 space-y-1" [attr.aria-label]="'Avisos del grafo' | t" data-testid="graph-warnings">
     @for (violation of violations(); track violation.message) {
       <li class="rounded-panel border border-status-warn/30 bg-status-warn/10 px-3 py-1.5 text-xs text-status-warn" role="status">{{ violation.message }}@if (violation.suggestion) { <strong class="font-semibold">{{ violation.suggestion }}</strong> }</li>
     }
@@ -704,10 +699,10 @@
 }
 
 @if (codeOpen()) {
-  <section id="main-tf-panel" class="mt-3 animate-slide-up overflow-hidden rounded-panel border border-line-subtle bg-surface-2" aria-label="Código Terraform generado">
+  <section id="main-tf-panel" class="mt-3 animate-slide-up overflow-hidden rounded-panel border border-line-subtle bg-surface-2" [attr.aria-label]="'Código Terraform generado' | t">
     <header class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line-subtle px-3 py-2">
       <p class="font-mono text-xs text-ink-1">main.tf <span class="text-ink-3">· {{ selected().name }} · se regenera con cada cambio</span></p>
-      <ul class="flex flex-1 flex-wrap gap-1.5" aria-label="Validación de seguridad">
+      <ul class="flex flex-1 flex-wrap gap-1.5" [attr.aria-label]="'Validación de seguridad' | t">
         @for (finding of findings(); track finding.check) {
           <li
             class="rounded-full border px-2 py-0.5 font-mono text-xs"
@@ -719,7 +714,7 @@
         }
       </ul>
       <button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1 text-xs text-ink-1 transition hover:bg-surface-3" (click)="copyMainTf()">
-        {{ copied() ? 'Copiado' : 'Copiar' }}
+        {{ copied() ? ('Copiado' | t) : ('Copiar' | t) }}
       </button>
     </header>
     @for (warning of warnings(); track warning.check) {
@@ -737,8 +732,6 @@
 }
 
 <p class="mt-2 text-xs leading-snug text-ink-3">
-  Mapa de despliegue, no un entorno en curso: hoy la plataforma está preparada para Neon (PostgreSQL) y Upstash (Redis),
-  definidos con Terraform. El código es un esqueleto; los eventos del inspector y los fallos son simulados y el coste es
-  una estimación orientativa. Las comprobaciones de seguridad y la auditoría sí se calculan sobre el diagrama.
+  {{ 'Mapa de despliegue, no un entorno en curso: hoy la plataforma está preparada para Neon (PostgreSQL) y Upstash (Redis), definidos con Terraform. El código es un esqueleto; los eventos del inspector y los fallos son simulados y el coste es una estimación orientativa. Las comprobaciones de seguridad y la auditoría sí se calculan sobre el diagrama.' | t }}
 </p>
 </div>

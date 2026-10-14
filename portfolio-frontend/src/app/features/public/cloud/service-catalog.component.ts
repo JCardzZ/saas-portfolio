@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { TechIconComponent } from '../../../shared/ui/tech-icon.component';
 import { TECH_ICONS, TechIcon } from '../../../shared/ui/tech-icons';
@@ -15,7 +16,7 @@ export const CATALOG_DRAG_TYPE = 'application/x-cloud-service';
 @Component({
   selector: 'app-service-catalog',
   standalone: true,
-  imports: [TechIconComponent],
+  imports: [TranslatePipe, TechIconComponent],
   templateUrl: './service-catalog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

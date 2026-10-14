@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, inject, input, output, signal, viewChild } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { finalize } from 'rxjs';
 
 import { runtimeConfig } from '../../../core/config/runtime-config';
@@ -32,24 +33,24 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
 @Component({
   selector: 'app-architecture-copilot',
   standalone: true,
-  imports: [MarkdownComponent, AutofocusDirective],
+  imports: [TranslatePipe, MarkdownComponent, AutofocusDirective],
   host: { class: 'block', '(keydown.escape)': 'closed.emit(); $event.stopPropagation()', '(keydown)': '$event.stopPropagation()' },
   template: `
     <section class="flex max-h-[36rem] animate-scale-up flex-col overflow-hidden rounded-card border border-line-strong bg-surface-1/95 text-ink-1 shadow-2xl backdrop-blur-2xl" role="dialog" aria-labelledby="copilot-title">
       <header class="flex items-start gap-3 border-b border-line-subtle px-4 py-3">
         <div class="min-w-0 flex-1">
-          <h4 id="copilot-title" class="text-sm font-semibold text-ink-1">Co-piloto de arquitectura</h4>
-          <p class="text-xs text-ink-2">IA sobre tu diagrama{{ demo ? ' · respuestas simuladas (modo demo)' : ' · Gemini con el índice RAG' }}</p>
+          <h4 id="copilot-title" class="text-sm font-semibold text-ink-1">{{ 'Co-piloto de arquitectura' | t }}</h4>
+          <p class="text-xs text-ink-2">IA sobre tu diagrama{{ demo ? (' · respuestas simuladas (modo demo)' | t) : (' · Gemini con el índice RAG' | t) }}</p>
         </div>
-        <button type="button" class="focus-ring rounded-control px-2 text-lg leading-none text-ink-2 hover:text-ink-1" aria-label="Cerrar el copiloto" (click)="closed.emit()">×</button>
+        <button type="button" class="focus-ring rounded-control px-2 text-lg leading-none text-ink-2 hover:text-ink-1" [attr.aria-label]="'Cerrar el copiloto' | t" (click)="closed.emit()">×</button>
       </header>
 
       <div #scroll class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3" aria-live="polite">
         @for (exchange of exchanges(); track exchange.id) {
           <article>
-            <p class="ml-8 rounded-panel rounded-br-mark bg-accent-solid px-3 py-1.5 text-xs text-white">{{ exchange.question }}</p>
+            <p class="ml-8 rounded-panel rounded-br-mark bg-accent-solid px-3 py-1.5 text-xs text-accent-on">{{ exchange.question }}</p>
             @if (exchange.pending) {
-              <p class="mt-2 animate-pulse text-xs text-ink-2">Analizando el diagrama…</p>
+              <p class="mt-2 animate-pulse text-xs text-ink-2">{{ 'Analizando el diagrama…' | t }}</p>
             } @else if (exchange.error) {
               <p class="mt-2 text-xs text-status-warn" role="alert">{{ exchange.error }}</p>
             } @else {
@@ -59,13 +60,13 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
                   <h5 class="text-[13px] font-medium text-ink-1">{{ recommendation.title }}</h5>
                   <div class="mt-2 grid gap-2 sm:grid-cols-2">
                     <div>
-                      <p class="text-xs font-medium uppercase tracking-wider text-status-ok">Puntos fuertes</p>
+                      <p class="text-xs font-medium uppercase tracking-wider text-status-ok">{{ 'Puntos fuertes' | t }}</p>
                       <ul class="mt-1 space-y-1 text-xs leading-snug text-ink-2">
                         @for (pro of recommendation.pros; track pro) { <li>{{ pro }}</li> } @empty { <li class="text-ink-3">—</li> }
                       </ul>
                     </div>
                     <div>
-                      <p class="text-xs font-medium uppercase tracking-wider text-status-warn">Riesgos y costes</p>
+                      <p class="text-xs font-medium uppercase tracking-wider text-status-warn">{{ 'Riesgos y costes' | t }}</p>
                       <ul class="mt-1 space-y-1 text-xs leading-snug text-ink-2">
                         @for (con of recommendation.cons; track con) { <li>{{ con }}</li> } @empty { <li class="text-ink-3">—</li> }
                       </ul>
@@ -84,20 +85,20 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
                   }
 
                   @if (recommendation.additions.length > 0) {
-                    <ul class="mt-2 flex flex-wrap gap-1" aria-label="Piezas que añadiría">
+                    <ul class="mt-2 flex flex-wrap gap-1" [attr.aria-label]="'Piezas que añadiría' | t">
                       @for (addition of recommendation.additions; track $index) {
                         <li class="rounded-full border border-line-strong px-2 py-0.5 text-xs text-ink-1">
-                          + {{ nameOf(addition) }}@if (addition.code === 'custom') { <span class="text-ink-3"> · fuera del catálogo</span> }
+                          + {{ nameOf(addition) }}@if (addition.code === 'custom') { <span class="text-ink-3"> {{ '· fuera del catálogo' | t }}</span> }
                         </li>
                       }
                     </ul>
                     <button
                       type="button"
-                      class="focus-ring mt-2 rounded-control bg-accent-solid px-3 py-1 text-xs font-medium text-white transition hover:bg-accent-solid-hover disabled:cursor-default disabled:bg-surface-3 disabled:text-ink-2"
+                      class="focus-ring mt-2 rounded-control bg-accent-solid px-3 py-1 text-xs font-medium text-accent-on transition hover:bg-accent-solid-hover disabled:cursor-default disabled:bg-surface-3 disabled:text-ink-2"
                       [disabled]="recommendation.applied !== null"
                       (click)="apply(exchange.id, recommendation)"
                     >
-                      {{ recommendation.applied === null ? '✨ Aplicar cambios al lienzo' : 'Aplicado · ' + recommendation.applied + (recommendation.applied === 1 ? ' pieza' : ' piezas') }}
+                      {{ recommendation.applied === null ? ('✨ Aplicar cambios al lienzo' | t) : ('Aplicado · ' | t) + recommendation.applied + (recommendation.applied === 1 ? (' pieza' | t) : (' piezas' | t)) }}
                     </button>
                   }
                 </div>
@@ -106,7 +107,7 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
           </article>
         } @empty {
           <div class="text-xs text-ink-2">
-            <p>Pregunta por tu diagrama. Por ejemplo:</p>
+            <p>{{ 'Pregunta por tu diagrama. Por ejemplo:' | t }}</p>
             <ul class="mt-2 space-y-1.5">
               @for (suggestion of suggestions; track suggestion) {
                 <li><button type="button" class="focus-ring rounded-control border border-line-strong px-3 py-1 text-left text-ink-1 transition hover:bg-surface-3" (click)="ask(suggestion)">{{ suggestion }}</button></li>
@@ -117,7 +118,7 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
       </div>
 
       <form class="flex items-end gap-2 border-t border-line-subtle p-3" (submit)="submit($event)">
-        <label class="sr-only" for="copilot-prompt">Pregunta para el copiloto</label>
+        <label class="sr-only" for="copilot-prompt">{{ 'Pregunta para el copiloto' | t }}</label>
         <textarea
           #prompt
           id="copilot-prompt"
@@ -125,13 +126,13 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
           rows="2"
           [attr.maxlength]="maxPrompt"
           class="focus-ring min-w-0 flex-1 resize-none rounded-panel border border-line-subtle bg-surface-2 px-3 py-1.5 text-xs text-ink-1 placeholder:text-ink-3"
-          placeholder="¿Qué quieres mejorar de esta arquitectura?"
+          [placeholder]="'¿Qué quieres mejorar de esta arquitectura?' | t"
           (keydown.enter)="submit($event)"
         ></textarea>
-        <button type="submit" class="focus-ring rounded-control bg-accent-solid px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40" [disabled]="busy()">Preguntar</button>
+        <button type="submit" class="focus-ring rounded-control bg-accent-solid px-3 py-1.5 text-xs font-medium text-accent-on disabled:opacity-40" [disabled]="busy()">{{ 'Preguntar' | t }}</button>
       </form>
       <p class="border-t border-line-subtle px-4 py-2 text-xs leading-snug text-ink-3">
-        Las recomendaciones las redacta un modelo y pueden equivocarse: revísalas. El coste sale del catálogo del estudio, no del modelo.
+        {{ 'Las recomendaciones las redacta un modelo y pueden equivocarse: revísalas. El coste sale del catálogo del estudio, no del modelo.' | t }}
       </p>
     </section>
   `,

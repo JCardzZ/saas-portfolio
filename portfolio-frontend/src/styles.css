@@ -26,7 +26,7 @@
 
   /* Lo que se ve antes de que Angular arranque; Angular lo sustituye al pintar la aplicación. */
   .boot-splash {
-    @apply fixed inset-0 m-0 flex items-center justify-center bg-black text-sm text-white/50;
+    @apply fixed inset-0 m-0 flex items-center justify-center bg-canvas text-sm text-ink-3;
   }
 }
 
@@ -118,6 +118,10 @@
       active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-disabled disabled:active:scale-100
       aria-disabled:cursor-not-allowed aria-disabled:text-ink-disabled;
   }
+  /* El icono de un botón no encoge: en un botón de icono estrecho se quedaba en 6 px de ancho. */
+  :where(.ui-btn, .ui-btn-primary, .ui-btn-secondary, .ui-btn-ghost, .ui-btn-danger) > svg {
+    flex-shrink: 0;
+  }
   .ui-btn-lg {
     @apply min-h-10 px-4;
   }
@@ -130,7 +134,7 @@
   }
   /* Una sola acción primaria por vista o por barra. */
   .ui-btn-primary {
-    @apply ui-btn bg-accent-solid text-white hover:bg-accent-solid-hover disabled:bg-surface-3 disabled:text-ink-disabled;
+    @apply ui-btn bg-accent-solid text-accent-on hover:bg-accent-solid-hover disabled:bg-surface-3 disabled:text-ink-disabled;
   }
   .ui-btn-secondary {
     @apply ui-btn border-line-strong bg-surface-2 text-ink-1 hover:bg-surface-3 disabled:hover:bg-surface-2;
@@ -261,7 +265,7 @@
   overscroll-behavior: contain;
   border-radius: 0;
   border-color: transparent;
-  background: rgb(9 9 11 / 0.82);
+  background: rgb(var(--c-canvas) / 0.82);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
   box-shadow: none;
@@ -293,9 +297,147 @@
   }
 }
 
-/* La vista pública es oscura: controles nativos y barras de scroll también. */
+/* Raíz de la vista pública: controles nativos y barras de scroll siguen a su tema (oscuro o claro).
+   La administración no la lleva y sigue clara. */
 .dark {
   color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .dark { color-scheme: light; }
+}
+:root[data-theme='light'] .dark { color-scheme: light; }
+
+/* Nombre del hero: un cartel de borde a borde. Escala con el ancho y nunca baja del titular normal. */
+/* Hero inmersivo: con el mazo de tecnologías abierto, el texto se retira y los botones se atenúan. */
+.hero :is(h1, p) {
+  transition: opacity var(--duration-slow) var(--ease-standard);
+}
+.hero-dimmed :is(h1, p) {
+  opacity: 0.1;
+  /* Con el globo abierto, el texto atenuado no debe tapar las fichas que hay detrás. */
+  pointer-events: none !important;
+}
+.hero-dimmed :is(a, button, app-cv-download) {
+  opacity: 0.5;
+  transition: opacity var(--duration-slow) var(--ease-standard);
+}
+
+/* La píldora del robot late suave mientras el mazo está cerrado, para que se descubra. */
+.hint-glow {
+  animation: hint-glow 2.6s var(--ease-standard) infinite;
+}
+@keyframes hint-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--c-accent-solid) / 0); border-color: var(--border-subtle); }
+  50% { box-shadow: 0 0 18px 2px rgb(var(--c-accent-solid) / 0.35); border-color: rgb(var(--c-accent-solid) / 0.7); }
+}
+
+/* Bocadillo del robot: una cola hacia la cabeza (a la izquierda, o abajo en pantallas estrechas). */
+.speech { will-change: transform; }
+.speech-body { position: relative; width: min(21rem, calc(100vw - 2rem)); }
+.speech-body::after {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: calc(50% - 6px);
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  border-left: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  transform: rotate(45deg);
+}
+.speech-narrow .speech-body::after { left: calc(50% - 6px); top: -7px; transform: rotate(135deg); }
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  background: rgb(var(--c-accent-solid));
+  animation: caret-blink 1s steps(1) infinite;
+}
+@keyframes caret-blink { 50% { opacity: 0; } }
+
+/* Isla dinámica de los filtros del globo. */
+.island {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.3rem;
+  border-radius: 999px;
+  background: rgb(var(--c-canvas) / 0.92);
+  box-shadow: 0 0 0 1px var(--border-subtle), 0 12px 40px rgb(0 0 0 / 0.35);
+  backdrop-filter: blur(16px);
+}
+.island-thumb {
+  position: absolute;
+  top: 0.3rem;
+  bottom: 0.3rem;
+  left: 0.3rem;
+  width: calc((100% - 0.6rem - 2.5rem) / 5);
+  border-radius: 999px;
+  background: rgb(var(--c-accent-solid));
+  box-shadow: 0 0 18px rgb(var(--c-accent-solid) / 0.45);
+  transition: transform var(--duration-slow) var(--ease-emphasized);
+}
+.island-option {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 2.25rem;
+  padding: 0 0.875rem;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-2);
+  border-radius: 999px;
+  transition: color var(--duration-base) var(--ease-standard);
+}
+.island-option:hover { color: var(--text-1); }
+.island-option-on, .island-option-on:hover { color: rgb(var(--c-accent-on)); font-weight: 600; }
+.island-count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  animation: island-count var(--duration-slow) var(--ease-emphasized);
+}
+@keyframes island-count { from { opacity: 0; transform: translateY(6px) scale(0.8); } }
+.island-sound {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-left: 0.25rem;
+  border-radius: 999px;
+  color: var(--text-2);
+}
+.island-sound:hover { color: var(--text-1); background: rgb(var(--c-ink-1) / 0.08); }
+.island :focus-visible { outline: 2px solid rgb(var(--c-accent-solid)); outline-offset: 2px; }
+@media (max-width: 639px) {
+  .island-option { padding: 0 0.5rem; font-size: 0.75rem; }
+}
+
+.hero-role {
+  font-size: clamp(1.25rem, 2.6vw, 2.25rem);
+  line-height: 1;
+  text-wrap: balance;
+}
+/* La escena del hero se funde con la galaxia por abajo: sin corte ni línea al final. */
+.hero-canvas {
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+}
+
+.hero-name {
+  /* «MANUEL CARDOZA» tiene que caber en una línea dentro de la columna (máx. 72 rem): 8,2vw. */
+  font-size: clamp(2.5rem, 8.2vw, 7.4rem);
+  text-wrap: balance;
 }
 
 /* Markdown de las respuestas del asistente. Global porque el HTML se inyecta con [innerHTML]. */
@@ -327,16 +469,16 @@
 }
 .markdown code {
   border-radius: 0.375rem;
-  background: rgb(255 255 255 / 0.12);
+  background: rgb(var(--c-ink-1) / 0.12);
   padding: 0.1em 0.35em;
   font-family: var(--font-mono);
   font-size: 0.88em;
 }
 .markdown pre {
   overflow-x: auto;
-  border: 1px solid rgb(255 255 255 / 0.1);
+  border: 1px solid rgb(var(--c-ink-1) / 0.1);
   border-radius: 0.875rem;
-  background: rgb(0 0 0 / 0.45);
+  background: rgb(var(--c-canvas) / 0.45);
   padding: 0.75em 0.9em;
 }
 .markdown pre code {
@@ -346,7 +488,7 @@
   line-height: 1.55;
 }
 .markdown blockquote {
-  border-left: 2px solid rgb(255 255 255 / 0.25);
+  border-left: 2px solid rgb(var(--c-ink-1) / 0.25);
   padding-left: 0.8em;
   color: var(--text-2);
 }
@@ -357,12 +499,12 @@
 }
 .markdown th,
 .markdown td {
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid rgb(var(--c-ink-1) / 0.12);
   padding: 0.3em 0.6em;
   text-align: left;
 }
 .markdown hr {
-  border-color: rgb(255 255 255 / 0.12);
+  border-color: rgb(var(--c-ink-1) / 0.12);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -422,11 +564,11 @@
 svg .zone.zone-region { stroke-dasharray: 2 5; }
 svg .zone.zone-selected { stroke: var(--accent-text) !important; stroke-width: 1.5; stroke-dasharray: none; }
 .zone-grip { fill: transparent; cursor: move; outline: none; touch-action: none; }
-.zone-grip:hover, .zone-grip:focus-visible { fill: rgb(255 255 255 / 0.08); }
+.zone-grip:hover, .zone-grip:focus-visible { fill: rgb(var(--c-ink-1) / 0.08); }
 .zone-grip:focus-visible { stroke: #fff; stroke-width: 1.5; }
-.zone-corner { fill: rgb(255 255 255 / 0.45); cursor: nwse-resize; touch-action: none; }
-.zone-corner:hover { fill: #fff; }
-svg .zone.zone-target { stroke: var(--accent-text); stroke-width: 1.5; stroke-dasharray: none; fill: rgb(111 168 255 / 0.08); }
+.zone-corner { fill: rgb(var(--c-ink-1) / 0.45); cursor: nwse-resize; touch-action: none; }
+.zone-corner:hover { fill: var(--text-1); }
+svg .zone.zone-target { stroke: var(--accent-text); stroke-width: 1.5; stroke-dasharray: none; fill: rgb(var(--c-accent-text) / 0.08); }
 .connect { cursor: crosshair; outline: none; touch-action: none; }
 .connect circle { fill: var(--accent-solid); transition: fill 0.2s; }
 .connect:hover circle, .connect:focus-visible circle, .connect[aria-pressed='true'] circle { fill: var(--accent-text); }

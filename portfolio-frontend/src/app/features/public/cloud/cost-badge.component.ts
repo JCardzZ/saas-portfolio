@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { CostEstimate, formatUsd } from './cloud-costs.data';
 import { LivePricingState } from './live-pricing.service';
@@ -10,10 +11,11 @@ import { LivePricingState } from './live-pricing.service';
 @Component({
   selector: 'app-cost-badge',
   standalone: true,
+  imports: [TranslatePipe],
   host: { class: 'block', '(mouseenter)': 'hovered.set(true)', '(mouseleave)': 'hovered.set(false)', '(keydown.escape)': 'pinned.set(false)' },
   template: `
     @if (open()) {
-      <div id="cost-breakdown" class="mb-2 w-64 animate-scale-up rounded-panel border border-line-strong bg-surface-1/95 p-3 text-left shadow-2xl backdrop-blur-2xl" role="region" aria-label="Desglose del coste mensual estimado">
+      <div id="cost-breakdown" class="mb-2 w-64 animate-scale-up rounded-panel border border-line-strong bg-surface-1/95 p-3 text-left shadow-2xl backdrop-blur-2xl" role="region" [attr.aria-label]="'Desglose del coste mensual estimado' | t">
         <p class="text-xs font-medium uppercase tracking-wider text-ink-2">FinOps · {{ providerName() }}</p>
         <ul class="mt-2 space-y-2">
           @for (category of estimate().categories; track category.id) {
@@ -27,12 +29,12 @@ import { LivePricingState } from './live-pricing.service';
               </div>
               <p class="mt-0.5 text-xs leading-snug text-ink-3">
                 @for (item of category.items; track item.nodeId; let last = $last) {
-                  <span [class.text-accent-text]="item.live" [title]="item.live ? 'Precio de lista real' : 'Estimación orientativa'">{{ item.name }} {{ usd(item.usd) }}{{ item.live ? ' ●' : '' }}</span>{{ last ? '' : ' · ' }}
+                  <span [class.text-accent-text]="item.live" [title]="item.live ? ('Precio de lista real' | t) : ('Estimación orientativa' | t)">{{ item.name }} {{ usd(item.usd) }}{{ item.live ? ' ●' : '' }}</span>{{ last ? '' : ' · ' }}
                 }
               </p>
             </li>
           } @empty {
-            <li class="text-xs text-ink-2">Ningún nodo del lienzo tiene coste fijo.</li>
+            <li class="text-xs text-ink-2">{{ 'Ningún nodo del lienzo tiene coste fijo.' | t }}</li>
           }
         </ul>
         @if (estimate().unestimated.length) {
@@ -44,8 +46,7 @@ import { LivePricingState } from './live-pricing.service';
           {{ sourceLabel() }}
         </p>
         <p class="mt-2 border-t border-line-subtle pt-2 text-xs leading-snug text-ink-3">
-          Estimación orientativa en USD para el tamaño mínimo de cada servicio. No incluye tráfico de salida, el uso de
-          Gemini, soporte ni descuentos. Contrasta con la calculadora oficial antes de decidir.
+          {{ 'Estimación orientativa en USD para el tamaño mínimo de cada servicio. No incluye tráfico de salida, el uso de Gemini, soporte ni descuentos. Contrasta con la calculadora oficial antes de decidir.' | t }}
         </p>
       </div>
     }
@@ -54,7 +55,7 @@ import { LivePricingState } from './live-pricing.service';
       class="focus-ring glass flex max-w-full flex-wrap items-center gap-x-2 gap-y-0.5 rounded-control px-3 py-1.5 text-left transition duration-500 ease-spring hover:bg-surface-3"
       [attr.aria-expanded]="open()"
       aria-controls="cost-breakdown"
-      [attr.aria-label]="'Coste estimado: ' + usd(estimate().total) + ' al mes en ' + providerName() + '. Ver desglose'"
+      [attr.aria-label]="('Coste estimado: ' | t) + usd(estimate().total) + (' al mes en ' | t) + providerName() + ('. Ver desglose' | t)"
       (click)="pinned.set(!pinned())"
     >
       <span class="h-1.5 w-1.5 rounded-full" [class]="estimate().liveUsd > 0 ? 'bg-status-ok' : 'bg-line-control'" aria-hidden="true"></span>
@@ -62,12 +63,12 @@ import { LivePricingState } from './live-pricing.service';
       @for (total of [usd(estimate().total)]; track total) {
         <span class="animate-slide-up font-mono text-sm font-semibold tabular-nums text-ink-1">≈ {{ total }}</span>
       }
-      <span class="text-xs text-ink-2">/mes</span>
+      <span class="text-xs text-ink-2">{{ '/mes' | t }}</span>
       @if (estimate().liveUsd > 0) {
-        <span class="rounded-full border border-status-ok/40 px-1.5 text-xs text-status-ok" data-testid="cost-live" title="Parte del total que son precios de lista reales, leídos de la API del proveedor">{{ usd(estimate().liveUsd) }} reales</span>
+        <span class="rounded-full border border-status-ok/40 px-1.5 text-xs text-status-ok" data-testid="cost-live" [attr.title]="'Parte del total que son precios de lista reales, leídos de la API del proveedor' | t">{{ usd(estimate().liveUsd) }} reales</span>
       }
       @if (estimate().unestimated.length) {
-        <span class="rounded-full border border-status-warn/40 px-1.5 text-xs text-status-warn" [title]="'Sin estimación: ' + unestimatedNames()">+{{ estimate().unestimated.length }} sin estimación</span>
+        <span class="rounded-full border border-status-warn/40 px-1.5 text-xs text-status-warn" [title]="('Sin estimación: ' | t) + unestimatedNames()">+{{ estimate().unestimated.length }} sin estimación</span>
       }
     </button>
   `,

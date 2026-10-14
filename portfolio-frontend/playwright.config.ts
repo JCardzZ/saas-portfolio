@@ -67,7 +67,7 @@ function project(profile: Profile, engine: Engine) {
 /** Lo nuevo que vive detrás de una feature flag: se prueba en todos los perfiles, con la flag encendida. */
 const FLAGGED = ['**/studio-smart.e2e.ts', '**/mcp-section.e2e.ts'];
 /** Lo que cambia de forma entre el ratón y el dedo: se prueba en todos los perfiles. */
-const EVERYWHERE = ['**/service-card.e2e.ts'];
+const EVERYWHERE = ['**/service-card.e2e.ts', '**/hero-globe.e2e.ts'];
 
 /** Puerto del servidor de pruebas; `E2E_PORT` lo cambia para probar dos copias del repositorio a la vez. */
 const PORT = Number(process.env['E2E_PORT'] ?? 4310);
@@ -88,6 +88,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     locale: 'es-ES',
+    // El sitio arranca en inglés; las pruebas están escritas contra los textos en español.
+    storageState: { cookies: [], origins: [{ origin: `http://localhost:${PORT}`, localStorage: [{ name: 'site-lang', value: 'es' }] }] },
     trace: 'retain-on-failure',
   },
   webServer: {

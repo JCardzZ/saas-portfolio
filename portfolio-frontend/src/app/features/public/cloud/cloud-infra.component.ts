@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { IconPopService } from '../../../shared/ui/icon-pop.service';
 import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
@@ -108,7 +109,7 @@ const NAV_HEIGHT = 64;
 @Component({
   selector: 'app-cloud-infra',
   standalone: true,
-  imports: [SystemDesignComponent, TechIconComponent, TheaterToggleComponent, ServiceCatalogComponent, CostBadgeComponent, AuditCardComponent, NodePropertiesComponent, ArchitectureCopilotComponent, LiveVitalsComponent, ContainerWidthDirective, StudioMobileCanvasComponent, ServiceInfoCardComponent, FocusTrapDirective, PortalDirective],
+  imports: [TranslatePipe, SystemDesignComponent, TechIconComponent, TheaterToggleComponent, ServiceCatalogComponent, CostBadgeComponent, AuditCardComponent, NodePropertiesComponent, ArchitectureCopilotComponent, LiveVitalsComponent, ContainerWidthDirective, StudioMobileCanvasComponent, ServiceInfoCardComponent, FocusTrapDirective, PortalDirective],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   templateUrl: './cloud-infra.component.html',

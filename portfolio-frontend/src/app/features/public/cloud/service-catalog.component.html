@@ -1,16 +1,16 @@
 <div class="flex h-full flex-col rounded-panel border border-line-subtle bg-surface-2">
   <div class="border-b border-line-subtle p-3">
-    <p class="text-sm font-semibold text-ink-1">Catálogo de servicios</p>
+    <p class="text-sm font-semibold text-ink-1">{{ 'Catálogo de servicios' | t }}</p>
     <p class="text-xs text-ink-2">
-      Nombres y recursos de <span class="font-medium text-ink-1">{{ providerName() }}</span>{{ fromServer() ? ' · servido por el backend' : '' }}
+      {{ 'Nombres y recursos de' | t }} <span class="font-medium text-ink-1">{{ providerName() }}</span>{{ fromServer() ? (' · servido por el backend' | t) : '' }}
     </p>
-    <label class="sr-only" for="catalog-search">Buscar un servicio</label>
+    <label class="sr-only" for="catalog-search">{{ 'Buscar un servicio' | t }}</label>
     <input
       id="catalog-search"
       type="search"
       autocomplete="off"
       class="focus-ring mt-2 w-full rounded-panel border border-line-subtle bg-surface-2 px-3 py-1.5 text-xs text-ink-1 placeholder:text-ink-3"
-      placeholder="Buscar: kafka, base de datos…"
+      [placeholder]="'Buscar: kafka, base de datos…' | t"
       [value]="search()"
       (input)="search.set($any($event.target).value)"
     />
@@ -27,7 +27,7 @@
                 type="button"
                 draggable="true"
                 class="focus-ring group flex w-full cursor-grab items-center gap-2.5 rounded-panel border border-transparent px-2 py-1.5 text-left transition duration-300 ease-spring hover:border-line-strong hover:bg-surface-2 active:cursor-grabbing"
-                [attr.aria-label]="'Añadir ' + nameOf(item) + ': ' + item.capability"
+                [attr.aria-label]="('Añadir ' | t) + nameOf(item) + ': ' + item.capability"
                 [title]="item.why + (gapOf(item) ? ' ' + gapOf(item) : '') + ' · ' + terraformOf(item)"
                 (click)="picked.emit(item)"
                 (dragstart)="onDragStart($event, item)"
@@ -37,7 +37,7 @@
                   <span class="block truncate text-[13px] font-medium text-ink-1">
                     {{ nameOf(item) }}
                     @if (item.enterprise) {
-                      <span class="ml-1 rounded-full border border-line-strong bg-surface-3 px-1.5 text-xs font-medium uppercase tracking-wide text-ink-1" title="Suele adoptarse a escala de empresa">Enterprise</span>
+                      <span class="ml-1 rounded-full border border-line-strong bg-surface-3 px-1.5 text-xs font-medium uppercase tracking-wide text-ink-1" [attr.title]="'Suele adoptarse a escala de empresa' | t">Enterprise</span>
                     }
                   </span>
                   <span class="block truncate text-xs text-ink-3">{{ item.capability }}</span>

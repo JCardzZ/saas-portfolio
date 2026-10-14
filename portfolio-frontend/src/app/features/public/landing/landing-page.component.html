@@ -1,19 +1,39 @@
-<div class="dock-aware dark safe-x min-h-dvh bg-canvas [color-scheme:dark] text-ink-1 selection:bg-accent-solid/50">
+<!-- El fondo lo pone la galaxia (fija, detrás de todo): esta capa no lleva color propio. -->
+<div class="dock-aware dark safe-x relative min-h-dvh overflow-x-clip text-ink-1 selection:bg-accent-solid/50">
+  <app-galaxy-backdrop />
+  <!-- Escena 3D a sangre, del ancho y el alto de la pantalla, detrás del hero. -->
+  <app-hero-scene class="absolute inset-x-0 top-0 z-0 h-dvh" (stackOpen)="immersive.set($event)" (ask)="askAi($event)" />
   <app-public-navbar (openChat)="chatOpen.set(true)" />
 
   <main class="mx-auto max-w-6xl px-6 pb-24 pt-[calc(7rem+env(safe-area-inset-top,0px))] max-[399px]:px-4 sm:pt-[calc(9rem+env(safe-area-inset-top,0px))]">
     <!-- Primero quién: nombre y rol se leen antes que nada (docs/DESIGN.md §8.2). -->
-    <section class="animate-slide-up pb-16 sm:pb-24" aria-labelledby="hero-titulo">
-      <h1 id="hero-titulo" class="text-display-sm text-ink-1 sm:text-display">Manuel Cardoza</h1>
-      <p class="mt-3 text-body-lg font-medium text-ink-1" data-testid="hero-role">{{ heroRole }}</p>
-      <p class="mt-4 max-w-[40rem] text-balance text-body-lg text-ink-2">
-        Ingeniería que se puede interrogar: proyectos, tecnologías y el propio código de esta plataforma, con un
-        asistente que responde citando sus fuentes.
+    <!-- Hero: el nombre gigante de borde a borde y, encima, el avatar 3D (genérico por ahora). -->
+    <!-- El hero deja pasar los clics a la escena salvo en sus enlaces y botones. -->
+    <section class="hero pointer-events-none relative flex min-h-[calc(100dvh-7rem-env(safe-area-inset-top,0px))] flex-col pb-6 sm:min-h-[calc(100dvh-9rem-env(safe-area-inset-top,0px))] sm:pb-10 [&_a]:pointer-events-auto [&_button]:pointer-events-auto" aria-labelledby="hero-titulo" [class.hero-dimmed]="immersive()">
+      <!-- Con el mazo abierto (hero-dimmed), el texto se retira para que las fichas ocupen la pantalla. -->
+      <!--
+        Jerarquía de tres niveles, de más a menos: saludo pequeño, nombre enorme (h1) y rol mediano en
+        el acento. Un solo elemento gigante: si nombre y rol pesan igual, compiten y el bloque se satura.
+      -->
+      <p class="pointer-events-auto relative z-10 text-center text-title-2 font-medium text-ink-2">{{ i18n.t(copy.heroGreeting) }}</p>
+      <h1 id="hero-titulo" class="hero-name pointer-events-auto relative z-0 mt-1 text-center font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink-1">
+        {{ i18n.t(copy.heroTitle) }}
+      </h1>
+      <p class="hero-role pointer-events-auto relative z-10 mx-auto mt-5 text-center font-semibold tracking-[-0.01em] text-accent-text" data-testid="hero-role">
+        {{ heroRole() }}
       </p>
-      <div class="mt-8 flex flex-wrap gap-3">
-        <app-cv-download variant="primary" />
-        <button type="button" class="ui-btn-secondary ui-btn-lg" (click)="chatOpen.set(true)">Preguntar a la IA</button>
-        <a href="#proyectos" class="ui-btn-secondary ui-btn-lg tap">Ver proyectos</a>
+      <!-- Hueco para el robot: crece lo que haga falta para que la frase y los botones queden dentro de la pantalla. -->
+      <div class="min-h-[12rem] flex-1 [@media(max-height:700px)]:min-h-[2rem]" aria-hidden="true"></div>
+      <div class="relative z-10 mt-auto flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
+        <!-- En móvil la dice el bocadillo del robot: aquí pisaría al robot. -->
+        <p class="max-w-[30rem] text-balance text-body-lg text-ink-2 max-sm:hidden">
+          {{ i18n.t(copy.heroIntro) }}
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <app-cv-download variant="primary" />
+          <button type="button" class="ui-btn-secondary ui-btn-lg" (click)="chatOpen.set(true)">{{ i18n.t(copy.askAi) }}</button>
+          <a href="#proyectos" class="ui-btn-secondary ui-btn-lg tap">{{ i18n.t(copy.seeProjects) }}</a>
+        </div>
       </div>
     </section>
 
@@ -21,13 +41,13 @@
       <div class="ui-card mb-16 max-w-md" role="alert">
         <p class="text-body-sm text-ink-2">{{ message }}</p>
         <button type="button" class="ui-btn-secondary mt-4" (click)="catalog.load()">
-          Reintentar
+          {{ i18n.t(copy.retry) }}
         </button>
       </div>
     }
 
     <section id="plataforma" class="scroll-mt-24" aria-labelledby="plataforma-titulo">
-      <app-section-header headingId="plataforma-titulo" title="Arquitectura" intro="Cómo está construida esta plataforma por dentro. Cada diagrama parte de su configuración real; lo que es simulación lo dice." />
+      <app-section-header headingId="plataforma-titulo" [title]="i18n.t(copy.platformTitle)" [intro]="i18n.t(copy.platformIntro)" />
       <div class="bento-grid">
         <app-architecture-canvas class="animate-slide-up md:col-span-4" />
         <app-telemetry-monitor class="animate-slide-up md:col-span-2 [animation-delay:80ms]" />
@@ -42,7 +62,7 @@
 
     <!-- Lo que hay desplegado de verdad y cómo llega hasta ahí. Datos reales o etiquetados como planificados. -->
     <section id="entrega" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="entrega-titulo">
-      <app-section-header headingId="entrega-titulo" title="Arquitectura real y entrega" intro="Lo que hay desplegado hoy y cómo llega hasta ahí: topología, pipeline de CI/CD y despliegues, con datos reales o marcados como planificados." />
+      <app-section-header headingId="entrega-titulo" [title]="i18n.t(copy.deliveryTitle)" [intro]="i18n.t(copy.deliveryIntro)" />
       @defer (on viewport; prefetch on idle) {
         <div class="grid gap-4 [&>*]:min-w-0">
           <app-production-architecture class="animate-slide-up" />
@@ -50,12 +70,12 @@
           <app-deploy-timeline class="animate-slide-up" />
         </div>
       } @placeholder {
-        <div class="bento-card flex min-h-[24rem] items-center justify-center text-body-sm text-ink-3">Cargando la arquitectura en producción…</div>
+        <div class="bento-card flex min-h-[24rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.deliveryLoading) }}</div>
       }
     </section>
 
     <section id="cloud" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="cloud-titulo">
-      <app-section-header headingId="cloud-titulo" title="Cloud &amp; DevOps" intro="Un estudio para dibujar la misma plataforma en AWS, Google Cloud o Azure, con comprobaciones de seguridad, coste orientativo y un esqueleto de Terraform." />
+      <app-section-header headingId="cloud-titulo" [title]="i18n.t(copy.cloudTitle)" [intro]="i18n.t(copy.cloudIntro)" />
       <!-- El estudio pesa: su código se descarga cuando la sección está a punto de verse. -->
       @defer (on viewport; prefetch on idle) {
         <div class="grid gap-4 [&>*]:min-w-0">
@@ -63,23 +83,23 @@
           <app-data-blueprints class="animate-slide-up" />
         </div>
       } @placeholder {
-        <div class="bento-card flex min-h-[36rem] items-center justify-center text-body-sm text-ink-3">Cargando el estudio de arquitectura…</div>
+        <div class="bento-card flex min-h-[36rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.cloudLoading) }}</div>
       }
     </section>
 
     @if (mcpSection()) {
       <section id="mcp" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="mcp-titulo">
-        <app-section-header headingId="mcp-titulo" overline="Model Context Protocol" title="Usa mi plataforma desde tu IA" intro="Lo que hace este estudio (validar una arquitectura, generar Terraform, cotizar, diseñar un sistema) también se puede pedir desde un asistente de IA, conectándolo a su servidor MCP. Ninguna herramienta guarda ni aplica nada." />
+        <app-section-header headingId="mcp-titulo" overline="Model Context Protocol" [title]="i18n.t(copy.mcpTitle)" [intro]="i18n.t(copy.mcpIntro)" />
         @defer (on viewport; prefetch on idle) {
           <app-mcp-section class="animate-slide-up" />
         } @placeholder {
-          <div class="bento-card flex min-h-[24rem] items-center justify-center text-body-sm text-ink-3">Cargando la sección del servidor MCP…</div>
+          <div class="bento-card flex min-h-[24rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.mcpLoading) }}</div>
         }
       </section>
     }
 
     <section id="proyectos" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="proyectos-titulo">
-      <app-section-header headingId="proyectos-titulo" title="Proyectos" intro="Trabajo publicado, con su código y las tecnologías que usa." />
+      <app-section-header headingId="proyectos-titulo" [title]="i18n.t(copy.projectsTitle)" [intro]="i18n.t(copy.projectsIntro)" />
 
       <div class="bento-grid">
         @if (catalog.loading()) {
@@ -104,7 +124,7 @@
               }
 
               @if (project.technologiesUsed?.length) {
-                <ul class="mt-4 flex flex-wrap gap-1.5" aria-label="Tecnologías usadas">
+                <ul class="mt-4 flex flex-wrap gap-1.5" [attr.aria-label]="i18n.t(copy.technologiesUsed)">
                   @for (id of project.technologiesUsed; track id) {
                     <li class="ui-badge">
                       @if (iconFor(catalog.technologyName(id)); as icon) {
@@ -118,7 +138,7 @@
 
               <div class="mt-auto flex gap-4 pt-6 text-body-sm font-medium">
                 @if (project.githubRepoUrl) {
-                  <a class="ui-focus tap inline-flex items-center rounded-mark text-accent-text hover:underline" [href]="project.githubRepoUrl" target="_blank" rel="noopener noreferrer">Código ↗</a>
+                  <a class="ui-focus tap inline-flex items-center rounded-mark text-accent-text hover:underline" [href]="project.githubRepoUrl" target="_blank" rel="noopener noreferrer">{{ i18n.t(copy.code) }}</a>
                 }
                 @if (project.demoVideoUrl) {
                   <a class="ui-focus tap inline-flex items-center rounded-mark text-accent-text hover:underline" [href]="project.demoVideoUrl" target="_blank" rel="noopener noreferrer">Demo ↗</a>
@@ -127,21 +147,21 @@
             </article>
           } @empty {
             @if (!catalog.error()) {
-              <p class="ui-card text-body-sm text-ink-2 md:col-span-6">Aún no hay proyectos publicados.</p>
+              <p class="ui-card text-body-sm text-ink-2 md:col-span-6">{{ i18n.t(copy.noProjects) }}</p>
             }
           }
 
           <!-- Cierra la fila: ocupa las columnas que queden libres. -->
           <button type="button" class="bento-card ui-card-interactive flex flex-col justify-between text-left" [class]="askSpan()" (click)="chatOpen.set(true)">
-            <span class="text-title-2 text-ink-1">¿Cómo está construido?</span>
-            <span class="mt-6 text-body-sm text-ink-2">Pregúntale al asistente; responde con el archivo y las líneas exactas.</span>
+            <span class="text-title-2 text-ink-1">{{ i18n.t(copy.askTitle) }}</span>
+            <span class="mt-6 text-body-sm text-ink-2">{{ i18n.t(copy.askBody) }}</span>
           </button>
         }
       </div>
     </section>
 
     <section id="tecnologias" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="tecnologias-titulo">
-      <app-section-header headingId="tecnologias-titulo" title="Tecnologías" intro="El stack con el que trabajo, agrupado por área." />
+      <app-section-header headingId="tecnologias-titulo" [title]="i18n.t(copy.technologiesTitle)" [intro]="i18n.t(copy.technologiesIntro)" />
 
       <div class="bento-grid">
         @if (catalog.loading()) {
@@ -160,7 +180,7 @@
                         <button
                           type="button"
                           class="ui-focus brand-glow rounded-mark transition duration-300 ease-spring hover:scale-110"
-                          [attr.aria-label]="'Inspeccionar la traza de ' + icon.title"
+                          [attr.aria-label]="i18n.t(copy.inspectTrace) + icon.title"
                           (mouseenter)="inspector.select(tech)"
                           (focus)="inspector.select(tech)"
                           (click)="inspector.select(tech)"
@@ -179,7 +199,7 @@
                       <span class="block truncate text-body-sm font-medium text-ink-1">
                         {{ technology.name }}
                         @if (technology.isFeatured) {
-                          <span class="ui-badge ui-badge-accent ml-1 align-middle">Destacada</span>
+                          <span class="ui-badge ui-badge-accent ml-1 align-middle">{{ i18n.t(copy.featured) }}</span>
                         }
                       </span>
                       <span class="block truncate text-caption font-normal text-ink-3">{{ technology.proficiencyLevel }}</span>
@@ -190,7 +210,7 @@
             </article>
           } @empty {
             @if (!catalog.error()) {
-              <p class="ui-card text-body-sm text-ink-2 md:col-span-6">Aún no hay tecnologías publicadas.</p>
+              <p class="ui-card text-body-sm text-ink-2 md:col-span-6">{{ i18n.t(copy.noTechnologies) }}</p>
             }
           }
         }
@@ -198,12 +218,12 @@
     </section>
 
     <section id="articulos" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="articulos-titulo">
-      <app-section-header headingId="articulos-titulo" title="Artículos" intro="Notas técnicas. El asistente también puede citarlas." />
+      <app-section-header headingId="articulos-titulo" [title]="i18n.t(copy.articlesTitle)" [intro]="i18n.t(copy.articlesIntro)" />
       <app-articles-hub />
     </section>
 
     <section id="trayectoria" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="trayectoria-titulo">
-      <app-section-header headingId="trayectoria-titulo" title="Trayectoria" intro="Experiencia y formación. El CV descargable sale de este mismo contenido." />
+      <app-section-header headingId="trayectoria-titulo" [title]="i18n.t(copy.careerTitle)" [intro]="i18n.t(copy.careerIntro)" />
       <app-career-timeline />
     </section>
   </main>
@@ -212,8 +232,7 @@
   <footer class="mt-8 border-t border-line-subtle pb-[calc(var(--pill-space,0px)+env(safe-area-inset-bottom,0px))]">
     <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8 max-[399px]:px-4">
       <p class="max-w-[40rem] text-body-sm text-ink-2">
-        <span class="font-medium text-ink-1">Manuel Cardoza</span> · El CV sale del mismo documento que la línea de
-        tiempo y el asistente.
+        <span class="font-medium text-ink-1">Manuel Cardoza</span> · {{ i18n.t(copy.footer) }}
       </p>
       <div class="flex flex-wrap items-center gap-2">
         <a routerLink="/admin" class="ui-btn-ghost ui-btn-lg tap">Admin</a>
@@ -222,6 +241,7 @@
     </div>
   </footer>
 
+  <app-scroll-buddy />
   <app-trace-inspector />
   <app-icon-pop-layer />
   <app-rag-chat [(open)]="chatOpen" [projects]="catalog.projects()" [technologies]="catalog.technologies()" />

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
 import { IconPopService } from '../../../shared/ui/icon-pop.service';
@@ -76,7 +77,7 @@ const TENANTS: Tenant[] = [
 @Component({
   selector: 'app-multi-tenant-shield',
   standalone: true,
-  imports: [ContainerWidthDirective, TheaterToggleComponent],
+  imports: [TranslatePipe, ContainerWidthDirective, TheaterToggleComponent],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   templateUrl: './multi-tenant-shield.component.html',
@@ -130,12 +131,12 @@ const TENANTS: Tenant[] = [
       from { opacity: 0; }
     }
     .gate rect {
-      fill: rgb(255 255 255 / 0.06);
+      fill: rgb(var(--c-ink-1) / 0.06);
       transition: stroke 0.5s, opacity 0.5s, fill 0.5s;
     }
     .gate-off rect {
       stroke: var(--status-danger);
-      fill: rgb(248 113 113 / 0.1);
+      fill: rgb(var(--c-status-danger) / 0.1);
     }
     .gate text {
       font-size: 12px;
@@ -150,7 +151,7 @@ const TENANTS: Tenant[] = [
       text-decoration: underline;
     }
     .tenant rect {
-      fill: rgb(255 255 255 / 0.05);
+      fill: rgb(var(--c-ink-1) / 0.05);
       transition: filter 0.5s, opacity 0.5s;
     }
     .tenant:focus-visible rect {

@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { finalize } from 'rxjs';
 
 import { Article, PublicCatalogShowcasesService } from '../../../core/api';
@@ -14,7 +15,7 @@ const EXCERPT_LENGTH = 170;
 @Component({
   selector: 'app-articles-hub',
   standalone: true,
-  imports: [DatePipe, MarkdownComponent, FocusTrapDirective, AutofocusDirective],
+  imports: [TranslatePipe, DatePipe, MarkdownComponent, FocusTrapDirective, AutofocusDirective],
   templateUrl: './articles-hub.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, output, signal,
 } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { TECH_ICONS, TechIconKey } from '../../../shared/ui/tech-icons';
 import { CARD, PILL, columnsThatFit, edgePath, layoutStages } from './delivery-data';
@@ -45,14 +46,15 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
 @Component({
   selector: 'app-stage-graph',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     @if (!vertical()) {
-      <div class="tools" role="group" aria-label="Vista del diagrama">
-        <button type="button" class="tool focus-ring" aria-label="Alejar" [disabled]="fit() || !canZoomOut()" (click)="zoomBy(-1)">−</button>
+      <div class="tools" role="group" [attr.aria-label]="'Vista del diagrama' | t">
+        <button type="button" class="tool focus-ring" [attr.aria-label]="'Alejar' | t" [disabled]="fit() || !canZoomOut()" (click)="zoomBy(-1)">−</button>
         <span class="level" aria-live="polite">{{ percent() }} %</span>
-        <button type="button" class="tool focus-ring" aria-label="Acercar" [disabled]="fit() || !canZoomIn()" (click)="zoomBy(1)">+</button>
+        <button type="button" class="tool focus-ring" [attr.aria-label]="'Acercar' | t" [disabled]="fit() || !canZoomIn()" (click)="zoomBy(1)">+</button>
         <button type="button" class="tool wide focus-ring" [attr.aria-pressed]="fit()" (click)="toggleFit()">
-          {{ fit() ? 'Tamaño real' : 'Ajustar a pantalla' }}
+          {{ fit() ? ('Tamaño real' | t) : ('Ajustar a pantalla' | t) }}
         </button>
       </div>
     }
@@ -155,12 +157,12 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
     }
     .edges { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
     .edges path {
-      fill: none; stroke: rgb(255 255 255 / 0.18); stroke-width: 1;
+      fill: none; stroke: rgb(var(--c-ink-1) / 0.18); stroke-width: 1;
       transition: stroke 0.25s ease-out, opacity 0.25s ease-out;
     }
     .edges path.planned { stroke-dasharray: 3 4; }
     .graph.focused .edges path:not(.lit) { opacity: 0.4; }
-    .edges path.lit { stroke: rgb(255 255 255 / 0.7); }
+    .edges path.lit { stroke: rgb(var(--c-ink-1) / 0.7); }
 
     .spark {
       position: absolute; left: 0; top: 0; width: 4px; height: 4px; margin: -2px 0 0 -2px;
@@ -181,12 +183,12 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
     .node {
       position: absolute; left: var(--x); top: var(--y); width: var(--node-width); height: var(--node-height);
       display: flex; align-items: center; gap: 0.625rem; padding: 0 0.75rem;
-      border: 1px solid rgb(255 255 255 / 0.1); border-radius: 8px;
+      border: 1px solid rgb(var(--c-ink-1) / 0.1); border-radius: 8px;
       background: var(--bg-surface-2); /* un punto más claro que la tarjeta, y opaco: las líneas pasan por detrás */
       text-align: left;
       transition: opacity 0.25s ease-out, border-color 0.25s ease-out;
     }
-    .node:hover, .node.active { border-color: rgb(255 255 255 / 0.32); }
+    .node:hover, .node.active { border-color: rgb(var(--c-ink-1) / 0.32); }
     .icon { flex: none; width: 16px; height: 16px; overflow: hidden; transition: width 0.25s ease-out, height 0.25s ease-out; }
     .node.active .icon { width: 20px; height: 20px; }
     .text { display: flex; min-width: 0; flex: 1; flex-direction: column; }
@@ -203,7 +205,7 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
     .tone-skipped .name { color: var(--text-2); }
     .tone-idle .dot, .tone-pending .dot { background: transparent; box-shadow: inset 0 0 0 1px var(--text-3); }
     .tone-pending { opacity: 0.4; }
-    .tone-planned { border-style: dashed; border-color: rgb(255 255 255 / 0.22); }
+    .tone-planned { border-style: dashed; border-color: rgb(var(--c-ink-1) / 0.22); }
     .tone-planned .dot { background: transparent; box-shadow: inset 0 0 0 1px var(--text-2); }
     .tone-running .dot { background: var(--accent-text); animation: pulse 0.9s ease-in-out infinite; }
     @keyframes pulse { 50% { opacity: 0.25; } }

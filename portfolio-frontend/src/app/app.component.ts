@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ThemeService } from './core/theme/theme.service';
 import { RouterOutlet } from '@angular/router';
 
 import { runtimeConfig } from './core/config/runtime-config';
@@ -26,4 +27,6 @@ import { DemoNoticeComponent, DemoNoticeHost } from './shared/ui/demo-notice.com
 export class AppComponent {
   readonly mockMode = runtimeConfig.mockMode;
   readonly host = inject(DemoNoticeHost);
+  /** Aplica el tema elegido (o el del sistema) desde el primer pintado, en cualquier página. */
+  private readonly theme = inject(ThemeService);
 }

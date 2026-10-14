@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
 import { IconPopService } from '../../../shared/ui/icon-pop.service';
@@ -141,7 +142,7 @@ function vertical(width: number): Geometry {
 @Component({
   selector: 'app-resilience-pipeline',
   standalone: true,
-  imports: [ContainerWidthDirective, TheaterToggleComponent],
+  imports: [TranslatePipe, ContainerWidthDirective, TheaterToggleComponent],
   hostDirectives: [TheaterDirective],
   host: { class: 'bento-card block' },
   templateUrl: './resilience-pipeline.component.html',
@@ -149,7 +150,7 @@ function vertical(width: number): Geometry {
     /* Al pasar por la tarjeta (o en modo teatro) las tuberías ganan contraste y los logos brillan. */
     :host(:hover) .pipe:not(.pipe-cut):not(.pipe-bypass),
     :host(.theater-expanded) .pipe:not(.pipe-cut):not(.pipe-bypass) {
-      stroke: rgb(255 255 255 / 0.3);
+      stroke: rgb(var(--c-ink-1) / 0.3);
     }
     :host(:hover) .stage rect,
     :host(.theater-expanded) .stage rect {
@@ -164,7 +165,7 @@ function vertical(width: number): Geometry {
     }
     .pipe {
       fill: none;
-      stroke: rgb(255 255 255 / 0.14);
+      stroke: rgb(var(--c-ink-1) / 0.14);
       stroke-width: 2;
       transition: stroke 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -181,7 +182,7 @@ function vertical(width: number): Geometry {
     }
     .pipe-bypass-on {
       opacity: 1;
-      filter: drop-shadow(0 0 6px rgb(52 211 153 / 0.7));
+      filter: drop-shadow(0 0 6px rgb(var(--c-status-ok) / 0.7));
     }
     .pulse {
       fill: none;
@@ -214,20 +215,20 @@ function vertical(width: number): Geometry {
       stroke-width: 2;
     }
     .stage rect {
-      fill: rgb(255 255 255 / 0.05);
-      stroke: rgb(255 255 255 / 0.16);
+      fill: rgb(var(--c-ink-1) / 0.05);
+      stroke: rgb(var(--c-ink-1) / 0.16);
       transition: fill 0.6s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.6s cubic-bezier(0.16, 1, 0.3, 1),
         filter 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .stage-down rect {
-      fill: rgb(248 113 113 / 0.12);
+      fill: rgb(var(--c-status-danger) / 0.12);
       stroke: var(--status-danger);
-      filter: drop-shadow(0 0 12px rgb(248 113 113 / 0.55));
+      filter: drop-shadow(0 0 12px rgb(var(--c-status-danger) / 0.55));
     }
     .stage-hot rect {
-      fill: rgb(52 211 153 / 0.12);
+      fill: rgb(var(--c-status-ok) / 0.12);
       stroke: var(--status-ok);
-      filter: drop-shadow(0 0 12px rgb(52 211 153 / 0.5));
+      filter: drop-shadow(0 0 12px rgb(var(--c-status-ok) / 0.5));
     }
     .stage-label {
       fill: var(--text-1);

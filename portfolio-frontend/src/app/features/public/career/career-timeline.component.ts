@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { finalize } from 'rxjs';
 
 import { CareerMilestone, PublicCatalogShowcasesService } from '../../../core/api';
@@ -10,13 +11,13 @@ import { techIconFor } from '../../../shared/ui/tech-icons';
 @Component({
   selector: 'app-career-timeline',
   standalone: true,
-  imports: [TechIconComponent],
+  imports: [TranslatePipe, TechIconComponent],
   template: `
     @if (error(); as message) {
       <div class="border border-line-subtle bg-surface-1 max-w-md rounded-card p-6 text-center" role="alert">
         <p class="text-sm text-ink-2">{{ message }}</p>
         <button type="button" class="focus-ring mt-3 rounded-control px-3 py-1 text-sm font-medium text-accent-text hover:underline" (click)="load()">
-          Reintentar
+          {{ 'Reintentar' | t }}
         </button>
       </div>
     } @else if (loading()) {
@@ -40,7 +41,7 @@ import { techIconFor } from '../../../shared/ui/tech-icons';
               <p class="mt-3 max-w-3xl text-sm leading-relaxed text-ink-2">{{ milestone.summary }}</p>
 
               @if (milestone.technologies?.length) {
-                <ul class="mt-4 flex flex-wrap gap-1.5" aria-label="Tecnologías">
+                <ul class="mt-4 flex flex-wrap gap-1.5" [attr.aria-label]="'Tecnologías' | t">
                   @for (technology of milestone.technologies; track technology) {
                     <li class="inline-flex items-center gap-1.5 rounded-full border border-line-subtle bg-surface-2 px-2.5 py-0.5 text-xs text-ink-2">
                       @if (iconFor(technology); as icon) {
@@ -54,7 +55,7 @@ import { techIconFor } from '../../../shared/ui/tech-icons';
             </article>
           </li>
         } @empty {
-          <li class="border border-line-subtle bg-surface-1 rounded-card p-6 text-sm text-ink-2">La trayectoria se publicará aquí próximamente.</li>
+          <li class="border border-line-subtle bg-surface-1 rounded-card p-6 text-sm text-ink-2">{{ 'La trayectoria se publicará aquí próximamente.' | t }}</li>
         }
       </ol>
     }
