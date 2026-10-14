@@ -288,17 +288,56 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   crest.position.set(0, 2.05, 0.16);
   chair.add(crest);
 
-  const deskTop = new three.Mesh(rounded(6.2, 0.16, 2.3, 0.07), deskMat);
-  deskTop.position.set(0, -2.86, 2.0);
+  // Escritorio gamer minimalista: tablero largo y fino negro brillante, tira de luz del acento en el
+  // canto delantero y patas de perfil delgado (sin faldón).
+  const deskGloss = physical(0x0a0b0d, 0.08, { metalness: 0.4, clearcoat: 1, clearcoatRoughness: 0.04 });
+  const deskTop = new three.Mesh(rounded(9.0, 0.09, 2.2, 0.04), deskGloss);
+  deskTop.position.set(0, -2.82, 2.0);
   character.add(deskTop);
-  const deskFront = new three.Mesh(keep(new three.BoxGeometry(6.0, 1.6, 0.1)), deskMat);
-  deskFront.position.set(0, -3.7, 3.05);
-  character.add(deskFront);
+  const ledStrip = new three.Mesh(keep(new three.BoxGeometry(8.9, 0.025, 0.02)), accentMat);
+  ledStrip.position.set(0, -2.85, 3.11);
+  character.add(ledStrip);
   for (const side of [-1, 1]) {
-    const leg = new three.Mesh(keep(new three.BoxGeometry(0.14, 1.6, 2.1)), deskMat);
-    leg.position.set(side * 2.95, -3.7, 2.0);
+    const leg = new three.Mesh(rounded(0.1, 2.4, 0.16, 0.04), metal);
+    leg.position.set(side * 4.0, -4.05, 2.0);
     character.add(leg);
+    const footBar = new three.Mesh(rounded(0.12, 0.07, 1.9, 0.03), metal);
+    footBar.position.set(side * 4.0, -5.25, 2.0);
+    character.add(footBar);
   }
+  // Asiento de la silla, columna y base de cinco radios.
+  const seat = new three.Mesh(rounded(2.5, 0.32, 2.2, 0.14), chairMat);
+  seat.position.set(0, -3.55, 0.15);
+  character.add(seat);
+  const column = new three.Mesh(keep(new three.CylinderGeometry(0.1, 0.12, 1.35, 20)), metal);
+  column.position.set(0, -4.4, 0.15);
+  character.add(column);
+  for (let spoke = 0; spoke < 5; spoke++) {
+    const angle = (spoke / 5) * Math.PI * 2 + 0.3;
+    const arm = new three.Mesh(rounded(1.15, 0.08, 0.14, 0.04), chairMat);
+    arm.position.set(Math.cos(angle) * 0.55, -5.1, 0.15 + Math.sin(angle) * 0.55);
+    arm.rotation.y = -angle;
+    character.add(arm);
+  }
+  // Cadera y piernas del robot, sentado: muslos hacia delante bajo la mesa y pies en el suelo.
+  const pelvis = new three.Mesh(rounded(2.1, 0.75, 1.5, 0.35), shell);
+  pelvis.position.set(0, -3.25, 0.1);
+  character.add(pelvis);
+  for (const side of [-1, 1]) {
+    const thigh = new three.Mesh(rounded(0.62, 0.55, 1.9, 0.27), shell);
+    thigh.position.set(side * 0.55, -3.2, 0.95);
+    character.add(thigh);
+    const knee = new three.Mesh(sphere(0.3, 24), graphite);
+    knee.position.set(side * 0.55, -3.25, 1.9);
+    character.add(knee);
+    const shin = new three.Mesh(rounded(0.48, 1.8, 0.5, 0.22), shell);
+    shin.position.set(side * 0.55, -4.25, 1.95);
+    character.add(shin);
+    const foot = new three.Mesh(rounded(0.55, 0.28, 0.95, 0.13), graphite);
+    foot.position.set(side * 0.55, -5.15, 2.2);
+    character.add(foot);
+  }
+
   const laptopBase = new three.Mesh(rounded(1.8, 0.08, 1.2, 0.04), metal);
   laptopBase.position.set(0, -2.74, 1.75);
   character.add(laptopBase);
@@ -420,14 +459,14 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
 
   // Carta de información (mano derecha): el mismo formato que las fichas, más alta.
   const infoArt = document.createElement('canvas');
-  infoArt.width = 512;
-  infoArt.height = 680;
+  infoArt.width = 640;
+  infoArt.height = 800;
   const infoTexture = keep(new three.CanvasTexture(infoArt));
   infoTexture.colorSpace = three.SRGBColorSpace;
   infoTexture.anisotropy = 4;
   const infoFace = keep(new three.MeshPhysicalMaterial({ map: infoTexture, roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.1, transparent: true }));
   const infoGlow = keep(new three.MeshStandardMaterial({ color: GRAPHITE, emissive: 0x7fee64, emissiveIntensity: 1, roughness: 0.4, metalness: 0.5, transparent: true }));
-  const infoMesh = new three.Mesh(keep(new three.BoxGeometry(1.2, 1.6, 0.05)), [infoGlow, infoGlow, infoGlow, infoGlow, infoFace, infoGlow]);
+  const infoMesh = new three.Mesh(keep(new three.BoxGeometry(1.3, 1.62, 0.05)), [infoGlow, infoGlow, infoGlow, infoGlow, infoFace, infoGlow]);
   infoMesh.scale.setScalar(0.001);
   scene.add(infoMesh);
   let info: SceneInfo | null = null;
@@ -464,20 +503,20 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     ctx.stroke();
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    const pad = 40;
+    const pad = 44;
     ctx.fillStyle = colors.accentText;
-    ctx.font = '600 26px "JetBrains Mono", ui-monospace, monospace';
+    ctx.font = '700 32px "JetBrains Mono", ui-monospace, monospace';
     ctx.fillText(info.category.toUpperCase(), pad, pad);
     ctx.fillStyle = colors.ink;
-    ctx.font = '800 38px Inter, system-ui, sans-serif';
-    let y = wrap(ctx, info.title, pad, pad + 48, width - pad * 2, 44, 3) + 20;
+    ctx.font = '800 54px Inter, system-ui, sans-serif';
+    let y = wrap(ctx, info.title, pad, pad + 52, width - pad * 2, 60, 3) + 24;
     const block = (label: string, text: string) => {
       ctx.fillStyle = colors.muted;
-      ctx.font = '600 22px "JetBrains Mono", ui-monospace, monospace';
+      ctx.font = '700 28px "JetBrains Mono", ui-monospace, monospace';
       ctx.fillText(label.toUpperCase(), pad, y);
       ctx.fillStyle = colors.ink;
-      ctx.font = '500 30px Inter, system-ui, sans-serif';
-      y = wrap(ctx, text, pad, y + 34, width - pad * 2, 40, 4) + 26;
+      ctx.font = '500 42px Inter, system-ui, sans-serif';
+      y = wrap(ctx, text, pad, y + 40, width - pad * 2, 52, 3) + 28;
     };
     block(info.whatLabel, info.what);
     block(info.helpLabel, info.help);
@@ -640,16 +679,16 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   }
 
   const HOLD_LEFT = new three.Vector3(-2.75, 0.55, 2.0);
-  const HOLD_RIGHT = new three.Vector3(2.85, 0.65, 2.0);
+  const HOLD_RIGHT = new three.Vector3(3.05, 0.75, 2.0);
   function placeInfo(follow: number): void {
     const shown = !!(focused && info && stackOpen);
     target.copy(HOLD_RIGHT);
     character.localToWorld(target);
     infoMesh.position.lerp(target, follow);
     infoMesh.quaternion.slerp(faceCamera, follow);
-    const goal = shown ? character.scale.x * 1.6 : 0.001;
+    const goal = shown ? character.scale.x * 1.9 : 0.001;
     infoMesh.scale.setScalar(infoMesh.scale.x + (goal - infoMesh.scale.x) * follow);
-    infoFace.opacity = infoGlow.opacity = Math.min(1, infoMesh.scale.x / Math.max(0.01, character.scale.x * 1.6));
+    infoFace.opacity = infoGlow.opacity = Math.min(1, infoMesh.scale.x / Math.max(0.01, character.scale.x * 1.9));
   }
 
   let visible: ReadonlySet<number> | null = null;
