@@ -160,157 +160,179 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     return geometry;
   };
 
-  // Casco y visor.
-  const helmet = new three.Mesh(rounded(2.5, 2.15, 2.2, 0.85), shell);
-  head.add(helmet);
-  const visorPlate = new three.Mesh(rounded(2.05, 1.25, 0.5, 0.42), visor);
-  visorPlate.position.set(0, -0.05, 0.92);
-  head.add(visorPlate);
-  const brow = new three.Mesh(keep(new three.TorusGeometry(0.75, 0.04, 12, 64, Math.PI)), metal);
-  brow.position.set(0, 0.62, 1.05);
-  brow.scale.set(1.25, 0.25, 1);
-  head.add(brow);
+  // Androide de pie (diseño propio, en el estilo de la referencia): cuerpo de tejido técnico gris
+  // mate, casco negro brillante con una franja de luz, articulaciones negras (hombros, codos, cadera,
+  // rodillas, tobillos), torso en V y piernas segmentadas. Sin rostro: expresa con la cabeza y las
+  // manos.
+  const fabric = physical(0x6c6f74, 0.88, { clearcoat: 0, sheen: 1, sheenColor: 0xb9bdc3, sheenRoughness: 0.6 });
+  const gloss = physical(0x07080a, 0.07, { metalness: 0.3, clearcoat: 1, clearcoatRoughness: 0.03 });
+  const lightMat = keep(new three.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1.8 }));
 
-  // Ojos de luz: se mueven dentro del visor y parpadean aplastándose.
+  /** Segmento de miembro con algo de músculo (torno): de `r0` arriba a `r1` abajo, de largo 1 (se escala). */
+  const limbGeometry = (r0: number, r1: number, bulge: number) => {
+    const points: THREE.Vector2[] = [];
+    const steps = 28;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const cap = Math.sqrt(Math.max(0, 1 - Math.pow(2 * t - 1, 12))); // extremos redondeados
+      const radius = (r0 + (r1 - r0) * t + bulge * Math.sin(Math.PI * Math.min(1, t * 1.4))) * cap;
+      points.push(new three.Vector2(Math.max(0.001, radius), 0.5 - t));
+    }
+    return keep(new three.LatheGeometry(points, 40));
+  };
+  const down = new three.Vector3(0, -1, 0);
+  const between = new three.Vector3();
+  /** Coloca un segmento (largo 1, a lo largo de −y) entre `from` y `to`. */
+  const span = (mesh: THREE.Object3D, from: THREE.Vector3, to: THREE.Vector3) => {
+    between.copy(to).sub(from);
+    const length = Math.max(0.001, between.length());
+    mesh.position.copy(from).addScaledVector(between, 0.5);
+    mesh.scale.set(1, length, 1);
+    mesh.quaternion.setFromUnitVectors(down, between.normalize());
+  };
+  const v = (x: number, y: number, z: number) => new three.Vector3(x, y, z);
+
+  // Cabeza: casco ovalado, franja de luz en el visor y un disco en la sien.
+  head.position.y = 0.45;
+  head.scale.setScalar(0.74);
+  const helmet = new three.Mesh(sphere(1, 64), gloss);
+  helmet.scale.set(0.8, 1.02, 0.88);
+  helmet.rotation.x = -0.1;
+  head.add(helmet);
   const eyeGroup = new three.Group();
-  eyeGroup.position.set(0, -0.02, 1.19);
+  eyeGroup.position.set(0.1, 0.02, 0.86);
   head.add(eyeGroup);
-  const eyeGeometry = keep(new three.CapsuleGeometry(0.13, 0.12, 8, 24));
-  const eyes = [-1, 1].map((side) => {
-    const eye = new three.Mesh(eyeGeometry, accentMat);
-    eye.position.x = side * 0.42;
-    eye.scale.set(1, 1, 0.4);
-    eyeGroup.add(eye);
-    return eye;
-  });
-  // Una sonrisa discreta de luz bajo los ojos: crece al tocar al robot.
-  const smile = new three.Mesh(keep(new three.TorusGeometry(0.11, 0.022, 8, 28, Math.PI)), accentMat);
-  smile.rotation.z = Math.PI;
-  smile.position.set(0, -0.3, 0);
-  smile.scale.set(1, 0.7, 0.4);
+  // La franja hace de «ojos»: parpadea aplastándose.
+  const slitGroup = new three.Group();
+  eyeGroup.add(slitGroup);
+  const slit = new three.Mesh(keep(new three.CapsuleGeometry(0.035, 0.5, 6, 16)), lightMat);
+  slit.rotation.set(0, 0.35, Math.PI / 2 + 0.06);
+  slitGroup.add(slit);
+  const eyes = [slitGroup];
+  const smile = new three.Group();
   eyeGroup.add(smile);
+  const temple = new three.Mesh(keep(new three.CylinderGeometry(0.22, 0.22, 0.1, 40)), gloss);
+  temple.rotation.z = Math.PI / 2;
+  temple.position.set(0.8, 0.05, 0.05);
+  head.add(temple);
+  const templeRing = new three.Mesh(keep(new three.TorusGeometry(0.17, 0.018, 8, 40)), metal);
+  templeRing.rotation.y = Math.PI / 2;
+  templeRing.position.set(0.86, 0.05, 0.05);
+  head.add(templeRing);
   let talking = false;
   let speaking = false;
-
-  const eyeLight = new three.PointLight(0x7fee64, 2.5, 3, 2);
-  eyeLight.position.set(0, 0, 1.6);
+  const eyeLight = new three.PointLight(0xffffff, 0, 1, 2);
   head.add(eyeLight);
-
-  // Auriculares y antena.
-  for (const side of [-1, 1]) {
-    const pod = new three.Mesh(keep(new three.CylinderGeometry(0.42, 0.42, 0.3, 48)), graphite);
-    pod.rotation.z = Math.PI / 2;
-    pod.position.set(side * 1.3, 0, 0);
-    head.add(pod);
-    const ring = new three.Mesh(keep(new three.TorusGeometry(0.3, 0.035, 12, 48)), accentMat);
-    ring.rotation.y = Math.PI / 2;
-    ring.position.set(side * 1.46, 0, 0);
-    head.add(ring);
-  }
-  // La antena gira desde su base: así se puede agitar.
   const antenna = new three.Group();
-  antenna.position.set(0.47, 1.0, -0.1);
-  antenna.rotation.z = -0.25;
   head.add(antenna);
-  const mast = new three.Mesh(keep(new three.CylinderGeometry(0.035, 0.05, 0.6, 16)), metal);
-  mast.position.set(0, 0.3, 0);
-  antenna.add(mast);
-  const beacon = new three.Mesh(sphere(0.1, 24), accentMat);
-  beacon.position.set(0, 0.64, 0);
-  antenna.add(beacon);
 
-  // Cuello articulado, torso y núcleo.
-  for (let i = 0; i < 3; i++) {
-    const segment = new three.Mesh(keep(new three.CylinderGeometry(0.42 - i * 0.03, 0.42 - i * 0.03, 0.14, 40)), i % 2 ? graphite : metal);
-    segment.position.y = -0.82 - i * 0.16;
-    character.add(segment);
+  // Cuello largo.
+  const neck = new three.Mesh(limbGeometry(0.2, 0.29, 0.02), fabric);
+  span(neck, v(0, -0.2, 0), v(0, -1.05, 0.04));
+  character.add(neck);
+  const collar = new three.Mesh(keep(new three.TorusGeometry(0.36, 0.025, 8, 48)), gloss);
+  collar.rotation.x = Math.PI / 2 - 0.15;
+  collar.position.set(0, -1.02, 0.03);
+  collar.scale.set(1.15, 1, 0.75);
+  character.add(collar);
+
+  // Torso esculpido en V (esfera deformada): pecho, surco central y cintura estrecha.
+  const torsoGeometry = keep(new three.SphereGeometry(1, 128, 96));
+  const tp = torsoGeometry.getAttribute('position');
+  const tv = new three.Vector3();
+  const lump = (dx: number, dy: number, sx: number, sy: number) => Math.exp(-(dx * dx) / sx - (dy * dy) / sy);
+  for (let i = 0; i < tp.count; i++) {
+    tv.fromBufferAttribute(tp, i);
+    const { x, y, z } = tv;
+    const front = Math.max(0, z);
+    const relief = 0.09 * lump(Math.abs(x) - 0.42, y - 0.36, 0.08, 0.04) * front - 0.035 * lump(x, y - 0.25, 0.003, 0.3) * front;
+    tv.multiplyScalar(1 + relief);
+    const taper = y > 0.25 ? 1.12 : 1.12 - (0.25 - y) * 0.42;
+    tp.setXYZ(i, tv.x * taper, tv.y * 1.2, tv.z * (z > 0 ? 0.6 : 0.66));
   }
-  const torso = new three.Mesh(rounded(3.1, 2.2, 1.7, 0.75), shell);
-  torso.position.y = -2.2;
+  torsoGeometry.computeVertexNormals();
+  const torso = new three.Mesh(torsoGeometry, fabric);
+  torso.position.y = -2.15;
   character.add(torso);
-  const chest = new three.Mesh(rounded(1.6, 1.0, 0.3, 0.22), graphite);
-  chest.position.set(0, -1.5, 0.78);
-  character.add(chest);
-  const core = new three.Mesh(sphere(0.2, 32), accentMat);
-  core.position.set(0, -1.5, 0.95);
+  const core = new three.Mesh(keep(new three.CapsuleGeometry(0.03, 0.2, 6, 12)), lightMat);
+  core.position.set(0.12, -1.65, 0.66);
   character.add(core);
-  const coreRing = new three.Mesh(keep(new three.TorusGeometry(0.32, 0.03, 12, 48)), metal);
-  coreRing.position.copy(core.position);
+  const coreRing = new three.Group();
   character.add(coreRing);
+  const chest = core;
   for (const side of [-1, 1]) {
-    const shoulder = new three.Mesh(sphere(0.55, 40), graphite);
-    shoulder.position.set(side * 1.65, -1.7, 0);
-    character.add(shoulder);
+    const deltoid = new three.Mesh(sphere(0.36, 40), fabric);
+    deltoid.scale.set(1, 1.12, 0.95);
+    deltoid.position.set(side * 1.12, -1.38, 0);
+    character.add(deltoid);
+    const shoulderCap = new three.Mesh(sphere(0.3, 40), gloss);
+    shoulderCap.scale.set(1.05, 0.7, 1);
+    shoulderCap.position.set(side * 1.08, -1.12, 0);
+    character.add(shoulderCap);
   }
 
-  // Puesto de trabajo: silla detrás, escritorio delante (su faldón tapa las piernas) y un portátil
-  // del que se ve la tapa con una luz del acento. El mazo de fichas descansa sobre la mesa.
-  const deskMat = physical(GRAPHITE, 0.45, { metalness: 0.3, clearcoat: 0.4 });
-  // Silla gamer genérica de gama alta (sin marca): respaldo esculpido y fino —se estrecha en la
-  // cintura y se abre en los hombros—, reposacabezas con dos ranuras, vivos del acento y
-  // reposabrazos finos. Enmarca al robot por detrás.
-  const chairMat = physical(0x1b1e23, 0.45, { clearcoat: 0.7, clearcoatRoughness: 0.3 });
-  const slotMat = keep(new three.MeshBasicMaterial({ color: 0x050607 }));
-  const chair = new three.Group();
-  chair.position.set(0, 0, -1.2);
-  character.add(chair);
-  const outline: [number, number][] = [
-    [1.05, -3.3], [1.12, -2.5], [0.95, -1.75], [1.48, -0.6], [1.52, 0.35], [1.12, 1.0], [0.8, 1.32], [0.84, 2.15],
-  ];
-  const back = new three.Shape();
-  back.moveTo(-outline[0][0], outline[0][1]);
-  for (const [x, y] of outline.slice(1)) back.lineTo(-x, y);
-  for (const [x, y] of [...outline].reverse()) back.lineTo(x, y);
-  back.closePath();
-  const backGeometry = keep(new three.ExtrudeGeometry(back, { depth: 0.18, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.06, bevelSegments: 4, curveSegments: 8 }));
-  backGeometry.translate(0, 0, -0.09);
-  chair.add(new three.Mesh(backGeometry, chairMat));
+  // Cadera negra con la «braga» de tejido y piernas segmentadas.
+  const pelvis = new three.Mesh(sphere(1, 48), gloss);
+  pelvis.scale.set(0.72, 0.42, 0.5);
+  pelvis.position.set(0, -3.38, 0);
+  character.add(pelvis);
+  const briefs = new three.Mesh(sphere(1, 48), fabric);
+  briefs.scale.set(0.62, 0.55, 0.47);
+  briefs.position.set(0, -3.68, 0.03);
+  character.add(briefs);
   for (const side of [-1, 1]) {
-    // Ranuras del reposacabezas.
-    const slot = new three.Mesh(rounded(0.16, 0.42, 0.02, 0.07), slotMat);
-    slot.position.set(side * 0.4, 1.78, 0.16);
-    chair.add(slot);
-    // Vivos del acento a lo largo del respaldo.
-    const piping = new three.Mesh(keep(new three.BoxGeometry(0.045, 2.2, 0.02)), accentMat);
-    piping.position.set(side * 1.22, -0.3, 0.16);
-    piping.rotation.z = side * 0.04;
-    chair.add(piping);
-    // Reposabrazos finos.
-    const armrest = new three.Mesh(rounded(0.26, 0.1, 1.3, 0.05), chairMat);
-    armrest.position.set(side * 1.85, -2.75, 1.05);
-    chair.add(armrest);
-    const post = new three.Mesh(keep(new three.CylinderGeometry(0.05, 0.05, 0.7, 12)), metal);
-    post.position.set(side * 1.85, -3.12, 1.05);
-    chair.add(post);
+    const hip = new three.Mesh(sphere(0.3, 32), gloss);
+    hip.position.set(side * 0.5, -3.72, 0);
+    character.add(hip);
+    const thigh = new three.Mesh(limbGeometry(0.36, 0.25, 0.06), fabric);
+    span(thigh, v(side * 0.46, -3.75, 0), v(side * 0.5, -5.8, 0.06));
+    character.add(thigh);
+    const knee = new three.Mesh(sphere(0.24, 32), gloss);
+    knee.position.set(side * 0.5, -5.88, 0.08);
+    character.add(knee);
+    const shin = new three.Mesh(limbGeometry(0.26, 0.15, 0.07), fabric);
+    span(shin, v(side * 0.5, -5.95, 0.06), v(side * 0.52, -7.8, 0));
+    character.add(shin);
+    const ankle = new three.Mesh(sphere(0.15, 24), gloss);
+    ankle.position.set(side * 0.52, -7.88, 0);
+    character.add(ankle);
+    const foot = new three.Mesh(rounded(0.36, 0.24, 1.0, 0.11), fabric);
+    foot.position.set(side * 0.54, -8.04, 0.3);
+    character.add(foot);
+    const toe = new three.Mesh(rounded(0.37, 0.1, 0.32, 0.05), gloss);
+    toe.position.set(side * 0.54, -8.13, 0.66);
+    character.add(toe);
   }
-  // Línea del acento en el borde superior del reposacabezas.
-  const crest = new three.Mesh(keep(new three.BoxGeometry(1.2, 0.035, 0.02)), accentMat);
-  crest.position.set(0, 2.05, 0.16);
-  chair.add(crest);
 
-  const deskTop = new three.Mesh(rounded(6.2, 0.16, 2.3, 0.07), deskMat);
-  deskTop.position.set(0, -2.86, 2.0);
+  // Escritorio elevable, fino y minimalista: tablero negro brillante con una tira de luz del acento
+  // en el canto, patas de perfil delgado y un portátil fino. Sin faldón: se ven las piernas.
+  const DESK_Y = -3.25;
+  const deskTop = new three.Mesh(rounded(5.4, 0.09, 1.7, 0.04), gloss);
+  deskTop.position.set(0, DESK_Y, 1.35);
   character.add(deskTop);
-  const deskFront = new three.Mesh(keep(new three.BoxGeometry(6.0, 1.6, 0.1)), deskMat);
-  deskFront.position.set(0, -3.7, 3.05);
-  character.add(deskFront);
+  const ledStrip = new three.Mesh(keep(new three.BoxGeometry(5.3, 0.025, 0.02)), accentMat);
+  ledStrip.position.set(0, DESK_Y - 0.02, 2.21);
+  character.add(ledStrip);
   for (const side of [-1, 1]) {
-    const leg = new three.Mesh(keep(new three.BoxGeometry(0.14, 1.6, 2.1)), deskMat);
-    leg.position.set(side * 2.95, -3.7, 2.0);
+    const leg = new three.Mesh(rounded(0.09, 4.8, 0.14, 0.04), metal);
+    leg.position.set(side * 2.35, DESK_Y - 2.45, 1.35);
     character.add(leg);
+    const footBar = new three.Mesh(rounded(0.1, 0.07, 1.5, 0.03), metal);
+    footBar.position.set(side * 2.35, DESK_Y - 4.85, 1.35);
+    character.add(footBar);
   }
-  const laptopBase = new three.Mesh(rounded(1.8, 0.08, 1.2, 0.04), metal);
-  laptopBase.position.set(0, -2.74, 1.75);
+  const laptopBase = new three.Mesh(rounded(1.55, 0.05, 1.0, 0.03), metal);
+  laptopBase.position.set(0, DESK_Y + 0.07, 1.25);
   character.add(laptopBase);
   const hinge = new three.Group();
-  hinge.position.set(0, -2.7, 2.33);
-  hinge.rotation.x = 0.22;
+  hinge.position.set(0, DESK_Y + 0.09, 1.74);
+  hinge.rotation.x = 0.2;
   character.add(hinge);
-  const lid = new three.Mesh(rounded(1.8, 1.0, 0.05, 0.025), metal);
-  lid.position.y = 0.5;
+  const lid = new three.Mesh(rounded(1.55, 0.95, 0.035, 0.02), metal);
+  lid.position.y = 0.47;
   hinge.add(lid);
-  const lidLogo = new three.Mesh(keep(new three.CircleGeometry(0.1, 32)), accentMat);
-  lidLogo.position.set(0, 0.55, 0.03);
+  const lidLogo = new three.Mesh(keep(new three.CircleGeometry(0.08, 32)), accentMat);
+  lidLogo.position.set(0, 0.5, 0.025);
   hinge.add(lidLogo);
 
   // Brazos y manos: sostienen el mazo delante del pecho.
@@ -320,27 +342,35 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   const armGeometry = keep(new three.CylinderGeometry(0.19, 0.2, 1, 24));
   const fingerGeometry = keep(new three.CapsuleGeometry(0.05, 0.1, 6, 12));
   const up = new three.Vector3(0, 1, 0);
+  const upperGeometry = limbGeometry(0.2, 0.15, 0.05);
+  const foreGeometry = limbGeometry(0.16, 0.11, 0.04);
   const arms = [-1, 1].map((side) => {
-    const shoulder = new three.Vector3(side * 1.65, -1.7, 0);
-    const rest = new three.Vector3(side * 0.45, -2.58, 1.55); // sobre el teclado
-    const arm = new three.Mesh(armGeometry, shell);
+    const shoulder = new three.Vector3(side * 1.18, -1.32, 0);
+    const rest = new three.Vector3(side * 0.45, -3.08, 1.05); // sobre el teclado del portátil
+    const arm = new three.Mesh(upperGeometry, fabric);
     character.add(arm);
+    const forearm = new three.Mesh(foreGeometry, fabric);
+    character.add(forearm);
+    const elbow = new three.Mesh(sphere(0.16, 24), gloss);
+    character.add(elbow);
+    const wrist = new three.Mesh(sphere(0.1, 20), gloss);
+    character.add(wrist);
     // Mano: palma, cuatro dedos con dos falanges y un pulgar, para que agarre y gesticule.
     const hand = new three.Group();
     hand.position.copy(rest);
     character.add(hand);
-    const palm = new three.Mesh(sphere(0.24, 32), graphite);
+    const palm = new three.Mesh(sphere(0.2, 32), gloss);
     palm.scale.set(1.05, 0.9, 0.7);
     hand.add(palm);
     const fingers = [-1.5, -0.5, 0.5, 1.5].map((slot) => {
       const knuckle = new three.Group();
       knuckle.position.set(slot * 0.1, 0.17, 0.02);
       knuckle.rotation.z = -slot * 0.08;
-      const base = new three.Mesh(fingerGeometry, graphite);
+      const base = new three.Mesh(fingerGeometry, gloss);
       base.position.y = 0.09;
       const joint = new three.Group();
       joint.position.y = 0.17;
-      const tip = new three.Mesh(fingerGeometry, graphite);
+      const tip = new three.Mesh(fingerGeometry, gloss);
       tip.position.y = 0.08;
       tip.scale.y = 0.85;
       joint.add(tip);
@@ -351,11 +381,11 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const thumb = new three.Group();
     thumb.position.set(-side * 0.2, 0.0, 0.08);
     thumb.rotation.z = side * 0.9;
-    const thumbMesh = new three.Mesh(fingerGeometry, graphite);
+    const thumbMesh = new three.Mesh(fingerGeometry, gloss);
     thumbMesh.position.y = 0.09;
     thumb.add(thumbMesh);
     hand.add(thumb);
-    return { side, shoulder, rest, arm, hand, fingers, thumb, target: rest.clone() };
+    return { side, shoulder, rest, arm, forearm, elbow, wrist, hand, fingers, thumb, target: rest.clone() };
   });
   /**
    * Dedos: `grip` 0 = abiertos y estirados, 1 = cerrados (agarrar). `spread` los abre en abanico
@@ -371,15 +401,29 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     limb.thumb.rotation.x = grip * 0.9;
   }
 
-  const segment = new three.Vector3();
+  // Brazo de dos segmentos con cinemática inversa: dado el hombro y la mano, el codo sale de la ley
+  // de los cosenos, doblado hacia fuera y atrás, como un brazo humano.
+  const UPPER = 1.35;
+  const FORE = 1.3;
+  const toHand = new three.Vector3();
+  const pole = new three.Vector3();
+  const bend = new three.Vector3();
+  const elbowAt = new three.Vector3();
   function placeArms(follow: number): void {
     for (const limb of arms) {
       limb.hand.position.lerp(limb.target, follow);
-      segment.copy(limb.hand.position).sub(limb.shoulder);
-      const length = Math.max(0.01, segment.length());
-      limb.arm.position.copy(limb.shoulder).addScaledVector(segment, 0.5);
-      limb.arm.scale.set(1, length, 1);
-      limb.arm.quaternion.setFromUnitVectors(up, segment.normalize());
+      toHand.copy(limb.hand.position).sub(limb.shoulder);
+      const reach = Math.min(UPPER + FORE - 0.01, Math.max(0.2, toHand.length()));
+      toHand.normalize();
+      const along = (UPPER * UPPER - FORE * FORE + reach * reach) / (2 * reach);
+      const out = Math.sqrt(Math.max(0, UPPER * UPPER - along * along));
+      pole.set(limb.side * 0.35, 0, -1);
+      bend.copy(pole).addScaledVector(toHand, -pole.dot(toHand)).normalize();
+      elbowAt.copy(limb.shoulder).addScaledVector(toHand, along).addScaledVector(bend, out);
+      span(limb.arm, limb.shoulder, elbowAt);
+      span(limb.forearm, elbowAt, limb.hand.position);
+      limb.elbow.position.copy(elbowAt);
+      limb.wrist.position.copy(limb.hand.position);
     }
   }
 
@@ -588,12 +632,12 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         // Mientras enseña una, las demás se apartan a un segundo plano.
         opacity = (0.28 + 0.72 * Math.max(0, (depth + 1) / 2) ** 1.4) * (focused ? 0.18 : 1);
       } else {
-        // Sobre la mesa, a la derecha del portátil: un mazo tumbado, algo desordenado.
-        target.set(2.05 + Math.sin(i * 2.1) * 0.04, -2.76 + i * 0.012, 1.85 + Math.cos(i * 1.7) * 0.04);
+        // Sobre el escritorio, a la derecha del portátil: un mazo tumbado, algo desordenado.
+        target.set(1.75 + Math.sin(i * 2.1) * 0.04, DESK_Y + 0.07 + i * 0.012, 1.3 + Math.cos(i * 1.7) * 0.04);
         character.localToWorld(target);
         tilt.setFromEuler(new three.Euler(-Math.PI / 2, 0, Math.sin(i * 1.3) * 0.08 - 0.2));
         targetQuat.copy(character.quaternion).multiply(tilt);
-        scale = 0.95 * character.scale.x;
+        scale = 0.85 * character.scale.x;
       }
       if (tile === grabbed) {
         // Sigue al dedo o al cursor, con un poco de retraso para que se note el peso.
@@ -639,8 +683,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     }
   }
 
-  const HOLD_LEFT = new three.Vector3(-2.75, 0.55, 2.0);
-  const HOLD_RIGHT = new three.Vector3(2.85, 0.65, 2.0);
+  const HOLD_LEFT = new three.Vector3(-2.2, -0.45, 1.6);
+  const HOLD_RIGHT = new three.Vector3(2.3, -0.35, 1.6);
   function placeInfo(follow: number): void {
     const shown = !!(focused && info && stackOpen);
     target.copy(HOLD_RIGHT);
@@ -730,7 +774,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     lookX += (wantX - lookX) * 0.08;
     lookY += (wantY - lookY) * 0.08;
     head.rotation.y = lookX * 0.55;
-    head.rotation.x = lookY * 0.3;
+    head.rotation.x = lookY * 0.3 + (talking && animate ? Math.sin(t * 6) * 0.04 : 0);
     head.rotation.z = -lookX * 0.06 + Math.sin(r * 9) * 0.22 * decay;
     character.rotation.y = lookX * 0.15;
     eyeGroup.position.x = lookX * 0.18;
@@ -752,27 +796,31 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const waving = animate && t - waveAt < 1.6;
     for (const limb of arms) {
       if (focused && stackOpen) {
-        limb.target.set(limb.side * 2.7, -0.55, 1.85); // sostiene las dos cartas a la altura de la cara
+        limb.target.set(limb.side * 2.05, -1.35, 1.35); // sostiene las dos cartas
       } else if (stackOpen) {
-        limb.target.set(limb.side * 2.0, -1.05, 0.9); // presenta el globo, brazos abiertos
+        limb.target.set(limb.side * 2.35, -2.45, 0.9); // presenta el globo, brazos abiertos
       } else {
-        // Teclea mientras el bocadillo escribe: las manos golpean por turnos.
+        // En reposo teclea en el portátil; mientras el bocadillo escribe, las manos golpean por turnos.
         limb.target.copy(limb.rest);
-        if (talking && animate) limb.target.y += Math.max(0, Math.sin(t * 19 + (limb.side > 0 ? Math.PI : 0))) * 0.07;
+        if (talking && animate) limb.target.y += Math.max(0, Math.sin(t * 19 + (limb.side > 0 ? Math.PI : 0))) * 0.06;
       }
       if (waving && limb.side === 1) {
-        limb.target.set(1.95, 0.55 + Math.sin((t - waveAt) * 14) * 0.18, 0.7 + Math.cos((t - waveAt) * 14) * 0.2);
+        limb.target.set(1.75, -0.2 + Math.sin((t - waveAt) * 14) * 0.15, 0.6 + Math.cos((t - waveAt) * 14) * 0.18);
       }
     }
     placeArms(follow);
+    const wavingNow = (limb: (typeof arms)[number]) => waving && limb.side === 1;
     for (const limb of arms) {
       const holding = !!(focused && stackOpen); // sostiene las dos cartas
       const typingHands = !stackOpen;
+      const resting = !stackOpen && !wavingNow(limb);
       const wave = waving && limb.side === 1;
       const pressed = reacting ? Math.max(0, 1 - r * 2.5) : 0; // al tocarlo, aprieta un instante
       poseFingers(limb, wave ? 0 : Math.min(1, (holding ? 0.75 : typingHands ? 0.45 + (talking ? Math.max(0, Math.sin(t * 23 + limb.side)) * 0.35 : 0) : 0.15) + pressed * 0.4), wave ? 1 : stackOpen && !focused ? 0.6 : 0, t);
       // La mano mira al frente, con la palma un poco inclinada según el gesto.
-      limb.hand.rotation.set(holding ? -0.35 : typingHands ? -1.3 : -0.1, 0, wave ? -limb.side * 0.3 + Math.sin((t - waveAt) * 14) * 0.35 : -limb.side * 0.15);
+      // Sobre el teclado la palma mira abajo; al sostener o saludar, los dedos hacia arriba.
+      if (resting) limb.hand.rotation.set(-1.3, 0, -limb.side * 0.15);
+      else limb.hand.rotation.set(holding ? -0.35 : -0.1, 0, wave ? -limb.side * 0.3 + Math.sin((t - waveAt) * 14) * 0.35 : -limb.side * 0.15);
     }
     placeTiles(dt);
     placeInfo(follow);
@@ -811,8 +859,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     },
     anchor(narrow) {
       // Ancho: a la derecha de la cabeza, centrado a la altura de los ojos.
-      // Estrecho: sobre el faldón del escritorio, bajo el robot (encima no cabe: está el rol).
-      const point = narrow ? new three.Vector3(0, -3.55, 3.1) : new three.Vector3(1.55, 0.1, 0);
+      // Estrecho: a la altura de las piernas (encima no cabe: está el rol).
+      const point = narrow ? new three.Vector3(0, -6.6, 1.2) : new three.Vector3(1.6, 0.1, 0);
       (narrow ? character : head).localToWorld(point);
       point.project(camera);
       return { x: ((point.x + 1) / 2) * viewWidth, y: ((1 - point.y) / 2) * viewHeight };
@@ -877,8 +925,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       halfWidth = halfHeight * camera.aspect;
       // El lienzo ocupa toda la pantalla: el robot, a escala de ella, queda en la mitad de abajo, bajo el nombre.
       // Robot entero con su escritorio (~6,2 de alto y de ancho) en la mitad baja, bajo el nombre.
-      fit = Math.min(halfHeight * 0.165, halfWidth * 0.29);
-      camera.position.y = -1.3 * fit + halfHeight * (camera.aspect < 0.8 ? 0.16 : 0.34);
+      // De pie, de la cabeza (~1,3) a los pies (~−8,2): en la mitad baja, bajo el nombre.
+      fit = Math.min(halfHeight * 0.12, halfWidth * 0.34);
+      camera.position.y = -3.45 * fit + halfHeight * (camera.aspect < 0.8 ? 0.26 : 0.36);
       camera.updateProjectionMatrix();
     },
     pointer(x, y) {
