@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostListener, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, OnInit, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { IconPopLayerComponent } from '../../../shared/ui/icon-pop-layer.component';
@@ -85,6 +85,13 @@ export class LandingPageComponent implements OnInit {
   readonly i18n = inject(LanguageService);
   /** El mazo de tecnologías del hero está abierto: el texto del hero se atenúa. */
   readonly immersive = signal(false);
+  /** Desplazamiento con inercia (solo ratón/trackpad y sin «reducir movimiento»). */
+  private readonly smoothScroll = (() => {
+    const destroyRef = inject(DestroyRef);
+    // Se carga aparte: no pesa en el arranque.
+    afterNextRender(() => void import('./smooth-scroll').then(({ startSmoothScroll }) => destroyRef.onDestroy(startSmoothScroll())));
+    return true;
+  })();
   private readonly chat = viewChild(RagChatComponent);
 
   /** Pregunta hecha al robot del hero: se abre el asistente y se le envía. */

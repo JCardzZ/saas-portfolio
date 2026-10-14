@@ -5,13 +5,15 @@ import { expect, test } from '@playwright/test';
  * y se recoge con Esc. Sin WebGL el robot no se pinta y no hay nada que probar.
  */
 test.describe('globo de tecnologías del hero', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    // La escena 3D se dibuja por software en la CI (lentísimo): se prueba en dos perfiles, forzándola.
+    test.skip(!/^(desktop-1440|iphone-390)-/.test(testInfo.project.name), 'solo escritorio e iPhone 390');
     await page.route(/^https:\/\/api\.example\.com\//, (route) => route.abort());
     await page.route(/^https:\/\/raw\.githubusercontent\.com\//, (route) => route.abort());
     // Un móvil en horizontal (menos de 500 px de alto) no tiene sitio para el robot: el hero se
     // desplaza y su centro queda bajo el texto. Ahí no se prueba ni el globo ni el «cabe entero».
     test.skip(page.viewportSize()!.height < 500, 'móvil en horizontal');
-    await page.goto('/');
+    await page.goto('/?webgl=force');
     await expect(page.locator('h1')).toBeVisible();
   });
 

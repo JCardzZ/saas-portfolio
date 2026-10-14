@@ -71,6 +71,8 @@ export interface HeroScene {
   speak(speaking: boolean): void;
   /** Agarra la ficha bajo (x, y), si la hay; devuelve su nombre. Se mueve con `fling` y se suelta con `release`. */
   grab(x: number, y: number): string | null;
+  /** Se despereza: se incorpora en la silla, estira los brazos por encima de la cabeza y bosteza. */
+  stretch(): void;
   /** Avisa cada vez que una ficha lanzada rebota (para el sonido). */
   onBounce(callback: () => void): void;
   /** Lleva la ficha agarrada al punto (x, y) del lienzo. */
@@ -914,6 +916,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   let viewHeight = 1;
   let last = 0;
   let browLift = 0;
+  let stretchAt = -99;
   const HEAD_Y = head.position.y;
   let reactAt = -99;
   let waveAt = -99;
@@ -940,6 +943,14 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     lookY += (wantY - lookY) * 0.08;
     head.rotation.y = lookX * 0.55;
     head.rotation.x = lookY * 0.3;
+    // Desperezo (3 s): sube, echa la cabeza atrás y estira los brazos; también solo, tras 35 s quieto.
+    if (animate && !stackOpen && t - pointerAt > 35 && t - stretchAt > 45) stretchAt = t;
+    const sp = animate ? (t - stretchAt) / 3 : 2;
+    const stretching = sp >= 0 && sp < 1 && !stackOpen;
+    const rise = stretching ? Math.sin(Math.PI * sp) : 0;
+    head.rotation.x -= rise * 0.45;
+    character.position.y += rise * 0.35 * character.scale.x;
+    character.rotation.x = -rise * 0.08;
     head.rotation.z = -lookX * 0.06 + Math.sin(r * 9) * 0.22 * decay;
     character.rotation.y = lookX * 0.15;
     eyeGroup.position.x = lookX * 0.18;
@@ -947,7 +958,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const blinkPhase = animate ? t % 4.2 : 1;
     const closed = blinkPhase < 0.16 ? Math.sin((blinkPhase / 0.16) * Math.PI) : 0;
     // Contento tras el toque: ojos entornados (como una sonrisa), y luego vuelve a parpadear.
-    const happy = reacting ? Math.min(1, r * 6) * Math.min(1, (1.3 - r) * 4) : 0;
+    // Al desperezarse, ojos entornados (bostezo), igual que contento.
+    const happy = Math.max(reacting ? Math.min(1, r * 6) * Math.min(1, (1.3 - r) * 4) : 0, rise);
     for (const eye of eyes) eye.scale.y = Math.min(1 - closed * 0.85, 1 - happy * 0.65);
     // Con voz, la sonrisa se abre y cierra como una boca que habla.
     const voice = speaking && animate ? Math.abs(Math.sin(t * 15)) * (0.6 + 0.4 * Math.sin(t * 4.1)) : 0;
@@ -986,6 +998,11 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         // Teclea mientras el bocadillo escribe: las manos golpean por turnos.
         limb.target.copy(limb.rest);
         if (talking && animate) limb.target.y += Math.max(0, Math.sin(t * 19 + (limb.side > 0 ? Math.PI : 0))) * 0.07;
+      }
+      if (stretching) {
+        // Brazos arriba, algo abiertos, y un balanceo lento de lado a lado.
+        const sway = Math.sin(sp * Math.PI * 2) * 0.25;
+        limb.target.lerp(new three.Vector3(limb.side * 1.0 + sway, 1.2 + rise * 1.4, 0.4), rise);
       }
       if (waving && limb.side === 1) {
         limb.target.set(1.95, 0.55 + Math.sin((t - waveAt) * 14) * 0.18, 0.7 + Math.cos((t - waveAt) * 14) * 0.2);
@@ -1063,6 +1080,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       if (animate) spinVelocity += direction * 1.6;
       else spin += direction * 0.4;
     },
+    stretch() {
+      stretchAt = clock;
+    },
     speak(next) {
       speaking = next;
     },
@@ -1109,7 +1129,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       // El lienzo ocupa toda la pantalla: el robot, a escala de ella, queda en la mitad de abajo, bajo el nombre.
       // Robot entero con su escritorio (~6,2 de alto y de ancho) en la mitad baja, bajo el nombre.
       fit = Math.min(halfHeight * 0.165, halfWidth * 0.29);
-      camera.position.y = -1.3 * fit + halfHeight * (camera.aspect < 0.8 ? 0.16 : 0.34);
+      camera.position.y = -1.3 * fit + halfHeight * (camera.aspect < 0.8 ? 0.2 : 0.42);
       camera.updateProjectionMatrix();
     },
     pointer(x, y) {

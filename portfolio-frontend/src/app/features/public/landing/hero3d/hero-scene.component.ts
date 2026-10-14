@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, Component, DestroyRef, computed, output, ElementRef, NgZone, afterNextRender, effect, inject, input, signal, viewChild,
+  ChangeDetectionStrategy, Component, ViewEncapsulation, DestroyRef, computed, output, ElementRef, NgZone, afterNextRender, effect, inject, input, signal, viewChild,
 } from '@angular/core';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
@@ -8,7 +8,11 @@ import { TECH_ICONS, TechIconKey } from '../../../../shared/ui/tech-icons';
 import type { HeroScene, ScenePalette, SceneTech } from './hero-scene';
 import { HERO_ROLE_PLACEHOLDER } from '../hero-content';
 import { HeroSound, bestVoice, countVisit, greeting } from './hero-sound';
-import { HELP_BY_CATEGORY, STACK_CARDS, USE_BY_CATEGORY } from './stack-cards';
+import { hasFastWebGL } from '../../../../shared/ui/webgl-support';
+import type * as StackCardsModule from './stack-cards';
+
+/** Textos de las cartas: se cargan con la escena 3D (no pesan en el arranque). */
+let cards: typeof StackCardsModule | null = null;
 
 /**
  * Las fichas del mazo: con qué está hecha la plataforma y los servicios de nube que dibuja el
@@ -31,7 +35,7 @@ function groupIndices(group: StackGroup): ReadonlySet<number> | null {
   if (group === 'all') return null;
   const inGroup = (key: TechIconKey): boolean => {
     switch (group) {
-      case 'platform': return STACK_CARDS[key]?.where === 'platform';
+      case 'platform': return cards?.STACK_CARDS[key]?.where === 'platform';
       case 'aws': return key.startsWith('aws');
       case 'azure': return key === 'azure' || key.startsWith('az');
       case 'gcp': return key.startsWith('gcp') || key === 'bigquery';
@@ -56,6 +60,151 @@ const DRAG_THRESHOLD = 6;
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
+  // Estilos del bocadillo, la isla de filtros y la píldora: viajan con la escena, que se carga aparte.
+  encapsulation: ViewEncapsulation.None,
+  styles: `
+/* Bocadillo del robot: una cola hacia la cabeza (a la izquierda, o abajo en pantallas estrechas). */
+.speech { will-change: transform; }
+.speech-body { position: relative; width: min(21rem, calc(100vw - 2rem)); }
+.speech-body::after {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: calc(50% - 6px);
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  border-left: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  transform: rotate(45deg);
+}
+.speech-narrow .speech-body::after { left: calc(50% - 6px); top: -7px; transform: rotate(135deg); }
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  background: rgb(var(--c-accent-solid));
+  animation: caret-blink 1s steps(1) infinite;
+}
+@keyframes caret-blink { 50% { opacity: 0; } }
+
+/*
+ * Entradas al desplazarse: cada bloque de una sección aparece desde abajo con una leve escala y
+ * nitidez, ligado al desplazamiento (scroll-driven animations, sin JavaScript). Solo donde el
+ * navegador las soporta y sin «reducir movimiento»; si no, todo está quieto y visible.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    main > section:not(.hero) > * {
+      animation: section-reveal linear both;
+      animation-timeline: view();
+      /* En longitud, no en porcentaje: un bloque más alto que la pantalla no se queda a medias. */
+      animation-range: entry 0px entry 220px;
+    }
+  }
+}
+@keyframes section-reveal {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: none; }
+}
+/* Las cabeceras de sección se leen sobre la marca de agua: un velo suave detrás del texto. */
+app-section-header {
+  position: relative;
+  isolation: isolate;
+}
+app-section-header::before {
+  content: '';
+  position: absolute;
+  inset: -1.5rem -2rem;
+  z-index: -1;
+  background: radial-gradient(ellipse at 20% 50%, rgb(var(--c-canvas) / 0.92), rgb(var(--c-canvas) / 0) 70%);
+  pointer-events: none;
+}
+
+/* Isla dinámica de los filtros del globo. */
+.island {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.3rem;
+  border-radius: 999px;
+  background: rgb(var(--c-canvas) / 0.92);
+  box-shadow: 0 0 0 1px var(--border-subtle), 0 12px 40px rgb(0 0 0 / 0.35);
+  backdrop-filter: blur(16px);
+}
+.island-thumb {
+  position: absolute;
+  top: 0.3rem;
+  bottom: 0.3rem;
+  left: 0.3rem;
+  width: calc((100% - 0.6rem - 2.5rem) / 5);
+  border-radius: 999px;
+  background: rgb(var(--c-accent-solid));
+  box-shadow: 0 0 18px rgb(var(--c-accent-solid) / 0.45);
+  transition: transform var(--duration-slow) var(--ease-emphasized);
+}
+.island-option {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 2.25rem;
+  padding: 0 0.875rem;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-2);
+  border-radius: 999px;
+  transition: color var(--duration-base) var(--ease-standard);
+}
+.island-option:hover { color: var(--text-1); }
+.island-option-on, .island-option-on:hover { color: rgb(var(--c-accent-on)); font-weight: 600; }
+.island-count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  animation: island-count var(--duration-slow) var(--ease-emphasized);
+}
+@keyframes island-count { from { opacity: 0; transform: translateY(6px) scale(0.8); } }
+.island-sound {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-left: 0.25rem;
+  border-radius: 999px;
+  color: var(--text-2);
+}
+.island-sound:hover { color: var(--text-1); background: rgb(var(--c-ink-1) / 0.08); }
+.island :focus-visible { outline: 2px solid rgb(var(--c-accent-solid)); outline-offset: 2px; }
+@media (max-width: 639px) {
+  .island-option { padding: 0 0.5rem; font-size: 0.75rem; }
+}
+/* En pantallas muy estrechas las cinco opciones no caben en una fila: pasan a dos, sin indicador
+   deslizante (el activo lleva su propio fondo) y con esquinas de tarjeta en lugar de píldora. */
+@media (max-width: 479px) {
+  .island { display: flex; flex-wrap: wrap; justify-content: center; border-radius: 1.25rem; gap: 0.125rem; }
+  .island-thumb { display: none; }
+  .island-option-on { background: rgb(var(--c-accent-solid)); }
+}
+
+/* La píldora del robot late suave mientras el mazo está cerrado, para que se descubra. */
+.hint-glow {
+  animation: hint-glow 2.6s var(--ease-standard) infinite;
+}
+@keyframes hint-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--c-accent-solid) / 0); border-color: var(--border-subtle); }
+  50% { box-shadow: 0 0 18px 2px rgb(var(--c-accent-solid) / 0.35); border-color: rgb(var(--c-accent-solid) / 0.7); }
+}
+
+  `,
   template: `
     <!-- Sin WebGL no hay avatar: el nombre gigante se basta solo. -->
     @if (!failed()) {
@@ -127,6 +276,7 @@ const DRAG_THRESHOLD = 6;
         (pointercancel)="pressEnd($event)"
         (click)="activate($event)"
         (keydown)="key($event)"
+        (dblclick)="stretch()"
       >
         @if (ready()) {
           <!-- El foco de teclado se ve en esta píldora, no como un marco alrededor de la escena. -->
@@ -193,6 +343,8 @@ export class HeroSceneComponent {
   readonly enabled = input(true);
 
   readonly ready = signal(false);
+  /** Ya están los textos de las cartas (para recalcular la carta y los filtros). */
+  private readonly cardsReady = signal(false);
   /** Avisa al hero de que el mazo se abre o se recoge (atenúa su texto). */
   readonly stackOpen = output<boolean>();
   /** Pregunta escrita en el bocadillo: la página abre el asistente con ella. */
@@ -261,6 +413,7 @@ export class HeroSceneComponent {
   /** Grupo del globo a la vista; al abrir, primero lo que usa la plataforma. */
   readonly filter = signal<StackGroup>('platform');
   readonly filters = computed(() => {
+    this.cardsReady();
     const en = this.i18n.lang() === 'en';
     const label: Record<StackGroup, string> = {
       platform: en ? 'Platform' : 'Plataforma', aws: 'AWS', azure: 'Azure', gcp: 'Google Cloud', all: en ? 'All' : 'Todo',
@@ -339,13 +492,14 @@ export class HeroSceneComponent {
   readonly card = computed(() => {
     const title = this.focused();
     const key = title ? STACK.find((item) => TECH_ICONS[item].title === title) : undefined;
-    const data = key ? STACK_CARDS[key] : undefined;
+    this.cardsReady();
+    const data = key ? cards?.STACK_CARDS[key] : undefined;
     if (!title || !data) return null;
     const en = this.i18n.lang() === 'en';
     return {
       name: title,
-      use: this.i18n.t(USE_BY_CATEGORY[data.category.en] ?? data.about),
-      help: this.i18n.t(HELP_BY_CATEGORY[data.category.en] ?? data.about),
+      use: this.i18n.t(cards!.USE_BY_CATEGORY[data.category.en] ?? data.about),
+      help: this.i18n.t(cards!.HELP_BY_CATEGORY[data.category.en] ?? data.about),
       category: this.i18n.t(data.category),
       title: en ? `I'll help you build with ${title}` : `Te ayudo a construir con ${title}`,
       about: this.i18n.t(data.about),
@@ -425,6 +579,14 @@ export class HeroSceneComponent {
     this.open.set(open);
   }
 
+  /** Doble clic: se despereza (solo con el mazo recogido). */
+  stretch(): void {
+    if (this.open()) return;
+    this.scene?.stretch();
+    this.speakText(this.i18n.lang() === 'en' ? 'Time for a little stretch.' : 'Un estiramiento rapidito.');
+    this.kickFrame?.();
+  }
+
   key(event: KeyboardEvent): void {
     if (!this.scene || !this.open()) return;
     if (event.key === 'Escape') {
@@ -486,7 +648,7 @@ export class HeroSceneComponent {
     });
 
     afterNextRender(() => {
-      if (!this.enabled() || !hasWebGL()) {
+      if (!this.enabled() || !hasFastWebGL()) {
         this.failed.set(true);
         return;
       }
@@ -502,7 +664,9 @@ export class HeroSceneComponent {
     }
     let scene: HeroScene;
     try {
-      const [three, { createHeroScene }] = await Promise.all([import('three'), import('./hero-scene')]);
+      const [three, { createHeroScene }, cardTexts] = await Promise.all([import('three'), import('./hero-scene'), import('./stack-cards')]);
+      cards = cardTexts;
+      this.cardsReady.set(true);
       const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
       const techs: SceneTech[] = STACK.map((key) => TECH_ICONS[key]).map(({ title, path, color, image }) => ({
         title, path, color, image: image ? `/${image}` : undefined,
@@ -639,14 +803,6 @@ export class HeroSceneComponent {
   }
 }
 
-function hasWebGL(): boolean {
-  try {
-    const canvas = document.createElement('canvas');
-    return !!(canvas.getContext('webgl2') ?? canvas.getContext('webgl'));
-  } catch {
-    return false;
-  }
-}
 
 /** Colores del tema activo, leídos de las variables CSS de design-tokens.js. */
 function readPalette(): ScenePalette {
