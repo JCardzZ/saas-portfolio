@@ -6,8 +6,9 @@ import { LanguageService } from '../../../../core/i18n/language.service';
 import { ThemeService } from '../../../../core/theme/theme.service';
 import { TECH_ICONS, TechIconKey } from '../../../../shared/ui/tech-icons';
 import type { HeroScene, ScenePalette, SceneTech } from './hero-scene';
+import { HERO_ROLE_PLACEHOLDER } from '../hero-content';
 import { HeroSound, bestVoice, countVisit, greeting } from './hero-sound';
-import { HELP_BY_CATEGORY, STACK_CARDS } from './stack-cards';
+import { HELP_BY_CATEGORY, STACK_CARDS, USE_BY_CATEGORY } from './stack-cards';
 
 /**
  * Las fichas del mazo: con qué está hecha la plataforma y los servicios de nube que dibuja el
@@ -274,6 +275,9 @@ export class HeroSceneComponent {
     return en ? `Click the robot to see my stack (${STACK.length})` : `Pulsa el robot para ver mi stack (${STACK.length})`;
   });
   private kickFrame: (() => void) | null = null;
+  private heroRoleText(): string {
+    return this.i18n.t(HERO_ROLE_PLACEHOLDER);
+  }
   readonly failed = signal(false);
   /** La carta de la mano derecha sigue a la ficha al frente y al idioma. */
   private readonly infoSync = effect(() => {
@@ -283,11 +287,16 @@ export class HeroSceneComponent {
       info
         ? {
             category: info.category,
-            title: info.title,
+            name: info.name,
+            status: info.platform ? (en ? 'In this platform' : 'En esta plataforma') : en ? 'In the Studio' : 'En el Estudio',
+            live: info.platform,
             whatLabel: en ? 'What it is' : 'Qué es',
             what: info.about,
-            helpLabel: en ? 'How I help your company' : 'Cómo ayudo a tu empresa',
+            forLabel: en ? 'What it’s for' : 'Para qué sirve',
+            use: info.use,
+            helpLabel: en ? 'How I can help you' : 'Cómo te puedo ayudar',
             help: info.help,
+            signature: 'Manuel Cardoza · ' + this.heroRoleText(),
           }
         : null,
     );
@@ -302,7 +311,7 @@ export class HeroSceneComponent {
     this.lastSpoken = key;
     if (!info) return;
     const en = this.i18n.lang() === 'en';
-    this.speakText(`${info.title}. ${info.about} ${en ? 'How I help your company:' : 'Cómo ayudo a tu empresa:'} ${info.help}`);
+    this.speakText(`${info.name}. ${info.about} ${info.use} ${en ? 'How I can help you:' : 'Cómo te puedo ayudar:'} ${info.help}`);
   });
 
   readonly focused = signal<string | null>(null);
@@ -314,6 +323,8 @@ export class HeroSceneComponent {
     if (!title || !data) return null;
     const en = this.i18n.lang() === 'en';
     return {
+      name: title,
+      use: this.i18n.t(USE_BY_CATEGORY[data.category.en] ?? data.about),
       help: this.i18n.t(HELP_BY_CATEGORY[data.category.en] ?? data.about),
       category: this.i18n.t(data.category),
       title: en ? `I'll help you build with ${title}` : `Te ayudo a construir con ${title}`,

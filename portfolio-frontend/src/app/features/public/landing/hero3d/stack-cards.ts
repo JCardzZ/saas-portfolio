@@ -44,6 +44,22 @@ export const HELP_BY_CATEGORY: Record<string, Localized> = {
   'Edge & APIs': { en: 'A fast, protected front door for your users and partners.', es: 'Una puerta de entrada rápida y protegida para usuarios y socios.' },
 };
 
+/** Para qué sirve cada área en un producto (bloque «Para qué sirve» de la carta). */
+export const USE_BY_CATEGORY: Record<string, Localized> = {
+  Backend: { en: 'Business logic and APIs that web, mobile and partners consume.', es: 'Lógica de negocio y APIs que consumen la web, el móvil y los socios.' },
+  Frontend: { en: 'The screens your customers use every day.', es: 'Las pantallas que tus clientes usan cada día.' },
+  Data: { en: 'Storing, querying and protecting your business data.', es: 'Guardar, consultar y proteger los datos del negocio.' },
+  AI: { en: 'Assistants, search and automation over your content.', es: 'Asistentes, búsqueda y automatización sobre tu contenido.' },
+  DevOps: { en: 'Building, testing and releasing software without drama.', es: 'Construir, probar y publicar software sin sobresaltos.' },
+  Security: { en: 'Deciding who can do what, and proving it.', es: 'Decidir quién puede hacer qué, y demostrarlo.' },
+  Observability: { en: 'Knowing how the system behaves in production.', es: 'Saber cómo se comporta el sistema en producción.' },
+  Messaging: { en: 'Letting services talk without waiting for each other.', es: 'Que los servicios se hablen sin esperarse.' },
+  Cloud: { en: 'Running and scaling everything without owning hardware.', es: 'Ejecutar y escalar todo sin tener servidores propios.' },
+  Compute: { en: 'Running your applications at any scale.', es: 'Ejecutar tus aplicaciones a cualquier escala.' },
+  Serverless: { en: 'Event-driven jobs that cost nothing when idle.', es: 'Tareas por eventos que no cuestan nada en reposo.' },
+  'Edge & APIs': { en: 'Fast, secure entry for users and partners worldwide.', es: 'Entrada rápida y segura para usuarios y socios en todo el mundo.' },
+};
+
 const card = (category: Localized, en: string, es: string, where: StackCard['where'] = 'studio'): StackCard => ({ category, about: { en, es }, where });
 
 export const STACK_CARDS: Partial<Record<TechIconKey, StackCard>> = {

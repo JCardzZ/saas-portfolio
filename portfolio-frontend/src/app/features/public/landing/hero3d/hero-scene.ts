@@ -35,11 +35,20 @@ export interface SceneTech {
 /** Carta de información que el robot sostiene en la mano derecha, junto a la del logo. */
 export interface SceneInfo {
   category: string;
-  title: string;
+  /** Nombre de la tecnología (va grande en la carta). */
+  name: string;
+  /** «Usado en esta plataforma» o «Disponible en el Estudio». */
+  status: string;
+  /** `true` si la plataforma la usa de verdad (la insignia va en el acento). */
+  live: boolean;
   whatLabel: string;
   what: string;
+  forLabel: string;
+  use: string;
   helpLabel: string;
   help: string;
+  /** Pie de la carta (quién la firma). */
+  signature: string;
 }
 
 export interface HeroScene {
@@ -189,6 +198,16 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   smile.position.set(0, -0.3, 0);
   smile.scale.set(1, 0.7, 0.4);
   eyeGroup.add(smile);
+  // Cejas de luz: la mitad de la expresión (sorpresa, alegría, duda) sale de ellas.
+  const browGeometry = keep(new three.CapsuleGeometry(0.022, 0.2, 6, 12));
+  const brows = [-1, 1].map((side) => {
+    const brow = new three.Mesh(browGeometry, accentMat);
+    brow.rotation.z = Math.PI / 2;
+    brow.position.set(side * 0.42, 0.27, 0);
+    brow.scale.set(1, 1, 0.4);
+    eyeGroup.add(brow);
+    return brow;
+  });
   let talking = false;
   let speaking = false;
 
@@ -338,6 +357,17 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     character.add(foot);
   }
 
+  // Tarjetero minimalista para el mazo: base fina negra con una línea del acento.
+  const DOCK = new three.Vector3(2.35, -2.42, 1.9);
+  const dock = new three.Mesh(rounded(0.95, 0.07, 0.5, 0.03), deskGloss);
+  dock.position.set(DOCK.x, -2.74, DOCK.z - 0.12);
+  dock.rotation.y = -0.35;
+  character.add(dock);
+  const dockLine = new three.Mesh(keep(new three.BoxGeometry(0.85, 0.012, 0.012)), accentMat);
+  dockLine.position.set(DOCK.x + 0.08, -2.73, DOCK.z + 0.11);
+  dockLine.rotation.y = -0.35;
+  character.add(dockLine);
+
   const laptopBase = new three.Mesh(rounded(1.8, 0.08, 1.2, 0.04), metal);
   laptopBase.position.set(0, -2.74, 1.75);
   character.add(laptopBase);
@@ -459,14 +489,16 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
 
   // Carta de información (mano derecha): el mismo formato que las fichas, más alta.
   const infoArt = document.createElement('canvas');
-  infoArt.width = 640;
-  infoArt.height = 800;
+  infoArt.width = 720;
+  infoArt.height = 1080;
   const infoTexture = keep(new three.CanvasTexture(infoArt));
   infoTexture.colorSpace = three.SRGBColorSpace;
   infoTexture.anisotropy = 4;
   const infoFace = keep(new three.MeshPhysicalMaterial({ map: infoTexture, roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.1, transparent: true }));
   const infoGlow = keep(new three.MeshStandardMaterial({ color: GRAPHITE, emissive: 0x7fee64, emissiveIntensity: 1, roughness: 0.4, metalness: 0.5, transparent: true }));
-  const infoMesh = new three.Mesh(keep(new three.BoxGeometry(1.3, 1.62, 0.05)), [infoGlow, infoGlow, infoGlow, infoGlow, infoFace, infoGlow]);
+  // Plano (no caja): la silueta de carta de colección la dibuja el canvas con transparencia.
+  infoFace.side = three.DoubleSide;
+  const infoMesh = new three.Mesh(keep(new three.PlaneGeometry(1.36, 2.04)), infoFace);
   infoMesh.scale.setScalar(0.001);
   scene.add(infoMesh);
   let info: SceneInfo | null = null;
@@ -489,37 +521,135 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     return y + lines * lineHeight;
   }
 
+  /**
+   * Carta estilo «carta de colección» (FIFA), moderna y minimalista: silueta de escudo con esquinas
+   * cortadas y punta abajo, canto con degradado del acento, logo grande, nombre, insignia (en la
+   * plataforma / en el Estudio) y tres bloques: qué es, para qué sirve, cómo ayudo. Sin cifras ni
+   * «valoraciones» inventadas.
+   */
   function paintInfo(colors: ScenePalette): void {
     const ctx = infoArt.getContext('2d');
     if (!ctx || !info) return;
-    const { width, height } = infoArt;
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = colors.surface;
-    ctx.beginPath();
-    ctx.roundRect(0, 0, width, height, 36);
+    const W = infoArt.width;
+    const H = infoArt.height;
+    const cut = 70;
+    const shield = () => {
+      ctx.beginPath();
+      ctx.moveTo(cut, 6);
+      ctx.lineTo(W - cut, 6);
+      ctx.lineTo(W - 6, cut);
+      ctx.lineTo(W - 6, H - 150);
+      ctx.quadraticCurveTo(W - 6, H - 110, W - 46, H - 90);
+      ctx.lineTo(W / 2 + 30, H - 14);
+      ctx.quadraticCurveTo(W / 2, H - 2, W / 2 - 30, H - 14);
+      ctx.lineTo(46, H - 90);
+      ctx.quadraticCurveTo(6, H - 110, 6, H - 150);
+      ctx.lineTo(6, cut);
+      ctx.closePath();
+    };
+    ctx.clearRect(0, 0, W, H);
+    // Fondo: superficie con un brillo diagonal suave.
+    shield();
+    const ground = ctx.createLinearGradient(0, 0, W, H);
+    ground.addColorStop(0, colors.surface);
+    ground.addColorStop(1, colors.light ? colors.surface : '#050607');
+    ctx.fillStyle = ground;
     ctx.fill();
-    ctx.strokeStyle = colors.accent;
-    ctx.lineWidth = 6;
+    ctx.save();
+    shield();
+    ctx.clip();
+    const sheen = ctx.createLinearGradient(0, 0, W, H * 0.6);
+    sheen.addColorStop(0, 'rgba(255,255,255,0.10)');
+    sheen.addColorStop(0.35, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sheen;
+    ctx.fillRect(0, 0, W, H);
+    // Halo del acento detrás del logo.
+    const halo = ctx.createRadialGradient(W - 170, 170, 10, W - 170, 170, 230);
+    halo.addColorStop(0, colors.accent);
+    halo.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+    // Canto: degradado del acento.
+    shield();
+    const rim = ctx.createLinearGradient(0, 0, W, H);
+    rim.addColorStop(0, colors.accent);
+    rim.addColorStop(0.5, colors.light ? colors.line : '#1d2320');
+    rim.addColorStop(1, colors.accent);
+    ctx.strokeStyle = rim;
+    ctx.lineWidth = 8;
     ctx.stroke();
-    ctx.textAlign = 'left';
+
+    const pad = 58;
     ctx.textBaseline = 'top';
-    const pad = 44;
+    ctx.textAlign = 'left';
+    // Arriba a la izquierda: área (como la «posición» de una carta).
     ctx.fillStyle = colors.accentText;
-    ctx.font = '700 32px "JetBrains Mono", ui-monospace, monospace';
-    ctx.fillText(info.category.toUpperCase(), pad, pad);
+    ctx.font = '800 40px "JetBrains Mono", ui-monospace, monospace';
+    ctx.fillText(info.category.toUpperCase(), pad, 70);
+    // Insignia de estado.
+    ctx.font = '700 26px "JetBrains Mono", ui-monospace, monospace';
+    const badge = info.status.toUpperCase();
+    const bw = ctx.measureText(badge).width + 32;
+    ctx.beginPath();
+    ctx.roundRect(pad, 126, bw, 40, 20);
+    ctx.fillStyle = info.live ? colors.accent : 'rgba(127,127,127,0.18)';
+    ctx.fill();
+    ctx.fillStyle = info.live ? '#07120A' : colors.muted;
+    ctx.fillText(badge, pad + 16, 134);
+    // Arriba a la derecha: el logo grande (el de la ficha al frente).
+    const logo = focused;
+    if (logo?.picture) {
+      const box = 190;
+      const ratio = Math.min(box / logo.picture.naturalWidth, box / logo.picture.naturalHeight) || 1;
+      const w = logo.picture.naturalWidth * ratio;
+      const h = logo.picture.naturalHeight * ratio;
+      ctx.drawImage(logo.picture, W - pad - box + (box - w) / 2, 66 + (box - h) / 2, w, h);
+    } else if (logo?.tech.path) {
+      const brand = new three.Color(logo.tech.color);
+      const luminance = brand.r * 0.2126 + brand.g * 0.7152 + brand.b * 0.0722;
+      ctx.save();
+      ctx.translate(W - pad - 190, 66);
+      ctx.scale(190 / 24, 190 / 24);
+      ctx.fillStyle = (colors.light ? luminance > 0.8 : luminance < 0.12) ? colors.ink : logo.tech.color;
+      ctx.fill(new Path2D(logo.tech.path));
+      ctx.restore();
+    }
+    // Nombre, grande.
     ctx.fillStyle = colors.ink;
-    ctx.font = '800 54px Inter, system-ui, sans-serif';
-    let y = wrap(ctx, info.title, pad, pad + 52, width - pad * 2, 60, 3) + 24;
+    let size = 84;
+    do {
+      ctx.font = `900 ${size}px Inter, system-ui, sans-serif`;
+      size -= 4;
+    } while (ctx.measureText(info.name.toUpperCase()).width > W - pad * 2 && size > 40);
+    ctx.fillText(info.name.toUpperCase(), pad, 290);
+    // Separador con un punto del acento, como el de las cartas.
+    let y = 290 + size + 34;
+    ctx.fillStyle = colors.line;
+    ctx.fillRect(pad, y, W - pad * 2, 2);
+    ctx.fillStyle = colors.accent;
+    ctx.beginPath();
+    ctx.arc(W / 2, y + 1, 7, 0, Math.PI * 2);
+    ctx.fill();
+    y += 34;
     const block = (label: string, text: string) => {
-      ctx.fillStyle = colors.muted;
-      ctx.font = '700 28px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillStyle = colors.accentText;
+      ctx.font = '700 26px "JetBrains Mono", ui-monospace, monospace';
       ctx.fillText(label.toUpperCase(), pad, y);
       ctx.fillStyle = colors.ink;
-      ctx.font = '500 42px Inter, system-ui, sans-serif';
-      y = wrap(ctx, text, pad, y + 40, width - pad * 2, 52, 3) + 28;
+      ctx.font = '600 38px Inter, system-ui, sans-serif';
+      y = wrap(ctx, text, pad, y + 38, W - pad * 2, 47, 3) + 24;
     };
     block(info.whatLabel, info.what);
+    block(info.forLabel, info.use);
     block(info.helpLabel, info.help);
+    // Firma, sobre la punta.
+    ctx.textAlign = 'center';
+    ctx.fillStyle = colors.muted;
+    ctx.font = '600 22px "JetBrains Mono", ui-monospace, monospace';
+    ctx.fillText(info.signature.toUpperCase(), W / 2, H - 132);
     infoTexture.needsUpdate = true;
   }
 
@@ -608,6 +738,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       const open = stackOpen && rank >= 0 && (!animate || clock - openedAt > rank * 0.035);
       let scale: number;
       let opacity = 1;
+      let inDock = false;
       if (open && tile === focused) {
         // En la mano izquierda, a la altura de la cara.
         target.copy(HOLD_LEFT);
@@ -627,12 +758,15 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         // Mientras enseña una, las demás se apartan a un segundo plano.
         opacity = (0.28 + 0.72 * Math.max(0, (depth + 1) / 2) ** 1.4) * (focused ? 0.18 : 1);
       } else {
-        // Sobre la mesa, a la derecha del portátil: un mazo tumbado, algo desordenado.
-        target.set(2.05 + Math.sin(i * 2.1) * 0.04, -2.76 + i * 0.012, 1.85 + Math.cos(i * 1.7) * 0.04);
+        // En su soporte del escritorio: de pie, alineadas una tras otra y algo inclinadas hacia
+        // atrás, como un tarjetero. Solo se ve la de delante; las demás asoman por arriba.
+        const depthInDock = count - 1 - i;
+        target.set(DOCK.x, DOCK.y + depthInDock * 0.004, DOCK.z - depthInDock * 0.007);
         character.localToWorld(target);
-        tilt.setFromEuler(new three.Euler(-Math.PI / 2, 0, Math.sin(i * 1.3) * 0.08 - 0.2));
+        tilt.setFromEuler(new three.Euler(-0.22, -0.35, 0));
         targetQuat.copy(character.quaternion).multiply(tilt);
-        scale = 0.95 * character.scale.x;
+        scale = 0.78 * character.scale.x;
+        inDock = true;
       }
       if (tile === grabbed) {
         // Sigue al dedo o al cursor, con un poco de retraso para que se note el peso.
@@ -671,7 +805,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       tile.mesh.quaternion.slerp(targetQuat, follow);
       tile.hover += ((tile === hovered && tile !== focused ? 1 : 0) - tile.hover) * follow;
       tile.mesh.scale.setScalar(scale * (1 + tile.hover * 0.28));
-      tile.glow.emissiveIntensity = 0.15 + tile.hover * 1.4 + (tile === focused ? 1 : 0);
+      // En el soporte, sin brillo en los cantos: un bloque limpio, no un fajo verde.
+      tile.glow.emissiveIntensity = inDock ? 0 : 0.15 + tile.hover * 1.4 + (tile === focused ? 1 : 0);
       const alpha = Math.max(opacity, tile.hover);
       tile.face.opacity += (alpha - tile.face.opacity) * follow;
       tile.glow.opacity = tile.face.opacity;
@@ -679,16 +814,16 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   }
 
   const HOLD_LEFT = new three.Vector3(-2.75, 0.55, 2.0);
-  const HOLD_RIGHT = new three.Vector3(3.05, 0.75, 2.0);
+  const HOLD_RIGHT = new three.Vector3(3.55, 1.15, 2.6);
   function placeInfo(follow: number): void {
     const shown = !!(focused && info && stackOpen);
     target.copy(HOLD_RIGHT);
     character.localToWorld(target);
     infoMesh.position.lerp(target, follow);
     infoMesh.quaternion.slerp(faceCamera, follow);
-    const goal = shown ? character.scale.x * 1.9 : 0.001;
+    const goal = shown ? character.scale.x * 2.75 : 0.001;
     infoMesh.scale.setScalar(infoMesh.scale.x + (goal - infoMesh.scale.x) * follow);
-    infoFace.opacity = infoGlow.opacity = Math.min(1, infoMesh.scale.x / Math.max(0.01, character.scale.x * 1.9));
+    infoFace.opacity = infoGlow.opacity = Math.min(1, infoMesh.scale.x / Math.max(0.01, character.scale.x * 2.75));
   }
 
   let visible: ReadonlySet<number> | null = null;
@@ -745,6 +880,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   let viewWidth = 1;
   let viewHeight = 1;
   let last = 0;
+  let browLift = 0;
+  const HEAD_Y = head.position.y;
   let reactAt = -99;
   let waveAt = -99;
   let pointerAt = 0;
@@ -782,6 +919,22 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     // Con voz, la sonrisa se abre y cierra como una boca que habla.
     const voice = speaking && animate ? Math.abs(Math.sin(t * 15)) * (0.6 + 0.4 * Math.sin(t * 4.1)) : 0;
     smile.scale.set(1 + happy * 0.6 + voice * 0.3, 0.7 + happy * 0.6 + voice * 1.4, 0.4);
+    // Expresión: cejas arriba al ver una carta bajo el cursor (curiosidad) o al tocarlo (alegría);
+    // una sola arriba cuando mira alrededor (duda); se mueven al hablar.
+    const curious = hovered && !focused ? 1 : 0;
+    const doubt = idle && !stackOpen ? Math.max(0, Math.sin(t * 0.45)) : 0;
+    browLift += ((Math.max(curious, happy) * 0.09 + voice * 0.03) - browLift) * 0.2;
+    brows.forEach((brow, index) => {
+      const side = index === 0 ? -1 : 1;
+      brow.position.y = 0.27 + browLift + (side === 1 ? doubt * 0.06 : 0);
+      brow.rotation.z = Math.PI / 2 + side * (happy * 0.25 - doubt * 0.18 * (side === 1 ? 1 : -0.4));
+    });
+    // Respira (el torso sube y baja), asiente al hablar y ladea la cabeza al mirar una carta.
+    const breath = animate ? Math.sin(t * 1.6) : 0;
+    torso.scale.set(1 + breath * 0.012, 1 + breath * 0.02, 1 + breath * 0.012);
+    head.position.y = HEAD_Y + breath * 0.025;
+    if (speaking && animate) head.rotation.x += Math.sin(t * 7) * 0.05;
+    head.rotation.z += curious * 0.12 * Math.sin(t * 2) ;
     const pulse = animate ? 0.5 + 0.5 * Math.sin(t * 2.4) : 1;
     accentMat.emissiveIntensity = 0.7 + pulse * 0.6;
     core.scale.setScalar(0.92 + pulse * 0.12);
@@ -791,7 +944,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const waving = animate && t - waveAt < 1.6;
     for (const limb of arms) {
       if (focused && stackOpen) {
-        limb.target.set(limb.side * 2.7, -0.55, 1.85); // sostiene las dos cartas a la altura de la cara
+        // Sostiene las dos cartas: la izquierda, el logo; la derecha, la carta de colección (más alta).
+        if (limb.side < 0) limb.target.set(-2.7, -0.55, 1.85);
+        else limb.target.set(3.2, -0.3, 2.35);
       } else if (stackOpen) {
         limb.target.set(limb.side * 2.0, -1.05, 0.9); // presenta el globo, brazos abiertos
       } else {
