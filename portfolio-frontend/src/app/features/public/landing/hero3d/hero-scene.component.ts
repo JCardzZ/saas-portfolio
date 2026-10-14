@@ -6,7 +6,7 @@ import { LanguageService } from '../../../../core/i18n/language.service';
 import { ThemeService } from '../../../../core/theme/theme.service';
 import { TECH_ICONS, TechIconKey } from '../../../../shared/ui/tech-icons';
 import type { HeroScene, ScenePalette, SceneTech } from './hero-scene';
-import { HeroSound, countVisit, greeting } from './hero-sound';
+import { HeroSound, bestVoice, countVisit, greeting } from './hero-sound';
 import { HELP_BY_CATEGORY, STACK_CARDS } from './stack-cards';
 
 /**
@@ -194,8 +194,11 @@ export class HeroSceneComponent {
     voice.cancel();
     const en = this.i18n.lang() === 'en';
     const utterance = new SpeechSynthesisUtterance(`${this.hello().replace(/👋/g, '')}. ${this.pitch().lead} ${this.pitch().lines[0]}.`);
-    utterance.lang = en ? 'en-US' : 'es-ES';
-    utterance.rate = 1.03;
+    const natural = bestVoice(en ? 'en' : 'es');
+    if (natural) utterance.voice = natural;
+    utterance.lang = natural?.lang ?? (en ? 'en-US' : 'es-ES');
+    utterance.rate = 1;
+    utterance.pitch = 1;
     utterance.onstart = () => this.scene?.speak(true);
     utterance.onend = utterance.onerror = () => this.scene?.speak(false);
     voice.speak(utterance);

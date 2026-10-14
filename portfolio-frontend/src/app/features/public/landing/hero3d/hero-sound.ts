@@ -93,3 +93,25 @@ export function countVisit(): number {
     return 1;
   }
 }
+
+/**
+ * La voz más natural disponible para el idioma: las voces neuronales o «premium» del sistema y del
+ * navegador suenan humanas; las básicas, robóticas. Se puntúa por nombre y se elige la mejor.
+ */
+export function bestVoice(lang: 'en' | 'es'): SpeechSynthesisVoice | null {
+  const voices = globalThis.speechSynthesis?.getVoices() ?? [];
+  const candidates = voices.filter((voice) => voice.lang.toLowerCase().startsWith(lang));
+  const score = (voice: SpeechSynthesisVoice): number => {
+    const name = voice.name.toLowerCase();
+    let points = 0;
+    if (/natural|neural|online/.test(name)) points += 50; // Edge, Windows: voces neuronales
+    if (/premium|enhanced|siri/.test(name)) points += 40; // macOS e iOS: voces mejoradas
+    if (/google/.test(name)) points += 25; // Chrome: voces en la nube, bastante naturales
+    if (/samantha|ava|allison|zoe|evan|nathan|paulina|m[oó]nica|jorge|diego|marisol|sof[ií]a|elena/.test(name)) points += 10;
+    if (!voice.localService) points += 5;
+    if (/compact|espeak|novelty|bad news|bells|whisper|zarvox|trinoids|albert/.test(name)) points -= 100;
+    if (lang === 'es' && /es-(mx|us|419)/i.test(voice.lang)) points += 3; // acento latinoamericano
+    return points;
+  };
+  return candidates.sort((a, b) => score(b) - score(a))[0] ?? null;
+}
