@@ -142,25 +142,43 @@ const DRAG_THRESHOLD = 6;
         <div
           class="absolute left-1/2 top-[calc(5rem+env(safe-area-inset-top,0px))] z-10 max-w-[calc(100%-2rem)] -translate-x-1/2 animate-fade-in max-[399px]:top-[calc(7.5rem+env(safe-area-inset-top,0px))]"
         >
-          <div class="ui-segmented flex-wrap justify-center bg-surface-1/80 backdrop-blur" role="radiogroup" [attr.aria-label]="i18n.lang() === 'en' ? 'Show' : 'Mostrar'" data-testid="stack-filters">
+          <!--
+            Isla dinámica: píldora negra con un indicador que se desliza bajo el grupo activo y su
+            número, que aparece animado. Las opciones tienen el mismo ancho para que el indicador
+            solo tenga que moverse (transform).
+          -->
+          <div class="island" role="radiogroup" [attr.aria-label]="i18n.lang() === 'en' ? 'Show' : 'Mostrar'" data-testid="stack-filters">
+            <span class="island-thumb" aria-hidden="true" [style.transform]="'translateX(' + activeIndex() * 100 + '%)'"></span>
             @for (option of filters(); track option.id) {
               <button
                 type="button"
                 role="radio"
-                class="ui-segment"
+                class="island-option"
+                [class.island-option-on]="filter() === option.id"
                 [attr.aria-checked]="filter() === option.id"
                 (click)="setFilter(option.id)"
-              >{{ option.label }} <span class="ml-1 text-ink-3">{{ option.count }}</span></button>
+              >
+                <span>{{ option.label }}</span>
+                @if (filter() === option.id) {
+                  <span class="island-count">{{ option.count }}</span>
+                }
+              </button>
             }
             <!-- El bocadillo se oculta con el globo abierto: aquí también se puede apagar la voz. -->
             <button
               type="button"
-              class="ui-segment"
+              class="island-sound"
               data-testid="hero-sound-globe"
               [attr.aria-pressed]="soundOn()"
               [attr.aria-label]="i18n.lang() === 'en' ? (soundOn() ? 'Turn sound and voice off' : 'Turn sound and voice on') : (soundOn() ? 'Apagar sonido y voz' : 'Encender sonido y voz')"
               (click)="toggleSound()"
-            >{{ soundOn() ? '🔊' : '🔇' }}</button>
+            >
+              @if (soundOn()) {
+                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zM16.5 8.5a5 5 0 0 1 0 7" /></svg>
+              } @else {
+                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zM17 9l5 6M22 9l-5 6" /></svg>
+              }
+            </button>
           </div>
         </div>
       }
@@ -249,6 +267,8 @@ export class HeroSceneComponent {
     };
     return (['platform', 'aws', 'azure', 'gcp', 'all'] as const).map((id) => ({ id, label: label[id], count: groupIndices(id)?.size ?? STACK.length }));
   });
+
+  readonly activeIndex = computed(() => this.filters().findIndex((item) => item.id === this.filter()));
 
   setFilter(group: StackGroup): void {
     this.filter.set(group);

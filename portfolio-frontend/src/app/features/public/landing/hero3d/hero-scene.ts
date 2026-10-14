@@ -357,16 +357,26 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     character.add(foot);
   }
 
-  // Tarjetero minimalista para el mazo: base fina negra con una línea del acento.
-  const DOCK = new three.Vector3(2.35, -2.42, 1.9);
-  const dock = new three.Mesh(rounded(0.95, 0.07, 0.5, 0.03), deskGloss);
-  dock.position.set(DOCK.x, -2.74, DOCK.z - 0.12);
-  dock.rotation.y = -0.35;
-  character.add(dock);
-  const dockLine = new three.Mesh(keep(new three.BoxGeometry(0.85, 0.012, 0.012)), accentMat);
-  dockLine.position.set(DOCK.x + 0.08, -2.73, DOCK.z + 0.11);
-  dockLine.rotation.y = -0.35;
-  character.add(dockLine);
+  // Proyector holográfico sobre la mesa: un disco con un anillo de luz, un haz tenue y un cubo de
+  // alambre que gira. Las fichas, en reposo, orbitan en miniatura alrededor del haz.
+  const DOCK = new three.Vector3(2.55, -2.35, 1.95);
+  const holo = new three.Group();
+  holo.position.set(DOCK.x, -2.76, DOCK.z);
+  character.add(holo);
+  const holoBase = new three.Mesh(keep(new three.CylinderGeometry(0.42, 0.48, 0.07, 48)), deskGloss);
+  holo.add(holoBase);
+  const holoRing = new three.Mesh(keep(new three.TorusGeometry(0.38, 0.018, 8, 64)), accentMat);
+  holoRing.rotation.x = Math.PI / 2;
+  holoRing.position.y = 0.045;
+  holo.add(holoRing);
+  const beamMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.12, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
+  const beam = new three.Mesh(keep(new three.CylinderGeometry(0.42, 0.36, 1.2, 48, 1, true)), beamMat);
+  beam.position.y = 0.64;
+  holo.add(beam);
+  const cubeMat = keep(new three.LineBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.9 }));
+  const holoCube = new three.LineSegments(keep(new three.EdgesGeometry(keep(new three.BoxGeometry(0.34, 0.34, 0.34)))), cubeMat);
+  holoCube.position.y = 0.66;
+  holo.add(holoCube);
 
   const laptopBase = new three.Mesh(rounded(1.8, 0.08, 1.2, 0.04), metal);
   laptopBase.position.set(0, -2.74, 1.75);
@@ -758,14 +768,14 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         // Mientras enseña una, las demás se apartan a un segundo plano.
         opacity = (0.28 + 0.72 * Math.max(0, (depth + 1) / 2) ** 1.4) * (focused ? 0.18 : 1);
       } else {
-        // En su soporte del escritorio: de pie, alineadas una tras otra y algo inclinadas hacia
-        // atrás, como un tarjetero. Solo se ve la de delante; las demás asoman por arriba.
-        const depthInDock = count - 1 - i;
-        target.set(DOCK.x, DOCK.y + depthInDock * 0.004, DOCK.z - depthInDock * 0.007);
+        // En el holograma: miniaturas que orbitan alrededor del haz, en tres alturas.
+        const orbit = clock * 0.6 + (i / count) * Math.PI * 2 * 3;
+        const band = i % 3;
+        target.set(DOCK.x + Math.cos(orbit) * 0.85, DOCK.y + band * 0.36, DOCK.z + Math.sin(orbit) * 0.85);
         character.localToWorld(target);
-        tilt.setFromEuler(new three.Euler(-0.22, -0.35, 0));
-        targetQuat.copy(character.quaternion).multiply(tilt);
-        scale = 0.78 * character.scale.x;
+        targetQuat.copy(faceCamera);
+        scale = 0.11 * character.scale.x;
+        opacity = 0.15 + 0.85 * Math.max(0, Math.sin(orbit)) ** 2;
         inDock = true;
       }
       if (tile === grabbed) {
@@ -864,6 +874,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const accent = new three.Color(next.accent);
     accentMat.color.copy(accent);
     accentMat.emissive.copy(accent);
+    beamMat.color.copy(accent);
+    cubeMat.color.copy(accent);
     rim.color.copy(accent);
     eyeLight.color.copy(accent);
     rim2.color.copy(accent);
@@ -968,6 +980,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       // La mano mira al frente, con la palma un poco inclinada según el gesto.
       limb.hand.rotation.set(holding ? -0.35 : typingHands ? -1.3 : -0.1, 0, wave ? -limb.side * 0.3 + Math.sin((t - waveAt) * 14) * 0.35 : -limb.side * 0.15);
     }
+    holoCube.rotation.set(t * 0.7, t * 0.9, 0);
+    beamMat.opacity = 0.09 + (animate ? Math.sin(t * 3) * 0.03 : 0);
     placeTiles(dt);
     placeInfo(follow);
     renderer.render(scene, camera);
