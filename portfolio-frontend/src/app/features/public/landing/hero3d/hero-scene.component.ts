@@ -61,7 +61,8 @@ const DRAG_THRESHOLD = 6;
   selector: 'app-hero-scene',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
+  // Al guiar, el componente entero sube de capa: su `z-0` limitaría el lienzo y el láser bajo las tarjetas.
+  host: { class: 'block', '[style.z-index]': 'guiding() ? 44 : null' },
   // Estilos del bocadillo, la isla de filtros y la píldora: viajan con la escena, que se carga aparte.
   encapsulation: ViewEncapsulation.None,
   styles: `
@@ -93,7 +94,7 @@ const DRAG_THRESHOLD = 6;
 @keyframes caret-blink { 50% { opacity: 0; } }
 
 /* Bocadillo a la izquierda del robot (modo guía, robot en el margen derecho): cola a la derecha. */
-.speech-left .speech-body::after { left: auto; right: -7px; transform: rotate(-135deg); }
+.speech-top .speech-body::after { left: 78%; top: auto; bottom: -7px; transform: rotate(-45deg); }
 .tour-pill {
   display: flex;
   align-items: center;
@@ -132,15 +133,25 @@ const DRAG_THRESHOLD = 6;
 .laser-on .laser-ring { animation: laser-ring 1.1s var(--ease-standard) infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes laser-ring { from { transform: scale(1); opacity: 0.9; } to { transform: scale(4); opacity: 0; } }
 /* La tarjeta que el robot «toca»: se ilumina y se desplaza como si la empujara con el láser. */
-.robot-touch {
-  transition: transform 600ms var(--ease-emphasized), box-shadow 600ms var(--ease-standard) !important;
-  box-shadow: 0 0 0 1px rgb(var(--c-accent-solid) / 0.8), 0 0 48px rgb(var(--c-accent-solid) / 0.25) !important;
-  animation: robot-nudge 2.4s var(--ease-standard) infinite;
+/* Abrir paso: la tarjeta junto al robot se aparta hacia la izquierda y gira un poco, como empujada. */
+main :is(.bento-card, .theater-card, article) {
+  transition: transform 700ms var(--ease-emphasized), opacity 700ms var(--ease-standard);
 }
-@keyframes robot-nudge {
-  0%, 100% { transform: perspective(1200px) translateX(0) rotateY(0); }
-  35% { transform: perspective(1200px) translateX(-14px) rotateY(-2.5deg); }
-  65% { transform: perspective(1200px) translateX(-6px) rotateY(-1deg); }
+.robot-part:not(.robot-touch) {
+  transform: perspective(1400px) translateX(-56px) rotateY(6deg) scale(0.985);
+  opacity: 0.92;
+}
+@media (prefers-reduced-motion: reduce) { .robot-part:not(.robot-touch) { transform: none; } }
+.robot-touch {
+  /* Como una lámina: bisagra en el borde izquierdo, el derecho (donde la agarra) sube hacia él. */
+  transform-origin: left center;
+  position: relative;
+  box-shadow: 0 0 0 1px rgb(var(--c-accent-solid) / 0.8), 0 30px 60px rgb(0 0 0 / 0.45), 0 0 48px rgb(var(--c-accent-solid) / 0.22) !important;
+  animation: robot-lamina 3.2s var(--ease-standard) infinite;
+}
+@keyframes robot-lamina {
+  0%, 100% { transform: perspective(1800px) rotateY(-3deg) translateZ(8px); }
+  50% { transform: perspective(1800px) rotateY(-5.5deg) translateZ(18px); }
 }
 @media (prefers-reduced-motion: reduce) { .robot-touch { animation: none; } .laser-on .laser-ring { animation: none; } }
 
@@ -234,7 +245,7 @@ const DRAG_THRESHOLD = 6;
         El lienzo es fijo y queda detrás del contenido: así el robot puede dejar el hero y acompañar
         al visitante por la página (modo guía, en pantallas anchas).
       -->
-      <canvas #canvas class="pointer-events-none fixed inset-0 -z-[5] block h-dvh w-screen" [class.hero-canvas]="!guiding()" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
+      <canvas #canvas class="pointer-events-none fixed inset-0 block h-dvh w-screen" [style.z-index]="guiding() ? 44 : -5" [class.hero-canvas]="!guiding()" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
       <!--
         Bocadillo del robot: en cinco segundos, qué hago, escrito a máquina y rotando. Sigue a la
         cabeza (se posiciona escribiendo el estilo, sin detección de cambios). Se retira con el
@@ -242,11 +253,11 @@ const DRAG_THRESHOLD = 6;
       -->
       <div
         #bubble
-        class="speech pointer-events-none fixed left-0 top-0 z-20 transition-opacity duration-slow"
+        class="speech pointer-events-none fixed left-0 top-0 z-[45] transition-opacity duration-slow"
         [class.opacity-0]="!ready() || open() || (guiding() && !guideLine())"
         [class.invisible]="!ready() || open() || (guiding() && !guideLine())"
         [class.speech-narrow]="narrow"
-        [class.speech-left]="guiding()"
+        [class.speech-top]="guiding()"
       >
         @if (guideLine(); as g) {
           <!-- En modo guía: la sección que se está viendo. -->
@@ -321,7 +332,7 @@ const DRAG_THRESHOLD = 6;
         Láser: del dedo del robot a la tarjeta que explica. Se dibuja en cada fotograma escribiendo
         atributos (sin detección de cambios); la tarjeta tocada se mueve un poco (.robot-touch).
       -->
-      <svg #laser class="laser pointer-events-none fixed inset-0 z-20 h-dvh w-screen" aria-hidden="true">
+      <svg #laser class="laser pointer-events-none fixed inset-0 z-[45] h-dvh w-screen" aria-hidden="true">
         <defs>
           <linearGradient id="laser-gradient" gradientUnits="userSpaceOnUse" #laserGradient>
             <stop offset="0" stop-color="var(--accent-solid)" stop-opacity="0.15" />
@@ -335,7 +346,7 @@ const DRAG_THRESHOLD = 6;
       </svg>
       @if (tour(); as current) {
         <!-- Control del recorrido guiado: abajo, centrado; Esc o desplazarse a mano lo detienen. -->
-        <div class="tour-pill fixed bottom-[calc(1.25rem+var(--dock-bottom,0px)+env(safe-area-inset-bottom,0px))] left-1/2 z-30 -translate-x-1/2" data-testid="tour-controls" role="group" [attr.aria-label]="i18n.lang() === 'en' ? 'Guided tour' : 'Recorrido guiado'">
+        <div class="tour-pill fixed bottom-[calc(1.25rem+var(--dock-bottom,0px)+env(safe-area-inset-bottom,0px))] left-1/2 z-[46] -translate-x-1/2" data-testid="tour-controls" role="group" [attr.aria-label]="i18n.lang() === 'en' ? 'Guided tour' : 'Recorrido guiado'">
           <span class="font-mono text-mono-sm text-ink-3">{{ i18n.lang() === 'en' ? 'Guided tour' : 'Recorrido' }} · {{ current.index + 1 }}/{{ current.total }}</span>
           <span class="tour-progress" aria-hidden="true"><span [style.width.%]="((current.index + 1) / current.total) * 100"></span></span>
           <button type="button" class="island-sound" [attr.aria-label]="current.paused ? (i18n.lang() === 'en' ? 'Resume' : 'Reanudar') : (i18n.lang() === 'en' ? 'Pause' : 'Pausar')" (click)="toggleTourPause()">
@@ -703,6 +714,7 @@ export class HeroSceneComponent {
     if (!script) return Promise.resolve();
     const text = this.i18n.t(long ? script.long : script.short);
     this.touchSection = id;
+    this.scene?.hold({ title: this.i18n.t(script.title), items: script.items[this.i18n.lang()] });
     this.zone.run(() => this.guideLine.set({ title: this.i18n.t(script.title), text }));
     clearTimeout(this.lineTimer);
     if (!long) this.lineTimer = window.setTimeout(() => this.zone.run(() => this.guideLine.set(null)), 4500);
@@ -764,6 +776,7 @@ export class HeroSceneComponent {
   stopTour(): void {
     this.tourRun++;
     this.touchSection = null;
+    this.scene?.hold(null);
     queueMicrotask(() => this.refreshGuide?.());
     document.documentElement.classList.remove('robot-touring');
     this.tour.set(null);
@@ -926,34 +939,61 @@ export class HeroSceneComponent {
     const bubbleEl = () => this.bubble()?.nativeElement;
     // Láser y «toque»: mientras explica una sección (y está señalando), un haz va de su dedo a la
     // tarjeta más visible de esa sección, que reacciona.
+    // Abrir paso: con el robot caminando, las tarjetas que tiene al lado se apartan con suavidad.
+    let parted = new Set<HTMLElement>();
+    const partWay = () => {
+      const walking = this.guiding() && !pointing && !this.open();
+      scene.sweep(walking);
+      const next = new Set<HTMLElement>();
+      if (walking) {
+        const head = scene.anchor(false, 'top');
+        const robotLeft = head.x - 140;
+        for (const el of Array.from(document.querySelectorAll<HTMLElement>('main .bento-card, main .theater-card, main article'))) {
+          const r = el.getBoundingClientRect();
+          if (r.bottom < head.y - 40 || r.top > innerHeight || r.right < robotLeft - 60) continue;
+          next.add(el);
+        }
+      }
+      for (const el of Array.from(parted)) if (!next.has(el)) el.classList.remove('robot-part');
+      for (const el of Array.from(next)) el.classList.add('robot-part');
+      parted = next;
+    };
     const placeLaser = () => {
+      partWay();
       const svg = this.laser()?.nativeElement;
       if (!svg) return;
       const tip = this.guiding() && this.guideLine() && this.touchSection ? scene.fingertip() : null;
       const section = this.touchSection ? document.getElementById(this.touchSection) : null;
       let target: HTMLElement | null = null;
       if (tip && section) {
-        const candidates = section.querySelectorAll<HTMLElement>('.bento-card, .theater-card, article, app-section-header');
-        let best = 0;
+        const candidates = section.querySelectorAll<HTMLElement>('.bento-card, .theater-card, article');
+        // La tarjeta bien visible más cercana al robot (el de más a la derecha): así el brazo no
+        // cruza otras tarjetas para llegar.
+        let right = -Infinity;
         for (const el of Array.from(candidates)) {
           const r = el.getBoundingClientRect();
           const visible = Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0));
-          if (visible > best + 40) {
-            best = visible;
+          if (visible >= Math.min(160, r.height * 0.6) && r.right > right + 8 && !el.closest('.robot-touch:not(:scope)')) {
+            right = r.right;
             target = el;
           }
         }
       }
       if (target !== this.touched) {
         this.touched?.classList.remove('robot-touch');
+      for (const el of Array.from(document.querySelectorAll('.robot-part'))) el.classList.remove('robot-part');
         target?.classList.add('robot-touch');
         this.touched = target;
       }
       svg.classList.toggle('laser-on', !!(tip && target));
       if (!tip || !target) return;
       const r = target.getBoundingClientRect();
-      const hx = Math.min(r.right - 12, tip.x - 40);
-      const hy = Math.max(r.top + 24, Math.min(r.bottom - 24, tip.y + Math.sin(performance.now() / 600) * 18));
+      const top = Math.max(r.top, 70);
+      const bottom = Math.min(r.bottom, innerHeight - 60);
+      // El láser escanea la tarjeta por dentro, de un lado a otro, mientras la explica.
+      const now = performance.now();
+      const hx = r.right - 24 - Math.min(r.width - 48, 360) * (0.5 + 0.5 * Math.sin(now / 900));
+      const hy = top + 30 + (bottom - top - 60) * (0.5 + 0.5 * Math.sin(now / 1700));
       for (const line of [this.laserCore()?.nativeElement, this.laserGlow()?.nativeElement]) {
         line?.setAttribute('x1', String(tip.x));
         line?.setAttribute('y1', String(tip.y));
@@ -977,7 +1017,7 @@ export class HeroSceneComponent {
       const el = bubbleEl();
       if (!el) return;
       const guide = this.guiding();
-      const raw = scene.anchor(this.narrow && !guide, guide ? 'left' : undefined);
+      const raw = scene.anchor(this.narrow && !guide, guide ? 'top' : undefined);
       // Margen muerto: la respiración del robot no debe hacer temblar el bocadillo (ni sus botones).
       if (Math.hypot(raw.x - bubbleAt.x, raw.y - bubbleAt.y) > 6 || guide !== bubbleGuide) {
         bubbleAt.x = raw.x;
@@ -986,7 +1026,7 @@ export class HeroSceneComponent {
       }
       const at = bubbleAt;
       el.style.transform = guide
-        ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-100%, -50%)`
+        ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-82%, calc(-100% - 14px))`
         : this.narrow
         ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-50%, -50%)`
         : `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translateY(-50%)`;
@@ -1076,6 +1116,7 @@ export class HeroSceneComponent {
           if (!on) {
             this.guideLine.set(null);
             this.guideSection = null;
+            scene.hold(null);
           } else if (!this.tour()) {
             // Al llegar al margen, presenta la sección que ya se está viendo.
             const best = [...visibleSections.entries()].sort((a, b) => b[1] - a[1])[0];
@@ -1095,7 +1136,7 @@ export class HeroSceneComponent {
       const width = innerWidth - dockRight;
       const gutter = Math.max(120, (width - 1152) / 2);
       const dockBottom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-bottom')) || 0;
-      scene.guide({ x: width - gutter * 0.56, y: (innerHeight - dockBottom) * 0.8, widthPx: gutter * 0.95, point: pointing || !!this.tour() });
+      scene.guide({ x: width - Math.max(150, gutter * 0.62), y: (innerHeight - dockBottom) * 0.8, widthPx: gutter * 0.95, point: pointing || !!this.tour() });
     };
     resize();
 

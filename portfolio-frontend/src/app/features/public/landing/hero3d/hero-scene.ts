@@ -82,7 +82,11 @@ export interface HeroScene {
   /** Mientras `true`, teclea en el portátil (lo marca el texto que escribe el bocadillo). */
   talk(talking: boolean): void;
   /** Punto de la pantalla (px del lienzo) junto a la cabeza, de donde sale el bocadillo. */
-  anchor(narrow: boolean, side?: 'left'): { x: number; y: number };
+  anchor(narrow: boolean, side?: 'left' | 'top'): { x: number; y: number };
+  /** Modo guía: la lámina holográfica que sostiene con las dos manos (la sección que explica); `null` la guarda. */
+  hold(panel: { title: string; items: string[] } | null): void;
+  /** Modo guía: mientras camina, aparta con la mano lo que tiene al lado (gesto de «abrir paso»). */
+  sweep(on: boolean): void;
   /** Punta del dedo que señala (mano izquierda), en píxeles del lienzo; `null` si no está guiando. */
   fingertip(): { x: number; y: number } | null;
   /** Señala la ficha bajo el cursor (coordenadas normalizadas del lienzo, -1…1); devuelve su nombre. */
@@ -511,7 +515,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   // mazo, presentar el globo, enseñar dos cartas, saludar) y el brazo se estira hasta ella.
   const HANDS = new three.Vector3(0, -1.5, 1.5);
   const armGeometry = keep(new three.CylinderGeometry(0.19, 0.2, 1, 24));
-  const fingerGeometry = keep(new three.CapsuleGeometry(0.05, 0.1, 6, 12));
+  const fingerGeometry = keep(new three.CapsuleGeometry(0.058, 0.11, 8, 16));
   const up = new three.Vector3(0, 1, 0);
   const arms = [-1, 1].map((side) => {
     const shoulder = new three.Vector3(side * 1.65, -1.7, 0);
@@ -521,6 +525,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     // Mano: palma, cuatro dedos con dos falanges y un pulgar, para que agarre y gesticule.
     const hand = new three.Group();
     hand.position.copy(rest);
+    hand.scale.setScalar(1.45); // manos grandes, de proporción más humana respecto al cuerpo
     character.add(hand);
     const palm = new three.Mesh(sphere(0.24, 32), graphite);
     palm.scale.set(1.05, 0.9, 0.7);
@@ -996,6 +1001,64 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   const guideVel = new three.Vector3();
   const guideGoal = new three.Vector3();
   let facing = 0;
+  // Lámina holográfica que sostiene con las dos manos al explicar una sección.
+  let held: { title: string; items: string[] } | null = null;
+  const panelArt = document.createElement('canvas');
+  panelArt.width = 768;
+  panelArt.height = 512;
+  const panelTexture = keep(new three.CanvasTexture(panelArt));
+  panelTexture.colorSpace = three.SRGBColorSpace;
+  const panelMat = keep(new three.MeshBasicMaterial({ map: panelTexture, transparent: true, depthWrite: false, side: three.DoubleSide }));
+  const panel = new three.Mesh(keep(new three.PlaneGeometry(2.7, 1.8)), panelMat);
+  panel.position.set(0, -0.75, 1.9);
+  panel.scale.setScalar(0.001);
+  character.add(panel);
+  let panelShow = 0;
+  let sweeping = false;
+  function paintPanel(colors: ScenePalette): void {
+    const ctx = panelArt.getContext('2d');
+    if (!ctx || !held) return;
+    const W = panelArt.width;
+    const H = panelArt.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = colors.light ? 'rgba(255,255,255,0.86)' : 'rgba(10,14,11,0.82)';
+    ctx.beginPath();
+    ctx.roundRect(4, 4, W - 8, H - 8, 30);
+    ctx.fill();
+    ctx.strokeStyle = colors.accent;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    // Líneas de barrido, como un holograma.
+    ctx.globalAlpha = 0.07;
+    ctx.fillStyle = colors.accent;
+    for (let y = 12; y < H; y += 8) ctx.fillRect(8, y, W - 16, 2);
+    ctx.globalAlpha = 1;
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = colors.accentText;
+    ctx.font = '700 28px "JetBrains Mono", ui-monospace, monospace';
+    ctx.fillText('§ ' + held.title.toUpperCase(), 44, 40);
+    ctx.fillStyle = colors.ink;
+    held.items.slice(0, 4).forEach((item, index) => {
+      const x = 44 + (index % 2) * ((W - 88) / 2 + 8);
+      const y = 120 + Math.floor(index / 2) * 170;
+      const w = (W - 88) / 2 - 8;
+      ctx.fillStyle = colors.light ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, 140, 20);
+      ctx.fill();
+      ctx.strokeStyle = colors.line;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = colors.accent;
+      ctx.beginPath();
+      ctx.arc(x + 32, y + 36, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = colors.ink;
+      ctx.font = '700 34px Inter, system-ui, sans-serif';
+      wrap(ctx, item, x + 24, y + 62, w - 48, 38, 2);
+    });
+    panelTexture.needsUpdate = true;
+  }
 
   function setPalette(next: ScenePalette): void {
     current = next;
@@ -1015,6 +1078,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     }
     infoGlow.emissive.copy(accent);
     paintCode(next);
+    paintPanel(next);
     paintInfo(next);
   }
   setPalette(palette);
@@ -1051,7 +1115,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     character.position.x = 0;
     furniture.position.set(0, scrollWorld, 0);
     // Cuando el hero ya quedó atrás, el escritorio no se dibuja (asomaría sobre las secciones).
-    furniture.visible = scrollPx < viewHeight * 1.05;
+    // Guiando (lienzo por delante del contenido) no se dibuja: asomaría sobre la barra y las secciones.
+    furniture.visible = scrollPx < viewHeight * 1.05 && !guideActive;
     void lift;
     antenna.rotation.z = -0.25 + Math.sin(r * 22) * 0.5 * decay + (animate ? Math.sin(t * 1.7) * 0.05 : 0);
 
@@ -1104,7 +1169,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       // Primero se pone de pie; luego camina.
       guideStand += ((guideTarget ? 1 : guidePos.distanceTo(seat) < 0.25 ? 0 : 1) - guideStand) * (1 - Math.exp(-dt * 5));
       if (guideStand > 0.85 || !guideTarget) {
-        const stiffness = 9;
+        const stiffness = 16;
         const damping = 2 * Math.sqrt(stiffness) * 0.95;
         const accel = guideGoal.clone().sub(guidePos).multiplyScalar(stiffness).addScaledVector(guideVel, -damping);
         guideVel.addScaledVector(accel, dt);
@@ -1200,14 +1265,22 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       for (const limb of arms) {
         const swing = Math.sin(walkPhase + (limb.side > 0 ? 0 : Math.PI)) * 0.55 * stride;
         limb.target.set(limb.side * 1.85, -3.4, 0.35 + swing);
-        if (guideTarget?.point && limb.side < 0 && stride < 0.3) {
+        if (sweeping && limb.side < 0 && !(held && panelShow > 0.05)) {
+          // Abre paso: la mano barre hacia fuera, a la altura del pecho, una y otra vez.
+          const k = 0.5 + 0.5 * Math.sin(t * 3.2);
+          limb.target.set(-1.6 - k * 1.1, -1.5 + k * 0.5, 1.3 - k * 0.4);
+        } else if (held && panelShow > 0.05) {
+          // Sostiene la lámina por sus bordes, con un leve vaivén.
+          limb.target.set(limb.side * 1.7, -1.2 + Math.sin(t * 1.6 + limb.side) * 0.04, 1.85);
+        } else if (guideTarget?.point && limb.side < 0 && guideVel.length() < 0.6) {
           limb.target.set(-3.0, -0.6 + Math.sin(t * 2) * 0.08, 1.1);
         }
       }
     }
     placeArms(follow);
     for (const limb of arms) {
-      const holding = !!(focused && stackOpen); // sostiene las dos cartas
+      // Sostiene las dos cartas, o agarra la tarjeta de una sección (mano izquierda, en modo guía).
+      const holding = !!(focused && stackOpen) || (guideActive && !!held && panelShow > 0.05);
       const typingHands = !stackOpen && !guideActive;
       const wave = waving && limb.side === 1;
       const pressed = reacting ? Math.max(0, 1 - r * 2.5) : 0; // al tocarlo, aprieta un instante
@@ -1215,6 +1288,14 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       // La mano mira al frente, con la palma un poco inclinada según el gesto.
       limb.hand.rotation.set(holding ? -0.35 : typingHands ? -1.3 : -0.1, 0, wave ? -limb.side * 0.3 + Math.sin((t - waveAt) * 14) * 0.35 : -limb.side * 0.15);
     }
+    // La lámina aparece entre las manos (escala y opacidad) y se inclina un poco hacia quien mira.
+    panelShow += ((guideActive && held && guideTarget?.point ? 1 : 0) - panelShow) * (1 - Math.exp(-dt * 5));
+    panel.visible = panelShow > 0.01;
+    panel.scale.setScalar(Math.max(0.001, panelShow * 1.3));
+    panelMat.opacity = panelShow;
+    // Contrarresta el giro del cuerpo: la lámina mira siempre a quien visita.
+    panel.rotation.set(-0.1 + Math.sin(t * 1.3) * 0.03, -facing, Math.sin(t * 0.9) * 0.02);
+    panel.position.y = -0.75 + Math.sin(t * 1.6) * 0.04;
     // Gira sobre su eje vertical, flotando un poco.
     holoCube.rotation.set(0, animate ? t * 0.9 : 0.4, 0);
     holoCube.position.y = 0.66 + (animate ? Math.sin(t * 1.8) * 0.04 : 0);
@@ -1261,10 +1342,18 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     talk(next) {
       talking = next;
     },
+    sweep(on) {
+      sweeping = on;
+    },
+    hold(next) {
+      held = next;
+      paintPanel(current);
+    },
     fingertip() {
       if (!guideActive) return null;
-      const point = new three.Vector3(0, 0.45, 0);
-      arms[0].hand.localToWorld(point);
+      // Con la lámina en las manos, el haz sale de su borde izquierdo; si no, del dedo.
+      const point = held && panelShow > 0.3 ? new three.Vector3(-1.35, 0, 0) : new three.Vector3(0, 0.45, 0);
+      (held && panelShow > 0.3 ? panel : arms[0].hand).localToWorld(point);
       point.project(camera);
       return { x: ((point.x + 1) / 2) * viewWidth, y: ((1 - point.y) / 2) * viewHeight };
     },
@@ -1272,7 +1361,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       // Ancho: a la derecha de la cabeza, centrado a la altura de los ojos (a la izquierda en modo
       // guía, porque el robot está en el margen derecho).
       // Estrecho: sobre el faldón del escritorio, bajo el robot (encima no cabe: está el rol).
-      const point = narrow ? new three.Vector3(0, -3.55, 3.1) : new three.Vector3(side === 'left' ? -1.55 : 1.55, 0.1, 0);
+      const point = narrow
+        ? new three.Vector3(0, -3.55, 3.1)
+        : side === 'top' ? new three.Vector3(0, 1.9, 0) : new three.Vector3(side === 'left' ? -1.55 : 1.55, 0.1, 0);
       (narrow ? character : head).localToWorld(point);
       if (!guideActive) point.y -= standLift;
       point.project(camera);
