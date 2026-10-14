@@ -444,13 +444,33 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   const codeTexture = keep(new three.CanvasTexture(codeArt));
   codeTexture.colorSpace = three.SRGBColorSpace;
   const codeMat = keep(new three.MeshBasicMaterial({ map: codeTexture, transparent: true, depthWrite: false, side: three.DoubleSide }));
-  const codeScreen = new three.Mesh(keep(new three.PlaneGeometry(2.5, 1.56)), codeMat);
-  codeScreen.position.set(-2.95, -1.85, 2.05);
-  codeScreen.rotation.y = 0.3;
+  // Holograma proyectado desde el portátil: sube desde la tapa y flota a su izquierda, ligeramente
+  // girado hacia quien mira, unido a él por un haz de luz.
+  codeMat.blending = three.AdditiveBlending;
+  const CODE_HOME = new three.Vector3(-3.15, -1.15, 2.25);
+  const codeScreen = new three.Mesh(keep(new three.PlaneGeometry(3.4, 2.12)), codeMat);
+  codeScreen.position.copy(CODE_HOME);
+  codeScreen.rotation.set(-0.05, 0.32, 0);
   furniture.add(codeScreen);
-  const codeStand = new three.Mesh(rounded(0.08, 0.5, 0.08, 0.03), metal);
-  codeStand.position.set(-2.95, -2.6, 1.95);
-  furniture.add(codeStand);
+  const codeBeamMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.1, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
+  const codeBeamGeometry = keep(new three.BufferGeometry());
+  const codeBeamPos = new Float32Array(12);
+  codeBeamGeometry.setAttribute('position', new three.BufferAttribute(codeBeamPos, 3));
+  codeBeamGeometry.setIndex([0, 1, 2, 0, 2, 3]);
+  const codeBeam = new three.Mesh(codeBeamGeometry, codeBeamMat);
+  furniture.add(codeBeam);
+  const beamCorner = new three.Vector3();
+  /** Haz: de la tapa del portátil (abajo) a los dos bordes inferiores del holograma (arriba). */
+  function placeCodeBeam(): void {
+    const from = [new three.Vector3(-0.85, -2.25, 2.3), new three.Vector3(-0.2, -2.25, 2.3)];
+    const half = (3.4 * codeScreen.scale.x) / 2;
+    const to = [new three.Vector3(-half, -1.06 * codeScreen.scale.y, 0), new three.Vector3(half, -1.06 * codeScreen.scale.y, 0)].map((v) => {
+      beamCorner.copy(v).applyEuler(codeScreen.rotation).add(codeScreen.position);
+      return beamCorner.clone();
+    });
+    [from[0], from[1], to[1], to[0]].forEach((v, k) => codeBeamPos.set([v.x, v.y, v.z], k * 3));
+    codeBeamGeometry.getAttribute('position').needsUpdate = true;
+  }
   const CODE = [
     '@GetMapping("/projects")',
     'public List<Project> list() {',
@@ -471,12 +491,17 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     if (!ctx) return;
     const { width, height } = codeArt;
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = colors.light ? 'rgba(255,255,255,0.82)' : 'rgba(8,10,9,0.78)';
+    // Holograma: fondo verdoso translúcido, líneas de barrido y canto de luz.
+    ctx.fillStyle = colors.light ? 'rgba(20,60,20,0.18)' : 'rgba(40,120,40,0.16)';
     ctx.beginPath();
     ctx.roundRect(0, 0, width, height, 22);
     ctx.fill();
+    ctx.globalAlpha = 0.09;
+    ctx.fillStyle = colors.accent;
+    for (let y = 6; y < height; y += 6) ctx.fillRect(4, y, width - 8, 2);
+    ctx.globalAlpha = 1;
     ctx.strokeStyle = colors.accent;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
     ctx.stroke();
     // Barra de ventana con sus tres puntos.
     for (let k = 0; k < 3; k++) {
@@ -487,7 +512,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       ctx.fill();
       ctx.globalAlpha = 1;
     }
-    ctx.font = '700 27px "JetBrains Mono", ui-monospace, monospace';
+    ctx.font = '700 31px "JetBrains Mono", ui-monospace, monospace';
     ctx.textBaseline = 'top';
     let left = codeChars;
     const visible: string[] = [];
@@ -1088,6 +1113,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   let last = 0;
   let browLift = 0;
   let stretchAt = -99;
+  /** Momento en que empezó a ordenar su puesto (al llegar a la silla; también al cargar). */
+  let settleAt = animate ? 1.6 : -99;
+  const SETTLE = 3.2;
   /** Cuánto ha subido al ponerse de pie: el bocadillo no le sigue (pisaría el rol). */
   let standLift = 0;
   const HEAD_Y = head.position.y;
@@ -1199,6 +1227,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         guideActive = false;
         guideScale = 1;
         facing = 0;
+        settleAt = t; // de vuelta en su silla: ordena el puesto
       }
     }
     head.rotation.z = -lookX * 0.06 + Math.sin(r * 9) * 0.22 * decay;
@@ -1276,6 +1305,31 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
           limb.target.set(-3.0, -0.6 + Math.sin(t * 2) * 0.08, 1.1);
         }
       }
+    }
+    // Ordenar el puesto (3,2 s): la silla se acerca y se endereza, las manos alinean lo que hay en la
+    // mesa, abre el portátil y el holograma sale de él.
+    const st = animate && !guideActive && !stackOpen ? (t - settleAt) / SETTLE : 2;
+    const settling = st >= 0 && st < 1;
+    const ph = (a: number, b: number) => (settling ? ease(Math.min(1, Math.max(0, (st - a) / (b - a)))) : 1);
+    const chairIn = ph(0, 0.35);
+    chair.position.z = -1.2 - (1 - chairIn) * 0.9;
+    chair.rotation.y = (1 - chairIn) * 0.45;
+    const lidOpen = ph(0.55, 0.78);
+    hinge.rotation.x = 0.22 + (1 - lidOpen) * 1.3;
+    const holo = ph(0.72, 1);
+    codeScreen.scale.setScalar(Math.max(0.001, holo));
+    codeScreen.position.copy(CODE_HOME).add(new three.Vector3(1.9 * (1 - holo), -1.0 * (1 - holo), 0));
+    codeMat.opacity = holo * (0.92 + (animate ? Math.sin(t * 13) * 0.04 : 0));
+    codeBeamMat.opacity = holo * 0.2 * (settling ? 1.5 : 1);
+    codeBeam.visible = holo > 0.02;
+    placeCodeBeam();
+    if (settling && st > 0.25 && st < 0.62) {
+      // Las manos recorren la mesa, empujando a los lados para dejarlo todo en su sitio.
+      const sweep = Math.sin(((st - 0.25) / 0.37) * Math.PI * 2);
+      for (const limb of arms) limb.target.set(limb.side * (1.3 + sweep * 0.5 * limb.side), -2.6, 2.2 + Math.abs(sweep) * 0.2);
+    } else if (settling && st >= 0.62 && st < 0.78) {
+      // La mano derecha levanta la tapa.
+      arms[1].target.set(0.5, -2.2 + lidOpen * 0.6, 2.4);
     }
     placeArms(follow);
     for (const limb of arms) {
