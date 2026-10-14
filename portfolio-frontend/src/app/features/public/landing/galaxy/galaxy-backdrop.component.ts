@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, NgZone, afterNextRender, effect, inject, signal, viewChild } from '@angular/core';
 
 import { ThemeService } from '../../../../core/theme/theme.service';
+import { hasFastWebGL } from '../../../../shared/ui/webgl-support';
 import type { GalaxyPalette, GalaxyScene } from './galaxy-scene';
 
 /**
@@ -79,7 +80,7 @@ export class GalaxyBackdropComponent {
 
   private async start(destroyRef: DestroyRef): Promise<void> {
     const canvas = this.canvas()?.nativeElement;
-    if (!canvas || !worthRendering()) return;
+    if (!canvas || !worthRendering() || !hasFastWebGL()) return;
     let scene: GalaxyScene;
     try {
       const [three, { createGalaxyScene }] = await Promise.all([import('three'), import('./galaxy-scene')]);
