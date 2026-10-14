@@ -151,6 +151,15 @@ const DRAG_THRESHOLD = 6;
                 (click)="setFilter(option.id)"
               >{{ option.label }} <span class="ml-1 text-ink-3">{{ option.count }}</span></button>
             }
+            <!-- El bocadillo se oculta con el globo abierto: aquí también se puede apagar la voz. -->
+            <button
+              type="button"
+              class="ui-segment"
+              data-testid="hero-sound-globe"
+              [attr.aria-pressed]="soundOn()"
+              [attr.aria-label]="i18n.lang() === 'en' ? (soundOn() ? 'Turn sound and voice off' : 'Turn sound and voice on') : (soundOn() ? 'Apagar sonido y voz' : 'Encender sonido y voz')"
+              (click)="toggleSound()"
+            >{{ soundOn() ? '🔊' : '🔇' }}</button>
           </div>
         </div>
       }
@@ -177,6 +186,13 @@ export class HeroSceneComponent {
   toggleSound(): void {
     this.soundOn.set(this.sound.toggle());
     this.sound.pop();
+    if (this.soundOn()) {
+      // Al encenderlo, se presenta: así se oye enseguida que funciona.
+      this.speakText(`${this.hello()}. ${this.i18n.lang() === 'en' ? 'Click me to see my stack.' : 'Pulsa sobre mí para ver mi stack.'}`);
+    } else {
+      globalThis.speechSynthesis?.cancel();
+      this.scene?.speak(false);
+    }
   }
 
   submitAsk(event: Event, field: HTMLInputElement): void {
@@ -187,22 +203,39 @@ export class HeroSceneComponent {
     this.ask.emit(question);
   }
 
-  /** Dice en voz alta el saludo y lo que ofrezco (si el sonido está encendido). */
-  private say(): void {
+  /**
+   * Narración: con el sonido encendido, el robot dice en voz alta lo que muestra (saludo, cada frase
+   * del bocadillo, la carta que enseña, el filtro, la carta que lanza). Una frase nueva corta la
+   * anterior; apagar el sonido calla al instante.
+   */
+  private speakText(text: string, interrupt = true): void {
     const voice = globalThis.speechSynthesis;
-    if (!this.soundOn() || !voice) return;
+    if (!this.soundOn() || !voice || !text.trim()) return;
+    // Lo que hace el visitante (abrir, elegir una carta…) corta lo anterior; el bocadillo, no.
+    if (!interrupt && (voice.speaking || voice.pending)) return;
     voice.cancel();
     const en = this.i18n.lang() === 'en';
-    const utterance = new SpeechSynthesisUtterance(`${this.hello().replace(/👋/g, '')}. ${this.pitch().lead} ${this.pitch().lines[0]}.`);
+    const utterance = new SpeechSynthesisUtterance(text.replace(/[👋↗→·]/gu, ' '));
     const natural = bestVoice(en ? 'en' : 'es');
     if (natural) utterance.voice = natural;
     utterance.lang = natural?.lang ?? (en ? 'en-US' : 'es-ES');
-    utterance.rate = 1;
-    utterance.pitch = 1;
+    utterance.rate = 1.02;
     utterance.onstart = () => this.scene?.speak(true);
     utterance.onend = utterance.onerror = () => this.scene?.speak(false);
     voice.speak(utterance);
   }
+
+  private say(): void {
+    const en = this.i18n.lang() === 'en';
+    this.speakText(`${this.hello()}. ${en ? 'Here is my stack. Pick any card.' : 'Este es mi stack. Elige cualquier carta.'}`);
+  }
+
+  /** Bocadillo: dice cada frase cuando empieza a escribirla (si nadie está mirando el globo). */
+  private narrateLine(line: string): void {
+    if (this.open()) return;
+    this.speakText(`${this.pitch().lead} ${line}.`, false);
+  }
+
   readonly open = signal(false);
   readonly hovered = signal<string | null>(null);
   readonly i18n = inject(LanguageService);
@@ -218,6 +251,8 @@ export class HeroSceneComponent {
 
   setFilter(group: StackGroup): void {
     this.filter.set(group);
+    const option = this.filters().find((item) => item.id === group);
+    if (option) this.speakText(this.i18n.lang() === 'en' ? `${option.label}: ${option.count} technologies` : `${option.label}: ${option.count} tecnologías`);
     this.scene?.show(groupIndices(group));
     this.focused.set(null);
     this.kickFrame?.();
@@ -257,6 +292,17 @@ export class HeroSceneComponent {
         : null,
     );
     this.kickFrame?.();
+  });
+  /** Dice la carta que enseña: qué es y cómo ayudo. Solo cuando cambia la carta. */
+  private lastSpoken: string | null = null;
+  private readonly cardVoice = effect(() => {
+    const info = this.card();
+    const key = info ? `${info.title}|${this.i18n.lang()}` : null;
+    if (key === this.lastSpoken) return;
+    this.lastSpoken = key;
+    if (!info) return;
+    const en = this.i18n.lang() === 'en';
+    this.speakText(`${info.title}. ${info.about} ${en ? 'How I help your company:' : 'Cómo ayudo a tu empresa:'} ${info.help}`);
   });
 
   readonly focused = signal<string | null>(null);
@@ -313,7 +359,10 @@ export class HeroSceneComponent {
   }
 
   pressEnd(_event: PointerEvent): void {
-    if (this.press?.grabbed) this.scene?.release();
+    if (this.press?.grabbed) {
+      this.scene?.release();
+      this.speakText(this.i18n.lang() === 'en' ? 'Whee!' : '¡Allá va!');
+    }
     this.suppressClick = !!this.press?.dragged;
     this.press = null;
   }
@@ -476,6 +525,7 @@ export class HeroSceneComponent {
       if (!target) return;
       const text = lines[line % lines.length];
       if (reduced) {
+        this.narrateLine(text);
         target.textContent = text;
         line++;
         return;
@@ -483,6 +533,7 @@ export class HeroSceneComponent {
       if (hold > 0) {
         hold--;
       } else if (!erasing) {
+        if (shown === 0) this.narrateLine(text);
         shown = Math.min(text.length, shown + 1);
         if (shown === text.length) {
           erasing = true;
