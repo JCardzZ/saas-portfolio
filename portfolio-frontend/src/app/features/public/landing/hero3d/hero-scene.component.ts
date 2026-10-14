@@ -90,39 +90,6 @@ const DRAG_THRESHOLD = 6;
 }
 @keyframes caret-blink { 50% { opacity: 0; } }
 
-/*
- * Entradas al desplazarse: cada bloque de una sección aparece desde abajo con una leve escala y
- * nitidez, ligado al desplazamiento (scroll-driven animations, sin JavaScript). Solo donde el
- * navegador las soporta y sin «reducir movimiento»; si no, todo está quieto y visible.
- */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    main > section:not(.hero) > * {
-      animation: section-reveal linear both;
-      animation-timeline: view();
-      /* En longitud, no en porcentaje: un bloque más alto que la pantalla no se queda a medias. */
-      animation-range: entry 0px entry 220px;
-    }
-  }
-}
-@keyframes section-reveal {
-  from { opacity: 0; transform: translateY(40px); }
-  to { opacity: 1; transform: none; }
-}
-/* Las cabeceras de sección se leen sobre la marca de agua: un velo suave detrás del texto. */
-app-section-header {
-  position: relative;
-  isolation: isolate;
-}
-app-section-header::before {
-  content: '';
-  position: absolute;
-  inset: -1.5rem -2rem;
-  z-index: -1;
-  background: radial-gradient(ellipse at 20% 50%, rgb(var(--c-canvas) / 0.92), rgb(var(--c-canvas) / 0) 70%);
-  pointer-events: none;
-}
-
 /* Isla dinámica de los filtros del globo. */
 .island {
   position: relative;

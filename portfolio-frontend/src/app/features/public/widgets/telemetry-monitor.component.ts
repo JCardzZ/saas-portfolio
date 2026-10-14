@@ -46,7 +46,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
       </div>
     </div>
 
-    <div class="mt-5 flex min-h-[5rem] flex-1 flex-col">
+    <div class="mt-5 flex min-h-[5rem] max-h-56 flex-1 flex-col">
       <div class="flex items-baseline justify-between">
         <p class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Latencia' | t }}</p>
         <p class="font-mono text-sm tabular-nums text-ink-1">{{ latestLatency() }} ms</p>

@@ -155,9 +155,20 @@
           }
 
           <!-- Cierra la fila: ocupa las columnas que queden libres. -->
-          <button type="button" class="bento-card ui-card-interactive flex flex-col justify-between text-left" [class]="askSpan()" (click)="chatOpen.set(true)">
-            <span class="text-title-2 text-ink-1">{{ i18n.t(copy.askTitle) }}</span>
-            <span class="mt-6 text-body-sm text-ink-2">{{ i18n.t(copy.askBody) }}</span>
+          <!-- Invitación al asistente: llena el hueco de la fila con contenido, no con aire. -->
+          <button type="button" class="ask-card bento-card ui-card-interactive group flex flex-col gap-5 text-left" [class]="askSpan()" (click)="chatOpen.set(true)">
+            <span class="flex items-center gap-3">
+              <span class="grid h-10 w-10 place-items-center rounded-control bg-accent-solid/15 text-accent-text" aria-hidden="true">
+                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l-3 3 3 3M16 9l3 3-3 3M13.5 6.5l-3 11" /></svg>
+              </span>
+              <span class="text-title-2 text-ink-1">{{ i18n.t(copy.askTitle) }}</span>
+            </span>
+            <span class="text-body-sm text-ink-2">{{ i18n.t(copy.askBody) }}</span>
+            <!-- Pregunta de ejemplo, como se vería en el chat. -->
+            <span class="flex items-center justify-between gap-3 rounded-control border border-line-subtle bg-surface-2 px-4 py-3 font-mono text-mono-sm text-ink-2 transition-colors duration-fast group-hover:border-accent-text/60">
+              <span class="min-w-0 truncate">{{ i18n.lang() === 'en' ? '› How does the cache-aside work?' : '› ¿Cómo funciona el cache-aside?' }}</span>
+              <span class="shrink-0 text-accent-text" aria-hidden="true">↵</span>
+            </span>
           </button>
         }
       </div>

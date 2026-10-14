@@ -8,6 +8,8 @@ test.describe('globo de tecnologías del hero', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     // La escena 3D se dibuja por software en la CI (lentísimo): se prueba en dos perfiles, forzándola.
     test.skip(!/^(desktop-1440|iphone-390)-/.test(testInfo.project.name), 'solo escritorio e iPhone 390');
+    // En la CI no hay GPU: forzar el 3D por software lo vuelve tan lento que se agota el tiempo.
+    test.skip(!!process.env['CI'], 'sin GPU en la CI');
     await page.route(/^https:\/\/api\.example\.com\//, (route) => route.abort());
     await page.route(/^https:\/\/raw\.githubusercontent\.com\//, (route) => route.abort());
     // Un móvil en horizontal (menos de 500 px de alto) no tiene sitio para el robot: el hero se
