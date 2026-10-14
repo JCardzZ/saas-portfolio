@@ -108,6 +108,19 @@ const DRAG_THRESHOLD = 6;
 .tour-progress { width: 7rem; height: 3px; border-radius: 2px; background: rgb(var(--c-ink-1) / 0.12); overflow: hidden; }
 .tour-progress > span { display: block; height: 100%; background: rgb(var(--c-accent-solid)); transition: width var(--duration-slow) var(--ease-emphasized); }
 
+.guide-switch { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2rem; border-radius: 999px; }
+.guide-switch-track {
+  position: relative; width: 2.25rem; height: 1.25rem; border-radius: 999px;
+  background: rgb(var(--c-ink-1) / 0.15); transition: background var(--duration-base) var(--ease-standard);
+}
+.guide-switch-thumb {
+  position: absolute; top: 0.125rem; left: 0.125rem; width: 1rem; height: 1rem; border-radius: 999px;
+  background: var(--text-1); transition: transform var(--duration-base) var(--ease-emphasized);
+}
+.guide-switch[aria-checked='true'] .guide-switch-track { background: rgb(var(--c-accent-solid)); }
+.guide-switch[aria-checked='true'] .guide-switch-thumb { transform: translateX(1rem); background: rgb(var(--c-accent-on)); }
+.guide-switch:focus-visible { outline: 2px solid rgb(var(--c-accent-solid)); outline-offset: 2px; }
+
 /* Isla dinámica de los filtros del globo. */
 .island {
   position: relative;
@@ -256,10 +269,28 @@ const DRAG_THRESHOLD = 6;
             <button type="submit" class="ui-btn-primary shrink-0">{{ i18n.lang() === 'en' ? 'Ask' : 'Preguntar' }}</button>
           </form>
           @if (guideAvailable()) {
-            <button type="button" class="ui-btn-ghost pointer-events-auto mt-2 w-full justify-center" data-testid="tour-start" (click)="startTour()">
-              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>
-              {{ i18n.lang() === 'en' ? 'Take the guided tour' : 'Hacer el recorrido guiado' }}
-            </button>
+            @if (askGuide()) {
+              <!-- Primera visita: pide permiso antes de guiar. -->
+              <div class="pointer-events-auto mt-3 border-t border-line-subtle pt-3" data-testid="guide-ask">
+                <p class="text-body-sm font-medium text-ink-1">{{ i18n.lang() === 'en' ? 'Want me to show you around?' : '¿Quieres que te guíe por la plataforma?' }}</p>
+                <div class="mt-2 flex gap-2">
+                  <button type="button" class="ui-btn-primary flex-1 justify-center" data-testid="tour-accept" (click)="acceptGuide()">{{ i18n.lang() === 'en' ? 'Yes, guide me' : 'Sí, guíame' }}</button>
+                  <button type="button" class="ui-btn-secondary flex-1 justify-center" data-testid="tour-decline" (click)="declineGuide()">{{ i18n.lang() === 'en' ? 'No, thanks' : 'No, gracias' }}</button>
+                </div>
+              </div>
+            } @else {
+              <div class="pointer-events-auto mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line-subtle pt-3">
+                <button type="button" class="ui-btn-ghost -ml-2" data-testid="tour-start" (click)="startTour()">
+                  <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>
+                  {{ i18n.lang() === 'en' ? 'Guided tour' : 'Recorrido guiado' }}
+                </button>
+                <!-- Interruptor: que el robot acompañe al bajar con el scroll (apagado por defecto). -->
+                <button type="button" role="switch" class="guide-switch" data-testid="guide-follow" [attr.aria-checked]="guideFollow()" (click)="toggleFollow()">
+                  <span class="guide-switch-track" aria-hidden="true"><span class="guide-switch-thumb"></span></span>
+                  <span class="text-body-sm text-ink-2">{{ i18n.lang() === 'en' ? 'Walk with me' : 'Acompañarme al bajar' }}</span>
+                </button>
+              </div>
+            }
           }
         </div>
       </div>
@@ -366,6 +397,11 @@ export class HeroSceneComponent {
   readonly ready = signal(false);
   /** Modo guía disponible: pantalla ancha (el robot camina por el margen) y 3D activo. */
   readonly guideAvailable = signal(false);
+  /** Primera visita: aún no ha respondido si quiere que le guíe. */
+  readonly askGuide = signal(readPref('robot-guide-asked') === null);
+  /** Que el robot acompañe al bajar con el scroll (lo elige el visitante; apagado por defecto). */
+  readonly guideFollow = signal(readPref('robot-guide-follow') === 'on');
+  private refreshGuide: (() => void) | null = null;
   /** El robot ha dejado el hero y acompaña por la página. */
   readonly guiding = signal(false);
   /** Lo que dice ahora en modo guía (sección actual), o nada. */
@@ -662,6 +698,14 @@ export class HeroSceneComponent {
         await new Promise<void>((resolve) => (this.tourResume = resolve));
       }
     }
+    if (run !== this.tourRun) return;
+    // Al terminar, se despide y vuelve a su silla: la página sube al inicio y él se sienta.
+    const en = this.i18n.lang() === 'en';
+    this.zone.run(() => this.guideLine.set({ title: en ? 'That’s all' : 'Eso es todo', text: en ? 'Back to my desk. Ask me anything!' : 'Vuelvo a mi escritorio. ¡Pregúntame lo que quieras!' }));
+    this.speakText(en ? 'That’s the tour. Back to my desk.' : 'Ese fue el recorrido. Vuelvo a mi escritorio.');
+    await new Promise((resolve) => setTimeout(resolve, 2200));
+    if (run !== this.tourRun) return;
+    await animateScrollTo(0, 1800);
     if (run === this.tourRun) this.stopTour();
   }
 
@@ -679,6 +723,7 @@ export class HeroSceneComponent {
 
   stopTour(): void {
     this.tourRun++;
+    queueMicrotask(() => this.refreshGuide?.());
     document.documentElement.classList.remove('robot-touring');
     this.tour.set(null);
     this.tourResume?.();
@@ -687,6 +732,24 @@ export class HeroSceneComponent {
     this.scene?.speak(false);
     clearTimeout(this.lineTimer);
     this.lineTimer = window.setTimeout(() => this.zone.run(() => this.guideLine.set(null)), 2500);
+  }
+
+  acceptGuide(): void {
+    writePref('robot-guide-asked', 'yes');
+    this.askGuide.set(false);
+    void this.startTour();
+  }
+
+  declineGuide(): void {
+    writePref('robot-guide-asked', 'no');
+    this.askGuide.set(false);
+    this.speakText(this.i18n.lang() === 'en' ? 'Sure. I’ll be right here.' : 'De acuerdo. Aquí estaré.');
+  }
+
+  toggleFollow(): void {
+    this.guideFollow.set(!this.guideFollow());
+    writePref('robot-guide-follow', this.guideFollow() ? 'on' : 'off');
+    this.refreshGuide?.();
   }
 
   /** Doble clic: se despereza (solo con el mazo recogido). */
@@ -897,9 +960,10 @@ export class HeroSceneComponent {
       }
     };
     watchSections();
+    this.refreshGuide = () => updateGuide();
     const rewatch = setInterval(watchSections, 3000);
     const updateGuide = () => {
-      const on = this.guideAvailable() && scrollY > innerHeight * 0.55 && !this.open();
+      const on = this.guideAvailable() && scrollY > innerHeight * 0.55 && !this.open() && (this.guideFollow() || !!this.tour());
       if (on !== this.guiding()) {
         this.zone.run(() => {
           this.guiding.set(on);
@@ -1036,4 +1100,20 @@ function animateScrollTo(top: number, duration: number): Promise<void> {
     };
     requestAnimationFrame(step);
   });
+}
+
+function readPref(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writePref(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Sin almacenamiento, la elección dura lo que la página.
+  }
 }
