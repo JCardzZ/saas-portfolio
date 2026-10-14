@@ -246,9 +246,48 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   // Puesto de trabajo: silla detrás, escritorio delante (su faldón tapa las piernas) y un portátil
   // del que se ve la tapa con una luz del acento. El mazo de fichas descansa sobre la mesa.
   const deskMat = physical(GRAPHITE, 0.45, { metalness: 0.3, clearcoat: 0.4 });
-  const chairBack = new three.Mesh(rounded(2.5, 2.7, 0.35, 0.17), deskMat);
-  chairBack.position.set(0, -2.0, -1.15);
-  character.add(chairBack);
+  // Silla gamer genérica de gama alta (sin marca): respaldo esculpido y fino —se estrecha en la
+  // cintura y se abre en los hombros—, reposacabezas con dos ranuras, vivos del acento y
+  // reposabrazos finos. Enmarca al robot por detrás.
+  const chairMat = physical(0x1b1e23, 0.45, { clearcoat: 0.7, clearcoatRoughness: 0.3 });
+  const slotMat = keep(new three.MeshBasicMaterial({ color: 0x050607 }));
+  const chair = new three.Group();
+  chair.position.set(0, 0, -1.2);
+  character.add(chair);
+  const outline: [number, number][] = [
+    [1.05, -3.3], [1.12, -2.5], [0.95, -1.75], [1.48, -0.6], [1.52, 0.35], [1.12, 1.0], [0.8, 1.32], [0.84, 2.15],
+  ];
+  const back = new three.Shape();
+  back.moveTo(-outline[0][0], outline[0][1]);
+  for (const [x, y] of outline.slice(1)) back.lineTo(-x, y);
+  for (const [x, y] of [...outline].reverse()) back.lineTo(x, y);
+  back.closePath();
+  const backGeometry = keep(new three.ExtrudeGeometry(back, { depth: 0.18, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.06, bevelSegments: 4, curveSegments: 8 }));
+  backGeometry.translate(0, 0, -0.09);
+  chair.add(new three.Mesh(backGeometry, chairMat));
+  for (const side of [-1, 1]) {
+    // Ranuras del reposacabezas.
+    const slot = new three.Mesh(rounded(0.16, 0.42, 0.02, 0.07), slotMat);
+    slot.position.set(side * 0.4, 1.78, 0.16);
+    chair.add(slot);
+    // Vivos del acento a lo largo del respaldo.
+    const piping = new three.Mesh(keep(new three.BoxGeometry(0.045, 2.2, 0.02)), accentMat);
+    piping.position.set(side * 1.22, -0.3, 0.16);
+    piping.rotation.z = side * 0.04;
+    chair.add(piping);
+    // Reposabrazos finos.
+    const armrest = new three.Mesh(rounded(0.26, 0.1, 1.3, 0.05), chairMat);
+    armrest.position.set(side * 1.85, -2.75, 1.05);
+    chair.add(armrest);
+    const post = new three.Mesh(keep(new three.CylinderGeometry(0.05, 0.05, 0.7, 12)), metal);
+    post.position.set(side * 1.85, -3.12, 1.05);
+    chair.add(post);
+  }
+  // Línea del acento en el borde superior del reposacabezas.
+  const crest = new three.Mesh(keep(new three.BoxGeometry(1.2, 0.035, 0.02)), accentMat);
+  crest.position.set(0, 2.05, 0.16);
+  chair.add(crest);
+
   const deskTop = new three.Mesh(rounded(6.2, 0.16, 2.3, 0.07), deskMat);
   deskTop.position.set(0, -2.86, 2.0);
   character.add(deskTop);
@@ -839,7 +878,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       // El lienzo ocupa toda la pantalla: el robot, a escala de ella, queda en la mitad de abajo, bajo el nombre.
       // Robot entero con su escritorio (~6,2 de alto y de ancho) en la mitad baja, bajo el nombre.
       fit = Math.min(halfHeight * 0.165, halfWidth * 0.29);
-      camera.position.y = -1.3 * fit + halfHeight * (camera.aspect < 0.8 ? 0.1 : 0.2);
+      camera.position.y = -1.3 * fit + halfHeight * (camera.aspect < 0.8 ? 0.16 : 0.34);
       camera.updateProjectionMatrix();
     },
     pointer(x, y) {
