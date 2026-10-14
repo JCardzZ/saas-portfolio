@@ -125,11 +125,10 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   // Entorno para los reflejos: una sala generada con cajas luminosas, sin descargar nada.
   const pmrem = keep(new three.PMREMGenerator(renderer));
   const room = new three.Scene();
-  const roomBox = new three.Mesh(keep(new three.BoxGeometry(20, 12, 20)), keep(new three.MeshBasicMaterial({ color: 0x5c626b, side: three.BackSide })));
+  const roomBox = new three.Mesh(keep(new three.BoxGeometry(20, 12, 20)), keep(new three.MeshBasicMaterial({ color: 0x15171a, side: three.BackSide })));
   room.add(roomBox);
-  for (const [x, y, z, w, h, c] of [[0, 5.9, 0, 10, 0.2, 0xffffff], [-9.9, 1, 0, 0.2, 6, 0xdfe6ff], [9.9, 2, -2, 0.2, 4, 0x7fee64], [0, 0, -9.9, 8, 3, 0x9aa4b5], [0, 1, 9.9, 12, 5, 0xc9ced6], [0, -5.9, 0, 14, 0.2, 0x2a2e33]] as const) {
-    const depth = x !== 0 ? 8 : Math.abs(y) > 5 ? 10 : 0.2;
-    const panel = new three.Mesh(keep(new three.BoxGeometry(w || 0.2, h, depth)), keep(new three.MeshBasicMaterial({ color: c })));
+  for (const [x, y, z, w, h, c] of [[0, 5.9, 0, 10, 0.2, 0xffffff], [-9.9, 1, 0, 0.2, 6, 0xdfe6ff], [9.9, 2, -2, 0.2, 4, 0x7fee64], [0, 0, -9.9, 8, 3, 0x9aa4b5]] as const) {
+    const panel = new three.Mesh(keep(new three.BoxGeometry(w || 0.2, h, x === 0 ? (y > 5 ? 10 : 0.2) : 8)), keep(new three.MeshBasicMaterial({ color: c })));
     panel.position.set(x, y, z);
     room.add(panel);
   }
@@ -161,44 +160,22 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     return geometry;
   };
 
-  // Androide estilizado (diseño propio): cabeza pequeña y ovalada de metal cromado, visor en
-  // franja, mandíbula marcada, cuello largo con pistones y torso en V. Ojos con el acento.
-  const chrome = physical(0xe6e9ed, 0.2, { metalness: 1, clearcoat: 1, clearcoatRoughness: 0.08 });
-  const darkChrome = physical(0x3a3f46, 0.22, { metalness: 1, clearcoat: 0.8 });
-  head.position.y = 0.6;
-  head.scale.setScalar(0.8);
-  const helmet = new three.Mesh(rounded(2.0, 2.45, 2.15, 0.95), chrome);
+  // Casco y visor.
+  const helmet = new three.Mesh(rounded(2.5, 2.15, 2.2, 0.85), shell);
   head.add(helmet);
-  const visorPlate = new three.Mesh(rounded(1.8, 0.58, 0.45, 0.24), visor);
-  visorPlate.position.set(0, 0.18, 0.86);
+  const visorPlate = new three.Mesh(rounded(2.05, 1.25, 0.5, 0.42), visor);
+  visorPlate.position.set(0, -0.05, 0.92);
   head.add(visorPlate);
-  const brow = new three.Mesh(rounded(1.75, 0.09, 0.14, 0.04), darkChrome);
-  brow.position.set(0, 0.55, 1.0);
+  const brow = new three.Mesh(keep(new three.TorusGeometry(0.75, 0.04, 12, 64, Math.PI)), metal);
+  brow.position.set(0, 0.62, 1.05);
+  brow.scale.set(1.25, 0.25, 1);
   head.add(brow);
-  const jaw = new three.Mesh(rounded(1.35, 0.6, 0.5, 0.22), darkChrome);
-  jaw.position.set(0, -0.72, 0.7);
-  head.add(jaw);
-  for (const side of [-1, 1]) {
-    // Juntas de la cara y sienes con una luz del acento.
-    const seam = new three.Mesh(keep(new three.BoxGeometry(0.035, 0.75, 0.02)), darkChrome);
-    seam.position.set(side * 0.72, -0.35, 0.98);
-    seam.rotation.z = side * 0.18;
-    head.add(seam);
-    const temple = new three.Mesh(keep(new three.CylinderGeometry(0.26, 0.26, 0.16, 40)), darkChrome);
-    temple.rotation.z = Math.PI / 2;
-    temple.position.set(side * 1.0, 0.1, 0);
-    head.add(temple);
-    const ring = new three.Mesh(keep(new three.TorusGeometry(0.18, 0.025, 10, 40)), accentMat);
-    ring.rotation.y = Math.PI / 2;
-    ring.position.set(side * 1.09, 0.1, 0);
-    head.add(ring);
-  }
 
   // Ojos de luz: se mueven dentro del visor y parpadean aplastándose.
   const eyeGroup = new three.Group();
-  eyeGroup.position.set(0, 0.18, 1.1);
+  eyeGroup.position.set(0, -0.02, 1.19);
   head.add(eyeGroup);
-  const eyeGeometry = keep(new three.CapsuleGeometry(0.085, 0.07, 8, 24));
+  const eyeGeometry = keep(new three.CapsuleGeometry(0.13, 0.12, 8, 24));
   const eyes = [-1, 1].map((side) => {
     const eye = new three.Mesh(eyeGeometry, accentMat);
     eye.position.x = side * 0.42;
@@ -206,58 +183,63 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     eyeGroup.add(eye);
     return eye;
   });
-  // Una línea de luz discreta en la mandíbula: se curva en sonrisa al tocar al robot.
-  const smile = new three.Mesh(keep(new three.TorusGeometry(0.11, 0.02, 8, 28, Math.PI)), accentMat);
+  // Una sonrisa discreta de luz bajo los ojos: crece al tocar al robot.
+  const smile = new three.Mesh(keep(new three.TorusGeometry(0.11, 0.022, 8, 28, Math.PI)), accentMat);
   smile.rotation.z = Math.PI;
-  smile.position.set(0, -0.82, -0.12);
-  smile.scale.set(1, 0.45, 0.4);
+  smile.position.set(0, -0.3, 0);
+  smile.scale.set(1, 0.7, 0.4);
   eyeGroup.add(smile);
   let talking = false;
   let speaking = false;
 
   const eyeLight = new three.PointLight(0x7fee64, 2.5, 3, 2);
-  eyeLight.position.set(0, 0.18, 1.6);
+  eyeLight.position.set(0, 0, 1.6);
   head.add(eyeLight);
-  // Sin antena visible: el grupo se conserva para la animación, vacío.
-  const antenna = new three.Group();
-  head.add(antenna);
 
-  // Cuello largo: columna cromada y dos pistones.
-  const neck = new three.Mesh(keep(new three.CylinderGeometry(0.2, 0.27, 0.8, 32)), chrome);
-  neck.position.y = -0.72;
-  character.add(neck);
+  // Auriculares y antena.
   for (const side of [-1, 1]) {
-    const piston = new three.Mesh(keep(new three.CylinderGeometry(0.04, 0.04, 0.85, 12)), darkChrome);
-    piston.position.set(side * 0.3, -0.75, 0.05);
-    piston.rotation.z = side * 0.22;
-    character.add(piston);
+    const pod = new three.Mesh(keep(new three.CylinderGeometry(0.42, 0.42, 0.3, 48)), graphite);
+    pod.rotation.z = Math.PI / 2;
+    pod.position.set(side * 1.3, 0, 0);
+    head.add(pod);
+    const ring = new three.Mesh(keep(new three.TorusGeometry(0.3, 0.035, 12, 48)), accentMat);
+    ring.rotation.y = Math.PI / 2;
+    ring.position.set(side * 1.46, 0, 0);
+    head.add(ring);
   }
-  // Torso en V: hombros anchos, cintura estrecha.
-  const vShape = new three.Shape();
-  vShape.moveTo(-1.45, 1.05);
-  vShape.lineTo(1.45, 1.05);
-  vShape.lineTo(1.2, 0.1);
-  vShape.lineTo(0.82, -1.15);
-  vShape.lineTo(-0.82, -1.15);
-  vShape.lineTo(-1.2, 0.1);
-  vShape.closePath();
-  const torsoGeometry = keep(new three.ExtrudeGeometry(vShape, { depth: 1.0, bevelEnabled: true, bevelThickness: 0.25, bevelSize: 0.25, bevelSegments: 6, curveSegments: 8 }));
-  torsoGeometry.translate(0, 0, -0.5);
-  const torso = new three.Mesh(torsoGeometry, chrome);
+  // La antena gira desde su base: así se puede agitar.
+  const antenna = new three.Group();
+  antenna.position.set(0.47, 1.0, -0.1);
+  antenna.rotation.z = -0.25;
+  head.add(antenna);
+  const mast = new three.Mesh(keep(new three.CylinderGeometry(0.035, 0.05, 0.6, 16)), metal);
+  mast.position.set(0, 0.3, 0);
+  antenna.add(mast);
+  const beacon = new three.Mesh(sphere(0.1, 24), accentMat);
+  beacon.position.set(0, 0.64, 0);
+  antenna.add(beacon);
+
+  // Cuello articulado, torso y núcleo.
+  for (let i = 0; i < 3; i++) {
+    const segment = new three.Mesh(keep(new three.CylinderGeometry(0.42 - i * 0.03, 0.42 - i * 0.03, 0.14, 40)), i % 2 ? graphite : metal);
+    segment.position.y = -0.82 - i * 0.16;
+    character.add(segment);
+  }
+  const torso = new three.Mesh(rounded(3.1, 2.2, 1.7, 0.75), shell);
   torso.position.y = -2.2;
   character.add(torso);
-  const chest = new three.Mesh(rounded(1.5, 0.85, 0.25, 0.2), darkChrome);
-  chest.position.set(0, -1.55, 0.72);
+  const chest = new three.Mesh(rounded(1.6, 1.0, 0.3, 0.22), graphite);
+  chest.position.set(0, -1.5, 0.78);
   character.add(chest);
-  const core = new three.Mesh(sphere(0.17, 32), accentMat);
-  core.position.set(0, -1.55, 0.86);
+  const core = new three.Mesh(sphere(0.2, 32), accentMat);
+  core.position.set(0, -1.5, 0.95);
   character.add(core);
-  const coreRing = new three.Mesh(keep(new three.TorusGeometry(0.27, 0.025, 12, 48)), metal);
+  const coreRing = new three.Mesh(keep(new three.TorusGeometry(0.32, 0.03, 12, 48)), metal);
   coreRing.position.copy(core.position);
   character.add(coreRing);
   for (const side of [-1, 1]) {
-    const shoulder = new three.Mesh(sphere(0.42, 40), darkChrome);
-    shoulder.position.set(side * 1.62, -1.35, 0);
+    const shoulder = new three.Mesh(sphere(0.55, 40), graphite);
+    shoulder.position.set(side * 1.65, -1.7, 0);
     character.add(shoulder);
   }
 
@@ -335,13 +317,13 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   // Cada brazo va del hombro a la mano; la mano sigue a un objetivo según el gesto (sostener el
   // mazo, presentar el globo, enseñar dos cartas, saludar) y el brazo se estira hasta ella.
   const HANDS = new three.Vector3(0, -1.5, 1.5);
-  const armGeometry = keep(new three.CylinderGeometry(0.12, 0.14, 1, 24));
+  const armGeometry = keep(new three.CylinderGeometry(0.19, 0.2, 1, 24));
   const fingerGeometry = keep(new three.CapsuleGeometry(0.05, 0.1, 6, 12));
   const up = new three.Vector3(0, 1, 0);
   const arms = [-1, 1].map((side) => {
-    const shoulder = new three.Vector3(side * 1.62, -1.35, 0);
+    const shoulder = new three.Vector3(side * 1.65, -1.7, 0);
     const rest = new three.Vector3(side * 0.45, -2.58, 1.55); // sobre el teclado
-    const arm = new three.Mesh(armGeometry, chrome);
+    const arm = new three.Mesh(armGeometry, shell);
     character.add(arm);
     // Mano: palma, cuatro dedos con dos falanges y un pulgar, para que agarre y gesticule.
     const hand = new three.Group();
@@ -745,8 +727,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const idle = animate && t - pointerAt > 4;
     const wantX = idle ? Math.sin(t * 0.45) * 0.55 : pointerX;
     const wantY = idle ? (talking && !stackOpen ? 0.55 : Math.sin(t * 0.31 + 1) * 0.25) : pointerY;
-    lookX += (wantX - lookX) * 0.14;
-    lookY += (wantY - lookY) * 0.14;
+    lookX += (wantX - lookX) * 0.08;
+    lookY += (wantY - lookY) * 0.08;
     head.rotation.y = lookX * 0.55;
     head.rotation.x = lookY * 0.3;
     head.rotation.z = -lookX * 0.06 + Math.sin(r * 9) * 0.22 * decay;
@@ -766,7 +748,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     core.scale.setScalar(0.92 + pulse * 0.12);
     coreRing.rotation.z = t * 0.8;
     // Gestos de los brazos.
-    const follow = animate ? 1 - Math.exp(-dt * 11) : 1;
+    const follow = animate ? 1 - Math.exp(-dt * 7) : 1;
     const waving = animate && t - waveAt < 1.6;
     for (const limb of arms) {
       if (focused && stackOpen) {
