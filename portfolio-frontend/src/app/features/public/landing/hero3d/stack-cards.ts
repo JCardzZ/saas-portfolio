@@ -25,6 +25,25 @@ const COMPUTE = { en: 'Compute', es: 'Cómputo' };
 const SERVERLESS = { en: 'Serverless', es: 'Serverless' };
 const EDGE = { en: 'Edge & APIs', es: 'Borde y APIs' };
 
+/**
+ * Cómo ayudo a una empresa con cada área (lo que lleva la carta de la mano derecha). Por categoría,
+ * no por tecnología: es una oferta de trabajo, no una afirmación sobre cada producto.
+ */
+export const HELP_BY_CATEGORY: Record<string, Localized> = {
+  Backend: { en: 'APIs that hold up under load: secure, observable and easy to evolve.', es: 'APIs que aguantan la carga: seguras, observables y fáciles de evolucionar.' },
+  Frontend: { en: 'Fast, accessible interfaces that turn your API into a product.', es: 'Interfaces rápidas y accesibles que convierten tu API en producto.' },
+  Data: { en: 'Data models that stay fast and consistent as you grow.', es: 'Modelos de datos que siguen rápidos y consistentes al crecer.' },
+  AI: { en: 'AI features grounded in your own data, with cost and quality under control.', es: 'IA sobre tus propios datos, con coste y calidad bajo control.' },
+  DevOps: { en: 'Pipelines that ship safely every day, with rollback ready.', es: 'Pipelines que despliegan seguro cada día, con rollback a mano.' },
+  Security: { en: 'Access control done right: roles, tokens and least privilege.', es: 'Control de acceso bien hecho: roles, tokens y mínimo privilegio.' },
+  Observability: { en: 'See problems before your users do.', es: 'Ver los problemas antes que tus usuarios.' },
+  Messaging: { en: 'Decoupled services that absorb spikes without losing events.', es: 'Servicios desacoplados que absorben picos sin perder eventos.' },
+  Cloud: { en: 'Architecture on this cloud, sized to your traffic and budget.', es: 'Arquitectura en esta nube, a la medida de tu tráfico y presupuesto.' },
+  Compute: { en: 'Workloads that scale and heal without babysitting.', es: 'Cargas que escalan y se recuperan sin vigilancia constante.' },
+  Serverless: { en: 'Pay-per-use services with no servers to manage.', es: 'Servicios de pago por uso, sin servidores que administrar.' },
+  'Edge & APIs': { en: 'A fast, protected front door for your users and partners.', es: 'Una puerta de entrada rápida y protegida para usuarios y socios.' },
+};
+
 const card = (category: Localized, en: string, es: string, where: StackCard['where'] = 'studio'): StackCard => ({ category, about: { en, es }, where });
 
 export const STACK_CARDS: Partial<Record<TechIconKey, StackCard>> = {

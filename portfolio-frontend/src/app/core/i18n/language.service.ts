@@ -32,10 +32,19 @@ export class LanguageService {
 
   private readonly document = inject(DOCUMENT);
   readonly lang = signal<Lang>(stored() ?? LanguageService.defaultLang);
+  /**
+   * Traducciones al inglés de los textos de las secciones (`en.ts`). Se piden con `import()` la
+   * primera vez que hace falta el inglés: no pesan en el arranque. Mientras llegan, el pipe `t`
+   * deja el español.
+   */
+  readonly dictionary = signal<Readonly<Record<string, string>> | null>(null);
 
   constructor() {
     effect(() => {
       this.document.documentElement.lang = this.lang();
+      if (this.lang() === 'en' && !this.dictionary()) {
+        void import('./en').then(({ EN }) => this.dictionary.set(EN));
+      }
     });
   }
 

@@ -6,7 +6,7 @@ import { LanguageService } from '../../../../core/i18n/language.service';
 import { ThemeService } from '../../../../core/theme/theme.service';
 import { TECH_ICONS, TechIconKey } from '../../../../shared/ui/tech-icons';
 import type { HeroScene, ScenePalette, SceneTech } from './hero-scene';
-import { STACK_CARDS } from './stack-cards';
+import { HELP_BY_CATEGORY, STACK_CARDS } from './stack-cards';
 
 /**
  * Las fichas del mazo: con qué está hecha la plataforma y los servicios de nube que dibuja el
@@ -59,6 +59,24 @@ const DRAG_THRESHOLD = 6;
     @if (!failed()) {
       <div #frame class="relative h-full w-full">
       <canvas #canvas class="hero-canvas pointer-events-none absolute inset-0 block h-full w-full" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
+      <!--
+        Bocadillo del robot: en cinco segundos, qué hago, escrito a máquina y rotando. Sigue a la
+        cabeza (se posiciona escribiendo el estilo, sin detección de cambios). Se retira con el
+        mazo abierto. El texto completo está también para lectores de pantalla.
+      -->
+      <div
+        #bubble
+        class="speech pointer-events-none absolute left-0 top-0 z-10 transition-opacity duration-slow"
+        [class.opacity-0]="!ready() || open()"
+        [class.speech-narrow]="narrow"
+        aria-hidden="true"
+      >
+        <div class="speech-body rounded-card border border-line-subtle bg-surface-1/85 px-4 py-3 shadow-floating backdrop-blur-xl">
+          <span class="block font-mono text-mono-sm text-ink-3">{{ pitch().lead }}</span>
+          <span class="mt-1 block text-title-3 font-semibold text-ink-1"><span #typed></span><span class="caret" aria-hidden="true"></span></span>
+        </div>
+      </div>
+      <p class="sr-only">{{ pitch().lead }} {{ pitch().lines.join(' · ') }}</p>
       <!-- Zona pulsable: empieza bajo la barra fija para que esta no la tape. -->
       <button
         type="button"
@@ -75,21 +93,7 @@ const DRAG_THRESHOLD = 6;
         (click)="activate($event)"
         (keydown)="key($event)"
       >
-        @if (card(); as info) {
-          <!-- Ficha «tipo carta» de la tecnología traída al frente. -->
-          <span
-            class="stack-card pointer-events-none absolute bottom-[max(4.5rem,9dvh)] left-1/2 block w-[min(27rem,calc(100%-2rem))] -translate-x-1/2 animate-slide-up rounded-card border bg-surface-1/90 p-5 text-left shadow-floating backdrop-blur-xl group-focus-visible:ring-2 group-focus-visible:ring-accent-solid/40"
-            aria-hidden="true"
-          >
-            <span class="flex flex-wrap items-center justify-between gap-2">
-              <span class="ui-badge ui-badge-accent">{{ info.category }}</span>
-              <span class="font-mono text-mono-sm" [class]="info.platform ? 'text-status-ok' : 'text-ink-3'">{{ info.where }}</span>
-            </span>
-            <span class="mt-3 block text-title-2 font-black uppercase leading-tight tracking-tight text-ink-1">{{ info.title }}</span>
-            <span class="mt-2 block text-body-sm text-ink-2">{{ info.about }}</span>
-            <span class="mt-4 block font-mono text-mono-sm text-ink-3">{{ info.back }}</span>
-          </span>
-        } @else if (ready()) {
+        @if (ready()) {
           <!-- El foco de teclado se ve en esta píldora, no como un marco alrededor de la escena. -->
           <span
             [class.hint-glow]="!open()"
@@ -117,7 +121,7 @@ const DRAG_THRESHOLD = 6;
         </div>
       }
       <!-- Lo que dice la ficha, también para lectores de pantalla. -->
-      <span class="sr-only" aria-live="polite">{{ card() ? card()!.title + '. ' + card()!.about : '' }}</span>
+      <span class="sr-only" aria-live="polite">{{ card() ? card()!.title + '. ' + card()!.about + ' ' + card()!.help : '' }}</span>
       </div>
     }
   `,
@@ -166,6 +170,24 @@ export class HeroSceneComponent {
   });
   private kickFrame: (() => void) | null = null;
   readonly failed = signal(false);
+  /** La carta de la mano derecha sigue a la ficha al frente y al idioma. */
+  private readonly infoSync = effect(() => {
+    const info = this.card();
+    const en = this.i18n.lang() === 'en';
+    this.scene?.showInfo(
+      info
+        ? {
+            category: info.category,
+            title: info.title,
+            whatLabel: en ? 'What it is' : 'Qué es',
+            what: info.about,
+            helpLabel: en ? 'How I help your company' : 'Cómo ayudo a tu empresa',
+            help: info.help,
+          }
+        : null,
+    );
+    this.kickFrame?.();
+  });
 
   readonly focused = signal<string | null>(null);
   /** Ficha de la tecnología que está al frente, en el idioma activo. */
@@ -176,6 +198,7 @@ export class HeroSceneComponent {
     if (!title || !data) return null;
     const en = this.i18n.lang() === 'en';
     return {
+      help: this.i18n.t(HELP_BY_CATEGORY[data.category.en] ?? data.about),
       category: this.i18n.t(data.category),
       title: en ? `I'll help you build with ${title}` : `Te ayudo a construir con ${title}`,
       about: this.i18n.t(data.about),
@@ -249,6 +272,34 @@ export class HeroSceneComponent {
   }
 
   private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
+  private readonly bubble = viewChild<ElementRef<HTMLElement>>('bubble');
+  private readonly typed = viewChild<ElementRef<HTMLElement>>('typed');
+  /** Pantalla estrecha: el bocadillo va encima de la cabeza y no a su lado. */
+  readonly narrow = typeof matchMedia === 'function' && matchMedia('(max-width: 767px)').matches;
+  /** Lo que ofrezco, en frases cortas que el robot escribe una tras otra. */
+  readonly pitch = computed(() =>
+    this.i18n.lang() === 'en'
+      ? {
+          lead: 'I can help you',
+          lines: [
+            'design systems built for your business',
+            'modernize legacy into clean REST APIs',
+            'move your platform to the cloud',
+            'add AI on top of your own data',
+            'ship every day with safe CI/CD',
+          ],
+        }
+      : {
+          lead: 'Te puedo ayudar a',
+          lines: [
+            'diseñar sistemas a la medida de tu negocio',
+            'modernizar legacy a APIs REST limpias',
+            'llevar tu plataforma a la nube',
+            'sumar IA sobre tus propios datos',
+            'desplegar cada día con CI/CD seguro',
+          ],
+        },
+  );
   private readonly frameRef = viewChild<ElementRef<HTMLElement>>('frame');
   private readonly theme = inject(ThemeService);
   private scene: HeroScene | null = null;
@@ -303,6 +354,7 @@ export class HeroSceneComponent {
         return;
       }
       scene.frame((performance.now() - started) / 1000);
+      placeBubble();
       if (!reduced) {
         raf = requestAnimationFrame(loop);
       }
@@ -312,6 +364,51 @@ export class HeroSceneComponent {
         raf = requestAnimationFrame(loop);
       }
     };
+
+    const bubbleEl = () => this.bubble()?.nativeElement;
+    const placeBubble = () => {
+      const el = bubbleEl();
+      if (!el) return;
+      const at = scene.anchor(this.narrow);
+      el.style.transform = this.narrow
+        ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-50%, -100%)`
+        : `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translateY(-100%)`;
+    };
+    // Máquina de escribir: escribe, espera, borra y pasa a la siguiente frase.
+    let line = 0;
+    let shown = 0;
+    let erasing = false;
+    let hold = 0;
+    const type = () => {
+      const target = this.typed()?.nativeElement;
+      const lines = this.pitch().lines;
+      if (!target) return;
+      const text = lines[line % lines.length];
+      if (reduced) {
+        target.textContent = text;
+        line++;
+        return;
+      }
+      if (hold > 0) {
+        hold--;
+      } else if (!erasing) {
+        shown = Math.min(text.length, shown + 1);
+        if (shown === text.length) {
+          erasing = true;
+          hold = 40; // ~2,2 s leyendo
+        }
+      } else {
+        shown = Math.max(0, shown - 2);
+        if (shown === 0) {
+          erasing = false;
+          line++;
+          hold = 4;
+        }
+      }
+      target.textContent = text.slice(0, shown);
+    };
+    const typing = setInterval(type, reduced ? 3500 : 55);
+    type();
 
     const resize = () => {
       const box = frame.getBoundingClientRect();
@@ -347,10 +444,12 @@ export class HeroSceneComponent {
     seen.observe(frame);
 
     this.ready.set(true);
+    placeBubble();
     kick();
 
     destroyRef.onDestroy(() => {
       cancelAnimationFrame(raf);
+      clearInterval(typing);
       sizes.disconnect();
       seen.disconnect();
       removeEventListener('pointermove', onPointer);

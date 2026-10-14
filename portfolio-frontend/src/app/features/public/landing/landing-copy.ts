@@ -2,7 +2,8 @@ import type { Localized } from '../../../core/i18n/language.service';
 
 /** Textos de la estructura de la landing en inglés y español. */
 export const LANDING_COPY = {
-  heroTitle: { en: 'Hi, I’m Manuel Cardoza', es: 'Hola, soy Manuel Cardoza' },
+  heroGreeting: { en: 'Hi, I’m', es: 'Hola, soy' },
+  heroTitle: { en: 'Manuel Cardoza', es: 'Manuel Cardoza' },
   heroIntro: {
     en: 'Engineering you can interrogate: projects, technologies and the very code of this platform, with an assistant that answers citing its sources.',
     es: 'Ingeniería que se puede interrogar: proyectos, tecnologías y el propio código de esta plataforma, con un asistente que responde citando sus fuentes.',

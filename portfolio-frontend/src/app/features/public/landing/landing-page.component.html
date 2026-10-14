@@ -11,17 +11,22 @@
     <!-- El hero deja pasar los clics a la escena salvo en sus enlaces y botones. -->
     <section class="hero pointer-events-none relative flex min-h-[calc(100dvh-7rem-env(safe-area-inset-top,0px))] flex-col pb-6 sm:min-h-[calc(100dvh-9rem-env(safe-area-inset-top,0px))] sm:pb-10 [&_a]:pointer-events-auto [&_button]:pointer-events-auto" aria-labelledby="hero-titulo" [class.hero-dimmed]="immersive()">
       <!-- Con el mazo abierto (hero-dimmed), el texto se retira para que las fichas ocupen la pantalla. -->
-      <!-- Jerarquía: nombre (h1) y, justo debajo, el rol como subtítulo legible; no como rótulo diminuto encima. -->
-      <h1 id="hero-titulo" class="hero-name pointer-events-auto relative z-0 text-center font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink-1">
+      <!--
+        Jerarquía de tres niveles, de más a menos: saludo pequeño, nombre enorme (h1) y rol mediano en
+        el acento. Un solo elemento gigante: si nombre y rol pesan igual, compiten y el bloque se satura.
+      -->
+      <p class="pointer-events-auto relative z-10 text-center text-title-2 font-medium text-ink-2">{{ i18n.t(copy.heroGreeting) }}</p>
+      <h1 id="hero-titulo" class="hero-name pointer-events-auto relative z-0 mt-1 text-center font-black uppercase leading-[0.9] tracking-[-0.04em] text-ink-1">
         {{ i18n.t(copy.heroTitle) }}
       </h1>
-      <p class="hero-role pointer-events-auto relative z-10 mx-auto mt-4 text-center font-black uppercase tracking-[-0.03em] text-accent-text" data-testid="hero-role">
+      <p class="hero-role pointer-events-auto relative z-10 mx-auto mt-5 text-center font-semibold tracking-[-0.01em] text-accent-text" data-testid="hero-role">
         {{ heroRole() }}
       </p>
       <!-- Hueco para el robot: crece lo que haga falta para que la frase y los botones queden dentro de la pantalla. -->
-      <div class="min-h-[12rem] flex-1" aria-hidden="true"></div>
+      <div class="min-h-[12rem] flex-1 [@media(max-height:700px)]:min-h-[2rem]" aria-hidden="true"></div>
       <div class="relative z-10 mt-auto flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
-        <p class="max-w-[30rem] text-balance text-body-lg text-ink-2">
+        <!-- En móvil la dice el bocadillo del robot: aquí pisaría al robot. -->
+        <p class="max-w-[30rem] text-balance text-body-lg text-ink-2 max-sm:hidden">
           {{ i18n.t(copy.heroIntro) }}
         </p>
         <div class="flex flex-wrap gap-3">

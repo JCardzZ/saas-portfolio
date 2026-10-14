@@ -7,7 +7,10 @@ import type * as THREE from 'three';
  * propio navegador (sin texturas descargadas). Sostiene en las manos un mazo con las tecnologías
  * de la plataforma y de las nubes; al pulsarlo, las fichas salen volando a un globo que ocupa la
  * pantalla (`activate`), con las de detrás más tenues. El globo se gira arrastrando, con inercia
- * (`drag`, `nudge`), y una ficha pulsada pasa al frente, ampliada.
+ * (`drag`, `nudge`). Una ficha pulsada la sostiene el robot con la mano izquierda y, con la derecha,
+ * una carta con qué es y cómo ayudo con ella (`showInfo`). Se comporta como un personaje: salta y
+ * entorna los ojos al tocarlo, saluda al abrir el mazo, mueve la antena y mira alrededor si nadie
+ * lo mueve.
  * Decorativa: el h1 dice quién es.
  */
 export interface ScenePalette {
@@ -29,6 +32,16 @@ export interface SceneTech {
   image?: string;
 }
 
+/** Carta de información que el robot sostiene en la mano derecha, junto a la del logo. */
+export interface SceneInfo {
+  category: string;
+  title: string;
+  whatLabel: string;
+  what: string;
+  helpLabel: string;
+  help: string;
+}
+
 export interface HeroScene {
   /**
    * Pulsación en (x, y) normalizadas del lienzo: abre el mazo, trae al frente la ficha pulsada,
@@ -43,6 +56,10 @@ export interface HeroScene {
   nudge(direction: number): void;
   /** Fichas que salen al globo (índices); `null` = todas. Las demás se quedan en las manos. */
   show(indices: ReadonlySet<number> | null): void;
+  /** Contenido de la carta de la mano derecha (qué es y cómo ayudo); `null` la guarda. */
+  showInfo(info: SceneInfo | null): void;
+  /** Punto de la pantalla (px del lienzo) junto a la cabeza, de donde sale el bocadillo. */
+  anchor(narrow: boolean): { x: number; y: number };
   /** Señala la ficha bajo el cursor (coordenadas normalizadas del lienzo, -1…1); devuelve su nombre. */
   pick(x: number, y: number): string | null;
   frame(t: number): void;
@@ -169,13 +186,17 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     ring.position.set(side * 1.46, 0, 0);
     head.add(ring);
   }
+  // La antena gira desde su base: así se puede agitar.
+  const antenna = new three.Group();
+  antenna.position.set(0.47, 1.0, -0.1);
+  antenna.rotation.z = -0.25;
+  head.add(antenna);
   const mast = new three.Mesh(keep(new three.CylinderGeometry(0.035, 0.05, 0.6, 16)), metal);
-  mast.position.set(0.55, 1.3, -0.1);
-  mast.rotation.z = -0.25;
-  head.add(mast);
+  mast.position.set(0, 0.3, 0);
+  antenna.add(mast);
   const beacon = new three.Mesh(sphere(0.1, 24), accentMat);
-  beacon.position.set(0.63, 1.62, -0.1);
-  head.add(beacon);
+  beacon.position.set(0, 0.64, 0);
+  antenna.add(beacon);
 
   // Cuello articulado, torso y núcleo.
   for (let i = 0; i < 3; i++) {
@@ -202,18 +223,73 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   }
 
   // Brazos y manos: sostienen el mazo delante del pecho.
+  // Cada brazo va del hombro a la mano; la mano sigue a un objetivo según el gesto (sostener el
+  // mazo, presentar el globo, enseñar dos cartas, saludar) y el brazo se estira hasta ella.
   const HANDS = new three.Vector3(0, -1.5, 1.5);
-  for (const side of [-1, 1]) {
-    const from = new three.Vector3(side * 1.65, -1.7, 0);
-    const to = new three.Vector3(side * 0.62, -1.62, 1.45);
-    const arm = new three.Mesh(keep(new three.CapsuleGeometry(0.2, from.distanceTo(to) - 0.2, 8, 24)), shell);
-    arm.position.copy(from).add(to).multiplyScalar(0.5);
-    arm.quaternion.setFromUnitVectors(new three.Vector3(0, 1, 0), to.clone().sub(from).normalize());
+  const armGeometry = keep(new three.CylinderGeometry(0.19, 0.2, 1, 24));
+  const fingerGeometry = keep(new three.CapsuleGeometry(0.05, 0.1, 6, 12));
+  const up = new three.Vector3(0, 1, 0);
+  const arms = [-1, 1].map((side) => {
+    const shoulder = new three.Vector3(side * 1.65, -1.7, 0);
+    const rest = new three.Vector3(side * 0.62, -1.62, 1.45);
+    const arm = new three.Mesh(armGeometry, shell);
     character.add(arm);
-    const hand = new three.Mesh(sphere(0.27, 32), graphite);
-    hand.position.copy(to);
-    hand.scale.set(1, 1.15, 1);
+    // Mano: palma, cuatro dedos con dos falanges y un pulgar, para que agarre y gesticule.
+    const hand = new three.Group();
+    hand.position.copy(rest);
     character.add(hand);
+    const palm = new three.Mesh(sphere(0.24, 32), graphite);
+    palm.scale.set(1.05, 0.9, 0.7);
+    hand.add(palm);
+    const fingers = [-1.5, -0.5, 0.5, 1.5].map((slot) => {
+      const knuckle = new three.Group();
+      knuckle.position.set(slot * 0.1, 0.17, 0.02);
+      knuckle.rotation.z = -slot * 0.08;
+      const base = new three.Mesh(fingerGeometry, graphite);
+      base.position.y = 0.09;
+      const joint = new three.Group();
+      joint.position.y = 0.17;
+      const tip = new three.Mesh(fingerGeometry, graphite);
+      tip.position.y = 0.08;
+      tip.scale.y = 0.85;
+      joint.add(tip);
+      knuckle.add(base, joint);
+      hand.add(knuckle);
+      return { knuckle, joint };
+    });
+    const thumb = new three.Group();
+    thumb.position.set(-side * 0.2, 0.0, 0.08);
+    thumb.rotation.z = side * 0.9;
+    const thumbMesh = new three.Mesh(fingerGeometry, graphite);
+    thumbMesh.position.y = 0.09;
+    thumb.add(thumbMesh);
+    hand.add(thumb);
+    return { side, shoulder, rest, arm, hand, fingers, thumb, target: rest.clone() };
+  });
+  /**
+   * Dedos: `grip` 0 = abiertos y estirados, 1 = cerrados (agarrar). `spread` los abre en abanico
+   * (saludo). `t` mueve un poco cada dedo por su cuenta, para que la mano no parezca de plástico.
+   */
+  function poseFingers(limb: (typeof arms)[number], grip: number, spread: number, t: number): void {
+    limb.fingers.forEach((finger, index) => {
+      const life = animate ? Math.sin(t * 2.3 + index * 1.3 + limb.side) * 0.08 : 0;
+      finger.knuckle.rotation.x = grip * 1.1 + life;
+      finger.joint.rotation.x = grip * 1.2 + life * 0.5;
+      finger.knuckle.rotation.z = -(index - 1.5) * (0.08 + spread * 0.18);
+    });
+    limb.thumb.rotation.x = grip * 0.9;
+  }
+
+  const segment = new three.Vector3();
+  function placeArms(follow: number): void {
+    for (const limb of arms) {
+      limb.hand.position.lerp(limb.target, follow);
+      segment.copy(limb.hand.position).sub(limb.shoulder);
+      const length = Math.max(0.01, segment.length());
+      limb.arm.position.copy(limb.shoulder).addScaledVector(segment, 0.5);
+      limb.arm.scale.set(1, length, 1);
+      limb.arm.quaternion.setFromUnitVectors(up, segment.normalize());
+    }
   }
 
   // Fichas de tecnologías: caja fina con el logo en la cara delantera, pintado en un canvas 2D.
@@ -246,6 +322,72 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     }
     return tile;
   });
+
+  // Carta de información (mano derecha): el mismo formato que las fichas, más alta.
+  const infoArt = document.createElement('canvas');
+  infoArt.width = 512;
+  infoArt.height = 680;
+  const infoTexture = keep(new three.CanvasTexture(infoArt));
+  infoTexture.colorSpace = three.SRGBColorSpace;
+  infoTexture.anisotropy = 4;
+  const infoFace = keep(new three.MeshPhysicalMaterial({ map: infoTexture, roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.1, transparent: true }));
+  const infoGlow = keep(new three.MeshStandardMaterial({ color: GRAPHITE, emissive: 0x7fee64, emissiveIntensity: 1, roughness: 0.4, metalness: 0.5, transparent: true }));
+  const infoMesh = new three.Mesh(keep(new three.BoxGeometry(1.2, 1.6, 0.05)), [infoGlow, infoGlow, infoGlow, infoGlow, infoFace, infoGlow]);
+  infoMesh.scale.setScalar(0.001);
+  scene.add(infoMesh);
+  let info: SceneInfo | null = null;
+
+  function wrap(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, width: number, lineHeight: number, maxLines: number): number {
+    const words = text.split(/\s+/);
+    let line = '';
+    let lines = 0;
+    for (const word of words) {
+      const next = line ? `${line} ${word}` : word;
+      if (ctx.measureText(next).width > width && line) {
+        ctx.fillText(line, x, y + lines * lineHeight);
+        line = word;
+        if (++lines >= maxLines) return y + lines * lineHeight;
+      } else {
+        line = next;
+      }
+    }
+    if (line) ctx.fillText(line, x, y + lines++ * lineHeight);
+    return y + lines * lineHeight;
+  }
+
+  function paintInfo(colors: ScenePalette): void {
+    const ctx = infoArt.getContext('2d');
+    if (!ctx || !info) return;
+    const { width, height } = infoArt;
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = colors.surface;
+    ctx.beginPath();
+    ctx.roundRect(0, 0, width, height, 36);
+    ctx.fill();
+    ctx.strokeStyle = colors.accent;
+    ctx.lineWidth = 6;
+    ctx.stroke();
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    const pad = 40;
+    ctx.fillStyle = colors.accentText;
+    ctx.font = '600 26px "JetBrains Mono", ui-monospace, monospace';
+    ctx.fillText(info.category.toUpperCase(), pad, pad);
+    ctx.fillStyle = colors.ink;
+    ctx.font = '800 38px Inter, system-ui, sans-serif';
+    let y = wrap(ctx, info.title, pad, pad + 48, width - pad * 2, 44, 3) + 20;
+    const block = (label: string, text: string) => {
+      ctx.fillStyle = colors.muted;
+      ctx.font = '600 22px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillText(label.toUpperCase(), pad, y);
+      ctx.fillStyle = colors.ink;
+      ctx.font = '500 30px Inter, system-ui, sans-serif';
+      y = wrap(ctx, text, pad, y + 34, width - pad * 2, 40, 4) + 26;
+    };
+    block(info.whatLabel, info.what);
+    block(info.helpLabel, info.help);
+    infoTexture.needsUpdate = true;
+  }
 
   function paintTile(tile: { art: HTMLCanvasElement; texture: THREE.CanvasTexture; tech: SceneTech; picture: HTMLImageElement | null }, colors: ScenePalette): void {
     const ctx = tile.art.getContext('2d');
@@ -333,9 +475,11 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       let scale: number;
       let opacity = 1;
       if (open && tile === focused) {
-        target.set(0, camY, 6);
+        // En la mano izquierda, a la altura de la cara.
+        target.copy(HOLD_LEFT);
+        character.localToWorld(target);
         targetQuat.copy(faceCamera);
-        scale = Math.min(halfHeight, halfWidth) * 0.42;
+        scale = 1.55 * character.scale.x;
       } else if (open) {
         const y = 1 - ((rank + 0.5) / shownCount) * 2;
         const ring = Math.sqrt(1 - y * y);
@@ -346,7 +490,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         target.set((x0 * cos - z0 * sin) * radius * 1.25, camY + y * radius * 0.82, depth * radius * 0.9);
         targetQuat.copy(faceCamera);
         scale = cardScale * (0.78 + 0.22 * (depth + 1) / 2) * (focused ? 0.8 : 1);
-        opacity = 0.28 + 0.72 * Math.max(0, (depth + 1) / 2) ** 1.4;
+        // Mientras enseña una, las demás se apartan a un segundo plano.
+        opacity = (0.28 + 0.72 * Math.max(0, (depth + 1) / 2) ** 1.4) * (focused ? 0.18 : 1);
       } else {
         // En las manos: un mazo abierto en abanico pequeño, como unas cartas.
         const offset = i - (count - 1) / 2;
@@ -366,6 +511,19 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       tile.face.opacity += (alpha - tile.face.opacity) * follow;
       tile.glow.opacity = tile.face.opacity;
     }
+  }
+
+  const HOLD_LEFT = new three.Vector3(-2.15, 0.85, 1.9);
+  const HOLD_RIGHT = new three.Vector3(2.2, 0.95, 1.9);
+  function placeInfo(follow: number): void {
+    const shown = !!(focused && info && stackOpen);
+    target.copy(HOLD_RIGHT);
+    character.localToWorld(target);
+    infoMesh.position.lerp(target, follow);
+    infoMesh.quaternion.slerp(faceCamera, follow);
+    const goal = shown ? character.scale.x * 1.2 : 0.001;
+    infoMesh.scale.setScalar(infoMesh.scale.x + (goal - infoMesh.scale.x) * follow);
+    infoFace.opacity = infoGlow.opacity = Math.min(1, infoMesh.scale.x / Math.max(0.01, character.scale.x * 1.2));
   }
 
   let visible: ReadonlySet<number> | null = null;
@@ -400,34 +558,78 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       paintTile(tile, next);
       tile.glow.emissive.copy(accent);
     }
+    infoGlow.emissive.copy(accent);
+    paintInfo(next);
   }
   setPalette(palette);
 
+  let viewWidth = 1;
+  let viewHeight = 1;
   let last = 0;
+  let reactAt = -99;
+  let waveAt = -99;
+  let pointerAt = 0;
   function frame(t: number): void {
     const dt = Math.min(0.1, Math.max(0, t - last));
     last = t;
     clock = t;
     const intro = animate ? easeOutBack(Math.min(1, t / 1.2)) : 1;
     character.scale.setScalar((0.6 + 0.4 * intro) * fit);
-    character.position.y = (animate ? Math.sin(t * 1.2) * 0.08 : 0) + lift * 1.2;
+    // Reacción al toque: salto con rebote, cabeza ladeada, ojos entornados y antena que vibra.
+    const r = animate ? t - reactAt : 99;
+    const reacting = r < 1.3;
+    const decay = reacting ? Math.exp(-r * 3) : 0;
+    const hop = r < 0.55 ? Math.sin((r / 0.55) * Math.PI) : 0;
+    character.position.y = (animate ? Math.sin(t * 1.2) * 0.08 : 0) + lift * 1.2 + hop * 0.35 * fit;
+    antenna.rotation.z = -0.25 + Math.sin(r * 22) * 0.5 * decay + (animate ? Math.sin(t * 1.7) * 0.05 : 0);
 
-    lookX += (pointerX - lookX) * 0.08;
-    lookY += (pointerY - lookY) * 0.08;
+    // Si nadie mueve el cursor, mira alrededor por su cuenta.
+    const idle = animate && t - pointerAt > 4;
+    const wantX = idle ? Math.sin(t * 0.45) * 0.55 : pointerX;
+    const wantY = idle ? Math.sin(t * 0.31 + 1) * 0.25 : pointerY;
+    lookX += (wantX - lookX) * 0.08;
+    lookY += (wantY - lookY) * 0.08;
     head.rotation.y = lookX * 0.55;
     head.rotation.x = lookY * 0.3;
-    head.rotation.z = -lookX * 0.06;
+    head.rotation.z = -lookX * 0.06 + Math.sin(r * 9) * 0.22 * decay;
     character.rotation.y = lookX * 0.15;
     eyeGroup.position.x = lookX * 0.18;
     eyeGroup.position.y = -0.02 - lookY * 0.12;
     const blinkPhase = animate ? t % 4.2 : 1;
     const closed = blinkPhase < 0.16 ? Math.sin((blinkPhase / 0.16) * Math.PI) : 0;
-    for (const eye of eyes) eye.scale.y = 1 - closed * 0.85;
+    // Contento tras el toque: ojos entornados (como una sonrisa), y luego vuelve a parpadear.
+    const happy = reacting ? Math.min(1, r * 6) * Math.min(1, (1.3 - r) * 4) : 0;
+    for (const eye of eyes) eye.scale.y = Math.min(1 - closed * 0.85, 1 - happy * 0.65);
     const pulse = animate ? 0.5 + 0.5 * Math.sin(t * 2.4) : 1;
     accentMat.emissiveIntensity = 0.7 + pulse * 0.6;
     core.scale.setScalar(0.92 + pulse * 0.12);
     coreRing.rotation.z = t * 0.8;
+    // Gestos de los brazos.
+    const follow = animate ? 1 - Math.exp(-dt * 7) : 1;
+    const waving = animate && t - waveAt < 1.6;
+    for (const limb of arms) {
+      if (focused && stackOpen) {
+        limb.target.set(limb.side * 2.1, -0.05, 1.75); // sostiene las dos cartas a la altura de la cara
+      } else if (stackOpen) {
+        limb.target.set(limb.side * 2.0, -1.05, 0.9); // presenta el globo, brazos abiertos
+      } else {
+        limb.target.copy(limb.rest); // sostiene el mazo
+      }
+      if (waving && limb.side === 1) {
+        limb.target.set(1.95, 0.55 + Math.sin((t - waveAt) * 14) * 0.18, 0.7 + Math.cos((t - waveAt) * 14) * 0.2);
+      }
+    }
+    placeArms(follow);
+    for (const limb of arms) {
+      const holding = (focused && stackOpen) || !stackOpen; // sostiene cartas o el mazo
+      const wave = waving && limb.side === 1;
+      const pressed = reacting ? Math.max(0, 1 - r * 2.5) : 0; // al tocarlo, aprieta un instante
+      poseFingers(limb, wave ? 0 : Math.min(1, (holding ? 0.75 : 0.15) + pressed * 0.4), wave ? 1 : stackOpen && !focused ? 0.6 : 0, t);
+      // La mano mira al frente, con la palma un poco inclinada según el gesto.
+      limb.hand.rotation.set(holding ? -0.35 : -0.1, 0, wave ? -limb.side * 0.3 + Math.sin((t - waveAt) * 14) * 0.35 : -limb.side * 0.15);
+    }
     placeTiles(dt);
+    placeInfo(follow);
     renderer.render(scene, camera);
   }
 
@@ -435,9 +637,11 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     frame,
     activate(x, y) {
       const tile = stackOpen && x !== null && y !== null ? hit(x, y) : null;
+      reactAt = clock;
       if (!stackOpen) {
         stackOpen = true;
         openedAt = clock;
+        waveAt = clock;
       } else if (tile) {
         focused = focused === tile ? null : tile;
       } else if (focused) {
@@ -456,6 +660,17 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     drag(dx) {
       if (stackOpen) spinVelocity += dx * 9;
     },
+    anchor(narrow) {
+      // Estrecho: encima de la cabeza; ancho: a su derecha, a la altura de los ojos.
+      const point = new three.Vector3(narrow ? 0 : 1.45, narrow ? 1.75 : 0.75, 0);
+      head.localToWorld(point);
+      point.project(camera);
+      return { x: ((point.x + 1) / 2) * viewWidth, y: ((1 - point.y) / 2) * viewHeight };
+    },
+    showInfo(next) {
+      info = next;
+      paintInfo(current);
+    },
     show(indices) {
       visible = indices;
       if (focused && !isShown(focused)) focused = null;
@@ -473,6 +688,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     },
     setPalette,
     resize(width, height) {
+      viewWidth = width;
+      viewHeight = height;
       renderer.setSize(width, height, false);
       camera.aspect = width / Math.max(1, height);
       camera.position.z = 13;
@@ -484,6 +701,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       camera.updateProjectionMatrix();
     },
     pointer(x, y) {
+      pointerAt = clock;
       pointerX = Math.max(-1, Math.min(1, x));
       pointerY = Math.max(-1, Math.min(1, y));
     },

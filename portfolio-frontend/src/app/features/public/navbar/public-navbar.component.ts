@@ -86,7 +86,7 @@ export { PAGE_SECTIONS } from './page-sections';
             }
           </div>
 
-          <!-- Tema: sistema → claro → oscuro. El icono dice el que hay elegido. -->
+          <!-- Tema: claro ↔ oscuro. El icono dice el que se ve. -->
           <button
             type="button"
             class="ui-btn-ghost ui-btn-icon"
@@ -96,10 +96,11 @@ export { PAGE_SECTIONS } from './page-sections';
             (click)="theme.next()"
           >
             <!-- Un SVG por icono: dentro de un bloque de control, un <path> suelto pierde el espacio de nombres SVG. -->
-            @switch (theme.choice()) {
-              @case ('light') { <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v1.5M12 18.5V20M4 12h1.5M18.5 12H20M6.3 6.3l1 1M16.7 16.7l1 1M6.3 17.7l1-1M16.7 7.3l1-1M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" /></svg> }
-              @case ('dark') { <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z" /></svg> }
-              @default { <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H4zM9 20h6M12 16v4" /></svg> }
+            <!-- Sol en claro, luna en oscuro: un clic pasa al otro, sin estados intermedios. -->
+            @if (theme.effective() === 'light') {
+              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v1.5M12 18.5V20M4 12h1.5M18.5 12H20M6.3 6.3l1 1M16.7 16.7l1 1M6.3 17.7l1-1M16.7 7.3l1-1M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" /></svg>
+            } @else {
+              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z" /></svg>
             }
           </button>
           <!-- En móvil el interruptor va dentro del menú: en la barra no cabe en una fila. -->
@@ -150,8 +151,8 @@ export class PublicNavbarComponent {
   readonly themeWord = computed(() => (this.en() ? 'Theme: ' : 'Tema: '));
   readonly themeLabel = computed(() =>
     this.en()
-      ? ({ system: 'system', light: 'light', dark: 'dark' })[this.theme.choice()] + '. Change'
-      : ({ system: 'el del sistema', light: 'claro', dark: 'oscuro' })[this.theme.choice()] + '. Cambiar',
+      ? (this.theme.effective() === 'light' ? 'light. Switch to dark' : 'dark. Switch to light')
+      : this.theme.effective() === 'light' ? 'claro. Cambiar a oscuro' : 'oscuro. Cambiar a claro',
   );
 
   labelOf(section: { label: string; labelEn: string }): string {

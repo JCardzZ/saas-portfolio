@@ -20,21 +20,19 @@ describe('ThemeService', () => {
     expect(document.documentElement.hasAttribute('data-theme')).toBeFalse();
   });
 
-  it('cycles system → light → dark → system, remembering a fixed choice', () => {
+  it('toggles straight between light and dark from what is shown, remembering the choice', () => {
     const theme = TestBed.inject(ThemeService);
+    const start = theme.effective();
+    const other = start === 'dark' ? 'light' : 'dark';
 
     theme.next();
-    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
-    expect(theme.effective()).toBe('light');
+    expect(document.documentElement.getAttribute('data-theme')).toBe(other);
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe(other);
+    expect(theme.effective()).toBe(other);
 
     theme.next();
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-    expect(theme.effective()).toBe('dark');
-
-    theme.next();
-    expect(document.documentElement.hasAttribute('data-theme')).toBeFalse();
-    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
+    expect(document.documentElement.getAttribute('data-theme')).toBe(start);
+    expect(theme.effective()).toBe(start);
   });
 
   it('restores a stored choice and ignores anything else', () => {

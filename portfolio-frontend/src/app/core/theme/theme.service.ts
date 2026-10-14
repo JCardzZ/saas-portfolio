@@ -4,7 +4,6 @@ import { Injectable, computed, signal } from '@angular/core';
 export type ThemeChoice = 'system' | 'light' | 'dark';
 
 export const THEME_STORAGE_KEY = 'site-theme';
-const ORDER: ThemeChoice[] = ['system', 'light', 'dark'];
 
 /**
  * Tema de la vista pública. Los colores son variables CSS (design-tokens.js): elegir tema solo
@@ -41,9 +40,9 @@ export class ThemeService {
     }
   }
 
-  /** Sistema → claro → oscuro → sistema. */
+  /** Alterna claro ↔ oscuro desde el que se ve ahora (sin pasar por «sistema»). */
   next(): void {
-    this.set(ORDER[(ORDER.indexOf(this.choice()) + 1) % ORDER.length]);
+    this.set(this.effective() === 'dark' ? 'light' : 'dark');
   }
 }
 
