@@ -83,6 +83,8 @@ export interface HeroScene {
   talk(talking: boolean): void;
   /** Punto de la pantalla (px del lienzo) junto a la cabeza, de donde sale el bocadillo. */
   anchor(narrow: boolean, side?: 'left'): { x: number; y: number };
+  /** Punta del dedo que señala (mano izquierda), en píxeles del lienzo; `null` si no está guiando. */
+  fingertip(): { x: number; y: number } | null;
   /** Señala la ficha bajo el cursor (coordenadas normalizadas del lienzo, -1…1); devuelve su nombre. */
   pick(x: number, y: number): string | null;
   frame(t: number): void;
@@ -1258,6 +1260,13 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     },
     talk(next) {
       talking = next;
+    },
+    fingertip() {
+      if (!guideActive) return null;
+      const point = new three.Vector3(0, 0.45, 0);
+      arms[0].hand.localToWorld(point);
+      point.project(camera);
+      return { x: ((point.x + 1) / 2) * viewWidth, y: ((1 - point.y) / 2) * viewHeight };
     },
     anchor(narrow, side) {
       // Ancho: a la derecha de la cabeza, centrado a la altura de los ojos (a la izquierda en modo
