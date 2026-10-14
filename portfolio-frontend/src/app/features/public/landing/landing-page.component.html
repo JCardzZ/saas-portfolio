@@ -2,7 +2,7 @@
 <div class="dock-aware dark safe-x relative min-h-dvh overflow-x-clip text-ink-1 selection:bg-accent-solid/50">
   <app-galaxy-backdrop />
   <!-- Escena 3D a sangre, del ancho y el alto de la pantalla, detrás del hero. -->
-  <app-hero-scene class="absolute inset-x-0 top-0 z-0 h-dvh" (stackOpen)="immersive.set($event)" />
+  <app-hero-scene class="absolute inset-x-0 top-0 z-0 h-dvh" (stackOpen)="immersive.set($event)" (ask)="askAi($event)" />
   <app-public-navbar (openChat)="chatOpen.set(true)" />
 
   <main class="mx-auto max-w-6xl px-6 pb-24 pt-[calc(7rem+env(safe-area-inset-top,0px))] max-[399px]:px-4 sm:pt-[calc(9rem+env(safe-area-inset-top,0px))]">
@@ -241,6 +241,7 @@
     </div>
   </footer>
 
+  <app-scroll-buddy />
   <app-trace-inspector />
   <app-icon-pop-layer />
   <app-rag-chat [(open)]="chatOpen" [projects]="catalog.projects()" [technologies]="catalog.technologies()" />

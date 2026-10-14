@@ -6,6 +6,7 @@ import { LanguageService } from '../../../../core/i18n/language.service';
 import { ThemeService } from '../../../../core/theme/theme.service';
 import { TECH_ICONS, TechIconKey } from '../../../../shared/ui/tech-icons';
 import type { HeroScene, ScenePalette, SceneTech } from './hero-scene';
+import { HeroSound, countVisit, greeting } from './hero-sound';
 import { HELP_BY_CATEGORY, STACK_CARDS } from './stack-cards';
 
 /**
@@ -68,12 +69,45 @@ const DRAG_THRESHOLD = 6;
         #bubble
         class="speech pointer-events-none absolute left-0 top-0 z-10 transition-opacity duration-slow"
         [class.opacity-0]="!ready() || open()"
+        [class.invisible]="!ready() || open()"
         [class.speech-narrow]="narrow"
-        aria-hidden="true"
       >
         <div class="speech-body rounded-card border border-line-subtle bg-surface-1/85 px-4 py-3 shadow-floating backdrop-blur-xl">
-          <span class="block font-mono text-mono-sm text-ink-3">{{ pitch().lead }}</span>
-          <span class="mt-1 block text-title-3 font-semibold text-ink-1"><span #typed></span><span class="caret" aria-hidden="true"></span></span>
+          <span class="flex items-start justify-between gap-2">
+            <span class="min-w-0">
+              <span class="block text-body-sm font-medium text-ink-2">{{ hello() }}</span>
+              <span class="block font-mono text-mono-sm text-ink-3">{{ pitch().lead }}</span>
+            </span>
+            <!-- Sonido y voz: apagados por defecto. -->
+            <button
+              type="button"
+              class="ui-btn-ghost ui-btn-icon pointer-events-auto -mr-2 -mt-1 shrink-0"
+              data-testid="hero-sound"
+              [attr.aria-pressed]="soundOn()"
+              [attr.aria-label]="i18n.lang() === 'en' ? (soundOn() ? 'Turn sound and voice off' : 'Turn sound and voice on') : (soundOn() ? 'Apagar sonido y voz' : 'Encender sonido y voz')"
+              (click)="toggleSound()"
+            >
+              @if (soundOn()) {
+                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /></svg>
+              } @else {
+                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zM17 9l5 6M22 9l-5 6" /></svg>
+              }
+            </button>
+          </span>
+          <span class="mt-1 block text-title-3 font-semibold text-ink-1"><span #typed aria-hidden="true"></span><span class="caret" aria-hidden="true"></span></span>
+          <!-- Preguntar al asistente desde el bocadillo: abre el chat con la pregunta ya enviada. -->
+          <form class="pointer-events-auto mt-3 flex gap-2" [class.hidden]="narrow" (submit)="submitAsk($event, question)">
+            <input
+              #question
+              type="text"
+              class="min-w-0 flex-1 rounded-control border border-line-subtle bg-surface-2 px-3 py-1.5 text-body-sm text-ink-1 placeholder:text-ink-3 focus:border-accent-solid focus:outline-none"
+              maxlength="300"
+              data-testid="hero-ask"
+              [attr.aria-label]="i18n.lang() === 'en' ? 'Ask me something' : 'Pregúntame algo'"
+              [placeholder]="i18n.lang() === 'en' ? 'Ask me something…' : 'Pregúntame algo…'"
+            />
+            <button type="submit" class="ui-btn-primary shrink-0">{{ i18n.lang() === 'en' ? 'Ask' : 'Preguntar' }}</button>
+          </form>
         </div>
       </div>
       <p class="sr-only">{{ pitch().lead }} {{ pitch().lines.join(' · ') }}</p>
@@ -133,6 +167,39 @@ export class HeroSceneComponent {
   readonly ready = signal(false);
   /** Avisa al hero de que el mazo se abre o se recoge (atenúa su texto). */
   readonly stackOpen = output<boolean>();
+  /** Pregunta escrita en el bocadillo: la página abre el asistente con ella. */
+  readonly ask = output<string>();
+  private readonly sound = new HeroSound();
+  readonly soundOn = signal(this.sound.enabled);
+  private readonly visits = countVisit();
+  readonly hello = computed(() => greeting(this.i18n.lang(), this.visits));
+
+  toggleSound(): void {
+    this.soundOn.set(this.sound.toggle());
+    this.sound.pop();
+  }
+
+  submitAsk(event: Event, field: HTMLInputElement): void {
+    event.preventDefault();
+    const question = field.value.trim();
+    if (!question) return;
+    field.value = '';
+    this.ask.emit(question);
+  }
+
+  /** Dice en voz alta el saludo y lo que ofrezco (si el sonido está encendido). */
+  private say(): void {
+    const voice = globalThis.speechSynthesis;
+    if (!this.soundOn() || !voice) return;
+    voice.cancel();
+    const en = this.i18n.lang() === 'en';
+    const utterance = new SpeechSynthesisUtterance(`${this.hello().replace(/👋/g, '')}. ${this.pitch().lead} ${this.pitch().lines[0]}.`);
+    utterance.lang = en ? 'en-US' : 'es-ES';
+    utterance.rate = 1.03;
+    utterance.onstart = () => this.scene?.speak(true);
+    utterance.onend = utterance.onerror = () => this.scene?.speak(false);
+    voice.speak(utterance);
+  }
   readonly open = signal(false);
   readonly hovered = signal<string | null>(null);
   readonly i18n = inject(LanguageService);
@@ -208,19 +275,34 @@ export class HeroSceneComponent {
     };
   });
   private readonly touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
-  private press: { x: number; lastX: number; dragged: boolean } | null = null;
+  private press: { x: number; y: number; lastX: number; dragged: boolean; grabbed: boolean } | null = null;
   private suppressClick = false;
 
   pressStart(event: PointerEvent): void {
-    this.press = { x: event.clientX, lastX: event.clientX, dragged: false };
+    this.press = { x: event.clientX, y: event.clientY, lastX: event.clientX, dragged: false, grabbed: false };
+  }
+
+  private toCanvas(clientX: number, clientY: number): { x: number; y: number } | null {
+    const box = this.canvas()?.nativeElement.getBoundingClientRect();
+    return box ? { x: ((clientX - box.left) / box.width) * 2 - 1, y: -((clientY - box.top) / box.height) * 2 + 1 } : null;
   }
 
   /** Arrastre: lo llama el listener de `pointermove` de la ventana. */
   private pressMove(event: PointerEvent): void {
     const press = this.press;
     if (!press || !this.scene) return;
-    if (Math.abs(event.clientX - press.x) > DRAG_THRESHOLD) press.dragged = true;
-    if (press.dragged) {
+    if (!press.dragged && Math.hypot(event.clientX - press.x, event.clientY - press.y) > DRAG_THRESHOLD) {
+      press.dragged = true;
+      // Si el arrastre empieza sobre una ficha, se agarra (para lanzarla); si no, gira el globo.
+      const start = this.toCanvas(press.x, press.y);
+      press.grabbed = !!(start && this.open() && this.scene.grab(start.x, start.y));
+      if (press.grabbed) this.sound.tick();
+    }
+    if (press.grabbed) {
+      const point = this.toCanvas(event.clientX, event.clientY);
+      if (point) this.scene.fling(point.x, point.y);
+      this.kickFrame?.();
+    } else if (press.dragged) {
       this.scene.drag((event.clientX - press.lastX) / Math.max(1, innerWidth));
       this.kickFrame?.();
     }
@@ -228,6 +310,7 @@ export class HeroSceneComponent {
   }
 
   pressEnd(_event: PointerEvent): void {
+    if (this.press?.grabbed) this.scene?.release();
     this.suppressClick = !!this.press?.dragged;
     this.press = null;
   }
@@ -245,7 +328,10 @@ export class HeroSceneComponent {
       ? null
       : { x: ((event.clientX - box.left) / box.width) * 2 - 1, y: -((event.clientY - box.top) / box.height) * 2 + 1 };
     if (!this.open()) this.scene.show(groupIndices(this.filter()));
+    const wasOpen = this.open();
     const state = this.scene.activate(point?.x ?? null, point?.y ?? null);
+    if (!wasOpen && state.open) this.say();
+    if (state.open !== wasOpen || state.focused) this.sound.pop();
     this.setOpen(state.open);
     this.focused.set(state.focused);
     this.kickFrame?.();
@@ -259,6 +345,7 @@ export class HeroSceneComponent {
   key(event: KeyboardEvent): void {
     if (!this.scene || !this.open()) return;
     if (event.key === 'Escape') {
+      globalThis.speechSynthesis?.cancel();
       this.scene.close();
       this.setOpen(false);
       this.focused.set(null);
@@ -338,6 +425,7 @@ export class HeroSceneComponent {
         title, path, color, image: image ? `/${image}` : undefined,
       }));
       scene = createHeroScene(three, canvas, readPalette(), !still, techs);
+      scene.onBounce(() => this.sound.bounce());
       this.scene = scene;
     } catch {
       this.failed.set(true);
@@ -371,8 +459,8 @@ export class HeroSceneComponent {
       if (!el) return;
       const at = scene.anchor(this.narrow);
       el.style.transform = this.narrow
-        ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-50%, -100%)`
-        : `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translateY(-100%)`;
+        ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-50%, -50%)`
+        : `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translateY(-50%)`;
     };
     // Máquina de escribir: escribe, espera, borra y pasa a la siguiente frase.
     let line = 0;
@@ -428,7 +516,10 @@ export class HeroSceneComponent {
       scene.pointer((event.clientX / innerWidth) * 2 - 1, (event.clientY / innerHeight) * 2 - 1);
       const box = canvas.getBoundingClientRect();
       const title = scene.pick(((event.clientX - box.left) / box.width) * 2 - 1, -((event.clientY - box.top) / box.height) * 2 + 1);
-      if (title !== this.hovered()) zoneRef.run(() => this.hovered.set(title));
+      if (title !== this.hovered()) {
+        if (title) this.sound.tick();
+        zoneRef.run(() => this.hovered.set(title));
+      }
       if (reduced) kick();
     };
     const onScroll = () => {

@@ -58,7 +58,17 @@ export interface HeroScene {
   show(indices: ReadonlySet<number> | null): void;
   /** Contenido de la carta de la mano derecha (qué es y cómo ayudo); `null` la guarda. */
   showInfo(info: SceneInfo | null): void;
-  /** Mientras `true`, mueve la boca como si hablara (lo marca el texto del bocadillo). */
+  /** Mientras `true`, la sonrisa se mueve como una boca (lo marca la voz del robot). */
+  speak(speaking: boolean): void;
+  /** Agarra la ficha bajo (x, y), si la hay; devuelve su nombre. Se mueve con `fling` y se suelta con `release`. */
+  grab(x: number, y: number): string | null;
+  /** Avisa cada vez que una ficha lanzada rebota (para el sonido). */
+  onBounce(callback: () => void): void;
+  /** Lleva la ficha agarrada al punto (x, y) del lienzo. */
+  fling(x: number, y: number): void;
+  /** Suelta la ficha: sale con la velocidad del gesto, cae con gravedad, rebota y vuelve al globo. */
+  release(): void;
+  /** Mientras `true`, teclea en el portátil (lo marca el texto que escribe el bocadillo). */
   talk(talking: boolean): void;
   /** Punto de la pantalla (px del lienzo) junto a la cabeza, de donde sale el bocadillo. */
   anchor(narrow: boolean): { x: number; y: number };
@@ -173,23 +183,14 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     eyeGroup.add(eye);
     return eye;
   });
-  // Nariz y boca de luz, en el visor, como los ojos: siguen la mirada. La boca habla (se abre y
-  // cierra con el texto del bocadillo) y sonríe al tocar al robot o cuando calla.
-  const nose = new three.Mesh(keep(new three.CapsuleGeometry(0.035, 0.07, 6, 12)), accentMat);
-  nose.position.set(0, -0.2, 0);
-  nose.scale.set(1, 1, 0.4);
-  eyeGroup.add(nose);
-  const mouth = new three.Mesh(keep(new three.CapsuleGeometry(0.07, 0.26, 8, 20)), accentMat);
-  mouth.rotation.z = Math.PI / 2;
-  mouth.position.set(0, -0.38, 0);
-  mouth.scale.set(1, 1, 0.4);
-  eyeGroup.add(mouth);
-  const smile = new three.Mesh(keep(new three.TorusGeometry(0.2, 0.035, 10, 32, Math.PI)), accentMat);
+  // Una sonrisa discreta de luz bajo los ojos: crece al tocar al robot.
+  const smile = new three.Mesh(keep(new three.TorusGeometry(0.11, 0.022, 8, 28, Math.PI)), accentMat);
   smile.rotation.z = Math.PI;
-  smile.position.set(0, -0.27, 0);
-  smile.scale.set(1, 0.8, 0.4);
+  smile.position.set(0, -0.3, 0);
+  smile.scale.set(1, 0.7, 0.4);
   eyeGroup.add(smile);
   let talking = false;
+  let speaking = false;
 
   const eyeLight = new three.PointLight(0x7fee64, 2.5, 3, 2);
   eyeLight.position.set(0, 0, 1.6);
@@ -228,10 +229,10 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   torso.position.y = -2.2;
   character.add(torso);
   const chest = new three.Mesh(rounded(1.6, 1.0, 0.3, 0.22), graphite);
-  chest.position.set(0, -1.9, 0.78);
+  chest.position.set(0, -1.5, 0.78);
   character.add(chest);
   const core = new three.Mesh(sphere(0.2, 32), accentMat);
-  core.position.set(0, -1.9, 0.95);
+  core.position.set(0, -1.5, 0.95);
   character.add(core);
   const coreRing = new three.Mesh(keep(new three.TorusGeometry(0.32, 0.03, 12, 48)), metal);
   coreRing.position.copy(core.position);
@@ -242,6 +243,37 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     character.add(shoulder);
   }
 
+  // Puesto de trabajo: silla detrás, escritorio delante (su faldón tapa las piernas) y un portátil
+  // del que se ve la tapa con una luz del acento. El mazo de fichas descansa sobre la mesa.
+  const deskMat = physical(GRAPHITE, 0.45, { metalness: 0.3, clearcoat: 0.4 });
+  const chairBack = new three.Mesh(rounded(2.5, 2.7, 0.35, 0.17), deskMat);
+  chairBack.position.set(0, -2.0, -1.15);
+  character.add(chairBack);
+  const deskTop = new three.Mesh(rounded(6.2, 0.16, 2.3, 0.07), deskMat);
+  deskTop.position.set(0, -2.86, 2.0);
+  character.add(deskTop);
+  const deskFront = new three.Mesh(keep(new three.BoxGeometry(6.0, 1.6, 0.1)), deskMat);
+  deskFront.position.set(0, -3.7, 3.05);
+  character.add(deskFront);
+  for (const side of [-1, 1]) {
+    const leg = new three.Mesh(keep(new three.BoxGeometry(0.14, 1.6, 2.1)), deskMat);
+    leg.position.set(side * 2.95, -3.7, 2.0);
+    character.add(leg);
+  }
+  const laptopBase = new three.Mesh(rounded(1.8, 0.08, 1.2, 0.04), metal);
+  laptopBase.position.set(0, -2.74, 1.75);
+  character.add(laptopBase);
+  const hinge = new three.Group();
+  hinge.position.set(0, -2.7, 2.33);
+  hinge.rotation.x = 0.22;
+  character.add(hinge);
+  const lid = new three.Mesh(rounded(1.8, 1.0, 0.05, 0.025), metal);
+  lid.position.y = 0.5;
+  hinge.add(lid);
+  const lidLogo = new three.Mesh(keep(new three.CircleGeometry(0.1, 32)), accentMat);
+  lidLogo.position.set(0, 0.55, 0.03);
+  hinge.add(lidLogo);
+
   // Brazos y manos: sostienen el mazo delante del pecho.
   // Cada brazo va del hombro a la mano; la mano sigue a un objetivo según el gesto (sostener el
   // mazo, presentar el globo, enseñar dos cartas, saludar) y el brazo se estira hasta ella.
@@ -251,7 +283,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   const up = new three.Vector3(0, 1, 0);
   const arms = [-1, 1].map((side) => {
     const shoulder = new three.Vector3(side * 1.65, -1.7, 0);
-    const rest = new three.Vector3(side * 0.62, -1.62, 1.45);
+    const rest = new three.Vector3(side * 0.45, -2.58, 1.55); // sobre el teclado
     const arm = new three.Mesh(armGeometry, shell);
     character.add(arm);
     // Mano: palma, cuatro dedos con dos falanges y un pulgar, para que agarre y gesticule.
@@ -330,7 +362,11 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const glow = keep(new three.MeshStandardMaterial({ color: GRAPHITE, emissive: 0x7fee64, emissiveIntensity: 0.15, roughness: 0.4, metalness: 0.5, transparent: true }));
     const mesh = new three.Mesh(tileGeometry, [glow, glow, glow, glow, face, glow]);
     scene.add(mesh);
-    const tile = { tech, art, texture, mesh, index, hover: 0, glow, face, picture: null as HTMLImageElement | null };
+    const tile = {
+      tech, art, texture, mesh, index, hover: 0, glow, face, picture: null as HTMLImageElement | null,
+      /** Vuelo libre tras lanzarla: velocidad y hasta cuándo dura (luego vuelve a su sitio). */
+      flight: null as { velocity: THREE.Vector3; spin: number; until: number } | null,
+    };
     if (tech.image) {
       const picture = new Image();
       picture.decoding = 'async';
@@ -499,7 +535,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         target.copy(HOLD_LEFT);
         character.localToWorld(target);
         targetQuat.copy(faceCamera);
-        scale = 1.55 * character.scale.x;
+        scale = 2.1 * character.scale.x;
       } else if (open) {
         const y = 1 - ((rank + 0.5) / shownCount) * 2;
         const ring = Math.sqrt(1 - y * y);
@@ -513,14 +549,45 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         // Mientras enseña una, las demás se apartan a un segundo plano.
         opacity = (0.28 + 0.72 * Math.max(0, (depth + 1) / 2) ** 1.4) * (focused ? 0.18 : 1);
       } else {
-        // En las manos: un mazo abierto en abanico pequeño, como unas cartas.
-        const offset = i - (count - 1) / 2;
-        const step = Math.min(0.03, 1.2 / count);
-        target.set(HANDS.x + offset * step, HANDS.y + 0.42 - Math.abs(offset) * step * 0.25, HANDS.z + 0.08 + i * 0.006);
+        // Sobre la mesa, a la derecha del portátil: un mazo tumbado, algo desordenado.
+        target.set(2.05 + Math.sin(i * 2.1) * 0.04, -2.76 + i * 0.012, 1.85 + Math.cos(i * 1.7) * 0.04);
         character.localToWorld(target);
-        tilt.setFromAxisAngle(zAxis, -offset * Math.min(0.05, 1.5 / count));
+        tilt.setFromEuler(new three.Euler(-Math.PI / 2, 0, Math.sin(i * 1.3) * 0.08 - 0.2));
         targetQuat.copy(character.quaternion).multiply(tilt);
-        scale = 0.62 * character.scale.x;
+        scale = 0.95 * character.scale.x;
+      }
+      if (tile === grabbed) {
+        // Sigue al dedo o al cursor, con un poco de retraso para que se note el peso.
+        tile.mesh.position.lerp(grabPoint, 0.35);
+        tile.mesh.quaternion.slerp(targetQuat, follow);
+        tile.mesh.scale.setScalar(cardScale * 1.25);
+        tile.face.opacity = tile.glow.opacity = 1;
+        tile.glow.emissiveIntensity = 2;
+        continue;
+      }
+      if (tile.flight) {
+        // Física simple: gravedad, rebote contra el suelo de la pantalla (y un poco contra los
+        // lados) con pérdida de energía, y giro; al acabar el tiempo vuelve a su sitio.
+        const { velocity } = tile.flight;
+        velocity.y -= 18 * dt;
+        tile.mesh.position.addScaledVector(velocity, dt);
+        const floor = camY - halfHeight * 0.92;
+        if (tile.mesh.position.y < floor) {
+          tile.mesh.position.y = floor;
+          velocity.y = Math.abs(velocity.y) * 0.55;
+          velocity.x *= 0.8;
+          onBounce?.();
+        }
+        const wall = halfWidth * 0.95;
+        if (Math.abs(tile.mesh.position.x) > wall) {
+          tile.mesh.position.x = Math.sign(tile.mesh.position.x) * wall;
+          velocity.x *= -0.6;
+        }
+        tile.mesh.rotateZ(tile.flight.spin * dt);
+        tile.flight.spin *= 0.98;
+        tile.face.opacity = tile.glow.opacity = 1;
+        if (clock > tile.flight.until) tile.flight = null;
+        continue;
       }
       tile.mesh.position.lerp(target, follow);
       tile.mesh.quaternion.slerp(targetQuat, follow);
@@ -533,22 +600,36 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     }
   }
 
-  const HOLD_LEFT = new three.Vector3(-2.15, 0.85, 1.9);
-  const HOLD_RIGHT = new three.Vector3(2.2, 0.95, 1.9);
+  const HOLD_LEFT = new three.Vector3(-2.75, 0.55, 2.0);
+  const HOLD_RIGHT = new three.Vector3(2.85, 0.65, 2.0);
   function placeInfo(follow: number): void {
     const shown = !!(focused && info && stackOpen);
     target.copy(HOLD_RIGHT);
     character.localToWorld(target);
     infoMesh.position.lerp(target, follow);
     infoMesh.quaternion.slerp(faceCamera, follow);
-    const goal = shown ? character.scale.x * 1.2 : 0.001;
+    const goal = shown ? character.scale.x * 1.6 : 0.001;
     infoMesh.scale.setScalar(infoMesh.scale.x + (goal - infoMesh.scale.x) * follow);
-    infoFace.opacity = infoGlow.opacity = Math.min(1, infoMesh.scale.x / Math.max(0.01, character.scale.x * 1.2));
+    infoFace.opacity = infoGlow.opacity = Math.min(1, infoMesh.scale.x / Math.max(0.01, character.scale.x * 1.6));
   }
 
   let visible: ReadonlySet<number> | null = null;
   function isShown(tile: (typeof tiles)[number]): boolean {
     return visible === null || visible.has(tile.index);
+  }
+
+  let grabbed: (typeof tiles)[number] | null = null;
+  const grabPoint = new three.Vector3();
+  const lastGrab = new three.Vector3();
+  const grabVelocity = new three.Vector3();
+  let lastGrabAt = 0;
+  let onBounce: (() => void) | null = null;
+  /** Punto del plano z = 2 (delante del robot) bajo (x, y) normalizadas del lienzo. */
+  function planePoint(x: number, y: number, out: THREE.Vector3): void {
+    raycaster.setFromCamera(new three.Vector2(x, y), camera);
+    const ray = raycaster.ray;
+    const t = (2 - ray.origin.z) / ray.direction.z;
+    out.copy(ray.origin).addScaledVector(ray.direction, t);
   }
 
   function hit(x: number, y: number): (typeof tiles)[number] | null {
@@ -606,7 +687,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     // Si nadie mueve el cursor, mira alrededor por su cuenta.
     const idle = animate && t - pointerAt > 4;
     const wantX = idle ? Math.sin(t * 0.45) * 0.55 : pointerX;
-    const wantY = idle ? Math.sin(t * 0.31 + 1) * 0.25 : pointerY;
+    const wantY = idle ? (talking && !stackOpen ? 0.55 : Math.sin(t * 0.31 + 1) * 0.25) : pointerY;
     lookX += (wantX - lookX) * 0.08;
     lookY += (wantY - lookY) * 0.08;
     head.rotation.y = lookX * 0.55;
@@ -620,13 +701,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     // Contento tras el toque: ojos entornados (como una sonrisa), y luego vuelve a parpadear.
     const happy = reacting ? Math.min(1, r * 6) * Math.min(1, (1.3 - r) * 4) : 0;
     for (const eye of eyes) eye.scale.y = Math.min(1 - closed * 0.85, 1 - happy * 0.65);
-    // Boca: al hablar se abre y cierra con un ritmo irregular, como sílabas; si no, sonríe.
-    const speaking = talking && !happy && animate;
-    const syllable = speaking ? Math.abs(Math.sin(t * 17)) * (0.6 + 0.4 * Math.sin(t * 5.3)) : 0;
-    mouth.visible = speaking;
-    mouth.scale.set(1 + syllable * 1.6, 1 - syllable * 0.25, 0.4);
-    smile.visible = !speaking;
-    smile.scale.set(1 + happy * 0.25, 0.8 + happy * 0.5, 0.4);
+    // Con voz, la sonrisa se abre y cierra como una boca que habla.
+    const voice = speaking && animate ? Math.abs(Math.sin(t * 15)) * (0.6 + 0.4 * Math.sin(t * 4.1)) : 0;
+    smile.scale.set(1 + happy * 0.6 + voice * 0.3, 0.7 + happy * 0.6 + voice * 1.4, 0.4);
     const pulse = animate ? 0.5 + 0.5 * Math.sin(t * 2.4) : 1;
     accentMat.emissiveIntensity = 0.7 + pulse * 0.6;
     core.scale.setScalar(0.92 + pulse * 0.12);
@@ -636,11 +713,13 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const waving = animate && t - waveAt < 1.6;
     for (const limb of arms) {
       if (focused && stackOpen) {
-        limb.target.set(limb.side * 2.1, -0.05, 1.75); // sostiene las dos cartas a la altura de la cara
+        limb.target.set(limb.side * 2.7, -0.55, 1.85); // sostiene las dos cartas a la altura de la cara
       } else if (stackOpen) {
         limb.target.set(limb.side * 2.0, -1.05, 0.9); // presenta el globo, brazos abiertos
       } else {
-        limb.target.copy(limb.rest); // sostiene el mazo
+        // Teclea mientras el bocadillo escribe: las manos golpean por turnos.
+        limb.target.copy(limb.rest);
+        if (talking && animate) limb.target.y += Math.max(0, Math.sin(t * 19 + (limb.side > 0 ? Math.PI : 0))) * 0.07;
       }
       if (waving && limb.side === 1) {
         limb.target.set(1.95, 0.55 + Math.sin((t - waveAt) * 14) * 0.18, 0.7 + Math.cos((t - waveAt) * 14) * 0.2);
@@ -648,12 +727,13 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     }
     placeArms(follow);
     for (const limb of arms) {
-      const holding = (focused && stackOpen) || !stackOpen; // sostiene cartas o el mazo
+      const holding = !!(focused && stackOpen); // sostiene las dos cartas
+      const typingHands = !stackOpen;
       const wave = waving && limb.side === 1;
       const pressed = reacting ? Math.max(0, 1 - r * 2.5) : 0; // al tocarlo, aprieta un instante
-      poseFingers(limb, wave ? 0 : Math.min(1, (holding ? 0.75 : 0.15) + pressed * 0.4), wave ? 1 : stackOpen && !focused ? 0.6 : 0, t);
+      poseFingers(limb, wave ? 0 : Math.min(1, (holding ? 0.75 : typingHands ? 0.45 + (talking ? Math.max(0, Math.sin(t * 23 + limb.side)) * 0.35 : 0) : 0.15) + pressed * 0.4), wave ? 1 : stackOpen && !focused ? 0.6 : 0, t);
       // La mano mira al frente, con la palma un poco inclinada según el gesto.
-      limb.hand.rotation.set(holding ? -0.35 : -0.1, 0, wave ? -limb.side * 0.3 + Math.sin((t - waveAt) * 14) * 0.35 : -limb.side * 0.15);
+      limb.hand.rotation.set(holding ? -0.35 : typingHands ? -1.3 : -0.1, 0, wave ? -limb.side * 0.3 + Math.sin((t - waveAt) * 14) * 0.35 : -limb.side * 0.15);
     }
     placeTiles(dt);
     placeInfo(follow);
@@ -691,9 +771,10 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       talking = next;
     },
     anchor(narrow) {
-      // Estrecho: encima de la cabeza; ancho: a su derecha, a la altura de los ojos.
-      const point = new three.Vector3(narrow ? 0 : 1.45, narrow ? 1.75 : 0.75, 0);
-      head.localToWorld(point);
+      // Ancho: a la derecha de la cabeza, centrado a la altura de los ojos.
+      // Estrecho: sobre el faldón del escritorio, bajo el robot (encima no cabe: está el rol).
+      const point = narrow ? new three.Vector3(0, -3.55, 3.1) : new three.Vector3(1.55, 0.1, 0);
+      (narrow ? character : head).localToWorld(point);
       point.project(camera);
       return { x: ((point.x + 1) / 2) * viewWidth, y: ((1 - point.y) / 2) * viewHeight };
     },
@@ -712,6 +793,36 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       if (animate) spinVelocity += direction * 1.6;
       else spin += direction * 0.4;
     },
+    speak(next) {
+      speaking = next;
+    },
+    grab(x, y) {
+      const tile = stackOpen ? hit(x, y) : null;
+      if (!tile || tile === focused) return null;
+      grabbed = tile;
+      tile.flight = null;
+      planePoint(x, y, grabPoint);
+      lastGrab.copy(grabPoint);
+      lastGrabAt = clock;
+      grabVelocity.set(0, 0, 0);
+      return tile.tech.title;
+    },
+    fling(x, y) {
+      if (!grabbed) return;
+      planePoint(x, y, grabPoint);
+      const elapsed = Math.max(0.016, clock - lastGrabAt);
+      grabVelocity.copy(grabPoint).sub(lastGrab).divideScalar(elapsed).clampLength(0, 30);
+      lastGrab.copy(grabPoint);
+      lastGrabAt = clock;
+    },
+    release() {
+      if (!grabbed) return;
+      grabbed.flight = { velocity: grabVelocity.clone().setZ(0), spin: grabVelocity.x * -0.6, until: clock + 3 };
+      grabbed = null;
+    },
+    onBounce(callback: () => void) {
+      onBounce = callback;
+    },
     pick(x, y) {
       hovered = stackOpen ? hit(x, y) : null;
       return hovered?.tech.title ?? null;
@@ -726,8 +837,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       halfHeight = Math.tan((camera.fov * Math.PI) / 360) * (camera.position.z - 0.3);
       halfWidth = halfHeight * camera.aspect;
       // El lienzo ocupa toda la pantalla: el robot, a escala de ella, queda en la mitad de abajo, bajo el nombre.
-      fit = Math.min(halfHeight * 0.27, halfWidth * 0.36);
-      camera.position.y = halfHeight * (camera.aspect < 0.8 ? 0.42 : 0.52);
+      // Robot entero con su escritorio (~6,2 de alto y de ancho) en la mitad baja, bajo el nombre.
+      fit = Math.min(halfHeight * 0.165, halfWidth * 0.29);
+      camera.position.y = -1.3 * fit + halfHeight * (camera.aspect < 0.8 ? 0.1 : 0.2);
       camera.updateProjectionMatrix();
     },
     pointer(x, y) {

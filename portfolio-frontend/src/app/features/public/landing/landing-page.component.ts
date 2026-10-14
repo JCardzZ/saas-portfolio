@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { IconPopLayerComponent } from '../../../shared/ui/icon-pop-layer.component';
@@ -32,6 +32,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { LANDING_COPY } from './landing-copy';
 import { HeroSceneComponent } from './hero3d/hero-scene.component';
 import { GalaxyBackdropComponent } from './galaxy/galaxy-backdrop.component';
+import { ScrollBuddyComponent } from './scroll-buddy.component';
 
 @Component({
   selector: 'app-landing-page',
@@ -41,6 +42,7 @@ import { GalaxyBackdropComponent } from './galaxy/galaxy-backdrop.component';
     SectionHeaderComponent,
     HeroSceneComponent,
     GalaxyBackdropComponent,
+    ScrollBuddyComponent,
     PublicNavbarComponent,
     CvDownloadComponent,
     CvPickerComponent,
@@ -83,6 +85,13 @@ export class LandingPageComponent implements OnInit {
   readonly i18n = inject(LanguageService);
   /** El mazo de tecnologías del hero está abierto: el texto del hero se atenúa. */
   readonly immersive = signal(false);
+  private readonly chat = viewChild(RagChatComponent);
+
+  /** Pregunta hecha al robot del hero: se abre el asistente y se le envía. */
+  askAi(question: string): void {
+    this.chatOpen.set(true);
+    setTimeout(() => this.chat()?.ask(question));
+  }
   readonly copy = LANDING_COPY;
   readonly heroRole = computed(() => this.i18n.t(HERO_ROLE_PLACEHOLDER));
 
