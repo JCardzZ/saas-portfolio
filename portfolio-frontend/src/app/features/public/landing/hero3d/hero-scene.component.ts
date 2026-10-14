@@ -121,12 +121,9 @@ const DRAG_THRESHOLD = 6;
 .guide-switch[aria-checked='true'] .guide-switch-thumb { transform: translateX(1rem); background: rgb(var(--c-accent-on)); }
 .guide-switch:focus-visible { outline: 2px solid rgb(var(--c-accent-solid)); outline-offset: 2px; }
 
-.play-dot {
-  display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 999px;
-  background: rgb(var(--c-accent-on)); color: rgb(var(--c-accent-solid));
-}
-.play-dot-accent { background: rgb(var(--c-accent-solid)); color: rgb(var(--c-accent-on)); box-shadow: 0 0 12px rgb(var(--c-accent-solid) / 0.5); }
-.play-dot svg { margin-left: 2px; }
+/* Play: triángulo de esquinas redondeadas, grande y sin adornos. */
+.play-icon { width: 1.375rem; height: 1.375rem; flex-shrink: 0; }
+.play-icon-accent { color: rgb(var(--c-accent-solid)); filter: drop-shadow(0 0 8px rgb(var(--c-accent-solid) / 0.45)); }
 .laser { opacity: 0; transition: opacity var(--duration-base) var(--ease-standard); }
 .laser-on { opacity: 1; }
 .laser-core { stroke-width: 2.5; stroke-linecap: round; }
@@ -300,14 +297,14 @@ const DRAG_THRESHOLD = 6;
               <div class="pointer-events-auto mt-3 border-t border-line-subtle pt-3" data-testid="guide-ask">
                 <p class="text-body-sm font-medium text-ink-1">{{ i18n.lang() === 'en' ? 'Want me to show you around?' : '¿Quieres que te guíe por la plataforma?' }}</p>
                 <div class="mt-2 flex gap-2">
-                  <button type="button" class="ui-btn-primary flex-1 justify-center gap-2" data-testid="tour-accept" (click)="acceptGuide()"><span class="play-dot" aria-hidden="true"><svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="currentColor"><path d="M9 6.5v11l9-5.5z" /></svg></span>{{ i18n.lang() === 'en' ? 'Yes, guide me' : 'Sí, guíame' }}</button>
+                  <button type="button" class="ui-btn-primary flex-1 justify-center gap-2" data-testid="tour-accept" (click)="acceptGuide()"><svg class="play-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.6v14.8a1.4 1.4 0 0 0 2.1 1.2l12-7.4a1.4 1.4 0 0 0 0-2.4l-12-7.4A1.4 1.4 0 0 0 7 4.6z" /></svg>{{ i18n.lang() === 'en' ? 'Yes, guide me' : 'Sí, guíame' }}</button>
                   <button type="button" class="ui-btn-secondary flex-1 justify-center" data-testid="tour-decline" (click)="declineGuide()">{{ i18n.lang() === 'en' ? 'No, thanks' : 'No, gracias' }}</button>
                 </div>
               </div>
             } @else {
               <div class="pointer-events-auto mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line-subtle pt-3">
                 <button type="button" class="ui-btn-ghost -ml-2 gap-2" data-testid="tour-start" (click)="startTour()">
-                  <span class="play-dot play-dot-accent" aria-hidden="true"><svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="currentColor"><path d="M9 6.5v11l9-5.5z" /></svg></span>
+                  <svg class="play-icon play-icon-accent" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.6v14.8a1.4 1.4 0 0 0 2.1 1.2l12-7.4a1.4 1.4 0 0 0 0-2.4l-12-7.4A1.4 1.4 0 0 0 7 4.6z" /></svg>
                   {{ i18n.lang() === 'en' ? 'Guided tour' : 'Recorrido guiado' }}
                 </button>
                 <!-- Interruptor: que el robot acompañe al bajar con el scroll (apagado por defecto). -->
