@@ -530,6 +530,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   const NODE_H = 116;
   let archT = 0;
   let codeTick = 0;
+  let genieOut = 1;
   function paintCode(colors: ScenePalette): void {
     const ctx = codeArt.getContext('2d');
     if (!ctx) return;
@@ -1417,10 +1418,13 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     hinge.rotation.x = 0.22 + (1 - lidOpen) * 1.3;
     const holo = ph(0.72, 1);
     // Efecto genio: la estela crece desde el portátil y la pantalla se abre girando desde su punta.
-    const tailGrow = ph(0.6, 0.85);
-    tailGeometry.setDrawRange(0, Math.floor(TAIL_INDEX * Math.max(0.001, settling ? tailGrow : 1)));
-    tailMat.opacity = (settling ? tailGrow : 1) * (0.13 + (animate ? Math.sin(t * 2.2) * 0.04 : 0));
-    const open = ph(0.78, 1);
+    // Con el globo de cartas abierto, el genio vuelve a la lámpara (se recoge) y sale al cerrarlo.
+    genieOut += ((stackOpen ? 0 : 1) - genieOut) * (1 - Math.exp(-dt * (stackOpen ? 6 : 3)));
+    const tailGrow = Math.min(settling ? ph(0.6, 0.85) : 1, Math.min(1, genieOut * 1.6));
+    tailGeometry.setDrawRange(0, Math.floor(TAIL_INDEX * Math.max(0.001, tailGrow)));
+    tailMat.opacity = tailGrow * (0.13 + (animate ? Math.sin(t * 2.2) * 0.04 : 0));
+    const open = Math.min(ph(0.78, 1), Math.max(0, genieOut * 1.6 - 0.6));
+    codeScreen.visible = open > 0.01;
     codeScreen.scale.set(Math.max(0.001, open), Math.max(0.001, open * open), 1);
     codeScreen.position.copy(screenFoot).lerp(CODE_HOME, open);
     codeScreen.rotation.set(-0.04, 0.22 + (1 - open) * 1.4, (1 - open) * -0.6);
@@ -1443,7 +1447,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       motePos.set([motePoint.x, motePoint.y, motePoint.z], i * 3);
     }
     moteGeometry.getAttribute('position').needsUpdate = true;
-    moteMat.opacity = (settling ? tailGrow : 1) * 0.9;
+    moteMat.opacity = tailGrow * 0.9;
     if (settling && st > 0.25 && st < 0.62) {
       // Las manos recorren la mesa, empujando a los lados para dejarlo todo en su sitio.
       const sweep = Math.sin(((st - 0.25) / 0.37) * Math.PI * 2);
