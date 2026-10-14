@@ -304,9 +304,13 @@ test.describe('diagramas: nada recortado, texto legible y nada fijo encima', () 
     expect(Math.abs(box.y + box.height - viewport.height), 'pegada al borde inferior').toBeLessThanOrEqual(1);
     expect(await bar.evaluate((element) => getComputedStyle(element).paddingBottom), 'reserva la zona segura inferior').toBeDefined();
     // La página le deja su hueco: el final del pie queda por encima de la barra.
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    await page.waitForTimeout(300);
-    const footer = (await page.locator('footer').last().boundingBox())!;
-    expect(footer.y + footer.height, 'el pie no queda debajo de la barra').toBeLessThanOrEqual(box.y + 1);
+    // Lo diferido puede seguir cargando y la barra publica su hueco (--dock-bottom) al medirse: se
+    // baja al final y se mide hasta que todo se asienta.
+    await expect.poll(async () => page.evaluate(async (barTop) => {
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      const footers = document.querySelectorAll('footer');
+      return footers[footers.length - 1].getBoundingClientRect().bottom - barTop;
+    }, box.y), { message: 'el pie no queda debajo de la barra', timeout: 10_000 }).toBeLessThanOrEqual(1);
   });
 });
