@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-14T06:12:34.014Z",
+  "updatedAt": "2026-10-14T07:00:43.008Z",
   "workflows": {
     "ci": {
-      "runId": 38517768810,
-      "runNumber": 92,
-      "sha": "50d56f2d3cecd2dcb559615268c2f3793343568a",
+      "runId": 38522568455,
+      "runNumber": 94,
+      "sha": "c342b8d635cbd21e7ca67476be51870292afeee3",
       "event": "push",
-      "startedAt": "2026-10-14T05:39:04Z",
-      "finishedAt": "2026-10-14T06:12:34.014Z",
-      "durationSeconds": 2010,
-      "conclusion": "failure",
+      "startedAt": "2026-10-14T06:30:07Z",
+      "finishedAt": "2026-10-14T07:00:43.008Z",
+      "durationSeconds": 1836,
+      "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 11,
+          "durationSeconds": 5,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 11,
+          "durationSeconds": 10,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 138,
+          "durationSeconds": 136,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 29,
+          "durationSeconds": 21,
           "runs": 1
         },
         {
@@ -71,7 +71,7 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 66,
+          "durationSeconds": 59,
           "runs": 3,
           "metrics": {
             "tests": 702
@@ -80,30 +80,35 @@
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 37,
+          "durationSeconds": 45,
           "runs": 1,
           "metrics": {
-            "bundleKb": 318,
-            "bundleGzipKb": 75.2
+            "bundleKb": 318.9,
+            "bundleGzipKb": 75.4
           }
         },
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 72,
+          "durationSeconds": 65,
           "runs": 1,
           "metrics": {
-            "performance": 75,
-            "accessibility": 100,
+            "performance": 81,
+            "accessibility": 97,
             "bestPractices": 96,
             "seo": 92
           }
         },
         {
           "id": "responsive",
-          "status": "cancelled",
-          "durationSeconds": 1834,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 1668,
+          "runs": 1,
+          "metrics": {
+            "tests": 507,
+            "failed": 0,
+            "profiles": 41
+          }
         },
         {
           "id": "preview",
@@ -131,8 +136,8 @@
         },
         {
           "id": "gate",
-          "status": "failure",
-          "durationSeconds": 5,
+          "status": "success",
+          "durationSeconds": 7,
           "runs": 1
         }
       ]
