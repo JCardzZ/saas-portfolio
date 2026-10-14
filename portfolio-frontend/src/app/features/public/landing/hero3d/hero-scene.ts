@@ -129,6 +129,10 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
 
   const character = new three.Group();
   scene.add(character);
+  // Mobiliario (silla, escritorio, portátil, holograma): sigue la escala y la posición base del
+  // robot pero no sus movimientos, para que pueda levantarse de la silla.
+  const furniture = new three.Group();
+  scene.add(furniture);
   const head = new three.Group();
   head.position.y = 0.35;
   character.add(head);
@@ -274,7 +278,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   const slotMat = keep(new three.MeshBasicMaterial({ color: 0x050607 }));
   const chair = new three.Group();
   chair.position.set(0, 0, -1.2);
-  character.add(chair);
+  furniture.add(chair);
   const outline: [number, number][] = [
     [1.05, -3.3], [1.12, -2.5], [0.95, -1.75], [1.48, -0.6], [1.52, 0.35], [1.12, 1.0], [0.8, 1.32], [0.84, 2.15],
   ];
@@ -314,57 +318,64 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   const deskGloss = physical(0x0a0b0d, 0.08, { metalness: 0.4, clearcoat: 1, clearcoatRoughness: 0.04 });
   const deskTop = new three.Mesh(rounded(9.0, 0.09, 2.2, 0.04), deskGloss);
   deskTop.position.set(0, -2.82, 2.0);
-  character.add(deskTop);
+  furniture.add(deskTop);
   const ledStrip = new three.Mesh(keep(new three.BoxGeometry(8.9, 0.025, 0.02)), accentMat);
   ledStrip.position.set(0, -2.85, 3.11);
-  character.add(ledStrip);
+  furniture.add(ledStrip);
   for (const side of [-1, 1]) {
     const leg = new three.Mesh(rounded(0.1, 2.4, 0.16, 0.04), metal);
     leg.position.set(side * 4.0, -4.05, 2.0);
-    character.add(leg);
+    furniture.add(leg);
     const footBar = new three.Mesh(rounded(0.12, 0.07, 1.9, 0.03), metal);
     footBar.position.set(side * 4.0, -5.25, 2.0);
-    character.add(footBar);
+    furniture.add(footBar);
   }
   // Asiento de la silla, columna y base de cinco radios.
   const seat = new three.Mesh(rounded(2.5, 0.32, 2.2, 0.14), chairMat);
   seat.position.set(0, -3.55, 0.15);
-  character.add(seat);
+  furniture.add(seat);
   const column = new three.Mesh(keep(new three.CylinderGeometry(0.1, 0.12, 1.35, 20)), metal);
   column.position.set(0, -4.4, 0.15);
-  character.add(column);
+  furniture.add(column);
   for (let spoke = 0; spoke < 5; spoke++) {
     const angle = (spoke / 5) * Math.PI * 2 + 0.3;
     const arm = new three.Mesh(rounded(1.15, 0.08, 0.14, 0.04), chairMat);
     arm.position.set(Math.cos(angle) * 0.55, -5.1, 0.15 + Math.sin(angle) * 0.55);
     arm.rotation.y = -angle;
-    character.add(arm);
+    furniture.add(arm);
   }
   // Cadera y piernas del robot, sentado: muslos hacia delante bajo la mesa y pies en el suelo.
   const pelvis = new three.Mesh(rounded(2.1, 0.75, 1.5, 0.35), shell);
   pelvis.position.set(0, -3.25, 0.1);
   character.add(pelvis);
-  for (const side of [-1, 1]) {
+  // Cada pierna gira en la cadera y en la rodilla: sentado, muslo hacia delante y espinilla
+  // vertical; de pie, las dos verticales (ver `stand`).
+  const legs = [-1, 1].map((side) => {
+    const hip = new three.Group();
+    hip.position.set(side * 0.55, -3.2, 0.1);
+    character.add(hip);
     const thigh = new three.Mesh(rounded(0.62, 0.55, 1.9, 0.27), shell);
-    thigh.position.set(side * 0.55, -3.2, 0.95);
-    character.add(thigh);
-    const knee = new three.Mesh(sphere(0.3, 24), graphite);
-    knee.position.set(side * 0.55, -3.25, 1.9);
-    character.add(knee);
+    thigh.position.set(0, 0, 0.85);
+    hip.add(thigh);
+    const knee = new three.Group();
+    knee.position.set(0, -0.05, 1.8);
+    hip.add(knee);
+    knee.add(new three.Mesh(sphere(0.3, 24), graphite));
     const shin = new three.Mesh(rounded(0.48, 1.8, 0.5, 0.22), shell);
-    shin.position.set(side * 0.55, -4.25, 1.95);
-    character.add(shin);
+    shin.position.set(0, -1.0, 0.05);
+    knee.add(shin);
     const foot = new three.Mesh(rounded(0.55, 0.28, 0.95, 0.13), graphite);
-    foot.position.set(side * 0.55, -5.15, 2.2);
-    character.add(foot);
-  }
+    foot.position.set(0, -1.9, 0.3);
+    knee.add(foot);
+    return { hip, knee };
+  });
 
   // Proyector holográfico sobre la mesa: un disco con un anillo de luz, un haz tenue y un cubo de
   // alambre que gira. Las fichas, en reposo, orbitan en miniatura alrededor del haz.
   const DOCK = new three.Vector3(2.55, -2.35, 1.95);
   const holo = new three.Group();
   holo.position.set(DOCK.x, -2.76, DOCK.z);
-  character.add(holo);
+  furniture.add(holo);
   const holoBase = new three.Mesh(keep(new three.CylinderGeometry(0.42, 0.48, 0.07, 48)), deskGloss);
   holo.add(holoBase);
   const holoRing = new three.Mesh(keep(new three.TorusGeometry(0.38, 0.018, 8, 64)), accentMat);
@@ -402,17 +413,90 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
 
   const laptopBase = new three.Mesh(rounded(1.8, 0.08, 1.2, 0.04), metal);
   laptopBase.position.set(0, -2.74, 1.75);
-  character.add(laptopBase);
+  furniture.add(laptopBase);
   const hinge = new three.Group();
   hinge.position.set(0, -2.7, 2.33);
   hinge.rotation.x = 0.22;
-  character.add(hinge);
+  furniture.add(hinge);
   const lid = new three.Mesh(rounded(1.8, 1.0, 0.05, 0.025), metal);
   lid.position.y = 0.5;
   hinge.add(lid);
   const lidLogo = new three.Mesh(keep(new three.CircleGeometry(0.1, 32)), accentMat);
   lidLogo.position.set(0, 0.55, 0.03);
   hinge.add(lidLogo);
+
+  // Pantalla holográfica junto al portátil, de cara a quien mira: el código que el robot teclea.
+  const codeArt = document.createElement('canvas');
+  codeArt.width = 640;
+  codeArt.height = 400;
+  const codeTexture = keep(new three.CanvasTexture(codeArt));
+  codeTexture.colorSpace = three.SRGBColorSpace;
+  const codeMat = keep(new three.MeshBasicMaterial({ map: codeTexture, transparent: true, depthWrite: false, side: three.DoubleSide }));
+  const codeScreen = new three.Mesh(keep(new three.PlaneGeometry(2.5, 1.56)), codeMat);
+  codeScreen.position.set(-2.95, -1.85, 2.05);
+  codeScreen.rotation.y = 0.3;
+  furniture.add(codeScreen);
+  const codeStand = new three.Mesh(rounded(0.08, 0.5, 0.08, 0.03), metal);
+  codeStand.position.set(-2.95, -2.6, 1.95);
+  furniture.add(codeStand);
+  const CODE = [
+    '@GetMapping("/projects")',
+    'public List<Project> list() {',
+    '  return cache.getOrLoad(KEY,',
+    '      repository::findAll);',
+    '}',
+    '',
+    'resource "aws_ecs_service" "api" {',
+    '  desired_count = 2',
+    '}',
+    '',
+    'const answer = await rag.ask(q);',
+  ];
+  let codeChars = 0;
+  let codeTick = 0;
+  function paintCode(colors: ScenePalette): void {
+    const ctx = codeArt.getContext('2d');
+    if (!ctx) return;
+    const { width, height } = codeArt;
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = colors.light ? 'rgba(255,255,255,0.82)' : 'rgba(8,10,9,0.78)';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, width, height, 22);
+    ctx.fill();
+    ctx.strokeStyle = colors.accent;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    // Barra de ventana con sus tres puntos.
+    for (let k = 0; k < 3; k++) {
+      ctx.fillStyle = colors.muted;
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.arc(30 + k * 24, 26, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    ctx.font = '700 27px "JetBrains Mono", ui-monospace, monospace';
+    ctx.textBaseline = 'top';
+    let left = codeChars;
+    const visible: string[] = [];
+    for (const line of CODE) {
+      if (left <= 0) break;
+      visible.push(line.slice(0, left));
+      left -= line.length + 1;
+    }
+    const lines = visible.slice(-9);
+    lines.forEach((line, k) => {
+      ctx.fillStyle = colors.muted;
+      ctx.fillText(String(k + 1).padStart(2, ' '), 18, 56 + k * 33);
+      ctx.fillStyle = /^(@|resource|const|public)/.test(line.trim()) ? colors.accentText : colors.ink;
+      ctx.fillText(line, 64, 56 + k * 33);
+    });
+    // Cursor.
+    const last = lines[lines.length - 1] ?? '';
+    ctx.fillStyle = colors.accent;
+    ctx.fillRect(64 + ctx.measureText(last).width + 2, 56 + (lines.length - 1) * 33, 12, 26);
+    codeTexture.needsUpdate = true;
+  }
 
   // Brazos y manos: sostienen el mazo delante del pecho.
   // Cada brazo va del hombro a la mano; la mano sigue a un objetivo según el gesto (sostener el
@@ -756,6 +840,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     }
     faceCamera.copy(camera.quaternion);
     character.updateMatrixWorld();
+    furniture.updateMatrixWorld();
     // Globo: las fichas repartidas por una esfera de Fibonacci (sin huecos ni montones), tan grande
     // como la pantalla, que gira sobre su eje vertical.
     const radius = Math.max(1.6, Math.min(halfHeight * 0.92, halfWidth * 0.9));
@@ -794,7 +879,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         const orbit = clock * 0.6 + (i / count) * Math.PI * 2 * 3;
         const band = i % 3;
         target.set(DOCK.x + Math.cos(orbit) * 0.85, DOCK.y + band * 0.36, DOCK.z + Math.sin(orbit) * 0.85);
-        character.localToWorld(target);
+        furniture.localToWorld(target);
         targetQuat.copy(faceCamera);
         scale = 0.11 * character.scale.x;
         opacity = 0.15 + 0.85 * Math.max(0, Math.sin(orbit)) ** 2;
@@ -908,6 +993,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       tile.glow.emissive.copy(accent);
     }
     infoGlow.emissive.copy(accent);
+    paintCode(next);
     paintInfo(next);
   }
   setPalette(palette);
@@ -917,6 +1003,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   let last = 0;
   let browLift = 0;
   let stretchAt = -99;
+  /** Cuánto ha subido al ponerse de pie: el bocadillo no le sigue (pisaría el rol). */
+  let standLift = 0;
   const HEAD_Y = head.position.y;
   let reactAt = -99;
   let waveAt = -99;
@@ -927,12 +1015,14 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     clock = t;
     const intro = animate ? easeOutBack(Math.min(1, t / 1.2)) : 1;
     character.scale.setScalar((0.6 + 0.4 * intro) * fit);
+    furniture.scale.copy(character.scale);
     // Reacción al toque: salto con rebote, cabeza ladeada, ojos entornados y antena que vibra.
     const r = animate ? t - reactAt : 99;
     const reacting = r < 1.3;
     const decay = reacting ? Math.exp(-r * 3) : 0;
     const hop = r < 0.55 ? Math.sin((r / 0.55) * Math.PI) : 0;
     character.position.y = (animate ? Math.sin(t * 1.2) * 0.08 : 0) + lift * 1.2 + hop * 0.35 * fit;
+    furniture.position.set(0, lift * 1.2, 0);
     antenna.rotation.z = -0.25 + Math.sin(r * 22) * 0.5 * decay + (animate ? Math.sin(t * 1.7) * 0.05 : 0);
 
     // Si nadie mueve el cursor, mira alrededor por su cuenta.
@@ -943,14 +1033,23 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     lookY += (wantY - lookY) * 0.08;
     head.rotation.y = lookX * 0.55;
     head.rotation.x = lookY * 0.3;
-    // Desperezo (3 s): sube, echa la cabeza atrás y estira los brazos; también solo, tras 35 s quieto.
+    // Se levanta y se despereza (5,5 s): se pone de pie (piernas que se enderezan), estira los brazos
+    // y echa la cabeza atrás, y se vuelve a sentar. Con doble clic o solo, tras 35 s quieto.
     if (animate && !stackOpen && t - pointerAt > 35 && t - stretchAt > 45) stretchAt = t;
-    const sp = animate ? (t - stretchAt) / 3 : 2;
+    const sp = animate ? (t - stretchAt) / 5.5 : 2;
     const stretching = sp >= 0 && sp < 1 && !stackOpen;
-    const rise = stretching ? Math.sin(Math.PI * sp) : 0;
+    const ease = (x: number) => x * x * (3 - 2 * x);
+    const standing = stretching ? (sp < 0.22 ? ease(sp / 0.22) : sp > 0.8 ? ease((1 - sp) / 0.2) : 1) : 0;
+    const rise = stretching && sp > 0.2 && sp < 0.82 ? Math.sin(Math.PI * (sp - 0.2) / 0.62) : 0;
+    for (const leg of legs) {
+      leg.hip.rotation.x = standing * Math.PI / 2;
+      leg.knee.rotation.x = -standing * Math.PI / 2;
+    }
     head.rotation.x -= rise * 0.45;
-    character.position.y += rise * 0.35 * character.scale.x;
-    character.rotation.x = -rise * 0.08;
+    standLift = standing * 1.75 * character.scale.x;
+    character.position.y += standLift;
+    character.position.z = -standing * 0.5 * character.scale.x;
+    character.rotation.x = -rise * 0.06;
     head.rotation.z = -lookX * 0.06 + Math.sin(r * 9) * 0.22 * decay;
     character.rotation.y = lookX * 0.15;
     eyeGroup.position.x = lookX * 0.18;
@@ -999,7 +1098,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         limb.target.copy(limb.rest);
         if (talking && animate) limb.target.y += Math.max(0, Math.sin(t * 19 + (limb.side > 0 ? Math.PI : 0))) * 0.07;
       }
-      if (stretching) {
+      if (stretching && rise > 0) {
         // Brazos arriba, algo abiertos, y un balanceo lento de lado a lado.
         const sway = Math.sin(sp * Math.PI * 2) * 0.25;
         limb.target.lerp(new three.Vector3(limb.side * 1.0 + sway, 1.2 + rise * 1.4, 0.4), rise);
@@ -1022,6 +1121,13 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     holoCube.rotation.set(0, animate ? t * 0.9 : 0.4, 0);
     holoCube.position.y = 0.66 + (animate ? Math.sin(t * 1.8) * 0.04 : 0);
     beamMat.opacity = 0.09 + (animate ? Math.sin(t * 3) * 0.03 : 0);
+    // La pantalla avanza mientras teclea; al terminar el fragmento, vuelve a empezar.
+    codeTick += dt;
+    if (talking && !stackOpen && codeTick > 0.06) {
+      codeTick = 0;
+      codeChars = (codeChars + 1) % (CODE.join('\n').length + 30);
+      paintCode(current);
+    }
     placeTiles(dt);
     placeInfo(follow);
     renderer.render(scene, camera);
@@ -1062,6 +1168,7 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       // Estrecho: sobre el faldón del escritorio, bajo el robot (encima no cabe: está el rol).
       const point = narrow ? new three.Vector3(0, -3.55, 3.1) : new three.Vector3(1.55, 0.1, 0);
       (narrow ? character : head).localToWorld(point);
+      point.y -= standLift;
       point.project(camera);
       return { x: ((point.x + 1) / 2) * viewWidth, y: ((1 - point.y) / 2) * viewHeight };
     },

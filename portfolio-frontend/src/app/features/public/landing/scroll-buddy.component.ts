@@ -17,7 +17,7 @@ const LINES: Record<string, { en: string; es: string }> = {
 
 /**
  * Un robot pequeño que acompaña al bajar por la página: aparece al dejar atrás el hero, señala la
- * sección que se está leyendo y dice en una frase qué hay en ella. Solo en pantallas anchas (≥ 1280
+ * sección que se está leyendo y dice en una frase qué hay en ella. Solo en pantallas anchas (≥ 1600
  * px), en el margen izquierdo, donde no tapa contenido. Decorativo: el título de cada sección ya
  * lo dice todo (`aria-hidden`).
  */
@@ -28,7 +28,7 @@ const LINES: Record<string, { en: string; es: string }> = {
   host: { class: 'contents' },
   template: `
     <div
-      class="buddy pointer-events-none fixed z-nav hidden xl:block"
+      class="buddy pointer-events-none fixed z-nav hidden min-[1600px]:block"
       [class.buddy-on]="line()"
       aria-hidden="true"
       data-testid="scroll-buddy"
