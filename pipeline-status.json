@@ -2,7 +2,7 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-14T15:02:30.686Z",
+  "updatedAt": "2026-10-14T15:03:33.173Z",
   "workflows": {
     "ci": {
       "runId": 38581282830,
@@ -143,32 +143,32 @@
       ]
     },
     "cd": {
-      "runId": 38539993829,
-      "runNumber": 35,
-      "sha": "90caae0addcfb29245707b6f4be35075c8aa93ab",
+      "runId": 38585859184,
+      "runNumber": 36,
+      "sha": "aab3c6feda7d7a4715fc13c5a4914ebd7891189d",
       "event": "workflow_run",
-      "startedAt": "2026-10-14T09:07:03Z",
-      "finishedAt": "2026-10-14T09:07:57.809Z",
-      "durationSeconds": 55,
+      "startedAt": "2026-10-14T15:02:43Z",
+      "finishedAt": "2026-10-14T15:03:33.173Z",
+      "durationSeconds": 50,
       "conclusion": "success",
       "jobs": [
         {
           "id": "source",
           "status": "success",
-          "durationSeconds": 5,
+          "durationSeconds": 6,
           "runs": 1,
           "metrics": {}
         },
         {
           "id": "frontend-deploy",
           "status": "success",
-          "durationSeconds": 32,
+          "durationSeconds": 26,
           "runs": 1,
           "metrics": {
-            "deployedSha": "90caae0addcfb29245707b6f4be35075c8aa93ab",
+            "deployedSha": "aab3c6feda7d7a4715fc13c5a4914ebd7891189d",
             "healthy": true,
-            "deploymentUrl": "https://44ed7d22.saas-portfolio-a6s.pages.dev",
-            "deploymentId": "44ed7d22-c7cb-4bc0-b5ed-503af3cf73e8"
+            "deploymentUrl": "https://167b0e04.saas-portfolio-a6s.pages.dev",
+            "deploymentId": "167b0e04-7000-4777-bfc6-5e8e882fb889"
           }
         },
         {
@@ -200,6 +200,16 @@
   },
   "deployments": {
     "frontend": [
+      {
+        "kind": "deploy",
+        "at": "2026-10-14T15:03:33.173Z",
+        "by": "JCardzZ",
+        "runId": 38585859184,
+        "runNumber": 36,
+        "sha": "aab3c6feda7d7a4715fc13c5a4914ebd7891189d",
+        "healthy": true,
+        "deploymentId": "167b0e04-7000-4777-bfc6-5e8e882fb889"
+      },
       {
         "kind": "deploy",
         "at": "2026-10-14T09:07:57.809Z",
