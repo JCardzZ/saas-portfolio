@@ -288,7 +288,11 @@ main :is(.bento-card, .theater-card, article) {
               }
             </button>
           </span>
-          <span class="mt-1 block text-title-3 font-semibold text-ink-1"><span #typed aria-hidden="true"></span><span class="caret" aria-hidden="true"></span></span>
+          <span class="mt-1 block min-h-[2lh] text-title-3 font-semibold text-ink-1"><span #typed aria-hidden="true"></span><span class="caret" aria-hidden="true"></span></span>
+          <!-- La invitación a abrir el mazo va aquí (antes, una píldora que tapaba el portátil). -->
+          <span class="mt-2 flex items-center gap-2 font-mono text-mono-sm text-ink-3" data-testid="hero-hint">
+            <span class="h-1.5 w-1.5 rounded-full bg-accent-solid" aria-hidden="true"></span>{{ hint() }}
+          </span>
           <!-- Preguntar al asistente desde el bocadillo: abre el chat con la pregunta ya enviada. -->
           <form class="pointer-events-auto mt-3 flex gap-2" [class.hidden]="narrow" (submit)="submitAsk($event, question)">
             <input
@@ -379,9 +383,11 @@ main :is(.bento-card, .theater-card, article) {
         (click)="activate($event)"
         (keydown)="key($event)"
         (dblclick)="stretch()"
+        (focus)="keyFocus.set(true)"
+        (blur)="keyFocus.set(false)"
       >
-        @if (ready()) {
-          <!-- El foco de teclado se ve en esta píldora, no como un marco alrededor de la escena. -->
+        @if (ready() && (open() || keyFocus())) {
+          <!-- Con el mazo abierto (el bocadillo se oculta), las indicaciones van en esta píldora. -->
           <span
             [class.hint-glow]="!open()"
             class="pointer-events-none absolute bottom-[max(7rem,15dvh)] left-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full border border-line-subtle bg-surface-1/80 group-focus-visible:border-accent-solid group-focus-visible:ring-2 group-focus-visible:ring-accent-solid/40 px-3 py-1 font-mono text-mono-sm text-ink-2 backdrop-blur"
@@ -445,6 +451,8 @@ export class HeroSceneComponent {
   readonly enabled = input(true);
 
   readonly ready = signal(false);
+  /** Foco de teclado en la escena: la píldora reaparece para que se vea dónde está el foco. */
+  readonly keyFocus = signal(false);
   /** Modo guía disponible: pantalla ancha (el robot camina por el margen) y 3D activo. */
   readonly guideAvailable = signal(false);
   /** Primera visita: aún no ha respondido si quiere que le guíe. */

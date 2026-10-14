@@ -365,6 +365,16 @@ app-section-header::before {
 /* Con el robot 3D guiando, sobra el acompañante 2D. */
 .robot-guide app-scroll-buddy { display: none; }
 
+/* Pie del hero: un velo oscuro detrás de la frase y los botones para que el escritorio 3D no los cruce. */
+.hero-foot::before {
+  content: '';
+  position: absolute;
+  inset: -3rem -50vw -2rem;
+  z-index: -1;
+  background: linear-gradient(to bottom, rgb(var(--c-canvas) / 0), rgb(var(--c-canvas) / 0.85) 45%, rgb(var(--c-canvas) / 0.95));
+  pointer-events: none;
+}
+
 .hero-role {
   /* Segundo nivel: más grande que el saludo, en peso medio; solo el nombre va en negrita. */
   font-size: clamp(1.375rem, 2.7vw, 2.4rem);

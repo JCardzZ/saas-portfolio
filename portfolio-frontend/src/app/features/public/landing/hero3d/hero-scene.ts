@@ -553,11 +553,14 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     // Cabecera: lo que se está diseñando, con cursor.
     const cycle = archT % 9;
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = colors.accent;
-    ctx.font = '700 30px "JetBrains Mono", ui-monospace, monospace';
+    ctx.fillStyle = colors.light ? colors.accentText : colors.ink;
+    ctx.shadowColor = colors.accent;
+    ctx.shadowBlur = 14;
+    ctx.font = '800 32px "JetBrains Mono", ui-monospace, monospace';
     const heading = '> design --saas --cloud aws|azure|gcp';
     const typed = heading.slice(0, Math.floor(Math.min(1, cycle / 0.5) * heading.length));
     ctx.fillText(typed + (Math.floor(archT * 2) % 2 ? '▌' : ''), 34, 36);
+    ctx.shadowBlur = 0;
     // Conexiones (aparecen tras sus nodos), con un pulso que viaja por cada una.
     const shownNodes = Math.floor(Math.max(0, cycle - 0.4) / 0.18);
     const centre = (n: ArchNode) => ({ x: n.x + NODE_W / 2, y: n.y + NODE_H / 2 });
@@ -601,7 +604,12 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       ctx.arc(node.x + 24, node.y + 38, 9, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = colors.ink;
-      ctx.font = '800 32px Inter, system-ui, sans-serif';
+      // El título cabe siempre en su caja: la letra baja hasta que entra.
+      let size = 32;
+      do {
+        ctx.font = `800 ${size}px Inter, system-ui, sans-serif`;
+        size -= 1;
+      } while (ctx.measureText(node.title).width > NODE_W - 54 && size > 18);
       ctx.fillText(node.title, node.x + 42, node.y + 38);
       ctx.fillStyle = colors.accentText;
       ctx.font = '600 24px "JetBrains Mono", ui-monospace, monospace';
