@@ -58,6 +58,8 @@ export interface HeroScene {
   show(indices: ReadonlySet<number> | null): void;
   /** Contenido de la carta de la mano derecha (qué es y cómo ayudo); `null` la guarda. */
   showInfo(info: SceneInfo | null): void;
+  /** Mientras `true`, mueve la boca como si hablara (lo marca el texto del bocadillo). */
+  talk(talking: boolean): void;
   /** Punto de la pantalla (px del lienzo) junto a la cabeza, de donde sale el bocadillo. */
   anchor(narrow: boolean): { x: number; y: number };
   /** Señala la ficha bajo el cursor (coordenadas normalizadas del lienzo, -1…1); devuelve su nombre. */
@@ -171,6 +173,24 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     eyeGroup.add(eye);
     return eye;
   });
+  // Nariz y boca de luz, en el visor, como los ojos: siguen la mirada. La boca habla (se abre y
+  // cierra con el texto del bocadillo) y sonríe al tocar al robot o cuando calla.
+  const nose = new three.Mesh(keep(new three.CapsuleGeometry(0.035, 0.07, 6, 12)), accentMat);
+  nose.position.set(0, -0.2, 0);
+  nose.scale.set(1, 1, 0.4);
+  eyeGroup.add(nose);
+  const mouth = new three.Mesh(keep(new three.CapsuleGeometry(0.07, 0.26, 8, 20)), accentMat);
+  mouth.rotation.z = Math.PI / 2;
+  mouth.position.set(0, -0.38, 0);
+  mouth.scale.set(1, 1, 0.4);
+  eyeGroup.add(mouth);
+  const smile = new three.Mesh(keep(new three.TorusGeometry(0.2, 0.035, 10, 32, Math.PI)), accentMat);
+  smile.rotation.z = Math.PI;
+  smile.position.set(0, -0.27, 0);
+  smile.scale.set(1, 0.8, 0.4);
+  eyeGroup.add(smile);
+  let talking = false;
+
   const eyeLight = new three.PointLight(0x7fee64, 2.5, 3, 2);
   eyeLight.position.set(0, 0, 1.6);
   head.add(eyeLight);
@@ -600,6 +620,13 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     // Contento tras el toque: ojos entornados (como una sonrisa), y luego vuelve a parpadear.
     const happy = reacting ? Math.min(1, r * 6) * Math.min(1, (1.3 - r) * 4) : 0;
     for (const eye of eyes) eye.scale.y = Math.min(1 - closed * 0.85, 1 - happy * 0.65);
+    // Boca: al hablar se abre y cierra con un ritmo irregular, como sílabas; si no, sonríe.
+    const speaking = talking && !happy && animate;
+    const syllable = speaking ? Math.abs(Math.sin(t * 17)) * (0.6 + 0.4 * Math.sin(t * 5.3)) : 0;
+    mouth.visible = speaking;
+    mouth.scale.set(1 + syllable * 1.6, 1 - syllable * 0.25, 0.4);
+    smile.visible = !speaking;
+    smile.scale.set(1 + happy * 0.25, 0.8 + happy * 0.5, 0.4);
     const pulse = animate ? 0.5 + 0.5 * Math.sin(t * 2.4) : 1;
     accentMat.emissiveIntensity = 0.7 + pulse * 0.6;
     core.scale.setScalar(0.92 + pulse * 0.12);
@@ -659,6 +686,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     },
     drag(dx) {
       if (stackOpen) spinVelocity += dx * 9;
+    },
+    talk(next) {
+      talking = next;
     },
     anchor(narrow) {
       // Estrecho: encima de la cabeza; ancho: a su derecha, a la altura de los ojos.

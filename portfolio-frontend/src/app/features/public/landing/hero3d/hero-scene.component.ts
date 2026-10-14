@@ -406,6 +406,8 @@ export class HeroSceneComponent {
         }
       }
       target.textContent = text.slice(0, shown);
+      // Habla mientras escribe (no mientras lee o borra), y calla con el mazo abierto.
+      scene.talk(!erasing && hold === 0 && shown < text.length && !this.open());
     };
     const typing = setInterval(type, reduced ? 3500 : 55);
     type();
