@@ -447,11 +447,41 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   // Holograma proyectado desde el portátil: sube desde la tapa y flota a su izquierda, ligeramente
   // girado hacia quien mira, unido a él por un haz de luz.
   codeMat.blending = three.AdditiveBlending;
-  const CODE_HOME = new three.Vector3(-4.6, -0.2, 2.25);
-  const codeScreen = new three.Mesh(keep(new three.PlaneGeometry(4.3, 2.68)), codeMat);
+  const CODE_HOME = new three.Vector3(-4.6, 0.7, 2.25);
+  // Pantalla curva (cóncava hacia quien mira), como un monitor envolvente.
+  const curved = (w: number, h: number, depth: number) => {
+    const geometry = keep(new three.PlaneGeometry(w, h, 48, 1));
+    const pos = geometry.getAttribute('position');
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i) / (w / 2);
+      pos.setZ(i, depth * x * x);
+    }
+    geometry.computeVertexNormals();
+    return geometry;
+  };
+  const codeScreen = new three.Mesh(curved(4.3, 2.68, 0.95), codeMat);
   codeScreen.position.copy(CODE_HOME);
   codeScreen.rotation.set(-0.04, 0.38, 0);
   furniture.add(codeScreen);
+  // Halo: la misma curva, algo mayor, en luz aditiva tenue (resplandor del holograma).
+  const haloMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.08, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
+  const halo = new three.Mesh(curved(4.6, 2.95, 1.0), haloMat);
+  halo.position.z = -0.03;
+  codeScreen.add(halo);
+  // Barrido: una franja de luz que recorre la pantalla de arriba abajo.
+  const sweepMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.35, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
+  const sweepBar = new three.Mesh(curved(4.25, 0.05, 0.95), sweepMat);
+  sweepBar.position.z = 0.01;
+  codeScreen.add(sweepBar);
+  // Motas de luz que suben del portátil al holograma.
+  const moteGeometry = keep(new three.BufferGeometry());
+  const MOTES = 40;
+  const motePos = new Float32Array(MOTES * 3);
+  const moteSeed = Array.from({ length: MOTES }, () => Math.random());
+  moteGeometry.setAttribute('position', new three.BufferAttribute(motePos, 3));
+  const moteMat = keep(new three.PointsMaterial({ color: 0x7fee64, size: 0.05, transparent: true, opacity: 0.8, depthWrite: false, blending: three.AdditiveBlending }));
+  const motes = new three.Points(moteGeometry, moteMat);
+  furniture.add(motes);
   const codeBeamMat = keep(new three.MeshBasicMaterial({ color: 0x7fee64, transparent: true, opacity: 0.1, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
   const codeBeamGeometry = keep(new three.BufferGeometry());
   const codeBeamPos = new Float32Array(12);
@@ -1093,6 +1123,10 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     beamMat.color.copy(accent);
     cubeMat.color.copy(accent);
     cubeMat.emissive.copy(accent);
+    haloMat.color.copy(accent);
+    sweepMat.color.copy(accent);
+    moteMat.color.copy(accent);
+    codeBeamMat.color.copy(accent);
     rim.color.copy(accent);
     eyeLight.color.copy(accent);
     rim2.color.copy(accent);
@@ -1318,11 +1352,27 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     hinge.rotation.x = 0.22 + (1 - lidOpen) * 1.3;
     const holo = ph(0.72, 1);
     codeScreen.scale.setScalar(Math.max(0.001, holo));
-    codeScreen.position.copy(CODE_HOME).add(new three.Vector3(3.6 * (1 - holo), -2.0 * (1 - holo), 0));
-    codeMat.opacity = holo * (0.92 + (animate ? Math.sin(t * 13) * 0.04 : 0));
+    codeScreen.position.copy(CODE_HOME).add(new three.Vector3(3.6 * (1 - holo), -2.9 * (1 - holo), 0));
+    // Parpadeo de holograma: casi constante, con algún «glitch» breve.
+    const glitch = animate && Math.sin(t * 0.7) > 0.985 ? 0.6 : 1;
+    codeMat.opacity = holo * glitch * (0.94 + (animate ? Math.sin(t * 13) * 0.03 : 0));
     codeBeamMat.opacity = holo * 0.2 * (settling ? 1.5 : 1);
     codeBeam.visible = holo > 0.02;
     placeCodeBeam();
+    // Barrido, resplandor que respira y motas que suben por el haz.
+    sweepBar.position.y = animate ? 1.3 - ((t * 0.45) % 1) * 2.6 : 0;
+    sweepMat.opacity = holo * 0.35;
+    haloMat.opacity = holo * (0.07 + (animate ? Math.sin(t * 2) * 0.025 : 0));
+    motes.visible = holo > 0.05;
+    for (let i = 0; i < MOTES; i++) {
+      const k = animate ? (moteSeed[i] + t * (0.25 + moteSeed[i] * 0.3)) % 1 : moteSeed[i];
+      const from = 0.5 + (moteSeed[i] - 0.5) * 0.6;
+      motePos[i * 3] = -0.5 + (CODE_HOME.x + (moteSeed[(i + 7) % MOTES] - 0.5) * 3.6 + 0.5) * k + (from - 0.5) * (1 - k);
+      motePos[i * 3 + 1] = -2.25 + (CODE_HOME.y - 1.3 + 2.25) * k;
+      motePos[i * 3 + 2] = 2.3 + (CODE_HOME.z - 2.3) * k;
+    }
+    moteGeometry.getAttribute('position').needsUpdate = true;
+    moteMat.opacity = holo * 0.8;
     if (settling && st > 0.25 && st < 0.62) {
       // Las manos recorren la mesa, empujando a los lados para dejarlo todo en su sitio.
       const sweep = Math.sin(((st - 0.25) / 0.37) * Math.PI * 2);
