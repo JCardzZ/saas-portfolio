@@ -65,6 +65,10 @@ export class TheaterDirective implements OnDestroy {
     if (event.pointerType !== 'mouse' || !this.animated || this.expanded()) {
       return;
     }
+    // Durante el recorrido guiado la página se desplaza sola bajo un cursor quieto: no es intención.
+    if (document.documentElement.classList.contains('robot-touring')) {
+      return;
+    }
     this.cancelHoverIntent();
     this.hoverTimer = setTimeout(() => this.setFocused(true), HOVER_INTENT_MS);
   }

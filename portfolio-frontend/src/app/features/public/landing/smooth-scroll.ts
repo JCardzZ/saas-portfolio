@@ -5,6 +5,9 @@
  * desplazamiento (paneles, diálogos, lienzos con zoom), ni Ctrl/⌘ + rueda (zoom del navegador),
  * ni el teclado, las anclas o la barra de desplazamiento: si la página se mueve por otra vía, la
  * inercia se reajusta a esa posición.
+ *
+ * Además, «la manita»: con el ratón, el fondo de la página (no las tarjetas, textos ni controles)
+ * se puede agarrar y arrastrar para desplazarse, y al soltar sigue con la inercia del gesto.
  */
 export function startSmoothScroll(): () => void {
   const fine = matchMedia('(pointer: fine)').matches;
@@ -55,11 +58,58 @@ export function startSmoothScroll(): () => void {
     if (!animating && !raf) target = current = scrollY;
   };
 
+  // ---- La manita --------------------------------------------------------------------------
+  let drag: { y: number; lastY: number; lastT: number; velocity: number } | null = null;
+  const isBackground = (target: EventTarget | null): boolean =>
+    target instanceof Element && target.matches(BACKGROUND);
+  const onDown = (event: PointerEvent) => {
+    if (event.pointerType !== 'mouse' || event.button !== 0 || !isBackground(event.target)) return;
+    event.preventDefault(); // sin selección de texto al arrastrar
+    cancelAnimationFrame(raf);
+    raf = 0;
+    target = current = scrollY;
+    drag = { y: event.clientY, lastY: event.clientY, lastT: performance.now(), velocity: 0 };
+    document.documentElement.classList.add('page-grabbing');
+  };
+  const onMove = (event: PointerEvent) => {
+    if (!drag) return;
+    const now = performance.now();
+    const dy = event.clientY - drag.lastY;
+    drag.velocity = drag.velocity * 0.6 + (dy / Math.max(1, now - drag.lastT)) * 0.4;
+    drag.lastY = event.clientY;
+    drag.lastT = now;
+    current = target = Math.max(0, Math.min(max(), current - dy));
+    animating = true;
+    scrollTo(0, current);
+    animating = false;
+  };
+  const onUp = () => {
+    if (!drag) return;
+    // Al soltar, sigue con la inercia del gesto (px/ms × 280 ms aprox.).
+    target = Math.max(0, Math.min(max(), current - drag.velocity * 280));
+    drag = null;
+    document.documentElement.classList.remove('page-grabbing');
+    if (!raf) raf = requestAnimationFrame(step);
+  };
+
   addEventListener('wheel', onWheel, { passive: false });
   addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('pointerdown', onDown);
+  addEventListener('pointermove', onMove, { passive: true });
+  addEventListener('pointerup', onUp);
+  addEventListener('pointercancel', onUp);
+  document.documentElement.classList.add('page-grab');
   return () => {
     cancelAnimationFrame(raf);
     removeEventListener('wheel', onWheel);
     removeEventListener('scroll', onScroll);
+    removeEventListener('pointerdown', onDown);
+    removeEventListener('pointermove', onMove);
+    removeEventListener('pointerup', onUp);
+    removeEventListener('pointercancel', onUp);
+    document.documentElement.classList.remove('page-grab', 'page-grabbing');
   };
 }
+
+/** El «fondo» de la página: contenedores sin contenido propio (no tarjetas, textos ni controles). */
+const BACKGROUND = '.dock-aware, .dock-aware > main, main > section, .bento-grid, main > section > div, app-galaxy-backdrop';
