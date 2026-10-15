@@ -140,7 +140,7 @@
           "frontend-build"
         ],
         "matrix": true,
-        "namePattern": "^🧪 Móvil \\(.+\\)$",
+        "namePattern": "^🧪 Móvil \\(.+ · .+/2\\)$",
         "stage": 4
       },
       {
