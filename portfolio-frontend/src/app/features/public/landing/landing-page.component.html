@@ -58,9 +58,8 @@
       <div class="bento-grid">
         <app-architecture-canvas class="animate-slide-up md:col-span-4" />
         <app-telemetry-monitor class="animate-slide-up md:col-span-2 [animation-delay:80ms]" />
-        <!-- La consola va junto al mapa vectorial para que se vea cómo reacciona al moverlo. -->
-        <app-vector-matrix class="animate-slide-up md:col-span-4 [animation-delay:160ms]" />
-        <app-event-console class="animate-slide-up md:col-span-2 [animation-delay:240ms]" />
+        <!-- Sin consola propia: los eventos del sistema se ven en el Inspector de traza (abajo). -->
+        <app-vector-matrix class="animate-slide-up md:col-span-6 [animation-delay:160ms]" />
         <app-ingestion-sandbox class="animate-slide-up md:col-span-6 [animation-delay:320ms]" />
         <app-resilience-pipeline class="animate-slide-up md:col-span-6 lg:col-span-3" />
         <app-multi-tenant-shield class="animate-slide-up md:col-span-6 lg:col-span-3" />

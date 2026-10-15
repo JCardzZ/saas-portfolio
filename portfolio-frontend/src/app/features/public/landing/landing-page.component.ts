@@ -17,7 +17,6 @@ import { CatalogStore } from '../data/catalog.store';
 import { TraceInspectorService } from '../data/trace-inspector.service';
 import { PublicNavbarComponent } from '../navbar/public-navbar.component';
 import { ArchitectureCanvasComponent } from '../widgets/architecture-canvas.component';
-import { EventConsoleComponent } from '../widgets/event-console.component';
 import { IngestionSandboxComponent } from '../widgets/ingestion-sandbox.component';
 import { MultiTenantShieldComponent } from '../widgets/multi-tenant-shield.component';
 import { ResiliencePipelineComponent } from '../widgets/resilience-pipeline.component';
@@ -56,7 +55,6 @@ import { ScrollBuddyComponent } from './scroll-buddy.component';
         TechIconComponent,
         IconPopLayerComponent,
         ArchitectureCanvasComponent,
-        EventConsoleComponent,
         IngestionSandboxComponent,
         MultiTenantShieldComponent,
         ResiliencePipelineComponent,
