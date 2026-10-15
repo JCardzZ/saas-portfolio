@@ -75,13 +75,12 @@ const TENANTS: Tenant[] = [
  * El interruptor muestra lo que ocurriría sin el filtro (algo que el backend no permite).
  */
 @Component({
-  selector: 'app-multi-tenant-shield',
-  standalone: true,
-  imports: [TranslatePipe, ContainerWidthDirective, TheaterToggleComponent],
-  hostDirectives: [TheaterDirective],
-  host: { class: 'bento-card block' },
-  templateUrl: './multi-tenant-shield.component.html',
-  styles: `
+    selector: 'app-multi-tenant-shield',
+    imports: [TranslatePipe, ContainerWidthDirective, TheaterToggleComponent],
+    hostDirectives: [TheaterDirective],
+    host: { class: 'bento-card block' },
+    templateUrl: './multi-tenant-shield.component.html',
+    styles: `
     /* Al pasar por la tarjeta (o en modo teatro) los haces y los vectores ganan contraste. */
     :host(:hover) .beam,
     :host(.theater-expanded) .beam {
@@ -162,7 +161,7 @@ const TENANTS: Tenant[] = [
       pointer-events: none;
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MultiTenantShieldComponent {
   private readonly events = inject(SystemEventsService);

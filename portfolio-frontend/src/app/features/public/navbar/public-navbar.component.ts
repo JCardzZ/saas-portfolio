@@ -18,10 +18,9 @@ export { PAGE_SECTIONS } from './page-sections';
  * enlaces pasan al menú «Secciones».
  */
 @Component({
-  selector: 'app-public-navbar',
-  standalone: true,
-  imports: [TranslatePipe, RouterLink, CvDownloadComponent, LanguageSwitchComponent],
-  template: `
+    selector: 'app-public-navbar',
+    imports: [TranslatePipe, RouterLink, CvDownloadComponent, LanguageSwitchComponent],
+    template: `
     <header
       class="safe-top safe-x fixed inset-x-0 top-0 z-nav border-b transition-colors duration-slow ease-standard"
       style="right: var(--dock-right, 0px)"
@@ -117,7 +116,7 @@ export { PAGE_SECTIONS } from './page-sections';
       </nav>
     </header>
   `,
-  styles: `
+    styles: `
     .nav-link {
       position: relative;
       display: inline-flex;
@@ -140,7 +139,7 @@ export { PAGE_SECTIONS } from './page-sections';
       background: var(--accent-text);
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PublicNavbarComponent {
   readonly openChat = output<void>();

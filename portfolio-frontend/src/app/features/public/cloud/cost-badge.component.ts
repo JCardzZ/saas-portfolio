@@ -9,11 +9,10 @@ import { LivePricingState } from './live-pricing.service';
  * despliega el desglose por categoría. Las cifras son órdenes de magnitud, no un presupuesto.
  */
 @Component({
-  selector: 'app-cost-badge',
-  standalone: true,
-  imports: [TranslatePipe],
-  host: { class: 'block', '(mouseenter)': 'hovered.set(true)', '(mouseleave)': 'hovered.set(false)', '(keydown.escape)': 'pinned.set(false)' },
-  template: `
+    selector: 'app-cost-badge',
+    imports: [TranslatePipe],
+    host: { class: 'block', '(mouseenter)': 'hovered.set(true)', '(mouseleave)': 'hovered.set(false)', '(keydown.escape)': 'pinned.set(false)' },
+    template: `
     @if (open()) {
       <div id="cost-breakdown" class="mb-2 w-64 animate-scale-up rounded-panel border border-line-strong bg-surface-1/95 p-3 text-left shadow-2xl backdrop-blur-2xl" role="region" [attr.aria-label]="'Desglose del coste mensual estimado' | t">
         <p class="text-xs font-medium uppercase tracking-wider text-ink-2">FinOps · {{ providerName() }}</p>
@@ -72,7 +71,7 @@ import { LivePricingState } from './live-pricing.service';
       }
     </button>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CostBadgeComponent {
   readonly estimate = input.required<CostEstimate>();

@@ -12,11 +12,10 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
  * el sistema, pero no lee métricas reales. La etiqueta "Simulación" lo deja a la vista.
  */
 @Component({
-  selector: 'app-telemetry-monitor',
-  standalone: true,
-  imports: [TranslatePipe],
-  host: { class: 'bento-card flex flex-col' },
-  template: `
+    selector: 'app-telemetry-monitor',
+    imports: [TranslatePipe],
+    host: { class: 'bento-card flex flex-col' },
+    template: `
     <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
       <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Telemetría' | t }}</h3>
       <span class="inline-flex items-center gap-1.5 rounded-full border border-line-subtle px-2 py-0.5 text-xs text-ink-2">
@@ -68,7 +67,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
       <p class="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-ink-1">{{ formattedRequests() }}</p>
     </div>
   `,
-  styles: `
+    styles: `
     .ring {
       transition: stroke-dashoffset 1.6s cubic-bezier(0.16, 1, 0.3, 1);
       filter: drop-shadow(0 0 6px rgb(var(--c-status-ok) / 0.6));
@@ -88,7 +87,7 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
       fill: var(--accent-text);
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TelemetryMonitorComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

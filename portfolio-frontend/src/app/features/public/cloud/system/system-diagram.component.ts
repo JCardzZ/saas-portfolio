@@ -14,12 +14,11 @@ import { DiagramNode, GLYPHS, SystemDiagram, buildSystemDiagram } from './system
  * vista conserva junto a él.
  */
 @Component({
-  selector: 'app-system-diagram',
-  standalone: true,
-  imports: [TranslatePipe, ContainerWidthDirective],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
-  template: `
+    selector: 'app-system-diagram',
+    imports: [TranslatePipe, ContainerWidthDirective],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'block' },
+    template: `
     <div class="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
       <p class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Arquitectura del sistema' | t }}</p>
       <ul class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-3" [attr.aria-label]="'Tipos de conexión' | t">
@@ -123,7 +122,7 @@ import { DiagramNode, GLYPHS, SystemDiagram, buildSystemDiagram } from './system
       }
     </div>
   `,
-  styles: `
+    styles: `
     .system-diagram { display: block; max-width: none; }
     /* El marco es un lienzo, como el del Estudio: rejilla de puntos sobre la superficie. */
     .canvas { background-color: var(--bg-surface-1); background-image: radial-gradient(var(--border-subtle) 1px, transparent 1px); background-size: 20px 20px; }
@@ -169,7 +168,7 @@ import { DiagramNode, GLYPHS, SystemDiagram, buildSystemDiagram } from './system
     @keyframes edge-fade { from { opacity: 0; } }
     @keyframes edge-flow { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
     @media (prefers-reduced-motion: reduce) { .edge-flow { display: none; } }
-  `,
+  `
 })
 export class SystemDiagramComponent {
   readonly design = input.required<SystemDesign>();

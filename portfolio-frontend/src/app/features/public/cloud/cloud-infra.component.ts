@@ -107,14 +107,13 @@ const TOOLTIP_ROOM = 72;
 const NAV_HEIGHT = 64;
 
 @Component({
-  selector: 'app-cloud-infra',
-  standalone: true,
-  imports: [TranslatePipe, SystemDesignComponent, TechIconComponent, TheaterToggleComponent, ServiceCatalogComponent, CostBadgeComponent, AuditCardComponent, NodePropertiesComponent, ArchitectureCopilotComponent, LiveVitalsComponent, ContainerWidthDirective, StudioMobileCanvasComponent, ServiceInfoCardComponent, FocusTrapDirective, PortalDirective],
-  hostDirectives: [TheaterDirective],
-  host: { class: 'bento-card block' },
-  templateUrl: './cloud-infra.component.html',
-  styleUrl: './cloud-infra.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-cloud-infra',
+    imports: [TranslatePipe, SystemDesignComponent, TechIconComponent, TheaterToggleComponent, ServiceCatalogComponent, CostBadgeComponent, AuditCardComponent, NodePropertiesComponent, ArchitectureCopilotComponent, LiveVitalsComponent, ContainerWidthDirective, StudioMobileCanvasComponent, ServiceInfoCardComponent, FocusTrapDirective, PortalDirective],
+    hostDirectives: [TheaterDirective],
+    host: { class: 'bento-card block' },
+    templateUrl: './cloud-infra.component.html',
+    styleUrl: './cloud-infra.component.css',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CloudInfraComponent {
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;

@@ -4,9 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { PortalDirective } from './portal.directive';
 
 @Component({
-  standalone: true,
-  imports: [PortalDirective],
-  template: `<section>@if (open()) { <div appPortal data-testid="sheet">{{ text() }}</div> }</section>`,
+    imports: [PortalDirective],
+    template: `<section>@if (open()) { <div appPortal data-testid="sheet">{{ text() }}</div> }</section>`
 })
 class HostComponent {
   readonly open = signal(true);

@@ -143,12 +143,11 @@ const LEVELS: C4Level[] = [
  * muestra su configuración; los pulsos recorren las conexiones en el sentido de la petición.
  */
 @Component({
-  selector: 'app-architecture-canvas',
-  standalone: true,
-  imports: [TranslatePipe, ContainerWidthDirective, TheaterToggleComponent],
-  hostDirectives: [TheaterDirective],
-  host: { class: 'bento-card block' },
-  template: `
+    selector: 'app-architecture-canvas',
+    imports: [TranslatePipe, ContainerWidthDirective, TheaterToggleComponent],
+    hostDirectives: [TheaterDirective],
+    host: { class: 'bento-card block' },
+    template: `
     <app-theater-toggle name="Arquitectura en vivo" />
     <div class="flex flex-wrap items-center justify-between gap-3 pr-10">
       <h3 class="text-title-2 text-ink-1">{{ 'Arquitectura en vivo' | t }}</h3>
@@ -229,7 +228,7 @@ const LEVELS: C4Level[] = [
       </div>
     </div>
   `,
-  styles: `
+    styles: `
     /* Nodo único del sitio (docs/DESIGN.md §9.6): superficie neutra, borde de 1 px, radio 8. El
        seleccionado se marca con el acento; el color de marca no sale del icono. */
     .edge {
@@ -323,7 +322,7 @@ const LEVELS: C4Level[] = [
       pointer-events: none;
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ArchitectureCanvasComponent {
   private readonly events = inject(SystemEventsService);

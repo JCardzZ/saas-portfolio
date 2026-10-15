@@ -27,11 +27,10 @@ interface Card {
  * grafo que se va a cargar, así que no puede quedarse atrás.
  */
 @Component({
-  selector: 'app-data-blueprints',
-  standalone: true,
-  imports: [TranslatePipe],
-  host: { class: 'bento-card block' },
-  template: `
+    selector: 'app-data-blueprints',
+    imports: [TranslatePipe],
+    host: { class: 'bento-card block' },
+    template: `
     <section id="patrones-de-datos" aria-labelledby="data-blueprints-title">
       <p class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Patrones de datos' | t }}</p>
       <h3 id="data-blueprints-title" class="mt-1 text-xl font-semibold tracking-tight text-ink-1">{{ 'CDC, streaming y analítica, listos para el lienzo' | t }}</h3>
@@ -94,7 +93,7 @@ interface Card {
       </ul>
     </section>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DataBlueprintsComponent {
   private readonly studio = inject(ArchitectureStudioService);

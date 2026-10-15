@@ -31,11 +31,10 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
  * pulsa «Aplicar cambios».
  */
 @Component({
-  selector: 'app-architecture-copilot',
-  standalone: true,
-  imports: [TranslatePipe, MarkdownComponent, AutofocusDirective],
-  host: { class: 'block', '(keydown.escape)': 'closed.emit(); $event.stopPropagation()', '(keydown)': '$event.stopPropagation()' },
-  template: `
+    selector: 'app-architecture-copilot',
+    imports: [TranslatePipe, MarkdownComponent, AutofocusDirective],
+    host: { class: 'block', '(keydown.escape)': 'closed.emit(); $event.stopPropagation()', '(keydown)': '$event.stopPropagation()' },
+    template: `
     <section class="flex max-h-[36rem] animate-scale-up flex-col overflow-hidden rounded-card border border-line-strong bg-surface-1/95 text-ink-1 shadow-2xl backdrop-blur-2xl" role="dialog" aria-labelledby="copilot-title">
       <header class="flex items-start gap-3 border-b border-line-subtle px-4 py-3">
         <div class="min-w-0 flex-1">
@@ -136,7 +135,7 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
       </p>
     </section>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ArchitectureCopilotComponent {
   private readonly api = inject(AppliedAIRAGService);

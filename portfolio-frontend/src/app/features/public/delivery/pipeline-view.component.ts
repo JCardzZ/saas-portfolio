@@ -37,12 +37,11 @@ const REPLAY_STAGE_MS = 850;
  * última ejecución en main. La estructura sale de los YAML; los datos, de pipeline-status.json.
  */
 @Component({
-  selector: 'app-pipeline-view',
-  standalone: true,
-  imports: [TranslatePipe, StageGraphComponent, TheaterToggleComponent],
-  hostDirectives: [TheaterDirective],
-  host: { class: 'bento-card block' },
-  template: `
+    selector: 'app-pipeline-view',
+    imports: [TranslatePipe, StageGraphComponent, TheaterToggleComponent],
+    hostDirectives: [TheaterDirective],
+    host: { class: 'bento-card block' },
+    template: `
     <app-theater-toggle name="Pipeline CI/CD" />
     <div class="flex flex-wrap items-center justify-between gap-3 pr-10">
       <h3 class="text-xl font-semibold tracking-tight text-ink-1">Pipeline CI/CD</h3>
@@ -125,7 +124,7 @@ const REPLAY_STAGE_MS = 850;
       }
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PipelineViewComponent implements OnInit {
   private readonly delivery = inject(DeliveryStatusService);

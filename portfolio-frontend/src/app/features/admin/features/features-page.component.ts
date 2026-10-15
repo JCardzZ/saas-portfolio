@@ -15,11 +15,10 @@ import { AlertComponent } from '../../../shared/ui/alert.component';
  * en la auditoría con el cliente que lo hizo.
  */
 @Component({
-  selector: 'app-features-page',
-  standalone: true,
-  imports: [DatePipe, AlertComponent],
-  templateUrl: './features-page.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-features-page',
+    imports: [DatePipe, AlertComponent],
+    templateUrl: './features-page.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FeaturesPageComponent implements OnInit {
   private readonly api = inject(FeatureFlagsService);

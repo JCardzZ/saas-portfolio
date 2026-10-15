@@ -14,10 +14,9 @@ export const SHEET_DISMISS_PX = 80;
  * inferior de móviles y tabletas, que se cierra deslizándola hacia abajo o con «Cerrar».
  */
 @Component({
-  selector: 'app-service-info-card',
-  standalone: true,
-  imports: [TranslatePipe],
-  template: `
+    selector: 'app-service-info-card',
+    imports: [TranslatePipe],
+    template: `
     <section
       role="dialog"
       [attr.aria-modal]="variant() === 'sheet' ? 'true' : null"
@@ -149,7 +148,7 @@ export const SHEET_DISMISS_PX = 80;
       }
     </section>
   `,
-  styles: `
+    styles: `
     :host { display: flex; flex-direction: column; min-height: 0; }
     .service-card { animation: service-card-in var(--duration-base) var(--ease-standard) backwards; }
     @keyframes service-card-in { from { opacity: 0; transform: translateY(4px); } }
@@ -167,7 +166,7 @@ export const SHEET_DISMISS_PX = 80;
     [data-side='bottom'] > .service-card-arrow { top: -6px; left: calc(var(--arrow) - 5px); border-right: 0; border-bottom: 0; }
     [data-side='top'] > .service-card-arrow { bottom: -6px; left: calc(var(--arrow) - 5px); border-left: 0; border-top: 0; }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ServiceInfoCardComponent {
   readonly card = input.required<ServiceCard>();

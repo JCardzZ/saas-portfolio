@@ -6,10 +6,9 @@ import { runtimeConfig } from './core/config/runtime-config';
 import { DemoNoticeComponent, DemoNoticeHost } from './shared/ui/demo-notice.component';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [RouterOutlet, DemoNoticeComponent],
-  template: `
+    selector: 'app-root',
+    imports: [RouterOutlet, DemoNoticeComponent],
+    template: `
     <router-outlet />
     <!-- En la página pública el aviso va en la barra del Inspector de traza; aquí, donde no lo hay. -->
     @if (mockMode && !host.hosted()) {
@@ -22,7 +21,7 @@ import { DemoNoticeComponent, DemoNoticeHost } from './shared/ui/demo-notice.com
       </p>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent {
   readonly mockMode = runtimeConfig.mockMode;

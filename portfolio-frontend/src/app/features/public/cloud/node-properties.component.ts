@@ -32,11 +32,10 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
 
 /** Panel de propiedades de un nodo del lienzo: nombre, zona de red, capacidad, puertos, entorno y conexiones. */
 @Component({
-  selector: 'app-node-properties',
-  standalone: true,
-  imports: [TranslatePipe, AutofocusDirective],
-  host: { class: 'block', '(keydown.escape)': 'closed.emit(); $event.stopPropagation()', '(keydown)': '$event.stopPropagation()' },
-  template: `
+    selector: 'app-node-properties',
+    imports: [TranslatePipe, AutofocusDirective],
+    host: { class: 'block', '(keydown.escape)': 'closed.emit(); $event.stopPropagation()', '(keydown)': '$event.stopPropagation()' },
+    template: `
     <section class="flex max-h-[32rem] animate-scale-up flex-col overflow-hidden rounded-panel border border-line-strong bg-surface-1/95 text-ink-1 shadow-2xl backdrop-blur-2xl" role="dialog" aria-labelledby="node-properties-title">
       <header class="flex items-center gap-2 border-b border-line-subtle px-3 py-2">
         <h4 id="node-properties-title" class="min-w-0 flex-1 truncate text-sm font-semibold">Propiedades · {{ service() }}</h4>
@@ -123,7 +122,7 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
       </footer>
     </section>
   `,
-  styles: `
+    styles: `
     .field {
       margin-top: 0.25rem;
       display: block;
@@ -137,7 +136,7 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
     }
     .field:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NodePropertiesComponent {
   readonly node = input.required<CloudNode>();

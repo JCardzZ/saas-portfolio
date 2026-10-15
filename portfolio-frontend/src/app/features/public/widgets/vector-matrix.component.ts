@@ -42,11 +42,10 @@ const POINTS_PER_CLUSTER = 14;
  * real tiene 768 dimensiones y usa distancia coseno.
  */
 @Component({
-  selector: 'app-vector-matrix',
-  standalone: true,
-  imports: [TranslatePipe],
-  host: { class: 'bento-card block' },
-  template: `
+    selector: 'app-vector-matrix',
+    imports: [TranslatePipe],
+    host: { class: 'bento-card block' },
+    template: `
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
       <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Búsqueda vectorial' | t }}</h3>
       <p class="text-xs text-ink-3">{{ 'Mueve el cursor por el mapa o elige una pregunta' | t }}</p>
@@ -102,7 +101,7 @@ const POINTS_PER_CLUSTER = 14;
       </div>
     </div>
   `,
-  styles: `
+    styles: `
     .point {
       fill: rgb(var(--c-ink-1) / 0.22);
     }
@@ -139,7 +138,7 @@ const POINTS_PER_CLUSTER = 14;
       to { transform: scale(2); opacity: 0; }
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class VectorMatrixComponent {
   private readonly events = inject(SystemEventsService);

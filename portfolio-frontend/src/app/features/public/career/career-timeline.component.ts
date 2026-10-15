@@ -9,10 +9,9 @@ import { techIconFor } from '../../../shared/ui/tech-icons';
 
 /** Línea de tiempo profesional. Los hitos salen de `GET /public/career-timeline`. */
 @Component({
-  selector: 'app-career-timeline',
-  standalone: true,
-  imports: [TranslatePipe, TechIconComponent],
-  template: `
+    selector: 'app-career-timeline',
+    imports: [TranslatePipe, TechIconComponent],
+    template: `
     @if (error(); as message) {
       <div class="border border-line-subtle bg-surface-1 max-w-md rounded-card p-6 text-center" role="alert">
         <p class="text-sm text-ink-2">{{ message }}</p>
@@ -60,7 +59,7 @@ import { techIconFor } from '../../../shared/ui/tech-icons';
       </ol>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CareerTimelineComponent implements OnInit {
   private readonly api = inject(PublicCatalogShowcasesService);

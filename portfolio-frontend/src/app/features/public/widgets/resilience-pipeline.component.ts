@@ -140,13 +140,12 @@ function vertical(width: number): Geometry {
  * comportamiento mostrado es el que implementa el backend (fail-open y circuit breaker).
  */
 @Component({
-  selector: 'app-resilience-pipeline',
-  standalone: true,
-  imports: [TranslatePipe, ContainerWidthDirective, TheaterToggleComponent],
-  hostDirectives: [TheaterDirective],
-  host: { class: 'bento-card block' },
-  templateUrl: './resilience-pipeline.component.html',
-  styles: `
+    selector: 'app-resilience-pipeline',
+    imports: [TranslatePipe, ContainerWidthDirective, TheaterToggleComponent],
+    hostDirectives: [TheaterDirective],
+    host: { class: 'bento-card block' },
+    templateUrl: './resilience-pipeline.component.html',
+    styles: `
     /* Al pasar por la tarjeta (o en modo teatro) las tuberías ganan contraste y los logos brillan. */
     :host(:hover) .pipe:not(.pipe-cut):not(.pipe-bypass),
     :host(.theater-expanded) .pipe:not(.pipe-cut):not(.pipe-bypass) {
@@ -258,7 +257,7 @@ function vertical(width: number): Geometry {
       transform: rotate(-38deg);
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ResiliencePipelineComponent {
   private readonly events = inject(SystemEventsService);

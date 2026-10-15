@@ -53,11 +53,10 @@ export class AdvisorOrbComponent {
  * calcula `assessSystem`; aquí no hay ninguna regla.
  */
 @Component({
-  selector: 'app-system-advisor',
-  standalone: true,
-  imports: [AdvisorOrbComponent, AutofocusDirective, FocusTrapDirective, PortalDirective],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'app-system-advisor',
+    imports: [AdvisorOrbComponent, AutofocusDirective, FocusTrapDirective, PortalDirective],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <div appPortal class="fixed inset-0 z-dialog flex items-end justify-center sm:items-center sm:p-6" data-testid="advisor-layer" (keydown.escape)="closed.emit()">
       <div class="absolute inset-0 bg-canvas/70 backdrop-blur-sm" data-testid="advisor-backdrop" (click)="closed.emit()"></div>
       <section
@@ -134,10 +133,10 @@ export class AdvisorOrbComponent {
       </section>
     </div>
   `,
-  styles: `
+    styles: `
     .advisor { animation: advisor-in var(--duration-slow) var(--ease-emphasized) backwards; }
     @keyframes advisor-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } }
-  `,
+  `
 })
 export class SystemAdvisorComponent {
   readonly assessment = input.required<Assessment>();

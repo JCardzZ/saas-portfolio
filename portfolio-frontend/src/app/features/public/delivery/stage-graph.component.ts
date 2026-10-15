@@ -44,10 +44,9 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
  * conexiones de entrada y de salida con los nodos del otro extremo, y el resto se atenúa.
  */
 @Component({
-  selector: 'app-stage-graph',
-  standalone: true,
-  imports: [TranslatePipe],
-  template: `
+    selector: 'app-stage-graph',
+    imports: [TranslatePipe],
+    template: `
     @if (!vertical()) {
       <div class="tools" role="group" [attr.aria-label]="'Vista del diagrama' | t">
         <button type="button" class="tool focus-ring" [attr.aria-label]="'Alejar' | t" [disabled]="fit() || !canZoomOut()" (click)="zoomBy(-1)">−</button>
@@ -127,7 +126,7 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
       </div>
     </div>
   `,
-  styles: `
+    styles: `
     :host { display: block; min-width: 0; }
     .scroller { min-width: 0; overflow-x: auto; padding-bottom: 0.25rem; }
     .sizer { margin-inline: auto; }
@@ -235,7 +234,7 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
       .node, .icon, .edges path, .tool { transition: none; }
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StageGraphComponent {
   readonly nodes = input.required<StageNode[]>();

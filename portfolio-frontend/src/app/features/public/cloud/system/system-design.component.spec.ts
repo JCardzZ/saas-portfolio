@@ -8,9 +8,8 @@ import { SystemDesignComponent } from './system-design.component';
 import { SystemDesign, defaultSystemDesign } from './system-design';
 
 @Component({
-  standalone: true,
-  imports: [SystemDesignComponent],
-  template: `<app-system-design [design]="design()" [nodes]="nodes()" [links]="links" provider="aws" [costUsd]="cost()" (changed)="design.set($event)" />`,
+    imports: [SystemDesignComponent],
+    template: `<app-system-design [design]="design()" [nodes]="nodes()" [links]="links" provider="aws" [costUsd]="cost()" (changed)="design.set($event)" />`
 })
 class HostComponent {
   readonly design = signal<SystemDesign>(defaultSystemDesign());

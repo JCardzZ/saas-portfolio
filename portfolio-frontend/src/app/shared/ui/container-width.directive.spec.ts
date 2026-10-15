@@ -4,9 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { ContainerWidthDirective } from './container-width.directive';
 
 @Component({
-  standalone: true,
-  imports: [ContainerWidthDirective],
-  template: `<div appContainerWidth style="width: 300px; padding: 0"></div>`,
+    imports: [ContainerWidthDirective],
+    template: `<div appContainerWidth style="width: 300px; padding: 0"></div>`
 })
 class HostComponent {
   readonly box = viewChild.required(ContainerWidthDirective);
