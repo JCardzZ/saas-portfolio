@@ -131,7 +131,7 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
         <button type="submit" class="focus-ring rounded-control bg-accent-solid px-3 py-1.5 text-xs font-medium text-accent-on disabled:opacity-40" [disabled]="busy()">{{ 'Preguntar' | t }}</button>
       </form>
       <p class="border-t border-line-subtle px-4 py-2 text-xs leading-snug text-ink-3">
-        {{ 'Las recomendaciones las redacta un modelo y pueden equivocarse: revísalas. El coste sale del catálogo del estudio, no del modelo.' | t }}
+        {{ 'Las recomendaciones las redacta un modelo (Google Gemini) y pueden equivocarse: revísalas; no son asesoría profesional. El coste sale del catálogo del estudio, no del modelo. No escribas datos personales.' | t }}
       </p>
     </section>
   `,

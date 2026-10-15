@@ -229,7 +229,7 @@
       "y": 470,
       "zone": "external",
       "role": "Pieza de datos",
-      "service": "AS400",
+      "service": "Mainframe",
       "icon": "dataService",
       "terraform": null,
       "why": "",

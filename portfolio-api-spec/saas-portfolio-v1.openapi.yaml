@@ -1581,8 +1581,8 @@ components:
       type: object
       required: [id, title, cloudProvider, isPreset, createdAt]
       properties:
-        id: { type: string, example: "core-banking" }
-        title: { type: string, example: "Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)" }
+        id: { type: string, example: "legacy-core" }
+        title: { type: string, example: "Core legado integrado por colas (Mainframe + MQ + Spring Batch + Lambda + SQS)" }
         description: { type: string }
         cloudProvider: { type: string, enum: [aws, gcp, azure, oci], description: "`oci` (Oracle Cloud Infrastructure) is only accepted while the `cloud.oracle` feature flag is on." }
         isPreset: { type: boolean, description: "Shipped with the platform and read-only." }

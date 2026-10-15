@@ -24,7 +24,7 @@ export interface TrafficProfile {
 export const TRAFFIC_PROFILES: TrafficProfile[] = [
   { id: 'low', name: 'Bajo', hint: 'noche', rps: 180, p95: 9, density: 1, speed: 0.6 },
   { id: 'normal', name: 'Normal', hint: 'pico', rps: 1450, p95: 14, density: 2, speed: 1 },
-  { id: 'extreme', name: 'Extremo', hint: 'Black Friday / elecciones', rps: 9800, p95: 38, density: 3, speed: 1.9 },
+  { id: 'extreme', name: 'Extremo', hint: 'Black Friday / lanzamientos', rps: 9800, p95: 38, density: 3, speed: 1.9 },
 ];
 
 /** Como mucho estas partículas en todo el lienzo: por encima, se baja la densidad para no cargar el navegador. */

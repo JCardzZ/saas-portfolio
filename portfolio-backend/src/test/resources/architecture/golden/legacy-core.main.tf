@@ -65,4 +65,4 @@ resource "aws_sqs_queue" "queue" {
   depends_on = [aws_lambda_function.lambda]
 }
 
-# Fuera de Terraform: Visitantes, IBM MQ, IBM AS400
+# Fuera de Terraform: Visitantes, IBM MQ, Mainframe

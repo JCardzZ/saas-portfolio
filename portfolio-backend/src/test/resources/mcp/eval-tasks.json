@@ -1,7 +1,7 @@
 [
   {"id": "T01", "area": "plantillas", "prompt": "¿Qué plantillas de arquitectura tiene la plataforma?",
    "plan": [{"tool": "listar_plantillas", "arguments": {}}],
-   "expect": {"tools": ["listar_plantillas"], "resultContains": ["core-banking", "system-fintech"]}},
+   "expect": {"tools": ["listar_plantillas"], "resultContains": ["legacy-core", "system-fintech"]}},
   {"id": "T02", "area": "plantillas", "prompt": "Enséñame solo las plantillas pensadas para Azure.",
    "plan": [{"tool": "listar_plantillas", "arguments": {"nube": "azure"}}],
    "expect": {"tools": ["listar_plantillas"], "resultContains": ["system-telemedicine"], "resultExcludes": ["system-fintech"]}},

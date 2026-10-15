@@ -32,13 +32,13 @@ class ArchitecturePresetSeederTest {
 
         List<ArchitectureProjectDomain> presets = service.findAll();
         assertThat(presets).allMatch(ArchitectureProjectDomain::preset);
-        assertThat(presets).extracting(ArchitectureProjectDomain::id).containsExactlyInAnyOrder("aks-oauth2", "core-banking", "electoral",
+        assertThat(presets).extracting(ArchitectureProjectDomain::id).containsExactlyInAnyOrder("aks-oauth2", "legacy-core", "high-traffic",
                 "event-driven", "ecommerce-cqrs", "saas-multitenant", "fintech-payments", "rag-enterprise",
                 "cdc-realtime", "event-analytics", "multi-region-recovery");
-        assertThat(service.findById("aks-oauth2").title()).isEqualTo("Modernización bancaria (AKS + OAuth2 + Redis)");
+        assertThat(service.findById("aks-oauth2").title()).isEqualTo("Microservicios en Kubernetes (AKS + OAuth2 + Redis)");
         assertThat(service.findById("aks-oauth2").cloudProvider()).isEqualTo(CloudProviderDomain.AZURE);
-        assertThat(service.findById("core-banking").title()).isEqualTo("Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)");
-        assertThat(service.findById("electoral").title()).isEqualTo("Plataforma electoral anti-DDoS");
+        assertThat(service.findById("legacy-core").title()).isEqualTo("Core legado integrado por colas (Mainframe + MQ + Spring Batch + Lambda + SQS)");
+        assertThat(service.findById("high-traffic").title()).isEqualTo("Plataforma de alto tráfico anti-DDoS (CDN + WAF + AWS)");
         // Todas dicen que son un escenario ilustrativo, no la infraestructura de nadie.
         assertThat(presets).allSatisfy(preset -> assertThat(preset.description()).contains("no describe la infraestructura real de ninguna entidad"));
     }
@@ -76,10 +76,10 @@ class ArchitecturePresetSeederTest {
     void theSeededGraphsCarryWhatTheirTitlesPromise() throws Exception {
         seeder.seed();
 
-        assertThat(types("core-banking")).contains("mainframe", "mq", "functions", "queue", "containers");
+        assertThat(types("legacy-core")).contains("mainframe", "mq", "functions", "queue", "containers");
         assertThat(types("aks-oauth2")).contains("kubernetes", "api-gateway", "identity", "redis");
-        assertThat(types("electoral")).contains("waf", "edge").filteredOn("postgres"::equals).hasSize(2);
-        assertThat(service.findById("core-banking").zones()).extracting(zone -> zone.get("label")).contains("Centro de datos propio");
+        assertThat(types("high-traffic")).contains("waf", "edge").filteredOn("postgres"::equals).hasSize(2);
+        assertThat(service.findById("legacy-core").zones()).extracting(zone -> zone.get("label")).contains("Centro de datos propio");
         assertThat(types("event-driven")).contains("streaming", "nosql");
         assertThat(types("ecommerce-cqrs")).contains("streaming", "search").filteredOn("newsql-pg"::equals).hasSize(2);
         assertThat(types("saas-multitenant")).contains("api-gateway", "identity", "postgres");
@@ -92,13 +92,13 @@ class ArchitecturePresetSeederTest {
     @Test
     void seedingAgainRefreshesThePresetsWithoutDuplicatingThem() throws Exception {
         seeder.seed();
-        ArchitectureProjectDomain before = service.findById("electoral");
-        repository.save(new ArchitectureProjectDomain("electoral", "Manipulada", null, CloudProviderDomain.GCP, List.of(), List.of(), List.of(), true, before.createdAt()));
+        ArchitectureProjectDomain before = service.findById("high-traffic");
+        repository.save(new ArchitectureProjectDomain("high-traffic", "Manipulada", null, CloudProviderDomain.GCP, List.of(), List.of(), List.of(), true, before.createdAt()));
 
         seeder.seed();
 
         assertThat(service.findAll()).hasSize(11);
-        assertThat(service.findById("electoral")).isEqualTo(before);
+        assertThat(service.findById("high-traffic")).isEqualTo(before);
     }
 
     @Test

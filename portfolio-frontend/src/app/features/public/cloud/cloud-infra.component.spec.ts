@@ -1075,21 +1075,21 @@ describe('CloudInfraComponent', () => {
         expect(element.querySelectorAll('#menu-presets button').length).toBe(10);
         expect(element.querySelector('#menu-presets')!.textContent).toContain('no describen la infraestructura real de ninguna entidad');
 
-        menuItem(element, 'Core bancario AS400').click();
+        menuItem(element, 'Core legado').click();
         fixture.detectChanges();
         expect(element.querySelector('#menu-presets')).toBeNull();
-        expect(services(element)).toEqual(jasmine.arrayContaining(['IBM MQ', 'IBM AS400', 'Spring Batch', 'ECS Fargate', 'Lambda', 'SQS']));
+        expect(services(element)).toEqual(jasmine.arrayContaining(['IBM MQ', 'Mainframe', 'Spring Batch', 'ECS Fargate', 'Lambda', 'SQS']));
         expect(diagram(element).textContent).toContain('Centro de datos propio');
         expect(tags()).toContain('Check: VPC Isolation OK');
 
         openMenu(fixture, element, 'Plantillas');
-        menuItem(element, 'Modernización bancaria').click();
+        menuItem(element, 'Microservicios en Kubernetes').click();
         fixture.detectChanges();
         expect(provider(element, 'Azure').getAttribute('aria-checked')).toBe('true');
         expect(services(element)).toEqual(jasmine.arrayContaining(['API Management', 'AKS', 'Entra External ID', 'Cache for Redis']));
 
         openMenu(fixture, element, 'Plantillas');
-        menuItem(element, 'Plataforma electoral').click();
+        menuItem(element, 'Plataforma de alto tráfico').click();
         fixture.detectChanges();
         expect(provider(element, 'AWS').getAttribute('aria-checked')).toBe('true');
         expect(services(element)).toEqual(jasmine.arrayContaining(['Cloudflare', 'WAF', 'ECS Fargate', 'ECS Fargate #2', 'RDS · réplica Multi-AZ']));
@@ -1429,9 +1429,9 @@ describe('CloudInfraComponent', () => {
       expect(element.querySelector('#menu-presets')!.textContent).toContain('Plantillas y proyectos servidos por el backend.');
       expect(Array.from(element.querySelectorAll('#menu-presets button')).map((item) => item.querySelector('span')!.textContent!.trim())).toEqual([
         'Arquitectura de referencia',
-        'Modernización bancaria (AKS + OAuth2 + Redis)',
-        'Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)',
-        'Plataforma electoral anti-DDoS',
+        'Microservicios en Kubernetes (AKS + OAuth2 + Redis)',
+        'Core legado integrado por colas (Mainframe + MQ + Spring Batch + Lambda + SQS)',
+        'Plataforma de alto tráfico anti-DDoS (CDN + WAF + AWS)',
         'Arquitectura Event-Driven de Alto Rendimiento (Kafka + Spring Cloud Stream + DynamoDB)',
         'E-Commerce Global Multi-Region (CQRS + Event Sourcing + Aurora Multi-AZ)',
         'Plataforma SaaS B2B Multi-Inquilino (API Gateway + Micro-Frontends + Isolated Tenant Schemas)',
@@ -1445,7 +1445,7 @@ describe('CloudInfraComponent', () => {
       const { fixture, element } = create();
       tick(400);
       openMenu(fixture, element, 'Plantillas');
-      menuItem(element, 'Modernización bancaria').click();
+      menuItem(element, 'Microservicios en Kubernetes').click();
       fixture.detectChanges();
       // Todavía no ha llegado: el lienzo sigue como estaba.
       expect(element.querySelectorAll('g.node').length).toBe(12);
@@ -1466,9 +1466,9 @@ describe('CloudInfraComponent', () => {
       openMenu(fixture, element, 'Plantillas');
 
       expect(element.querySelector('#menu-presets')!.textContent).toContain('Plantillas incluidas en el estudio.');
-      menuItem(element, 'Core bancario AS400').click();
+      menuItem(element, 'Core legado').click();
       fixture.detectChanges();
-      expect(services(element)).toContain('IBM AS400');
+      expect(services(element)).toContain('Mainframe');
       flush();
     }));
 
@@ -1477,10 +1477,10 @@ describe('CloudInfraComponent', () => {
       tick(400);
       const api = TestBed.inject(ArchitectureStudioApi);
       spyOn(api, 'publicArchitectureProjectsIdGet').and.returnValue(of({
-        id: 'electoral', title: 'x', cloudProvider: 'aws', isPreset: true, createdAt: '', nodes: [{ id: '<script>' }], connections: [], zones: [],
+        id: 'high-traffic', title: 'x', cloudProvider: 'aws', isPreset: true, createdAt: '', nodes: [{ id: '<script>' }], connections: [], zones: [],
       }) as never);
       openMenu(fixture, element, 'Plantillas');
-      menuItem(element, 'Plataforma electoral').click();
+      menuItem(element, 'Plataforma de alto tráfico').click();
       fixture.detectChanges();
 
       expect(element.querySelector('[role="alert"]')!.textContent).toContain('No se pudo abrir');

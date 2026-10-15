@@ -286,13 +286,13 @@
       "custom": true
     },
     {
-      "id": "as400",
+      "id": "core-system",
       "type": "mainframe",
       "x": 710,
       "y": 668,
       "zone": "external",
-      "role": "Core bancario",
-      "service": "IBM AS400",
+      "role": "Core transaccional",
+      "service": "Mainframe",
       "icon": null,
       "terraform": null,
       "why": "Recibe tramas planas; las APIs nunca lo llaman de forma síncrona.",
@@ -345,7 +345,7 @@
     },
     {
       "from": "mq",
-      "to": "as400",
+      "to": "core-system",
       "label": "tramas planas"
     }
   ]

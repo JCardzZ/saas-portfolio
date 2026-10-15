@@ -36,14 +36,14 @@ resource "aws_lb" "lb" {
 }
 
 resource "aws_ecs_service" "api" {
-  # ECS Fargate · API de resultados
+  # ECS Fargate · API pública
   # capacidad: var.api_instance
   # puertos: 8080
   depends_on = [aws_db_instance.postgres, aws_elasticache_replication_group.redis, aws_sqs_queue.queue]
 }
 
 resource "aws_ecs_service" "api_2" {
-  # ECS Fargate · API de resultados
+  # ECS Fargate · API pública
   depends_on = [aws_db_instance.postgres]
 }
 
@@ -62,7 +62,7 @@ resource "aws_elasticache_replication_group" "redis" {
 }
 
 resource "aws_sqs_queue" "queue" {
-  # SQS · Recuento asíncrono
+  # SQS · Procesamiento asíncrono
 }
 
 resource "aws_cloudwatch_log_group" "observability" {

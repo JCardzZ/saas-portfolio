@@ -76,7 +76,7 @@ const withUnsupported = (project) => ({
     unsupported('bi-1', 'powerbi', 'Power BI', { name: '  Panel  de "ventas"  ' }),
     unsupported('snowflake-1', 'snowflake', 'Snowflake', { terraform: 'snowflake_database' }),
     // Un sistema propio no es «sin soporte»: sigue fuera de Terraform.
-    unsupported('legacy', 'mainframe', 'AS400', { zone: 'external' }),
+    unsupported('legacy', 'mainframe', 'Mainframe', { zone: 'external' }),
   ],
   links: [...project.links, { from: 'postgres', to: 'debezium-1', kind: 'CDC_STREAM' }, { from: 'cdc', to: 'snowflake-1', kind: 'CDC_STREAM' }],
 });

@@ -57,4 +57,4 @@ resource "snowflake_database" "snowflake_1" {
 # Debezium: sin soporte de Terraform todavía
 # Panel de "ventas": sin soporte de Terraform todavía
 
-# Fuera de Terraform: Visitantes, AS400
+# Fuera de Terraform: Visitantes, Mainframe

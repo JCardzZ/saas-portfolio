@@ -81,16 +81,16 @@ public class ArchitectureProjectServiceTest {
 
     @Test
     void presetsAreRegisteredWithAFixedIdRefreshedInPlaceAndCannotBeEditedThroughTheApi() {
-        ArchitectureProjectDomain first = service.registerPreset("core-banking", draft("Core bancario"));
-        ArchitectureProjectDomain again = service.registerPreset("core-banking", draft("Core bancario v2"));
+        ArchitectureProjectDomain first = service.registerPreset("legacy-core", draft("Core bancario"));
+        ArchitectureProjectDomain again = service.registerPreset("legacy-core", draft("Core bancario v2"));
 
         assertThat(again.preset()).isTrue();
         assertThat(again.createdAt()).isEqualTo(first.createdAt());
         assertThat(service.findAll()).extracting(ArchitectureProjectDomain::title).containsExactly("Core bancario v2");
 
-        assertThatThrownBy(() -> service.update("core-banking", draft("Pisada")))
+        assertThatThrownBy(() -> service.update("legacy-core", draft("Pisada")))
                 .isInstanceOf(InvalidRequestException.class).hasMessageContaining("Las plantillas no se pueden modificar");
-        assertThat(service.findById("core-banking").title()).isEqualTo("Core bancario v2");
+        assertThat(service.findById("legacy-core").title()).isEqualTo("Core bancario v2");
     }
 
     @Test

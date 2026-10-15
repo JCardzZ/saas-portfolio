@@ -85,8 +85,12 @@ export const EN: Readonly<Record<string, string>> = {
   'Pregunta por tu diagrama. Por ejemplo:': 'Ask about your diagram. For example:',
   'Pregunta para el copiloto': 'Question for the co-pilot',
   'Preguntar': 'Ask',
-  'Las recomendaciones las redacta un modelo y pueden equivocarse: revísalas. El coste sale del catálogo del estudio, no del modelo.':
-    'The recommendations are written by a model and can be wrong: review them. The cost comes from the studio catalog, not from the model.',
+  'Las recomendaciones las redacta un modelo (Google Gemini) y pueden equivocarse: revísalas; no son asesoría profesional. El coste sale del catálogo del estudio, no del modelo. No escribas datos personales.':
+    'The recommendations are written by a model (Google Gemini) and can be wrong: review them; they are not professional advice. The cost comes from the studio catalog, not from the model. Do not enter personal data.',
+  'Respuestas generadas por IA (Google Gemini) con el contenido de este sitio; pueden contener errores. No escribas datos personales.':
+    'AI-generated answers (Google Gemini) based on this site’s content; they may contain errors. Do not enter personal data.',
+  'Aviso legal': 'Legal notice',
+  'Aviso legal y privacidad': 'Legal notice and privacy',
   'Cerrar el copiloto': 'Close the co-pilot',
   'Piezas que añadiría': 'Pieces it would add',
   '¿Qué quieres mejorar de esta arquitectura?': 'What do you want to improve in this architecture?',
