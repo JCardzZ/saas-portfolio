@@ -223,6 +223,14 @@ describe('ProductionArchitectureComponent', () => {
     expect(element.querySelector('[aria-label="Leyenda"]')!.textContent).toContain('Planificado');
   });
 
+  it('opens with a live piece already selected, so the detail panel is never empty', () => {
+    const { fixture, backend, element } = setup(ProductionArchitectureComponent);
+    serveSnapshot(backend, statusFile(), fixture);
+    const detail = element.querySelector('div[aria-live="polite"]')!.textContent!;
+    expect(detail).toContain('Por qué');
+    expect(detail).not.toContain('Toca una pieza');
+  });
+
   it('shows the real data of a live piece and none for a planned one', () => {
     const { fixture, backend, element } = setup(ProductionArchitectureComponent);
     serveSnapshot(backend, statusFile(), fixture);

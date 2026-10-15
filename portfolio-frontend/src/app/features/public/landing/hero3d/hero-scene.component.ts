@@ -1175,6 +1175,14 @@ export class HeroSceneComponent {
     };
     const onScroll = () => {
       scene.scroll(scrollY);
+      // Al dejar atrás el hero, el mazo abierto se recoge solo.
+      if (this.open() && scrollY > innerHeight * 0.5) {
+        scene.close();
+        this.zone.run(() => {
+          this.setOpen(false);
+          this.focused.set(null);
+        });
+      }
       // Mientras se desplaza, camina; al detenerse, señala la sección.
       pointing = false;
       clearTimeout(settleTimer);

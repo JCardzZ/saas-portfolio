@@ -92,6 +92,35 @@ export function startSmoothScroll(): () => void {
     if (!raf) raf = requestAnimationFrame(step);
   };
 
+  // ---- Tarjetas con tacto ---------------------------------------------------------------------
+  // Un borde de luz sigue al cursor por cada tarjeta y las de contenido (proyectos, tecnologías,
+  // trayectoria) se inclinan 2–3° hacia él. Los diagramas no se inclinan: se usan con el ratón.
+  let lit: HTMLElement | null = null;
+  const onCardMove = (event: PointerEvent) => {
+    if (event.pointerType !== 'mouse' || drag) return;
+    const card = (event.target as Element | null)?.closest?.<HTMLElement>('main .bento-card') ?? null;
+    if (card !== lit) {
+      if (lit) {
+        lit.classList.remove('card-lit');
+        lit.style.removeProperty('--tilt');
+      }
+      lit = card;
+      card?.classList.add('card-lit');
+    }
+    if (!card) return;
+    const box = card.getBoundingClientRect();
+    const x = event.clientX - box.left;
+    const y = event.clientY - box.top;
+    card.style.setProperty('--mx', `${x}px`);
+    card.style.setProperty('--my', `${y}px`);
+    if (card.tagName === 'ARTICLE') {
+      const nx = x / box.width - 0.5;
+      const ny = y / box.height - 0.5;
+      card.style.setProperty('--tilt', `${(-ny).toFixed(3)} ${nx.toFixed(3)} 0 ${(Math.hypot(nx, ny) * 5).toFixed(2)}deg`);
+    }
+  };
+
+  addEventListener('pointermove', onCardMove, { passive: true });
   addEventListener('wheel', onWheel, { passive: false });
   addEventListener('scroll', onScroll, { passive: true });
   addEventListener('pointerdown', onDown);
@@ -111,6 +140,7 @@ export function startSmoothScroll(): () => void {
     removeEventListener('pointermove', onMove);
     removeEventListener('pointerup', onUp);
     removeEventListener('pointercancel', onUp);
+    removeEventListener('pointermove', onCardMove);
     document.documentElement.classList.remove('page-grab', 'page-grabbing');
     style.remove();
   };
@@ -120,6 +150,18 @@ export function startSmoothScroll(): () => void {
 const BACKGROUND = '.dock-aware, .dock-aware > main, main > section, .bento-grid, main > section > div, app-galaxy-backdrop';
 
 const GRAB_CSS = `
+main .bento-card { position: relative; }
+main .bento-card::after {
+  content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: radial-gradient(260px circle at var(--mx, -999px) var(--my, -999px), rgb(var(--c-accent-solid) / 0.7), transparent 65%);
+  -webkit-mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: 0; transition: opacity 300ms ease;
+}
+main .bento-card.card-lit::after { opacity: 1; }
+main .theater-card.card-lit::after { background: radial-gradient(340px circle at var(--mx, -999px) var(--my, -999px), rgb(var(--c-accent-solid) / 0.95), transparent 65%); }
+main .bento-grid { perspective: 1400px; }
+main article.bento-card { rotate: var(--tilt, 0 0 1 0deg); transition: rotate 300ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .page-grab :is(${BACKGROUND.replace(', app-galaxy-backdrop', '')}) { cursor: grab; }
 .page-grab :is(${BACKGROUND.replace(', app-galaxy-backdrop', '')}) > :not(.bento-grid, div, section, main) { cursor: auto; }
 .page-grabbing, .page-grabbing * { cursor: grabbing !important; user-select: none; }`;
