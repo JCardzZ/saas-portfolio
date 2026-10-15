@@ -4,11 +4,29 @@ import { SystemEventsService } from '../data/system-events.service';
 import { IngestionSandboxComponent } from './ingestion-sandbox.component';
 
 describe('IngestionSandboxComponent', () => {
+  /** Crea el simulador y lo despliega (arranca plegado). */
   function create() {
     const fixture = TestBed.createComponent(IngestionSandboxComponent);
     fixture.detectChanges();
-    return { fixture, element: fixture.nativeElement as HTMLElement };
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector<HTMLButtonElement>('[data-testid="ingestion-toggle"]')!.click();
+    fixture.detectChanges();
+    return { fixture, element };
   }
+
+  it('starts collapsed, showing only the three steps and a button to open the demo', () => {
+    const fixture = TestBed.createComponent(IngestionSandboxComponent);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    const toggle = element.querySelector<HTMLButtonElement>('[data-testid="ingestion-toggle"]')!;
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(element.querySelector('pre')).toBeNull();
+    expect(element.textContent).toContain('Vector 768D');
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(element.querySelectorAll('pre').length).toBeGreaterThan(1);
+  });
 
   const button = (element: HTMLElement, text: string) =>
     Array.from(element.querySelectorAll<HTMLButtonElement>('button')).find((candidate) => candidate.textContent?.includes(text))!;

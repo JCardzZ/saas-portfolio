@@ -99,6 +99,10 @@ export function startSmoothScroll(): () => void {
   addEventListener('pointerup', onUp);
   addEventListener('pointercancel', onUp);
   document.documentElement.classList.add('page-grab');
+  // Sus estilos viajan con este módulo (que se carga aparte), no en la hoja global.
+  const style = document.createElement('style');
+  style.textContent = GRAB_CSS;
+  document.head.append(style);
   return () => {
     cancelAnimationFrame(raf);
     removeEventListener('wheel', onWheel);
@@ -108,8 +112,14 @@ export function startSmoothScroll(): () => void {
     removeEventListener('pointerup', onUp);
     removeEventListener('pointercancel', onUp);
     document.documentElement.classList.remove('page-grab', 'page-grabbing');
+    style.remove();
   };
 }
 
 /** El «fondo» de la página: contenedores sin contenido propio (no tarjetas, textos ni controles). */
 const BACKGROUND = '.dock-aware, .dock-aware > main, main > section, .bento-grid, main > section > div, app-galaxy-backdrop';
+
+const GRAB_CSS = `
+.page-grab :is(${BACKGROUND.replace(', app-galaxy-backdrop', '')}) { cursor: grab; }
+.page-grab :is(${BACKGROUND.replace(', app-galaxy-backdrop', '')}) > :not(.bento-grid, div, section, main) { cursor: auto; }
+.page-grabbing, .page-grabbing * { cursor: grabbing !important; user-select: none; }`;

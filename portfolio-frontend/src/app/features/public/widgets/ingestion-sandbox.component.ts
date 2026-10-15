@@ -95,6 +95,8 @@ export class IngestionSandboxComponent {
 
   readonly input = new FormControl(TEMPLATES[0].text, { nonNullable: true });
   readonly activeTemplate = signal<string | null>(TEMPLATES[0].label);
+  /** Plegado por defecto: la demo completa se abre bajo demanda. */
+  readonly open = signal(false);
 
   /** 0 = sin procesar; 1..3 = último paso mostrado. Arranca procesado para no abrir vacío. */
   readonly step = signal(3);

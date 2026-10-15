@@ -136,7 +136,13 @@ test.describe('conexiones inteligentes del Estudio (studio.smart-rules)', () => 
     const wires = await page.locator(`${CANVAS} path.wire`).count();
     await capture(page, testInfo, 'hito-2-conectar-antes');
 
-    await page.locator(`${CANVAS} g.node[data-node-id="users"]`).click();
+    // Primero el nodo tiene que quedar seleccionado (si el clic coincide con el zoom por foco del
+    // lienzo, se pierde): solo entonces se empieza a conectar desde su asa.
+    const users = page.locator(`${CANVAS} g.node[data-node-id="users"]`);
+    await expect(async () => {
+      await users.click();
+      await expect(users).toHaveClass(/node-active/, { timeout: 1000 });
+    }).toPass({ timeout: 15_000 });
     await page.locator(`${CANVAS} g.connect`).press('Enter');
     await expect(page.locator(`${CANVAS} g.node[data-node-id="api"]`)).toHaveClass(/node-target-ok/);
     await expect(page.locator(`${CANVAS} g.node[data-node-id="postgres"]`)).toHaveClass(/node-target-no/);

@@ -480,4 +480,10 @@ export const EN: Readonly<Record<string, string>> = {
   'Servicio caído: su réplica asume el tráfico': 'Service down: its replica takes the traffic',
   'Servicio caído sin respaldo: se pierden peticiones': 'Service down with no backup: requests are lost',
   'Tráfico extremo con una sola instancia de cómputo': 'Extreme traffic with a single compute instance',
+  'Cómo se indexa el código para que el asistente lo cite.': 'How the code is indexed so the assistant can cite it.',
+  'Texto': 'Text',
+  'Chunks': 'Chunks',
+  'Vector 768D': '768-D vector',
+  'Plegar': 'Collapse',
+  'Ver demo': 'See demo',
 };
