@@ -338,6 +338,9 @@
       /* En longitud, no en porcentaje: un bloque más alto que la pantalla no se queda a medias. */
       animation-range: entry 0px entry 220px;
     }
+    /* Entrada escalonada: en una fila, cada tarjeta empieza un poco después que la anterior. */
+    main article.bento-card:nth-child(3n + 2) { animation-range: entry 40px entry 260px; }
+    main article.bento-card:nth-child(3n + 3) { animation-range: entry 80px entry 300px; }
   }
 }
 @keyframes section-reveal {

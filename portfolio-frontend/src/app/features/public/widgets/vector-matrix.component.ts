@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, signal } from '@angular/core';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { SystemEventsService } from '../data/system-events.service';
@@ -65,10 +65,10 @@ const POINTS_PER_CLUSTER = 14;
       }
     </div>
 
-    <div class="mt-4 grid gap-5 md:grid-cols-3 [&>*]:min-w-0">
+    <div class="mt-4 grid gap-5 md:grid-cols-3 lg:grid-cols-5 [&>*]:min-w-0">
       <svg
         [attr.viewBox]="viewBox"
-        class="w-full cursor-crosshair touch-none rounded-panel border border-line-subtle bg-surface-2 md:col-span-2"
+        class="w-full cursor-crosshair touch-none rounded-panel border border-line-subtle bg-surface-2 md:col-span-2 lg:col-span-3"
         role="img"
         [attr.aria-label]="'Mapa de fragmentos indexados; la pregunta se conecta con los cinco más afines' | t"
         (pointermove)="follow($event)"
@@ -142,6 +142,31 @@ const POINTS_PER_CLUSTER = 14;
 })
 export class VectorMatrixComponent {
   private readonly events = inject(SystemEventsService);
+  /** Hasta que alguien lo toca, el mapa recorre solo las preguntas de ejemplo (si se ve en pantalla). */
+  private touched = false;
+  private readonly autoplay = (() => {
+    const host = inject(ElementRef<HTMLElement>);
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      let visible = false;
+      const seen = new IntersectionObserver(([entry]) => (visible = entry.isIntersecting));
+      seen.observe(host.nativeElement);
+      let index = 0;
+      const timer = setInterval(() => {
+        if (this.touched || !visible || document.hidden) return;
+        index = (index + 1) % this.suggestions.length;
+        const next = this.suggestions[index];
+        this.activeSuggestion.set(next.label);
+        this.query.set({ x: next.x, y: next.y });
+      }, 3500);
+      destroyRef.onDestroy(() => {
+        clearInterval(timer);
+        seen.disconnect();
+      });
+    });
+    return true;
+  })();
   private lastEventAt = 0;
   private lastTopMatch = -1;
 
@@ -168,12 +193,14 @@ export class VectorMatrixComponent {
   });
 
   select(suggestion: Query & { label: string }): void {
+    this.touched = true;
     this.activeSuggestion.set(suggestion.label);
     this.query.set({ x: suggestion.x, y: suggestion.y });
     this.logSearch(true);
   }
 
   follow(event: PointerEvent): void {
+    this.touched = true;
     const bounds = (event.currentTarget as SVGSVGElement).getBoundingClientRect();
     this.activeSuggestion.set(null);
     this.query.set({

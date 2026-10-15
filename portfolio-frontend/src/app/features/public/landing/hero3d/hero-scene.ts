@@ -973,6 +973,12 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   const zAxis = new three.Vector3(0, 0, 1);
 
   function placeTiles(dt: number): void {
+    // Las fichas solo existen en el hero: guiando por la página (o con el escritorio ya fuera de
+    // la vista) no se dibujan, para no transparentarse detrás ni delante de las secciones.
+    const tilesOn = !guideActive && furniture.visible;
+    for (const tile of tiles) tile.mesh.visible = tilesOn;
+    infoMesh.visible = tilesOn;
+    if (!tilesOn) return;
     const count = tiles.length;
     const shown = tiles.filter((tile) => isShown(tile));
     const shownCount = Math.max(1, shown.length);

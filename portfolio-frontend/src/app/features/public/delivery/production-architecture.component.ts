@@ -77,7 +77,15 @@ export class ProductionArchitectureComponent implements OnInit {
 
   private readonly detail = viewChild<ElementRef<HTMLElement>>('detail');
 
-  readonly activeId = signal<string | null>(null);
+  /**
+   * Abre con una pieza ya elegida (la primera en producción del recorrido de la petición), para
+   * que la ficha nunca esté vacía; tocar otra la cambia.
+   */
+  readonly activeId = signal<string | null>(
+    TOPOLOGY.nodes.find((node) => node.id === 'pages' && node.status === 'live')?.id
+      ?? TOPOLOGY.nodes.find((node) => node.status === 'live')?.id
+      ?? null,
+  );
   readonly stageNames = TOPOLOGY.stages;
 
   readonly nodes: StageNode[] = TOPOLOGY.nodes.map((node) => ({
