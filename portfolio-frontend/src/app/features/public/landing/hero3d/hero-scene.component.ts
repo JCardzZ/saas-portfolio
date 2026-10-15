@@ -66,6 +66,9 @@ const DRAG_THRESHOLD = 6;
   // Estilos del bocadillo, la isla de filtros y la píldora: viajan con la escena, que se carga aparte.
   encapsulation: ViewEncapsulation.None,
   styles: `
+    /* Robot en modo guía: la mano del ratón al pasar por encima, y cerrada mientras se arrastra. */
+    html.robot-hover, html.robot-hover * { cursor: grab !important; }
+    html.robot-carrying, html.robot-carrying * { cursor: grabbing !important; user-select: none !important; }
 /* Bocadillo del robot: una cola hacia la cabeza (a la izquierda, o abajo en pantallas estrechas). */
 .speech { will-change: transform; }
 .speech-body { position: relative; width: min(21rem, calc(100vw - 2rem)); }
@@ -641,6 +644,10 @@ export class HeroSceneComponent {
     };
   });
   private readonly touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  /** Dónde dejó el visitante al robot en modo guía (fracciones del ancho útil y del alto); `null` = su margen. */
+  private robotSpot: { fx: number; fy: number } | null = parseSpot(readPref('robot-guide-spot'));
+  /** Arrastre del robot en curso: desfase entre el cursor y su punto de anclaje. */
+  private carry: { pointerId: number; startX: number; startY: number; dx: number; dy: number; moved: boolean; before: { fx: number; fy: number } | null } | null = null;
   private press: { x: number; y: number; lastX: number; dragged: boolean; grabbed: boolean } | null = null;
   private suppressClick = false;
 
@@ -1104,6 +1111,8 @@ export class HeroSceneComponent {
     // y el borde, o el inspector acoplado) y presenta la sección que se está leyendo.
     let settleTimer = 0;
     let pointing = false;
+    /** Último destino del modo guía, en px: de ahí sale el desfase al agarrarlo. */
+    let guideAt = { x: 0, y: 0 };
     const visibleSections = new Map<string, number>();
     const sectionsSeen = new IntersectionObserver(
       (entries) => {
@@ -1156,7 +1165,13 @@ export class HeroSceneComponent {
       const width = innerWidth - dockRight;
       const gutter = Math.max(120, (width - 1152) / 2);
       const dockBottom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-bottom')) || 0;
-      scene.guide({ x: width - Math.max(150, gutter * 0.62), y: (innerHeight - dockBottom) * 0.8, widthPx: gutter * 0.95, point: pointing || !!this.tour() });
+      // Donde lo dejó el visitante (fracciones de la pantalla), o en el margen derecho.
+      const spot = this.robotSpot;
+      const x = spot ? clampSpot(spot.fx * width, 90, width - 90) : width - Math.max(150, gutter * 0.62);
+      const y = spot ? clampSpot(spot.fy * innerHeight, 140, innerHeight - dockBottom - 30) : (innerHeight - dockBottom) * 0.8;
+      guideAt = { x, y };
+      const carried = !!this.carry?.moved;
+      scene.guide({ x, y, widthPx: gutter * 0.95, point: !carried && (pointing || !!this.tour()), carried });
     };
     resize();
 
@@ -1196,6 +1211,83 @@ export class HeroSceneComponent {
     addEventListener('touchstart', interrupt, { passive: true });
     addEventListener('keydown', interrupt);
     const onVisibility = () => kick();
+    // ---- Arrastrar al robot (modo guía) ----------------------------------------------------
+    // Se agarra donde se pulse sobre él (no sobre un enlace o un botón de la página), cuelga del
+    // cursor y se queda donde se suelte. Doble clic sobre él: vuelve a su margen.
+    const onCanvasPoint = (clientX: number, clientY: number) => {
+      const box = canvas.getBoundingClientRect();
+      return { x: ((clientX - box.left) / box.width) * 2 - 1, y: -((clientY - box.top) / box.height) * 2 + 1 };
+    };
+    const overRobot = (event: { clientX: number; clientY: number; target: EventTarget | null }) => {
+      if (!this.guiding() || isInteractive(event.target)) return false;
+      const point = onCanvasPoint(event.clientX, event.clientY);
+      return scene.hitRobot(point.x, point.y);
+    };
+    const html = document.documentElement;
+    let hoverChecked = 0;
+    const onRobotHover = (event: PointerEvent) => {
+      const carry = this.carry;
+      if (carry && carry.pointerId === event.pointerId) {
+        if (!carry.moved && Math.hypot(event.clientX - carry.startX, event.clientY - carry.startY) > DRAG_THRESHOLD) {
+          carry.moved = true;
+          html.classList.add('robot-carrying');
+          this.sound.tick();
+        }
+        if (carry.moved) {
+          const dockRight = parseFloat(getComputedStyle(html).getPropertyValue('--dock-right')) || 0;
+          this.robotSpot = { fx: (event.clientX + carry.dx) / Math.max(1, innerWidth - dockRight), fy: (event.clientY + carry.dy) / Math.max(1, innerHeight) };
+          updateGuide();
+          kick();
+        }
+        return;
+      }
+      if (event.pointerType !== 'mouse' || event.timeStamp - hoverChecked < 50) return;
+      hoverChecked = event.timeStamp;
+      html.classList.toggle('robot-hover', overRobot(event));
+    };
+    const onRobotDown = (event: PointerEvent) => {
+      if (event.button !== 0 || this.carry || !overRobot(event)) return;
+      // Antes que el arrastre de página (smooth-scroll) y que la selección de texto.
+      event.preventDefault();
+      event.stopPropagation();
+      this.carry = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, dx: guideAt.x - event.clientX, dy: guideAt.y - event.clientY, moved: false, before: this.robotSpot };
+      html.classList.add('robot-hover');
+    };
+    const endCarry = (event: PointerEvent | KeyboardEvent) => {
+      const carry = this.carry;
+      if (!carry || ('pointerId' in event && event.pointerId !== carry.pointerId)) return;
+      if (event instanceof KeyboardEvent) {
+        if (event.key !== 'Escape') return;
+        this.robotSpot = carry.before;
+      } else if (carry.moved) {
+        writePref('robot-guide-spot', this.robotSpot ? JSON.stringify(this.robotSpot) : null);
+        this.zone.run(() => this.speakText(this.i18n.lang() === 'en' ? 'I’ll stay here.' : 'Aquí me quedo.'));
+      }
+      this.carry = null;
+      html.classList.remove('robot-carrying');
+      updateGuide();
+      kick();
+    };
+    const onRobotDouble = (event: MouseEvent) => {
+      if (!overRobot(event) || !this.robotSpot) return;
+      this.robotSpot = null;
+      writePref('robot-guide-spot', null);
+      updateGuide();
+      kick();
+    };
+    // Con el dedo, el navegador desplazaría la página: sobre el robot se lo impedimos.
+    const onRobotTouch = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (event.touches.length === 1 && overRobot({ clientX: touch.clientX, clientY: touch.clientY, target: event.target })) event.preventDefault();
+    };
+    addEventListener('pointerdown', onRobotDown, { capture: true });
+    addEventListener('pointermove', onRobotHover, { passive: true });
+    addEventListener('pointerup', endCarry);
+    addEventListener('pointercancel', endCarry);
+    addEventListener('keydown', endCarry);
+    addEventListener('dblclick', onRobotDouble);
+    addEventListener('touchstart', onRobotTouch, { passive: false });
+
     addEventListener('pointermove', onPointer, { passive: true });
     addEventListener('scroll', onScroll, { passive: true });
     document.addEventListener('visibilitychange', onVisibility);
@@ -1224,6 +1316,14 @@ export class HeroSceneComponent {
       seen.disconnect();
       removeEventListener('pointermove', onPointer);
       removeEventListener('scroll', onScroll);
+      removeEventListener('pointerdown', onRobotDown, { capture: true });
+      removeEventListener('pointermove', onRobotHover);
+      removeEventListener('pointerup', endCarry);
+      removeEventListener('pointercancel', endCarry);
+      removeEventListener('keydown', endCarry);
+      removeEventListener('dblclick', onRobotDouble);
+      removeEventListener('touchstart', onRobotTouch);
+      html.classList.remove('robot-hover', 'robot-carrying');
       document.removeEventListener('visibilitychange', onVisibility);
       scene.dispose();
       this.scene = null;
@@ -1270,6 +1370,27 @@ function animateScrollTo(top: number, duration: number): Promise<void> {
   });
 }
 
+function clampSpot(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(Math.max(min, max), value));
+}
+
+/** Posición guardada del robot: solo dos fracciones entre 0 y 1; cualquier otra cosa se ignora. */
+export function parseSpot(raw: string | null): { fx: number; fy: number } | null {
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(raw) as { fx?: unknown; fy?: unknown };
+    const ok = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1;
+    return ok(value.fx) && ok(value.fy) ? { fx: value.fx, fy: value.fy } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Lo que el visitante pulsa para usar la página: ahí no se agarra al robot. */
+function isInteractive(target: EventTarget | null): boolean {
+  return target instanceof Element && !!target.closest('a, button, input, textarea, select, label, summary, [role="button"], [role="tab"], [role="switch"], [contenteditable="true"], [data-no-robot-grab]');
+}
+
 function readPref(key: string): string | null {
   try {
     return localStorage.getItem(key);
@@ -1278,9 +1399,10 @@ function readPref(key: string): string | null {
   }
 }
 
-function writePref(key: string, value: string): void {
+function writePref(key: string, value: string | null): void {
   try {
-    localStorage.setItem(key, value);
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
   } catch {
     // Sin almacenamiento, la elección dura lo que la página.
   }
