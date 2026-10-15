@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
@@ -37,7 +38,7 @@ const SIMULATION_MS = 900;
       <p class="text-xs text-ink-3">{{ 'Solo lectura · datos del CD' | t }}</p>
     </div>
 
-    <div class="mt-6 grid gap-8 md:grid-cols-2 [&>*]:min-w-0">
+    <div class="mt-5 grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] [&>*]:min-w-0">
       @for (lane of lanes; track lane.target) {
         <section [attr.aria-label]="('Despliegues de ' | t) + lane.title">
           <p class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.06em] text-ink-3">
@@ -50,38 +51,53 @@ const SIMULATION_MS = 900;
 
           @if (history(lane.target); as deployments) {
             @if (deployments.length > 0) {
-              <ol class="rail mt-3">
+              <!-- Cada despliegue es una barra (el más reciente a la derecha): de un vistazo, cuántos hubo y cómo salieron. -->
+              <div class="mt-3 flex items-center gap-3">
+                <div class="strip" role="img" [attr.aria-label]="('Historial de salud' | t) + ': ' + summary(deployments)">
+                  @for (deployment of reversed(deployments); track deployment.runId + deployment.kind) {
+                    <span class="tick" [class.ok]="deployment.healthy === true" [class.bad]="deployment.healthy === false"
+                      [class.rolled]="deployment.kind === 'rollback'"
+                      [class.on]="deployments.indexOf(deployment) === currentIndex(lane.target)"></span>
+                  }
+                </div>
+                <p class="shrink-0 text-xs tabular-nums text-ink-3">{{ summary(deployments) }}</p>
+              </div>
+
+              <ol class="mt-3">
                 @for (deployment of deployments; track deployment.runId + deployment.kind; let index = $index) {
-                  <li class="entry" [class.current]="index === currentIndex(lane.target)" [class.simulated]="simulating() && lane.target === 'frontend' && index === currentIndex(lane.target)">
+                  <li class="entry" [hidden]="!showAll(lane.target) && index >= visible && index !== currentIndex(lane.target)"
+                    [class.current]="index === currentIndex(lane.target)"
+                    [class.simulated]="simulating() && lane.target === 'frontend' && index === currentIndex(lane.target)">
                     <span class="mark" aria-hidden="true"></span>
-                    <div class="min-w-0">
-                      <p class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span class="text-sm font-medium text-ink-1">#{{ deployment.runNumber }}</span>
-                        <code class="font-mono text-xs text-ink-2">{{ deployment.sha.slice(0, 7) }}</code>
-                        @if (deployment.kind === 'rollback') {
-                          <span class="rounded-full border border-line-strong px-2 py-0.5 text-xs text-ink-2">rollback</span>
-                        }
-                        @if (index === currentIndex(lane.target)) {
-                          <span class="rounded-full border px-2 py-0.5 text-xs font-medium"
-                            [class]="simulating() && lane.target === 'frontend' ? 'border-status-warn/50 text-status-warn' : 'border-status-ok/40 text-status-ok'">
-                            {{ simulating() && lane.target === 'frontend' ? ('en producción · simulación' | t) : ('en producción' | t) }}
-                          </span>
-                        }
-                      </p>
-                      <p class="mt-0.5 text-xs text-ink-2">
-                        {{ date(deployment.at) }}@if (deployment.by) { · {{ deployment.by }} }
-                      </p>
-                      <p class="mt-0.5 flex items-center gap-1.5 text-xs" [class]="deployment.healthy === false ? 'text-status-danger' : 'text-ink-2'">
-                        <span class="h-2 w-2 rounded-full" [class]="deployment.healthy === true ? 'bg-status-ok' : deployment.healthy === false ? 'bg-status-danger' : 'border border-line-control'" aria-hidden="true"></span>
-                        {{ deployment.healthy === true ? ('Salud comprobada' | t) : deployment.healthy === false ? ('No pasó la comprobación de salud' | t) : ('Salud sin comprobar' | t) }}
-                      </p>
-                    </div>
+                    <span class="text-sm font-medium tabular-nums text-ink-1">#{{ deployment.runNumber }}</span>
+                    <code class="font-mono text-xs text-ink-2">{{ deployment.sha.slice(0, 7) }}</code>
+                    @if (deployment.kind === 'rollback') {
+                      <span class="rounded-full border border-line-strong px-2 py-0.5 text-xs text-ink-2">rollback</span>
+                    }
+                    @if (index === currentIndex(lane.target)) {
+                      <span class="rounded-full border px-2 py-0.5 text-xs font-medium"
+                        [class]="simulating() && lane.target === 'frontend' ? 'border-status-warn/50 text-status-warn' : 'border-status-ok/40 text-status-ok'">
+                        {{ simulating() && lane.target === 'frontend' ? ('en producción · simulación' | t) : ('en producción' | t) }}
+                      </span>
+                    }
+                    <span class="ml-auto flex min-w-0 items-center gap-2 text-xs text-ink-3">
+                      <span class="truncate">{{ date(deployment.at) }}@if (deployment.by) { · {{ deployment.by }} }</span>
+                      <span class="h-2 w-2 shrink-0 rounded-full" [class]="deployment.healthy === true ? 'bg-status-ok' : deployment.healthy === false ? 'bg-status-danger' : 'border border-line-control'" aria-hidden="true"></span>
+                      <span [class]="deployment.healthy === false ? 'text-status-danger' : index === currentIndex(lane.target) ? 'text-ink-2' : 'sr-only'">{{ health(deployment) }}</span>
+                    </span>
                   </li>
                 }
               </ol>
+
+              @if (deployments.length > visible) {
+                <button type="button" class="focus-ring mt-2 rounded-control px-2 py-1 text-xs font-medium text-accent-text hover:bg-surface-3"
+                  [attr.aria-expanded]="showAll(lane.target)" (click)="toggleAll(lane.target)">
+                  {{ showAll(lane.target) ? ('Ver menos' | t) : ('Ver historial completo' | t) + ' (' + deployments.length + ')' }}
+                </button>
+              }
             } @else {
-              <p class="mt-3 rounded-control border border-dashed border-line-strong p-4 text-sm text-ink-2">
-                {{ lane.planned ? ('Sin despliegues: todavía no existe en producción. Cuando exista, su historial y su rollback aparecerán aquí.' | t) : (loaded() ? ('Aún no hay despliegues publicados.' | t) : ('Cargando…' | t)) }}
+              <p class="mt-3 rounded-control border border-dashed border-line-strong px-3 py-2.5 text-sm text-ink-2">
+                {{ lane.planned ? ('Sin desplegar: todavía no existe en producción.' | t) : (loaded() ? ('Aún no hay despliegues publicados.' | t) : ('Cargando…' | t)) }}
               </p>
             }
           }
@@ -89,7 +105,7 @@ const SIMULATION_MS = 900;
       }
     </div>
 
-    <div class="mt-6 flex flex-wrap items-center gap-3">
+    <div class="mt-5 flex flex-wrap items-center gap-3">
       <button
         type="button"
         class="focus-ring rounded-control border border-line-strong px-4 py-1.5 text-sm font-medium text-ink-1 transition duration-200 ease-out hover:bg-surface-3 disabled:opacity-40"
@@ -107,35 +123,52 @@ const SIMULATION_MS = 900;
     </div>
   `,
     styles: `
-    .rail { position: relative; margin: 0; padding: 0; list-style: none; }
-    .entry { position: relative; display: flex; gap: 0.75rem; padding: 0 0 1.5rem 0; transition: opacity 0.25s ease-out; }
-    .entry:last-child { padding-bottom: 0; }
+    .entry {
+      position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem;
+      padding: 0.375rem 0.5rem; margin: 0 -0.5rem; border-radius: 6px; transition: opacity 0.25s ease-out, background-color 0.25s ease-out;
+    }
     /* La línea que une un despliegue con el anterior. */
     .entry:not(:last-child)::before {
-      content: ''; position: absolute; left: 3.5px; top: 14px; bottom: -4px; width: 1px; background: rgb(var(--c-ink-1) / 0.14);
+      content: ''; position: absolute; left: calc(0.5rem + 3.5px); top: 1.25rem; bottom: -0.5rem; width: 1px; background: rgb(var(--c-ink-1) / 0.14);
     }
+    .entry[hidden] { display: none; }
     .mark {
-      flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 9999px;
+      position: relative; flex: none; width: 8px; height: 8px; border-radius: 9999px;
       background: var(--bg-surface-2); box-shadow: inset 0 0 0 1px var(--text-3);
       transition: background-color 0.3s ease-out, box-shadow 0.3s ease-out, transform 0.3s ease-out;
     }
     .entry.current .mark { background: var(--status-ok); box-shadow: 0 0 0 3px rgb(var(--c-status-ok) / 0.18); }
-    .entry.simulated .mark { background: var(--status-warn); box-shadow: 0 0 0 3px rgb(245 185 74 / 0.2); transform: scale(1.15); }
+    .entry.simulated .mark { background: var(--status-warn); box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-warn) 20%, transparent); transform: scale(1.15); }
     .entry:not(.current) { opacity: 0.72; }
+
+    /* Una barra por despliegue; la altura marca cuál está en producción. */
+    .strip { display: flex; flex: 1 1 auto; min-width: 0; align-items: flex-end; gap: 3px; height: 28px; }
+    .tick {
+      flex: 1 1 0; max-width: 14px; min-width: 3px; height: 14px; border-radius: 2px;
+      background: rgb(var(--c-ink-1) / 0.18); transition: height 0.3s ease-out, background-color 0.3s ease-out;
+    }
+    .tick.ok { background: rgb(var(--c-status-ok) / 0.55); }
+    .tick.bad { background: var(--status-danger); }
+    .tick.rolled { box-shadow: inset 0 2px 0 var(--status-warn); }
+    .tick.on { height: 28px; background: var(--status-ok); }
     @media (prefers-reduced-motion: reduce) {
-      .entry, .mark { transition: none; }
+      .entry, .mark, .tick { transition: none; }
     }
   `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DeployTimelineComponent implements OnInit {
   private readonly delivery = inject(DeliveryStatusService);
+  private readonly language = inject(LanguageService);
   private timer: ReturnType<typeof setTimeout> | null = null;
 
   readonly loaded = this.delivery.loaded;
   /** Rollback simulado en pantalla: el marcador de producción está en la versión anterior. */
   readonly simulating = signal(false);
   readonly animating = signal(false);
+  private readonly expanded = signal<ReadonlySet<DeployTarget>>(new Set());
+  /** Filas que se ven sin desplegar el historial. */
+  readonly visible = 3;
 
   /** Qué piezas existen ya en producción lo dice la topología, no esta vista. */
   readonly lanes: Lane[] = [
@@ -162,6 +195,44 @@ export class DeployTimelineComponent implements OnInit {
   /** Posición del despliegue que está en producción: el más reciente, o el anterior durante la simulación. */
   currentIndex(target: DeployTarget): number {
     return target === 'frontend' && this.simulating() ? 1 : 0;
+  }
+
+  showAll(target: DeployTarget): boolean {
+    return this.expanded().has(target);
+  }
+
+  toggleAll(target: DeployTarget): void {
+    const next = new Set(this.expanded());
+    if (!next.delete(target)) {
+      next.add(target);
+    }
+    this.expanded.set(next);
+  }
+
+  reversed(deployments: Deployment[]): Deployment[] {
+    return [...deployments].reverse();
+  }
+
+  health(deployment: Deployment): string {
+    return deployment.healthy === true ? this.tr('Salud comprobada')
+      : deployment.healthy === false ? this.tr('No pasó la comprobación de salud') : this.tr('Salud sin comprobar');
+  }
+
+  /** «20 despliegues · 19 sanos · 1 rollback», contado de los datos del CD. */
+  summary(deployments: Deployment[]): string {
+    const healthy = deployments.filter((item) => item.healthy === true).length;
+    const rollbacks = deployments.filter((item) => item.kind === 'rollback').length;
+    const parts = [`${deployments.length} ${this.tr(deployments.length === 1 ? 'despliegue' : 'despliegues')}`, `${healthy} ${this.tr('sanos')}`];
+    if (rollbacks > 0) {
+      parts.push(`${rollbacks} rollback`);
+    }
+    return parts.join(' · ');
+  }
+
+  /** Lo mismo que el pipe `t`, para los textos que se componen en la clase. */
+  private tr(es: string): string {
+    const dictionary = this.language.dictionary();
+    return this.language.lang() === 'en' && dictionary ? (dictionary[es] ?? es) : es;
   }
 
   date(iso: string): string {
