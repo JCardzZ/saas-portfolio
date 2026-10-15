@@ -37,11 +37,10 @@ const AMBIENT: (() => SystemEventStep)[] = [
  * Los widgets de la landing añaden además sus propias simulaciones, siempre marcadas.
  */
 @Component({
-  selector: 'app-event-console',
-  standalone: true,
-  imports: [TranslatePipe],
-  host: { class: 'bento-card flex flex-col overflow-hidden !p-0' },
-  template: `
+    selector: 'app-event-console',
+    imports: [TranslatePipe],
+    host: { class: 'bento-card flex flex-col overflow-hidden !p-0' },
+    template: `
     <div class="flex min-h-9 flex-wrap items-center gap-2 border-b border-line-subtle px-4 py-1">
       <h3 class="min-w-0 flex-1 truncate font-mono text-mono-sm font-normal text-ink-2">system-events</h3>
       <span class="ui-badge" [class.ui-badge-ok]="telemetry.status() === 'live'" [class.ui-badge-warn]="telemetry.status() === 'simulated'" data-testid="console-origin">
@@ -72,7 +71,7 @@ const AMBIENT: (() => SystemEventStep)[] = [
       <span class="text-accent-text">▍</span> {{ 'Simulaciones que provocas tú en los widgets de esta página.' | t }}
     </p>
   `,
-  styles: `
+    styles: `
     .log-row {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
@@ -85,7 +84,7 @@ const AMBIENT: (() => SystemEventStep)[] = [
       padding-left: calc(0.5rem - 2px);
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EventConsoleComponent implements OnInit {
   readonly events = inject(SystemEventsService);

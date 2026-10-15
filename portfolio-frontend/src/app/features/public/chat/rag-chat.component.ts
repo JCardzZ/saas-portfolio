@@ -55,12 +55,11 @@ const ASK_OPTION_ID = 'palette-option-ask';
  * aunque el panel se cierre y se vuelva a abrir.
  */
 @Component({
-  selector: 'app-rag-chat',
-  standalone: true,
-  imports: [TranslatePipe, NgTemplateOutlet, ReactiveFormsModule, AutofocusDirective, CitationPillComponent, FocusTrapDirective, MarkdownComponent],
-  providers: [RagChatStore],
-  templateUrl: './rag-chat.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-rag-chat',
+    imports: [TranslatePipe, NgTemplateOutlet, ReactiveFormsModule, AutofocusDirective, CitationPillComponent, FocusTrapDirective, MarkdownComponent],
+    providers: [RagChatStore],
+    templateUrl: './rag-chat.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RagChatComponent {
   readonly store = inject(RagChatStore);

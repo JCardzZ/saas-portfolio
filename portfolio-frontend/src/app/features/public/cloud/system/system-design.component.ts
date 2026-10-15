@@ -29,12 +29,11 @@ interface Piece {
  * En pantallas estrechas es de solo lectura, como el resto de lo nuevo del Estudio.
  */
 @Component({
-  selector: 'app-system-design',
-  standalone: true,
-  imports: [TranslatePipe, AdvisorOrbComponent, SystemAdvisorComponent, SystemDiagramComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
-  template: `
+    selector: 'app-system-design',
+    imports: [TranslatePipe, AdvisorOrbComponent, SystemAdvisorComponent, SystemDiagramComponent],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'block' },
+    template: `
     <section class="mt-3 space-y-4" aria-labelledby="system-design-title" data-testid="system-design">
       <header class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
        <div class="min-w-0">
@@ -249,7 +248,7 @@ interface Piece {
       </section>
     </section>
   `,
-  styles: [`
+    styles: [`
     .category-focused { border-color: var(--accent-text); }
     .app-piece {
       min-width: 9rem;
@@ -260,7 +259,7 @@ interface Piece {
       padding: 0.5rem 0.75rem;
     }
     fieldset:disabled label { cursor: default; }
-  `],
+  `]
 })
 export class SystemDesignComponent {
   private readonly api = inject(SystemDesignApi);

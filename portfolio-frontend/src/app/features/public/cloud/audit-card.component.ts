@@ -16,11 +16,10 @@ import { AUDIT_AREAS, Recommendation, auditPrompt } from './topology-auditor';
  * documentación indexados.
  */
 @Component({
-  selector: 'app-audit-card',
-  standalone: true,
-  imports: [TranslatePipe, MarkdownComponent, AutofocusDirective],
-  host: { class: 'block', '(keydown.escape)': 'closed.emit(); $event.stopPropagation()' },
-  template: `
+    selector: 'app-audit-card',
+    imports: [TranslatePipe, MarkdownComponent, AutofocusDirective],
+    host: { class: 'block', '(keydown.escape)': 'closed.emit(); $event.stopPropagation()' },
+    template: `
     <section class="flex max-h-[34rem] animate-scale-up border border-line-strong bg-surface-1/95 backdrop-blur-2xl flex-col overflow-hidden rounded-card shadow-2xl" role="dialog" aria-labelledby="audit-title">
       <header class="flex items-start gap-3 border-b border-line-subtle px-4 py-3">
         <div class="min-w-0 flex-1">
@@ -72,7 +71,7 @@ import { AUDIT_AREAS, Recommendation, auditPrompt } from './topology-auditor';
       </footer>
     </section>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AuditCardComponent implements OnInit {
   private readonly api = inject(AppliedAIRAGService);

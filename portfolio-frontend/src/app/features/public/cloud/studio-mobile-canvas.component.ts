@@ -38,11 +38,10 @@ export function fitText(text: string, width: number, charWidth: number): string 
  * dos dedos o con los botones y, ampliado, se arrastra; «Ajustar a pantalla» lo devuelve entero.
  */
 @Component({
-  selector: 'app-studio-mobile-canvas',
-  standalone: true,
-  imports: [TranslatePipe, ContainerWidthDirective],
-  host: { class: 'block' },
-  template: `
+    selector: 'app-studio-mobile-canvas',
+    imports: [TranslatePipe, ContainerWidthDirective],
+    host: { class: 'block' },
+    template: `
     <div class="mb-2 flex flex-wrap items-center gap-2">
       <div class="flex items-center gap-1" role="group" [attr.aria-label]="'Zoom del diagrama' | t">
         <button type="button" class="ui-btn-secondary ui-btn-icon" [attr.aria-label]="'Alejar' | t" [disabled]="zoom() <= minZoom" (click)="zoomBy(-step)">
@@ -113,7 +112,7 @@ export function fitText(text: string, width: number, charWidth: number): string 
       </svg>
     </div>
   `,
-  styles: `
+    styles: `
     .viewport { cursor: grab; }
     svg { will-change: transform; }
     .wire { fill: none; stroke: var(--border-strong); stroke-width: 1; }
@@ -131,7 +130,7 @@ export function fitText(text: string, width: number, charWidth: number): string 
     .node-meta { fill: var(--text-3); font-size: 12px; pointer-events: none; font-variant-numeric: tabular-nums; }
     .node-meta-live { fill: var(--accent-text); }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StudioMobileCanvasComponent {
   readonly rows = input.required<MobileRow[]>();

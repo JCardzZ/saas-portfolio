@@ -16,11 +16,10 @@ const MAX_PASSWORD = 72;
  * crean aquí. Las contraseñas solo viajan al crearlas o cambiarlas: la API nunca las devuelve.
  */
 @Component({
-  selector: 'app-users-page',
-  standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, AlertComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './users-page.component.html',
+    selector: 'app-users-page',
+    imports: [DatePipe, ReactiveFormsModule, AlertComponent],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    templateUrl: './users-page.component.html'
 })
 export class UsersPageComponent implements OnInit {
   private readonly api = inject(AdminUsersService);

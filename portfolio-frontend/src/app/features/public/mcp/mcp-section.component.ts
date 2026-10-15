@@ -24,12 +24,11 @@ const REPLAY_STEP_MS = 900;
  * demo no hay servidor: se enseña lo mismo sacado de la grabación, con la etiqueta «Grabación».
  */
 @Component({
-  selector: 'app-mcp-section',
-  standalone: true,
-  imports: [TranslatePipe],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block' },
-  template: `
+    selector: 'app-mcp-section',
+    imports: [TranslatePipe],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'block' },
+    template: `
     <div class="grid gap-4 lg:grid-cols-2" data-testid="mcp-section">
       <!-- Conectar -->
       <section class="ui-card min-w-0 lg:col-span-2" aria-labelledby="mcp-connect-title">
@@ -194,7 +193,7 @@ const REPLAY_STEP_MS = 900;
         }
       </section>
     </div>
-  `,
+  `
 })
 export class McpSectionComponent implements OnInit {
   private readonly http = inject(HttpClient);

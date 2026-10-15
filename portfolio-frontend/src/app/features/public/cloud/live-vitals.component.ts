@@ -11,11 +11,10 @@ import { Vitals } from './live-traffic';
  * se detiene solo cuando el lienzo está fuera de pantalla o la persona prefiere menos movimiento.
  */
 @Component({
-  selector: 'app-live-vitals',
-  standalone: true,
-  imports: [TranslatePipe],
-  host: { class: 'block' },
-  template: `
+    selector: 'app-live-vitals',
+    imports: [TranslatePipe],
+    host: { class: 'block' },
+    template: `
     <section class="glass rounded-panel px-3 py-2" [attr.aria-label]="'Métricas en vivo (simulación)' | t">
       <p class="flex flex-wrap items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-ink-2">
         <span
@@ -41,7 +40,7 @@ import { Vitals } from './live-traffic';
       <p class="mt-1 max-w-[13rem] text-xs leading-snug text-ink-3" role="status">{{ vitals().note | t }}</p>
     </section>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LiveVitalsComponent {
   readonly vitals = input.required<Vitals>();

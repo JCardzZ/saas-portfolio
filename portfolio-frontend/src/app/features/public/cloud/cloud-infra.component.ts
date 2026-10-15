@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import { capturePointer } from '../../../shared/ui/pointer-capture';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { IconPopService } from '../../../shared/ui/icon-pop.service';
@@ -107,14 +108,13 @@ const TOOLTIP_ROOM = 72;
 const NAV_HEIGHT = 64;
 
 @Component({
-  selector: 'app-cloud-infra',
-  standalone: true,
-  imports: [TranslatePipe, SystemDesignComponent, TechIconComponent, TheaterToggleComponent, ServiceCatalogComponent, CostBadgeComponent, AuditCardComponent, NodePropertiesComponent, ArchitectureCopilotComponent, LiveVitalsComponent, ContainerWidthDirective, StudioMobileCanvasComponent, ServiceInfoCardComponent, FocusTrapDirective, PortalDirective],
-  hostDirectives: [TheaterDirective],
-  host: { class: 'bento-card block' },
-  templateUrl: './cloud-infra.component.html',
-  styleUrl: './cloud-infra.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-cloud-infra',
+    imports: [TranslatePipe, SystemDesignComponent, TechIconComponent, TheaterToggleComponent, ServiceCatalogComponent, CostBadgeComponent, AuditCardComponent, NodePropertiesComponent, ArchitectureCopilotComponent, LiveVitalsComponent, ContainerWidthDirective, StudioMobileCanvasComponent, ServiceInfoCardComponent, FocusTrapDirective, PortalDirective],
+    hostDirectives: [TheaterDirective],
+    host: { class: 'bento-card block' },
+    templateUrl: './cloud-infra.component.html',
+    styleUrl: './cloud-infra.component.css',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CloudInfraComponent {
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
@@ -1103,7 +1103,7 @@ export class CloudInfraComponent {
     }
     const point = this.toCanvas(event.clientX, event.clientY);
     this.dragging = { id: node.id, dx: node.x - point.x, dy: node.y - point.y, recorded: false };
-    (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
+    capturePointer(event.currentTarget, event.pointerId);
     this.activeId.set(node.id);
   }
 
@@ -1441,7 +1441,7 @@ export class CloudInfraComponent {
       event.stopPropagation();
       this.linkDragStart = this.toCanvas(event.clientX, event.clientY);
       this.linkPreview.set(this.linkDragStart);
-      (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
+      capturePointer(event.currentTarget, event.pointerId);
     }
   }
 
@@ -1610,7 +1610,7 @@ export class CloudInfraComponent {
       nodes: mode === 'move' ? this.nodes().filter(inside).map((node) => ({ ...node })) : this.resizeContent(zone).nodes,
       zones: mode === 'move' ? zonesInside(this.zones(), zone).map((inner) => ({ ...inner })) : this.resizeContent(zone).zones,
     };
-    (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
+    capturePointer(event.currentTarget, event.pointerId);
     this.activeZoneId.set(zone.id);
   }
 

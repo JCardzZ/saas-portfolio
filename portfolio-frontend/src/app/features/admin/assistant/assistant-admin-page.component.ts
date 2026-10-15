@@ -8,11 +8,10 @@ import { ProfilePhotoCardComponent } from './profile-photo-card.component';
 import { CV_OPTIONS, cvUrl } from '../../../shared/ui/cv-download.component';
 
 @Component({
-  selector: 'app-assistant-admin-page',
-  standalone: true,
-  imports: [AlertComponent, ProfilePhotoCardComponent],
-  templateUrl: './assistant-admin-page.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-assistant-admin-page',
+    imports: [AlertComponent, ProfilePhotoCardComponent],
+    templateUrl: './assistant-admin-page.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AssistantAdminPageComponent {
   private readonly api = inject(AppliedAIRAGService);

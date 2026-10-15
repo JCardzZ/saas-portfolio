@@ -5,9 +5,8 @@ import { TheaterToggleComponent } from './theater-toggle.component';
 import { HOVER_INTENT_MS, THEATER_ANIMATIONS, TheaterDirective } from './theater.directive';
 
 @Component({
-  standalone: true,
-  imports: [TheaterDirective, TheaterToggleComponent],
-  template: `
+    imports: [TheaterDirective, TheaterToggleComponent],
+    template: `
     <div class="grid" style="display: grid; grid-template-columns: repeat(6, 1fr)">
       <article appTheater id="card" style="grid-column: span 4 / span 4; height: 120px">
         <app-theater-toggle name="Arquitectura" />
@@ -15,7 +14,7 @@ import { HOVER_INTENT_MS, THEATER_ANIMATIONS, TheaterDirective } from './theater
       </article>
       <article id="sibling" style="grid-column: span 2 / span 2">Vecina</article>
     </div>
-  `,
+  `
 })
 class HostComponent {}
 

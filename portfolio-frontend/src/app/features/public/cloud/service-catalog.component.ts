@@ -14,11 +14,10 @@ export const CATALOG_DRAG_TYPE = 'application/x-cloud-service';
  * el logo y el recurso de Terraform de la nube activa. Se añade con un clic o arrastrándola.
  */
 @Component({
-  selector: 'app-service-catalog',
-  standalone: true,
-  imports: [TranslatePipe, TechIconComponent],
-  templateUrl: './service-catalog.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-service-catalog',
+    imports: [TranslatePipe, TechIconComponent],
+    templateUrl: './service-catalog.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ServiceCatalogComponent {
   readonly provider = input.required<CloudProviderId>();

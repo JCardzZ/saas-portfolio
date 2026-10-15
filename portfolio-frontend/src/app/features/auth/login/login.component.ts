@@ -10,11 +10,10 @@ import { AlertComponent } from '../../../shared/ui/alert.component';
 const DEFAULT_RETURN_URL = '/admin';
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  imports: [ReactiveFormsModule, AlertComponent],
-  templateUrl: './login.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-login',
+    imports: [ReactiveFormsModule, AlertComponent],
+    templateUrl: './login.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoginComponent {
   private readonly auth = inject(AuthService);

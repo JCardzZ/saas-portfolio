@@ -13,11 +13,10 @@ const EXCERPT_LENGTH = 170;
 
 /** Hub de artículos: tarjetas con las publicaciones de `GET /public/articles` y un lector en modal. */
 @Component({
-  selector: 'app-articles-hub',
-  standalone: true,
-  imports: [TranslatePipe, DatePipe, MarkdownComponent, FocusTrapDirective, AutofocusDirective],
-  templateUrl: './articles-hub.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-articles-hub',
+    imports: [TranslatePipe, DatePipe, MarkdownComponent, FocusTrapDirective, AutofocusDirective],
+    templateUrl: './articles-hub.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ArticlesHubComponent implements OnInit {
   private readonly api = inject(PublicCatalogShowcasesService);

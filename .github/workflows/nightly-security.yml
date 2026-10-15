@@ -125,7 +125,8 @@ jobs:
               "$TRIVY_IMAGE" image --scanners vuln --no-progress "$@" scan-target:latest
           }
           # Informe completo (todas las severidades, con y sin corrección) para el resumen…
-          trivy --format table --exit-code 0 | tee trivy.txt
+          for attempt in 1 2 3; do trivy --format table --exit-code 0 > trivy.txt && break; echo "Trivy: reintento $attempt"; sleep $((attempt * 20)); done
+          cat trivy.txt
           # …y fallo solo con altas o críticas que ya tienen versión corregida.
           trivy --severity HIGH,CRITICAL --ignore-unfixed --ignorefile /work/.trivyignore.yaml --format table --exit-code 1 --quiet > /dev/null
       - name: Resumen
@@ -160,7 +161,8 @@ jobs:
             docker run --rm -v "$PWD/portfolio-frontend:/src:ro" -v "$HOME/.cache/trivy:/root/.cache/trivy" \
               "$TRIVY_IMAGE" fs --scanners vuln --no-progress "$@" /src
           }
-          trivy --format table --exit-code 0 | tee trivy-deps.txt
+          for attempt in 1 2 3; do trivy --format table --exit-code 0 > trivy-deps.txt && break; echo "Trivy: reintento $attempt"; sleep $((attempt * 20)); done
+          cat trivy-deps.txt
           trivy --severity HIGH,CRITICAL --ignore-unfixed --format table --exit-code 1 --quiet > /dev/null
       - name: Resumen
         if: always()

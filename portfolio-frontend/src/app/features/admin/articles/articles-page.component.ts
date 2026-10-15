@@ -14,11 +14,10 @@ const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
  * todavía no hay edición ni borrado.
  */
 @Component({
-  selector: 'app-articles-page',
-  standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, AlertComponent],
-  templateUrl: './articles-page.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-articles-page',
+    imports: [ReactiveFormsModule, DatePipe, AlertComponent],
+    templateUrl: './articles-page.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ArticlesPageComponent implements OnInit {
   private readonly admin = inject(AdminTechnicalBlogCMSService);

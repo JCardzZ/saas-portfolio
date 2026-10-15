@@ -17,7 +17,6 @@ import { CatalogStore } from '../data/catalog.store';
 import { TraceInspectorService } from '../data/trace-inspector.service';
 import { PublicNavbarComponent } from '../navbar/public-navbar.component';
 import { ArchitectureCanvasComponent } from '../widgets/architecture-canvas.component';
-import { EventConsoleComponent } from '../widgets/event-console.component';
 import { IngestionSandboxComponent } from '../widgets/ingestion-sandbox.component';
 import { MultiTenantShieldComponent } from '../widgets/multi-tenant-shield.component';
 import { ResiliencePipelineComponent } from '../widgets/resilience-pipeline.component';
@@ -35,40 +34,38 @@ import { GalaxyBackdropComponent } from './galaxy/galaxy-backdrop.component';
 import { ScrollBuddyComponent } from './scroll-buddy.component';
 
 @Component({
-  selector: 'app-landing-page',
-  standalone: true,
-  imports: [
-    RouterLink,
-    SectionHeaderComponent,
-    HeroSceneComponent,
-    GalaxyBackdropComponent,
-    ScrollBuddyComponent,
-    PublicNavbarComponent,
-    CvDownloadComponent,
-    CvPickerComponent,
-    RagChatComponent,
-    CareerTimelineComponent,
-    ArticlesHubComponent,
-    CloudInfraComponent,
-    DataBlueprintsComponent,
-    DeployTimelineComponent,
-    PipelineViewComponent,
-    ProductionArchitectureComponent,
-    TechIconComponent,
-    IconPopLayerComponent,
-    ArchitectureCanvasComponent,
-    EventConsoleComponent,
-    IngestionSandboxComponent,
-    MultiTenantShieldComponent,
-    ResiliencePipelineComponent,
-    TraceInspectorComponent,
-    TelemetryMonitorComponent,
-    VectorMatrixComponent,
-    McpSectionComponent,
-  ],
-  providers: [CatalogStore],
-  templateUrl: './landing-page.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-landing-page',
+    imports: [
+        RouterLink,
+        SectionHeaderComponent,
+        HeroSceneComponent,
+        GalaxyBackdropComponent,
+        ScrollBuddyComponent,
+        PublicNavbarComponent,
+        CvDownloadComponent,
+        CvPickerComponent,
+        RagChatComponent,
+        CareerTimelineComponent,
+        ArticlesHubComponent,
+        CloudInfraComponent,
+        DataBlueprintsComponent,
+        DeployTimelineComponent,
+        PipelineViewComponent,
+        ProductionArchitectureComponent,
+        TechIconComponent,
+        IconPopLayerComponent,
+        ArchitectureCanvasComponent,
+        IngestionSandboxComponent,
+        MultiTenantShieldComponent,
+        ResiliencePipelineComponent,
+        TraceInspectorComponent,
+        TelemetryMonitorComponent,
+        VectorMatrixComponent,
+        McpSectionComponent,
+    ],
+    providers: [CatalogStore],
+    templateUrl: './landing-page.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LandingPageComponent implements OnInit {
   readonly catalog = inject(CatalogStore);

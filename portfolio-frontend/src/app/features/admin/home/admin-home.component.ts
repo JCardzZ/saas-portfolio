@@ -6,11 +6,10 @@ import { SECTIONS } from '../layout/admin-layout.component';
 
 /** Inicio del panel: quién ha entrado, con qué rol, y las secciones que puede abrir. */
 @Component({
-  selector: 'app-admin-home',
-  standalone: true,
-  imports: [RouterLink],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+    selector: 'app-admin-home',
+    imports: [RouterLink],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
     <section class="space-y-6">
       <header>
         <h1 class="text-2xl font-semibold">Panel de administración</h1>
@@ -40,7 +39,7 @@ import { SECTIONS } from '../layout/admin-layout.component';
         </div>
       }
     </section>
-  `,
+  `
 })
 export class AdminHomeComponent {
   private readonly auth = inject(AuthService);

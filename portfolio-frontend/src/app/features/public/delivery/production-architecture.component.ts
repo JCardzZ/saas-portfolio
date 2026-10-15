@@ -18,12 +18,11 @@ interface Fact {
  * se ha desplegado (borde punteado). Los datos de cada pieza son los de la última ejecución real.
  */
 @Component({
-  selector: 'app-production-architecture',
-  standalone: true,
-  imports: [TranslatePipe, StageGraphComponent, TheaterToggleComponent],
-  hostDirectives: [TheaterDirective],
-  host: { class: 'bento-card block' },
-  template: `
+    selector: 'app-production-architecture',
+    imports: [TranslatePipe, StageGraphComponent, TheaterToggleComponent],
+    hostDirectives: [TheaterDirective],
+    host: { class: 'bento-card block' },
+    template: `
     <app-theater-toggle name="Arquitectura en producción" />
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pr-10">
       <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Arquitectura en producción' | t }}</h3>
@@ -71,7 +70,7 @@ interface Fact {
       }
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductionArchitectureComponent implements OnInit {
   private readonly delivery = inject(DeliveryStatusService);

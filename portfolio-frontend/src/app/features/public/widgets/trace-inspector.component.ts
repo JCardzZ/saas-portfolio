@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, Injector, afterNextRender, computed, effect, inject, signal, viewChild,
 } from '@angular/core';
+import { capturePointer } from '../../../shared/ui/pointer-capture';
 
 import { runtimeConfig } from '../../../core/config/runtime-config';
 import { DemoNoticeComponent, DemoNoticeHost } from '../../../shared/ui/demo-notice.component';
@@ -72,10 +73,9 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
  * lee el mismo flujo que la consola general.
  */
 @Component({
-  selector: 'app-trace-inspector',
-  standalone: true,
-  imports: [TechIconComponent, DemoNoticeComponent],
-  template: `
+    selector: 'app-trace-inspector',
+    imports: [TechIconComponent, DemoNoticeComponent],
+    template: `
     @if (icon(); as icon) {
       @if (layout() === 'pill') {
         <div data-pill style="bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); right: calc(1rem + env(safe-area-inset-right, 0px))" class="fixed z-[46] flex max-w-[calc(100vw-2rem)] animate-scale-up items-center rounded-full border border-line-strong bg-surface-2/95 shadow-floating backdrop-blur-xl">
@@ -264,7 +264,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
       </div>
     }
   `,
-  styles: `
+    styles: `
     section { transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
     .log-row { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 0.75rem; }
     /* Flotante mientras se usa el lienzo: casi transparente y sin desenfoque, para ver los nodos de debajo. */
@@ -305,7 +305,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
     header:hover .traffic-minimize, .traffic:focus-within .traffic-minimize { background: var(--status-warn); }
     header:hover .traffic-maximize, .traffic:focus-within .traffic-maximize { background: var(--status-ok); }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TraceInspectorComponent {
   readonly inspector = inject(TraceInspectorService);
@@ -490,7 +490,7 @@ export class TraceInspectorComponent {
     this.resizing.set(true);
     // Mientras se arrastra, la página sigue al panel sin la transición con la que se acopla.
     document.documentElement.classList.add('dock-resizing');
-    (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
+    capturePointer(event.currentTarget, event.pointerId);
   }
 
   onResizeMove(event: PointerEvent): void {
@@ -563,7 +563,7 @@ export class TraceInspectorComponent {
       return;
     }
     this.drag = { dx: event.clientX - this.position().x, dy: event.clientY - this.position().y };
-    (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
+    capturePointer(event.currentTarget, event.pointerId);
   }
 
   onDragMove(event: PointerEvent): void {

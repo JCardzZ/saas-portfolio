@@ -7,12 +7,11 @@ import { ProjectsStore } from '../data/projects.store';
 import { TechnologiesStore } from '../data/technologies.store';
 
 @Component({
-  selector: 'app-projects-page',
-  standalone: true,
-  imports: [ReactiveFormsModule, AlertComponent],
-  providers: [ProjectsStore, TechnologiesStore],
-  templateUrl: './projects-page.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-projects-page',
+    imports: [ReactiveFormsModule, AlertComponent],
+    providers: [ProjectsStore, TechnologiesStore],
+    templateUrl: './projects-page.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProjectsPageComponent implements OnInit {
   readonly store = inject(ProjectsStore);

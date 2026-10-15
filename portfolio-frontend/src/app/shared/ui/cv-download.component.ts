@@ -96,10 +96,9 @@ export class CvDownloadComponent {
  * de la página (dentro de la barra de navegación quedaría atrapado por su desenfoque).
  */
 @Component({
-  selector: 'app-cv-picker',
-  standalone: true,
-  imports: [FocusTrapDirective, AutofocusDirective],
-  template: `
+    selector: 'app-cv-picker',
+    imports: [FocusTrapDirective, AutofocusDirective],
+    template: `
     @if (picker.open()) {
       <div class="fixed inset-0 z-50 flex animate-fade-in items-start justify-center overflow-y-auto bg-canvas/70 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(6dvh,env(safe-area-inset-bottom))] pt-[max(6dvh,env(safe-area-inset-top))] backdrop-blur-sm" (click)="close()" (keydown.escape)="close()">
         <section
@@ -169,7 +168,7 @@ export class CvDownloadComponent {
       </div>
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CvPickerComponent {
   readonly picker = inject(CvPickerService);

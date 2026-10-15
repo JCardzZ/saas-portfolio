@@ -77,12 +77,11 @@ const CHUNK_STYLES = ['border-line-subtle bg-surface-2', 'border-line-strong bg-
  * El troceo es el algoritmo real; el vector es ilustrativo (no se llama a ningún modelo).
  */
 @Component({
-  selector: 'app-ingestion-sandbox',
-  standalone: true,
-  imports: [TranslatePipe, ReactiveFormsModule],
-  host: { class: 'bento-card block' },
-  templateUrl: './ingestion-sandbox.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-ingestion-sandbox',
+    imports: [TranslatePipe, ReactiveFormsModule],
+    host: { class: 'bento-card block' },
+    templateUrl: './ingestion-sandbox.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class IngestionSandboxComponent {
   private readonly events = inject(SystemEventsService);

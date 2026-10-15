@@ -14,11 +14,10 @@ export const SECTIONS: readonly { path: string; label: string; permissions: stri
 ];
 
 @Component({
-  selector: 'app-admin-layout',
-  standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
-  templateUrl: './admin-layout.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-admin-layout',
+    imports: [RouterLink, RouterLinkActive, RouterOutlet],
+    templateUrl: './admin-layout.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdminLayoutComponent {
   private readonly auth = inject(AuthService);

@@ -6,12 +6,11 @@ import { AlertComponent } from '../../../shared/ui/alert.component';
 import { TechnologiesStore } from '../data/technologies.store';
 
 @Component({
-  selector: 'app-technologies-page',
-  standalone: true,
-  imports: [ReactiveFormsModule, AlertComponent],
-  providers: [TechnologiesStore],
-  templateUrl: './technologies-page.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-technologies-page',
+    imports: [ReactiveFormsModule, AlertComponent],
+    providers: [TechnologiesStore],
+    templateUrl: './technologies-page.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TechnologiesPageComponent implements OnInit {
   readonly store = inject(TechnologiesStore);

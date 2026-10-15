@@ -4,9 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { CvDownloadComponent, CvPickerComponent, CvPickerService, cvPreviewUrl, cvUrl } from './cv-download.component';
 
 @Component({
-  standalone: true,
-  imports: [CvDownloadComponent, CvPickerComponent],
-  template: `<app-cv-download variant="nav" /><app-cv-download /><app-cv-picker />`,
+    imports: [CvDownloadComponent, CvPickerComponent],
+    template: `<app-cv-download variant="nav" /><app-cv-download /><app-cv-picker />`
 })
 class HostComponent {}
 

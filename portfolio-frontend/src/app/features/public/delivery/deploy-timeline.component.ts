@@ -26,12 +26,11 @@ const SIMULATION_MS = 900;
  * solo puede lanzar quien tiene permisos en el repositorio.
  */
 @Component({
-  selector: 'app-deploy-timeline',
-  standalone: true,
-  imports: [TranslatePipe, TheaterToggleComponent],
-  hostDirectives: [TheaterDirective],
-  host: { class: 'bento-card block' },
-  template: `
+    selector: 'app-deploy-timeline',
+    imports: [TranslatePipe, TheaterToggleComponent],
+    hostDirectives: [TheaterDirective],
+    host: { class: 'bento-card block' },
+    template: `
     <app-theater-toggle name="Despliegues y rollback" />
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pr-10">
       <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Despliegues y rollback' | t }}</h3>
@@ -107,7 +106,7 @@ const SIMULATION_MS = 900;
       </p>
     </div>
   `,
-  styles: `
+    styles: `
     .rail { position: relative; margin: 0; padding: 0; list-style: none; }
     .entry { position: relative; display: flex; gap: 0.75rem; padding: 0 0 1.5rem 0; transition: opacity 0.25s ease-out; }
     .entry:last-child { padding-bottom: 0; }
@@ -127,7 +126,7 @@ const SIMULATION_MS = 900;
       .entry, .mark { transition: none; }
     }
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DeployTimelineComponent implements OnInit {
   private readonly delivery = inject(DeliveryStatusService);
