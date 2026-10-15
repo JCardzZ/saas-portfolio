@@ -119,7 +119,7 @@ class RAGIndexingServiceTest {
     @Test
     void indexesTheArchitecturePresetsSoTheAssistantKnowsThem() {
         given(architectureProjects.findAll()).willReturn(List.of(new ArchitectureProjectDomain(
-                "core-banking", "Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)", "Las APIs hablan con el core por colas.",
+                "legacy-core", "Core legado integrado por colas (Mainframe + MQ + Spring Batch + Lambda + SQS)", "Las APIs hablan con el core por colas.",
                 CloudProviderDomain.AWS,
                 List.of(Map.of("id", "api", "service", Map.of("aws", "ECS Fargate", "gcp", "Cloud Run", "azure", "Container Apps"), "role", "API Spring Boot"),
                         Map.of("id", "mq", "service", "IBM MQ", "role", "")),
@@ -131,9 +131,9 @@ class RAGIndexingServiceTest {
         ArgumentCaptor<List<EmbeddingDomain>> stored = ArgumentCaptor.forClass(List.class);
         verify(vectorRepository).replaceAllForTenant(eq("acme"), stored.capture());
         EmbeddingDomain preset = stored.getValue().stream()
-                .filter(embedding -> embedding.sourceId().equals("architecture/projects/core-banking")).findFirst().orElseThrow();
+                .filter(embedding -> embedding.sourceId().equals("architecture/projects/legacy-core")).findFirst().orElseThrow();
         assertThat(preset.content())
-                .contains("Arquitectura del Estudio: Core bancario AS400", "Nube: AWS", "Las APIs hablan con el core por colas.")
+                .contains("Arquitectura del Estudio: Core legado integrado por colas", "Nube: AWS", "Las APIs hablan con el core por colas.")
                 .contains("- ECS Fargate (API Spring Boot)", "- IBM MQ")
                 .doesNotContain("Cloud Run");
     }

@@ -14,7 +14,7 @@ const twin = (id: string): CloudNode => ({ ...CLOUD_NODES.find((node) => node.id
 
 describe('live traffic model', () => {
   it('offers three traffic profiles, each busier, denser and faster than the previous', () => {
-    expect(TRAFFIC_PROFILES.map((profile) => `${profile.name} (${profile.hint})`)).toEqual(['Bajo (noche)', 'Normal (pico)', 'Extremo (Black Friday / elecciones)']);
+    expect(TRAFFIC_PROFILES.map((profile) => `${profile.name} (${profile.hint})`)).toEqual(['Bajo (noche)', 'Normal (pico)', 'Extremo (Black Friday / lanzamientos)']);
     for (const field of ['rps', 'p95', 'density', 'speed'] as const) {
       expect(TRAFFIC_PROFILES.map((profile) => profile[field])).toEqual([...TRAFFIC_PROFILES.map((profile) => profile[field])].sort((a, b) => a - b));
     }
@@ -132,7 +132,7 @@ describe('live command center', () => {
     expect(vitals()).toContain('RPS9,800 req/s');
     expect(vitals()).toContain('Tráfico extremo con una sola instancia de cómputo');
     const events = TestBed.inject(SystemEventsService).events();
-    expect(events.at(-2)!.detail).toBe('Extremo (Black Friday / elecciones) · ≈ 9,800 req/s');
+    expect(events.at(-2)!.detail).toBe('Extremo (Black Friday / lanzamientos) · ≈ 9,800 req/s');
 
     button('Bajo').click();
     fixture.detectChanges();
@@ -171,7 +171,7 @@ describe('live command center', () => {
   it('diverts the traffic to another instance of the same service when there is one', fakeAsync(() => {
     const { fixture, element, component, button, node, select } = studio();
     tick(400);
-    component.loadPreset(component.presets().find((preset) => preset.id === 'electoral')!);
+    component.loadPreset(component.presets().find((preset) => preset.id === 'high-traffic')!);
     tick(400);
     fixture.detectChanges();
     select('ECS Fargate');

@@ -112,7 +112,7 @@
       "x": 556,
       "y": 250,
       "zone": "compute",
-      "role": "API de resultados",
+      "role": "API pública",
       "icon": {
         "default": "docker",
         "aws": "awsFargate",
@@ -143,7 +143,7 @@
       "x": 556,
       "y": 340,
       "zone": "compute",
-      "role": "API de resultados",
+      "role": "API pública",
       "service": {
         "aws": "ECS Fargate",
         "gcp": "Cloud Run",
@@ -253,7 +253,7 @@
       "x": 865,
       "y": 215,
       "zone": "managed",
-      "role": "Recuento asíncrono",
+      "role": "Procesamiento asíncrono",
       "service": {
         "aws": "SQS",
         "gcp": "Pub/Sub",
@@ -336,7 +336,7 @@
     {
       "from": "edge",
       "to": "static",
-      "label": "resultados"
+      "label": "contenido"
     },
     {
       "from": "edge",

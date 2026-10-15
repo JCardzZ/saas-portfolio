@@ -189,7 +189,7 @@ class McpServerEndToEndTest {
             assertThat(all.isError()).isFalse();
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> templates = (List<Map<String, Object>>) structured(all).get("plantillas");
-            assertThat(templates).hasSize(17).extracting(template -> template.get("id")).contains("core-banking", "system-fintech");
+            assertThat(templates).hasSize(17).extracting(template -> template.get("id")).contains("legacy-core", "system-fintech");
             assertThat(templates).filteredOn(template -> Boolean.TRUE.equals(template.get("sistemaCompleto"))).hasSize(6);
 
             McpSchema.CallToolResult azure = client.callTool(new McpSchema.CallToolRequest("listar_plantillas", Map.of("nube", "azure")));

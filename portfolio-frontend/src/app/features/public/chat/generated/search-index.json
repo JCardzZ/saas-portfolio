@@ -58,22 +58,22 @@
   {
     "id": "plantilla-aks-oauth2",
     "group": "plantillas",
-    "title": "Modernización bancaria (AKS + OAuth2 + Redis)",
+    "title": "Microservicios en Kubernetes (AKS + OAuth2 + Redis)",
     "text": "Microservicios en Kubernetes con APIs protegidas",
     "target": "cloud"
   },
   {
-    "id": "plantilla-core-banking",
+    "id": "plantilla-legacy-core",
     "group": "plantillas",
-    "title": "Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)",
+    "title": "Core legado integrado por colas (Mainframe + MQ + Spring Batch + Lambda + SQS)",
     "text": "APIs en la nube que hablan con el core por colas",
     "target": "cloud"
   },
   {
-    "id": "plantilla-electoral",
+    "id": "plantilla-high-traffic",
     "group": "plantillas",
-    "title": "Plataforma electoral anti-DDoS",
-    "text": "Picos de tráfico el día de la votación",
+    "title": "Plataforma de alto tráfico anti-DDoS (CDN + WAF + AWS)",
+    "text": "Picos de tráfico en eventos masivos",
     "target": "cloud"
   },
   {

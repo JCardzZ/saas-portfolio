@@ -52,12 +52,12 @@ describe('nodeLabel', () => {
 });
 
 describe('presets', () => {
-  it('offers the reference architecture, three banking and electoral scenarios and a blank canvas', () => {
+  it('offers the reference architecture, three illustrative scenarios and a blank canvas', () => {
     expect(STUDIO_PRESETS.map((preset) => preset.name)).toEqual([
       'Arquitectura de referencia',
-      'Modernización bancaria (AKS + OAuth2 + Redis)',
-      'Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)',
-      'Plataforma electoral anti-DDoS',
+      'Microservicios en Kubernetes (AKS + OAuth2 + Redis)',
+      'Core legado integrado por colas (Mainframe + MQ + Spring Batch + Lambda + SQS)',
+      'Plataforma de alto tráfico anti-DDoS (CDN + WAF + AWS)',
       'Arquitectura Event-Driven de Alto Rendimiento (Kafka + Spring Cloud Stream + DynamoDB)',
       'E-Commerce Global Multi-Region (CQRS + Event Sourcing + Aurora Multi-AZ)',
       'Plataforma SaaS B2B Multi-Inquilino (API Gateway + Micro-Frontends + Isolated Tenant Schemas)',
@@ -88,18 +88,18 @@ describe('presets', () => {
     }
   });
 
-  it('models the asynchronous core: the APIs only reach the AS400 through the queue', () => {
-    const { nodes, links, zones, provider } = STUDIO_PRESETS.find((preset) => preset.id === 'core-banking')!.build();
+  it('models the asynchronous core: the APIs only reach the core through the queue', () => {
+    const { nodes, links, zones, provider } = STUDIO_PRESETS.find((preset) => preset.id === 'legacy-core')!.build();
     const into = (id: string) => links.filter((link) => link.to === id).map((link) => link.from);
 
-    expect(into('as400')).toEqual(['mq']);
+    expect(into('core-system')).toEqual(['mq']);
     // La API deja eventos en SQS; una función Lambda los entrega a IBM MQ.
     expect(into('mq')).toEqual(['lambda', 'batch']);
     expect(into('lambda')).toEqual(['queue']);
     expect(into('queue')).toEqual(['api']);
     expect(zones.at(-1)!.label).toBe('Centro de datos propio');
     // El core y la cola están en el centro de datos: fuera de Terraform.
-    expect(generateMainTf(nodes, links, provider)).toContain('# Fuera de Terraform: Visitantes, IBM MQ, IBM AS400');
+    expect(generateMainTf(nodes, links, provider)).toContain('# Fuera de Terraform: Visitantes, IBM MQ, Mainframe');
     expect(nodes.find((node) => node.id === 'batch')!.name).toBe('Spring Batch');
   });
 });

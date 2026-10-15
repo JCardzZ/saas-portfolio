@@ -194,7 +194,7 @@ export const STUDIO_PRESETS: StudioPreset[] = [
   { id: 'reference', name: 'Arquitectura de referencia', summary: 'La de esta plataforma', build: referenceProject },
   {
     id: 'aks-oauth2',
-    name: 'Modernización bancaria (AKS + OAuth2 + Redis)',
+    name: 'Microservicios en Kubernetes (AKS + OAuth2 + Redis)',
     summary: 'Microservicios en Kubernetes con APIs protegidas',
     description: `Microservicios Spring Boot en AKS detrás de un gestor de APIs que valida tokens OAuth2, con Redis como caché. ${ILLUSTRATIVE}`,
     build: () => ({
@@ -215,8 +215,8 @@ export const STUDIO_PRESETS: StudioPreset[] = [
     }),
   },
   {
-    id: 'core-banking',
-    name: 'Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)',
+    id: 'legacy-core',
+    name: 'Core legado integrado por colas (Mainframe + MQ + Spring Batch + Lambda + SQS)',
     summary: 'APIs en la nube que hablan con el core por colas',
     description: `Las APIs y los procesos por lotes nunca llaman al core de forma síncrona: dejan mensajes en colas y el core los atiende a su ritmo. ${ILLUSTRATIVE}`,
     build: () => ({
@@ -231,20 +231,20 @@ export const STUDIO_PRESETS: StudioPreset[] = [
         at(BASE('postgres'), 710, 340), at(BASE('redis'), 710, 250), BASE('secrets'), BASE('observability'),
         placed('queue', 'queue', 865, 385, { role: 'Eventos pendientes de entregar' }),
         onPremise('mq', 'mq', 556, 668, 'IBM MQ', 'Colas de mensajes', 'Desacopla las APIs del core: si el core tarda o cae, los mensajes esperan en la cola.'),
-        onPremise('mainframe', 'as400', 710, 668, 'IBM AS400', 'Core bancario', 'Recibe tramas planas; las APIs nunca lo llaman de forma síncrona.'),
+        onPremise('mainframe', 'core-system', 710, 668, 'Mainframe', 'Core transaccional', 'Recibe tramas planas; las APIs nunca lo llaman de forma síncrona.'),
       ],
       links: [
         { from: 'users', to: 'edge' }, { from: 'edge', to: 'lb', label: '/v1' }, { from: 'lb', to: 'api' },
         { from: 'api', to: 'postgres' }, { from: 'api', to: 'redis' }, { from: 'batch', to: 'postgres' },
         { from: 'api', to: 'queue', label: 'eventos' }, { from: 'queue', to: 'lambda' },
-        { from: 'lambda', to: 'mq', label: 'JMS' }, { from: 'batch', to: 'mq' }, { from: 'mq', to: 'as400', label: 'tramas planas' },
+        { from: 'lambda', to: 'mq', label: 'JMS' }, { from: 'batch', to: 'mq' }, { from: 'mq', to: 'core-system', label: 'tramas planas' },
       ],
     }),
   },
   {
-    id: 'electoral',
-    name: 'Plataforma electoral anti-DDoS',
-    summary: 'Picos de tráfico el día de la votación',
+    id: 'high-traffic',
+    name: 'Plataforma de alto tráfico anti-DDoS (CDN + WAF + AWS)',
+    summary: 'Picos de tráfico en eventos masivos',
     description: `Borde y cortafuegos que absorben el tráfico hostil, dos réplicas de la API y una base de datos con réplica en espera en otra zona. ${ILLUSTRATIVE}`,
     build: () => ({
       provider: 'aws',
@@ -252,15 +252,15 @@ export const STUDIO_PRESETS: StudioPreset[] = [
       nodes: [
         BASE('users'), at(BASE('edge'), 196, 250, { role: 'Anti-DDoS · CDN · DNS' }), BASE('static'),
         placed('waf', 'waf', 402, 250), at(BASE('lb'), 402, 340),
-        at(BASE('api'), 556, 250, { role: 'API de resultados', props: { instance: '1 vCPU · 2 GB', ports: '8080' } }),
-        placed('containers', 'api-2', 556, 340, { role: 'API de resultados', zone: 'compute' }),
+        at(BASE('api'), 556, 250, { role: 'API pública', props: { instance: '1 vCPU · 2 GB', ports: '8080' } }),
+        placed('containers', 'api-2', 556, 340, { role: 'API pública', zone: 'compute' }),
         at(BASE('postgres'), 710, 340),
         at(BASE('postgres'), 710, 430, { id: 'postgres-standby', name: 'RDS · réplica Multi-AZ', role: 'En espera en otra zona', custom: true }),
         at(BASE('redis'), 710, 250),
-        placed('queue', 'queue', 865, 215, { role: 'Recuento asíncrono' }), at(BASE('observability'), 865, 300), at(BASE('secrets'), 865, 385),
+        placed('queue', 'queue', 865, 215, { role: 'Procesamiento asíncrono' }), at(BASE('observability'), 865, 300), at(BASE('secrets'), 865, 385),
       ],
       links: [
-        { from: 'users', to: 'edge' }, { from: 'edge', to: 'static', label: 'resultados' }, { from: 'edge', to: 'waf' },
+        { from: 'users', to: 'edge' }, { from: 'edge', to: 'static', label: 'contenido' }, { from: 'edge', to: 'waf' },
         { from: 'waf', to: 'lb' }, { from: 'lb', to: 'api' }, { from: 'lb', to: 'api-2' },
         { from: 'api', to: 'postgres' }, { from: 'api-2', to: 'postgres' }, { from: 'postgres', to: 'postgres-standby', label: 'replicación' },
         { from: 'api', to: 'redis' }, { from: 'api', to: 'queue' },
@@ -399,7 +399,7 @@ export const STUDIO_PRESETS: StudioPreset[] = [
 
 /** Plantillas que el backend guarda y sirve: los escenarios, sin los dos puntos de partida locales. */
 export const SERVER_PRESET_IDS = [
-  'aks-oauth2', 'core-banking', 'electoral', 'event-driven', 'ecommerce-cqrs', 'saas-multitenant', 'fintech-payments', 'rag-enterprise',
+  'aks-oauth2', 'legacy-core', 'high-traffic', 'event-driven', 'ecommerce-cqrs', 'saas-multitenant', 'fintech-payments', 'rag-enterprise',
 ];
 
 // ---------- Guardar, exportar e importar ----------

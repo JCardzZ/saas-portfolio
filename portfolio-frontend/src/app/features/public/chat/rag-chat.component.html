@@ -124,6 +124,7 @@
             </div>
           } @else {
             <ng-container [ngTemplateOutlet]="conversation" />
+            <ng-container [ngTemplateOutlet]="aiNotice" />
           }
           <!-- Los atajos son de teclado: con el dedo no se muestran. -->
           <p class="hidden shrink-0 border-t border-line-subtle px-4 py-2 font-mono text-mono-sm text-ink-3 [@media(hover:hover)]:sm:block" aria-hidden="true">
@@ -175,6 +176,7 @@
         </form>
 
         <ng-container [ngTemplateOutlet]="conversation" />
+        <ng-container [ngTemplateOutlet]="aiNotice" />
         <ng-container [ngTemplateOutlet]="alertBox" />
       </section>
     </div>
@@ -228,6 +230,14 @@
       </div>
     }
   </div>
+</ng-template>
+
+<!-- Aviso de IA: quién procesa la pregunta y que la respuesta puede equivocarse. -->
+<ng-template #aiNotice>
+  <p class="shrink-0 border-t border-line-subtle px-4 py-2 text-xs leading-snug text-ink-3" data-testid="ai-notice">
+    {{ 'Respuestas generadas por IA (Google Gemini) con el contenido de este sitio; pueden contener errores. No escribas datos personales.' | t }}
+    <a routerLink="/legal" class="focus-ring rounded-mark text-ink-2 underline underline-offset-2 hover:text-ink-1" (click)="close()">{{ 'Aviso legal' | t }}</a>
+  </p>
 </ng-template>
 
 <ng-template #alertBox>

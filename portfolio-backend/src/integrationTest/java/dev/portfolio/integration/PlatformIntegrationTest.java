@@ -281,7 +281,7 @@ class PlatformIntegrationTest {
             io.modelcontextprotocol.spec.McpSchema.CallToolResult templates = client.callTool(
                     new io.modelcontextprotocol.spec.McpSchema.CallToolRequest("listar_plantillas", Map.of()));
             assertThat(templates.isError()).isFalse();
-            assertThat(templates.toString()).contains("core-banking").contains("system-fintech");
+            assertThat(templates.toString()).contains("legacy-core").contains("system-fintech");
 
             // Un sistema diseñado sobre lo que hay sembrado, con sus archivos.
             io.modelcontextprotocol.spec.McpSchema.CallToolResult designed = client.callTool(

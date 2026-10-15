@@ -49,7 +49,7 @@ class TerraformGeneratorTest {
      * tiene que dar exactamente el mismo texto para la misma topología.
      */
     @ParameterizedTest
-    @ValueSource(strings = {"reference", "aks-oauth2", "core-banking", "electoral", "blank",
+    @ValueSource(strings = {"reference", "aks-oauth2", "legacy-core", "high-traffic", "blank",
             "event-driven", "ecommerce-cqrs", "saas-multitenant", "fintech-payments", "rag-enterprise",
             "properties-aws", "properties-gcp", "properties-azure"})
     void producesTheSameTerraformAsTheBrowserGenerator(String name) throws IOException {

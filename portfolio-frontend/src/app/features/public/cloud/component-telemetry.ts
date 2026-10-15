@@ -123,7 +123,7 @@ const TELEMETRY: Record<string, ComponentTelemetry> = {
   ] },
   mainframe: { tech: null, steps: [
     ['info', 'Program Call', '{name} · trama plana de 512 bytes'],
-    ['ok', 'Transaction OK', 'respuesta del core bancario'],
+    ['ok', 'Transaction OK', 'respuesta del core'],
   ] },
   prometheus: { tech: null, steps: [
     ['info', 'Scrape OK', '/actuator/prometheus · 15 s'],

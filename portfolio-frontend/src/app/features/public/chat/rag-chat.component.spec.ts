@@ -1,3 +1,4 @@
+import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 
@@ -20,7 +21,7 @@ describe(`RagChatComponent (chat, ui.command-palette ${palette ? 'on' : 'off'})`
   beforeEach(() => {
     resetMockApi();
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(withInterceptors([mockApiInterceptor])), provideApi(environment.apiBaseUrl)],
+      providers: [provideHttpClient(withInterceptors([mockApiInterceptor])), provideApi(environment.apiBaseUrl), provideRouter([])],
     });
     fixture = TestBed.createComponent(RagChatComponent);
     fixture.componentInstance.palette.set(palette);
@@ -91,10 +92,21 @@ describe(`RagChatComponent (chat, ui.command-palette ${palette ? 'on' : 'off'})`
     expect(element.querySelector('app-citation-pill pre')?.textContent).toContain('Arquitectura Hexagonal Pura');
   }));
 
+  it('says the answers come from Google Gemini, can be wrong and must not carry personal data', fakeAsync(() => {
+    open();
+    ask('¿Qué arquitectura usa el backend?');
+
+    const notice = element.querySelector('[data-testid="ai-notice"]')!;
+    expect(notice.textContent).toContain('Google Gemini');
+    expect(notice.textContent).toContain('pueden contener errores');
+    expect(notice.textContent).toContain('No escribas datos personales');
+    expect(notice.querySelector('a')!.getAttribute('href')).toBe('/legal');
+  }));
+
   it('keeps Tab inside the dialog, wrapping in both directions', fakeAsync(() => {
     open();
     const dialog = element.querySelector<HTMLElement>('[role="dialog"]')!;
-    const focusable = Array.from(dialog.querySelectorAll<HTMLElement>('input, button'));
+    const focusable = Array.from(dialog.querySelectorAll<HTMLElement>('input, button, a[href]'));
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
 
@@ -159,7 +171,7 @@ describe('RagChatComponent (command palette)', () => {
   beforeEach(() => {
     resetMockApi();
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(withInterceptors([mockApiInterceptor])), provideApi(environment.apiBaseUrl)],
+      providers: [provideHttpClient(withInterceptors([mockApiInterceptor])), provideApi(environment.apiBaseUrl), provideRouter([])],
     });
     fixture = TestBed.createComponent(RagChatComponent);
     fixture.componentInstance.palette.set(true);

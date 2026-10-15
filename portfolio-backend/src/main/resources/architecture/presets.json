@@ -1,7 +1,7 @@
 [
   {
     "id": "aks-oauth2",
-    "title": "Modernización bancaria (AKS + OAuth2 + Redis)",
+    "title": "Microservicios en Kubernetes (AKS + OAuth2 + Redis)",
     "description": "Microservicios Spring Boot en AKS detrás de un gestor de APIs que valida tokens OAuth2, con Redis como caché. Escenario ilustrativo de este tipo de sistema: no describe la infraestructura real de ninguna entidad.",
     "cloudProvider": "azure",
     "nodes": [
@@ -328,8 +328,8 @@
     ]
   },
   {
-    "id": "core-banking",
-    "title": "Core bancario AS400 (IBM MQ + Spring Batch + AWS Lambda + SQS)",
+    "id": "legacy-core",
+    "title": "Core legado integrado por colas (Mainframe + MQ + Spring Batch + Lambda + SQS)",
     "description": "Las APIs y los procesos por lotes nunca llaman al core de forma síncrona: dejan mensajes en colas y el core los atiende a su ritmo. Escenario ilustrativo de este tipo de sistema: no describe la infraestructura real de ninguna entidad.",
     "cloudProvider": "aws",
     "nodes": [
@@ -618,13 +618,13 @@
         "custom": true
       },
       {
-        "id": "as400",
+        "id": "core-system",
         "type": "mainframe",
         "x": 710,
         "y": 668,
         "zone": "external",
-        "role": "Core bancario",
-        "service": "IBM AS400",
+        "role": "Core transaccional",
+        "service": "Mainframe",
         "icon": null,
         "terraform": null,
         "why": "Recibe tramas planas; las APIs nunca lo llaman de forma síncrona.",
@@ -677,7 +677,7 @@
       },
       {
         "from": "mq",
-        "to": "as400",
+        "to": "core-system",
         "label": "tramas planas"
       }
     ],
@@ -740,8 +740,8 @@
     ]
   },
   {
-    "id": "electoral",
-    "title": "Plataforma electoral anti-DDoS",
+    "id": "high-traffic",
+    "title": "Plataforma de alto tráfico anti-DDoS (CDN + WAF + AWS)",
     "description": "Borde y cortafuegos que absorben el tráfico hostil, dos réplicas de la API y una base de datos con réplica en espera en otra zona. Escenario ilustrativo de este tipo de sistema: no describe la infraestructura real de ninguna entidad.",
     "cloudProvider": "aws",
     "nodes": [
@@ -856,7 +856,7 @@
         "x": 556,
         "y": 250,
         "zone": "compute",
-        "role": "API de resultados",
+        "role": "API pública",
         "icon": {
           "default": "docker",
           "aws": "awsFargate",
@@ -887,7 +887,7 @@
         "x": 556,
         "y": 340,
         "zone": "compute",
-        "role": "API de resultados",
+        "role": "API pública",
         "service": {
           "aws": "ECS Fargate",
           "gcp": "Cloud Run",
@@ -997,7 +997,7 @@
         "x": 865,
         "y": 215,
         "zone": "managed",
-        "role": "Recuento asíncrono",
+        "role": "Procesamiento asíncrono",
         "service": {
           "aws": "SQS",
           "gcp": "Pub/Sub",
@@ -1080,7 +1080,7 @@
       {
         "from": "edge",
         "to": "static",
-        "label": "resultados"
+        "label": "contenido"
       },
       {
         "from": "edge",

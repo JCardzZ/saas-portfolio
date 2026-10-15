@@ -10,6 +10,11 @@ export const routes: Routes = [
       import('./features/public/landing/landing-page.component').then((m) => m.LandingPageComponent),
   },
   {
+    path: 'legal',
+    title: 'Aviso legal y privacidad · Manuel Cardoza',
+    loadComponent: () => import('./features/public/legal/legal-page.component').then((m) => m.LegalPageComponent),
+  },
+  {
     path: 'login',
     loadComponent: () => import('./features/auth/login/login.component').then((m) => m.LoginComponent),
   },

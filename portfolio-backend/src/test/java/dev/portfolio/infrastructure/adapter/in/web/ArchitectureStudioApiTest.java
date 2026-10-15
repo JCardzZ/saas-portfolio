@@ -71,7 +71,7 @@ class ArchitectureStudioApiTest {
     static final String SECRET = "dGVzdC1vbmx5LWhtYWMta2V5LTAxMjM0NTY3ODlhYmNkZWY=";
     private static final Instant CREATED = Instant.parse("2026-10-05T12:00:00Z");
     private static final ArchitectureProjectDomain PRESET = new ArchitectureProjectDomain(
-            "core-banking", "Core bancario", "Escenario ilustrativo", CloudProviderDomain.AWS,
+            "legacy-core", "Core bancario", "Escenario ilustrativo", CloudProviderDomain.AWS,
             List.of(Map.of("id", "api", "x", 556)), List.of(Map.of("from", "api", "to", "mq")), List.of(Map.of("id", "cloud")), true, CREATED);
     private static final String BODY = """
             {"title":"Mi arquitectura","description":"d","cloudProvider":"gcp",
@@ -111,7 +111,7 @@ class ArchitectureStudioApiTest {
 
         mockMvc.perform(get("/public/architecture/projects"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value("core-banking"))
+                .andExpect(jsonPath("$[0].id").value("legacy-core"))
                 .andExpect(jsonPath("$[0].cloudProvider").value("aws"))
                 .andExpect(jsonPath("$[0].isPreset").value(true))
                 .andExpect(jsonPath("$[0].createdAt").value("2026-10-05T12:00:00Z"))
@@ -120,10 +120,10 @@ class ArchitectureStudioApiTest {
 
     @Test
     void anyoneCanLoadAProjectWithItsWholeGraph() throws Exception {
-        given(projects.findById("core-banking")).willReturn(PRESET);
+        given(projects.findById("legacy-core")).willReturn(PRESET);
         given(projects.findById("nope")).willThrow(new ResourceNotFoundException("ArchitectureProject", "nope"));
 
-        mockMvc.perform(get("/public/architecture/projects/core-banking"))
+        mockMvc.perform(get("/public/architecture/projects/legacy-core"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Core bancario"))
                 .andExpect(jsonPath("$.nodes[0].id").value("api"))
@@ -138,7 +138,7 @@ class ArchitectureStudioApiTest {
                         "Riesgo de seguridad", "Muévela a una subred privada", null, null),
                 new dev.portfolio.domain.model.GraphDiagnosticDomain("mq", "connection", dev.portfolio.domain.model.GraphDiagnosticDomain.Severity.ERROR,
                         "No permitida", null, "api", "mq")));
-        mockMvc.perform(get("/public/architecture/projects/core-banking"))
+        mockMvc.perform(get("/public/architecture/projects/legacy-core"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.diagnostics.length()").value(2))
                 .andExpect(jsonPath("$.diagnostics[0].nodeId").value("api"))
@@ -163,9 +163,9 @@ class ArchitectureStudioApiTest {
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(post("/public/architecture/projects").contentType(MediaType.APPLICATION_JSON).content(BODY))
                 .andExpect(status().is4xxClientError());
-        mockMvc.perform(put("/public/architecture/projects/core-banking").contentType(MediaType.APPLICATION_JSON).content(BODY))
+        mockMvc.perform(put("/public/architecture/projects/legacy-core").contentType(MediaType.APPLICATION_JSON).content(BODY))
                 .andExpect(status().is4xxClientError());
-        mockMvc.perform(delete("/public/architecture/projects/core-banking")).andExpect(status().is4xxClientError());
+        mockMvc.perform(delete("/public/architecture/projects/legacy-core")).andExpect(status().is4xxClientError());
         verifyNoInteractions(projects);
     }
 
@@ -196,9 +196,9 @@ class ArchitectureStudioApiTest {
 
     @Test
     void presetsAndInvalidProjectsAreRejectedWithAProblemDetail() throws Exception {
-        given(projects.update(eq("core-banking"), any())).willThrow(new InvalidRequestException("Las plantillas no se pueden modificar"));
+        given(projects.update(eq("legacy-core"), any())).willThrow(new InvalidRequestException("Las plantillas no se pueden modificar"));
 
-        mockMvc.perform(put("/admin/architecture/projects/core-banking").header(HttpHeaders.AUTHORIZATION, adminToken())
+        mockMvc.perform(put("/admin/architecture/projects/legacy-core").header(HttpHeaders.AUTHORIZATION, adminToken())
                         .contentType(MediaType.APPLICATION_JSON).content(BODY))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
@@ -256,7 +256,7 @@ class ArchitectureStudioApiTest {
                 new dev.portfolio.domain.model.system.SystemDesignDomain.NonFunctional(null, 800.0, null, 99.9, null, List.of("pci")));
         given(projects.findById("with-system")).willReturn(new ArchitectureProjectDomain("with-system", "Con sistema", null, CloudProviderDomain.AWS,
                 PRESET.nodes(), PRESET.connections(), PRESET.zones(), system, false, CREATED));
-        given(projects.findById("core-banking")).willReturn(PRESET);
+        given(projects.findById("legacy-core")).willReturn(PRESET);
 
         mockMvc.perform(get("/public/architecture/projects/with-system"))
                 .andExpect(status().isOk())
@@ -267,7 +267,7 @@ class ArchitectureStudioApiTest {
                 .andExpect(jsonPath("$.system.nfr.users").doesNotExist())
                 .andExpect(jsonPath("$.system.nfr.compliance[0]").value("pci"));
         // Sin diseño, el campo no viaja: la respuesta es la de siempre.
-        mockMvc.perform(get("/public/architecture/projects/core-banking"))
+        mockMvc.perform(get("/public/architecture/projects/legacy-core"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.system").doesNotExist());
 

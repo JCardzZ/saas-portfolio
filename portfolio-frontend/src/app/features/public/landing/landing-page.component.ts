@@ -97,6 +97,7 @@ export class LandingPageComponent implements OnInit {
     setTimeout(() => this.chat()?.ask(question));
   }
   readonly copy = LANDING_COPY;
+  readonly legalLink = { es: 'Aviso legal y privacidad', en: 'Legal notice and privacy' };
   readonly heroRole = computed(() => this.i18n.t(HERO_ROLE_PLACEHOLDER));
   /** Letras del nombre y del rol (los espacios, sin romper la línea). */
   readonly nameLetters = computed(() => [...this.i18n.t(this.copy.heroTitle)].map((c) => (c === ' ' ? '\u00a0' : c)));
