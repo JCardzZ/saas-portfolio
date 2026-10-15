@@ -1,11 +1,11 @@
-# Plan de despliegue del backend en Google Cloud Run
+# Plan de despliegue del backend: Google Cloud Run + respaldo en Azure Container Apps
 
 | | |
 |---|---|
 | **Estado** | Propuesta: primer despliegue del backend (el frontend ya está en Cloudflare Pages) |
 | **Objetivo de coste** | 0,00 $/mes dentro de la capa gratuita, con tope de gasto acotado |
 | **Fecha de los precios** | 2026-10-15, comprobados en las páginas oficiales (sección 9) |
-| **Alcance** | `portfolio-backend` (Java 21, Spring Boot 3.5.16) |
+| **Alcance** | `portfolio-backend` (Java 21, Spring Boot 3.5.16): nube principal en Google (secciones 1–8) y respaldo en Azure (sección 9) |
 
 > **Regla de este documento.** Lo verificado se cita con su fuente. Lo estimado lleva la marca
 > *(supuesto)*, y lo que solo se puede comprobar desplegando lleva la marca *(validar)*. Las variables
@@ -23,7 +23,7 @@
  ┌──────────────────────┐        ┌───────────────────────────────┐
  │  Cloudflare Pages    │  fetch │  Cloud Run · servicio          │
  │  Angular 20 (SPA)    │───────▶│  portfolio-api  (us-east4)     │
- │  config.json → URL   │  /v1/* │  1 vCPU · 512 MiB · 0→3 inst.  │
+ │  config.json → URL   │  /v1/* │  1 vCPU · 512 MiB · 0→1 inst.  │
  └──────────────────────┘        │  facturación por petición      │
                                  └──┬──────────┬──────────┬───────┘
           TLS · JDBC (puerto 5432)  │          │ TLS ·    │ volumen GCS FUSE
@@ -77,12 +77,13 @@ propio (cuota fija mensual) y el VPS de `deploy/` (24/7 y mantenimiento propio).
 | Upstash Redis Free | 500 000 comandos · 250 MB · 10 GB de ancho de banda | Unos pocos comandos por petición | Amplio *(supuesto)* |
 | Gemini API | Capa gratuita con límites por modelo | RAG y copiloto | Ya acotado por el límite diario global del backend |
 
-**Tope de gasto:** con `--max-instances 3`, el peor caso teórico es de 3 instancias ocupadas las
-24 horas:
-3 × 730 h × 3 600 s × (0,000024 $/vCPU-s + 0,5 × 0,0000025 $/GiB-s) ≈ **200 $/mes**.
+**Tope de gasto:** `--max-instances 1` (para un portafolio sobra: atiende 80 peticiones a la vez). Sin
+más defensas, el peor caso teórico sería una instancia ocupada las 24 horas:
+730 h × 3 600 s × (0,000024 $/vCPU-s + 0,5 × 0,0000025 $/GiB-s) ≈ **66 $/mes**.
 
-Solo se llega ahí con tráfico sostenido. Lo frenan los límites por IP ya existentes y los avisos de
-presupuesto (sección 6). Precios del nivel 1 tomados de terceros que coinciden con la página oficial
+Solo se llega ahí con tráfico sostenido, y no se llega: lo frenan los límites por IP ya existentes y,
+sobre todo, el **corte automático a 1 $** (sección 6.1), que deja el gasto real en 0 $ o en céntimos
+en el peor caso. Precios del nivel 1 tomados de terceros que coinciden con la página oficial
 *(validar con la calculadora)*.
 
 ---
@@ -371,7 +372,7 @@ Los pasos 1 a 4 **ya existen** (job `📦 Imagen + Trivy` y `publish-image`). Lo
           no_traffic: true
           tag: ${{ env.TAG }}
           flags: >-
-            --memory=512Mi --cpu=1 --min-instances=0 --max-instances=3 --concurrency=80
+            --memory=512Mi --cpu=1 --min-instances=0 --max-instances=1 --concurrency=80
             --timeout=300 --cpu-boost --execution-environment=gen2
             --service-account=portfolio-api@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
             --allow-unauthenticated
@@ -481,7 +482,7 @@ gcloud run deploy portfolio-api \
   --region="$REGION" \
   --platform=managed \
   --memory 512Mi --cpu 1 \
-  --min-instances 0 --max-instances 3 --concurrency 80 \
+  --min-instances 0 --max-instances 1 --concurrency 80 \
   --timeout=300 --cpu-boost --execution-environment=gen2 \
   --service-account="$RUNTIME_SA" \
   --allow-unauthenticated \
@@ -521,9 +522,9 @@ El job lleva 1 GiB: trocear e indexar pesa más que atender peticiones y solo cu
 
 ## 6. Guardarraíles FinOps
 
-1. **Presupuesto** del proyecto con avisos al 50 %, 90 % y 100 % de **5 $**:
-   `gcloud billing budgets create --billing-account=<id> --display-name=portfolio --budget-amount=5USD --threshold-rule=percent=0.5 --threshold-rule=percent=0.9 --threshold-rule=percent=1.0`.
-2. **`--max-instances 3`** acota el peor caso (sección 1.2); con poco tráfico basta con 1.
+1. **Presupuesto** del proyecto de **1 $** con avisos al 50 % y al 100 %, por correo y por Pub/Sub
+   (este último dispara el corte de 6.1).
+2. **`--max-instances 1`** acota el peor caso (sección 1.2).
 3. **Límites por IP ya existentes** (`/auth/token`, RAG, Terraform, pricing) y límite diario global
    de Gemini.
 4. **Sin instancias mínimas ni balanceador.** La URL pública es la `run.app`.
@@ -537,6 +538,30 @@ El job lleva 1 GiB: trocear e indexar pesa más que atender peticiones y solo cu
    - Opcional: un ping de Cloud Scheduler en horario laboral a un endpoint que **no consulte la base
      de datos** (para no despertar a Neon).
 
+### 6.1 Corte automático (para que no cobren nada)
+
+Google **no tiene un tope de gasto nativo**: un presupuesto solo avisa. El corte se construye con el
+patrón oficial *«Disable billing usage with notifications»*:
+
+```
+Presupuesto (1 $) ──▶ Pub/Sub «billing-alerts» ──▶ Cloud Run function «cost-guard»
+                                                     ├─ ≥ 100 % de 1 $ → portfolio-api pasa a --ingress=internal
+                                                     │   (deja de aceptar tráfico de Internet; nada se borra)
+                                                     └─ ≥ 300 % (3 $)  → desactiva la facturación del proyecto
+```
+
+- **Primer escalón (1 $):** cerrar la entrada del servicio para el tráfico de Internet. Todo se
+  conserva y se reabre con un comando.
+- **Segundo escalón (3 $), solo si el primero no bastó:** desactivar la facturación. Esto para
+  **todos** los servicios del proyecto, incluidos los gratuitos. Antes hay que desbloquear el
+  vínculo del proyecto con la cuenta de facturación si está bloqueado.
+- **El aviso de facturación llega con horas de retraso.** Google lo dice expresamente: el corte no
+  garantiza no pasar del presupuesto. Por eso los umbrales son bajos: en el peor caso se pagan
+  céntimos.
+- La función `cost-guard` entra en la capa gratuita (se ejecuta un puñado de veces al mes).
+- **Mientras el corte está activo, el frontend pasa solo a la nube de respaldo (sección 9)** y, si
+  tampoco responde, al modo demo. La web nunca se cae.
+
 ---
 
 ## 7. Plan de ejecución
@@ -549,6 +574,8 @@ El job lleva 1 GiB: trocear e indexar pesa más que atender peticiones y solo cu
 | 4 | Proyecto GCP (5), mejor como Terraform en `infra/terraform` (estado en un bucket GCS) | `terraform plan` sin cambios tras aplicar |
 | 5 | Job de `cd.yml` (4) + `rollback.yml` con `update-traffic` | Primer despliegue con `workflow_dispatch` |
 | 6 | Validación | Ver la lista siguiente |
+| 7 | Respaldo en Azure (sección 9): entorno, aplicación y job `🚀 Azure (respaldo)` en `cd.yml` | La URL de Azure responde `UP` con la misma imagen |
+| 8 | Conmutación en el frontend (`apiFallbackUrl`) y corte automático en las dos nubes | Con Google cerrado (`--ingress=internal`), la web usa Azure sin modo demo |
 
 **Validación en producción:**
 - `/v1/telemetry/health` → `UP`.
@@ -569,9 +596,175 @@ El job lleva 1 GiB: trocear e indexar pesa más que atender peticiones y solo cu
 | Arranque en frío > 3 s | El frontend entra en modo demo | `--cpu-boost`, margen de 8 s, ping opcional |
 | `getRemoteAddr()` no da la IP real | Límites por IP compartidos por todos | Validar en la fase 6 antes de anunciar el sitio |
 | Paquete GHCR privado | Hace falta el 7.º secreto | Borrar el secreto de arranque antes |
-| Cambios en las capas gratuitas | Coste no previsto | Google avisa con 30 días; presupuesto con avisos |
+| Cambios en las capas gratuitas | Coste no previsto | Google avisa con 30 días; presupuesto con avisos y corte automático |
+| Neon o Upstash caídos | Las dos nubes sin datos (punto único de fallo) | Redis ya es best-effort; con Neon caído, modo demo. Aceptado para un portafolio |
+| Las dos nubes despiertan a la vez en cada visita | Doble arranque en frío | Dentro de las dos capas gratuitas; ver 9.4 |
 
-## 9. Fuentes
+## 9. Nube de respaldo: Azure Container Apps
+
+### 9.1 Idea
+
+La misma imagen firmada, desplegada también en **Azure Container Apps** (plan Consumption,
+`eastus`, Virginia, junto a Neon). Las dos nubes comparten Neon y Upstash, así que **no hay que
+copiar datos**. No hay balanceador de pago: **el navegador elige la nube**.
+
+```
+                        Navegador (Angular)
+                 main.ts: sondea las dos en paralelo
+              ┌─────────────────┴──────────────────┐
+              ▼ preferida                          ▼ respaldo
+ ┌───────────────────────────┐        ┌───────────────────────────────┐
+ │ Google Cloud Run          │        │ Azure Container Apps          │
+ │ portfolio-api · us-east4  │        │ portfolio-api · eastus        │
+ │ 0→1 instancia             │        │ 0→1 réplica · rol «standby»   │
+ └─────────────┬─────────────┘        └───────────────┬───────────────┘
+               │      misma imagen (digest y firma)   │
+               └──────────────┬───────────────────────┘
+                              ▼
+          Neon (PostgreSQL + pgvector)  ·  Upstash (Redis)
+          compartidos: mismos datos, mismas sesiones, mismos límites por IP
+```
+
+| Qué se comparte | Consecuencia |
+|---|---|
+| Neon | Mismos datos en las dos nubes, sin réplica ni sincronización |
+| Upstash | Los límites por IP y la caché son **globales**: cambiar de nube no regala intentos de login |
+| `JWT_SECRET` y tokens de refresco en Neon | Una sesión iniciada en Google sigue valiendo en Azure |
+| La imagen (digest) | Las dos nubes ejecutan exactamente el mismo código verificado |
+
+### 9.2 Coste: también 0 $
+
+- Azure Container Apps, plan Consumption: **180 000 vCPU-s, 360 000 GiB-s y 2 M de peticiones gratis
+  al mes por suscripción**, y escala a cero (página oficial de precios). Es la misma capa que Cloud Run.
+- **Logs: `--logs-destination none`.** Log Analytics cobra por GB ingerido; sin destino, los logs se
+  siguen viendo en tiempo real con *Log stream*. Es la diferencia más fácil de pasar por alto.
+- **Sin Key Vault ni Azure Files:** los secretos van como *secrets* de la propia aplicación (sin
+  coste) y el respaldo no guarda ficheros (9.3).
+- `--max-replicas 1` y presupuesto de 1 $ con aviso. **Azure tampoco tiene tope nativo** en
+  pago por uso: el aviso del presupuesto dispara un *runbook* de Azure Automation que deshabilita la
+  entrada de la aplicación (`az containerapp ingress disable`). *(validar: los minutos gratis de
+  Automation y el retraso de los datos de coste, que en Azure suele ser de horas)*.
+
+### 9.3 Qué hace distinto el respaldo (rol `standby`)
+
+Una propiedad `platform.role=primary|standby` (variable `PLATFORM_ROLE`), leída en infraestructura.
+
+| Función | Primaria (Google) | Respaldo (Azure) |
+|---|---|---|
+| Lectura pública, RAG, copiloto, CV | Sí | Sí |
+| Login, administración del CMS y del Estudio | Sí | Sí (escriben en la misma Neon) |
+| Foto de perfil | Bucket de Cloud Storage | **Sin volumen**: el CV sale con el avatar de iniciales; `PUT /admin/profile/photo` responde 503 ProblemDetail («no disponible en la nube de respaldo») |
+| Reindexado RAG | Cloud Run Job | **503** (el índice está en Neon y sigue sirviendo) |
+| Telemetría SSE | Apagada (2.2) | Apagada |
+
+Así nada se parte en dos: lo único que vive fuera de Neon (la foto y el job) solo existe en la
+primaria. La telemetría puede añadir `cloud: gcp|azure` a `/telemetry/health` para que la web
+diga qué nube la atiende.
+
+### 9.4 Conmutación en el frontend
+
+- `public/config.json` admite un segundo campo, `apiFallbackUrl` (mismas reglas que `apiBaseUrl`:
+  http(s) absoluta). `runtime-config.ts` lo valida igual y **sigue sin permitir activar el modo demo
+  desde el archivo**.
+- `main.ts` (`fallBackToDemoIfBackendIsDown`) sondea `/telemetry/health` de las dos **en paralelo**:
+  1. si la primaria responde 2xx en ≤ 8 s, se usa la primaria;
+  2. si no, y el respaldo respondió 2xx, se usa el respaldo (`apiBaseUrl` pasa a ser su URL);
+  3. si ninguna responde, modo demo, como hoy.
+
+  Ir en paralelo evita sumar dos arranques en frío seguidos. A cambio, cada visita despierta las dos
+  nubes, dentro de las dos capas gratuitas *(supuesto con tráfico de portafolio)*.
+- **La decisión se toma una vez por carga de página**, como el fallback de hoy. Si la primaria cae a
+  mitad de una visita, las peticiones fallan hasta recargar. Un interceptor que reintente en la otra
+  nube queda como mejora posterior.
+- **CSP:** `write-deploy-config.mjs` escribe los dos orígenes en `connect-src` (variable nueva
+  `API_FALLBACK_URL`). Si falta uno, el navegador bloquea esa nube.
+- **CORS:** las dos APIs con el mismo `CORS_ALLOWED_ORIGINS`.
+- «Arquitectura en producción» (`deploy/topology.json`) muestra las dos nubes, cada una con su
+  estado real, y la insignia dice cuál atiende la visita.
+
+### 9.5 CI/CD
+
+Nuevo job en `cd.yml`, `🚀 Azure (respaldo)`.
+- Corre después del de Cloud Run y no lo bloquea: si Azure falla, la primaria ya está desplegada y
+  el resumen lo marca.
+- Usa la **misma** `backend-image.json` y la firma verificada en `source`.
+
+```yaml
+  deploy-azure:
+    name: 🚀 Azure (respaldo)
+    needs: [source, deploy-cloud-run]
+    if: needs.source.outputs.backend_digest != ''
+    runs-on: ubuntu-24.04
+    environment: production
+    permissions:
+      contents: read
+      id-token: write                       # OIDC: credencial federada, sin secretos de Azure
+    steps:
+      - uses: azure/login@<sha> # v2 (fijar por SHA al copiar)
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Desplegar la misma imagen
+        run: |
+          az containerapp update -n portfolio-api -g portfolio-rg \
+            --image "ghcr.io/jcardzz/saas-portfolio-backend@${{ needs.source.outputs.backend_digest }}"
+      - name: Pruebas de humo
+        run: |
+          fqdn=$(az containerapp show -n portfolio-api -g portfolio-rg --query properties.configuration.ingress.fqdn -o tsv)
+          API_BASE_URL="https://$fqdn/v1" ./deploy/smoke-test.sh
+```
+
+Azure Container Apps sí descarga de GHCR privado con usuario y token: un token de solo lectura
+(`read:packages`) guardado como *secret* de la aplicación, sin pasar por un registro intermedio.
+
+### 9.6 Comandos (una sola vez)
+
+```bash
+az group create -n portfolio-rg -l eastus
+az containerapp env create -n portfolio-env -g portfolio-rg -l eastus --logs-destination none
+
+az containerapp create -n portfolio-api -g portfolio-rg --environment portfolio-env \
+  --image "ghcr.io/jcardzz/saas-portfolio-backend@sha256:<digest>" \
+  --registry-server ghcr.io --registry-username <usuario> --registry-password <token-read-packages> \
+  --ingress external --target-port 8080 \
+  --cpu 1 --memory 2Gi --min-replicas 0 --max-replicas 1 \
+  --secrets db-password=<…> redis-password=<…> gemini-api-key=<…> jwt-secret=<…> admin-client-secret=<…> \
+  --env-vars PLATFORM_ROLE=standby DB_URL=<igual que en Google> DB_USERNAME=<…> \
+    REDIS_HOST=<…>.upstash.io REDIS_PORT=6379 REDIS_SSL_ENABLED=true \
+    CORS_ALLOWED_ORIGINS=https://<proyecto>.pages.dev SERVER_FORWARD_HEADERS_STRATEGY=native \
+    TELEMETRY_STREAM_ENABLED=false \
+    DB_PASSWORD=secretref:db-password REDIS_PASSWORD=secretref:redis-password \
+    GEMINI_API_KEY=secretref:gemini-api-key JWT_SECRET=secretref:jwt-secret \
+    ADMIN_CLIENT_SECRET=secretref:admin-client-secret
+
+# Credencial federada para GitHub Actions (sin contraseñas): aplicación de Entra ID con
+# federated credential para repo:JCardzZ/saas-portfolio:environment:production y rol
+# «Contributor» limitado al grupo portfolio-rg.
+```
+
+- **Memoria:** en el plan Consumption, CPU y memoria van en pares fijos. Con 1 vCPU el par es 2 GiB,
+  así que 512 MiB no se puede *(validar los pares vigentes)*.
+  - Opción A: 0,25 vCPU / 0,5 GiB. Es lo más parecido a Google, pero con una CPU muy lenta para
+    arrancar Spring Boot.
+  - Opción B (la del comando): 1 vCPU / 2 GiB. Va holgada, pero consume la capa gratuita de memoria
+    cuatro veces más rápido. Para un respaldo que casi no atiende tráfico, sigue cabiendo.
+- **IP real:** `SERVER_FORWARD_HEADERS_STRATEGY=native` y comprobar, como en Google, que
+  `getRemoteAddr()` da la IP del visitante *(validar: el proxy de Container Apps usa otros rangos
+  internos)*.
+- **Secretos duplicados:** los mismos valores que en Secret Manager, guardados también en Azure. Al
+  rotar uno, **rotarlo en las dos nubes**.
+
+### 9.7 Validación del respaldo
+
+1. `https://<fqdn>/v1/telemetry/health` → `UP`.
+2. `deploy/smoke-test.sh` contra Azure en verde.
+3. **Simulacro:** `gcloud run services update portfolio-api --ingress=internal` → la web carga desde
+   Azure, sin modo demo. Luego se vuelve con `--ingress=all`.
+4. Una sesión iniciada en Google sigue valiendo tras el cambio.
+5. El sexto login en un minuto da 429 aunque se repartan los intentos entre las dos nubes.
+
+## 10. Fuentes
 
 - Capa gratuita de Google Cloud: https://docs.cloud.google.com/free/docs/free-cloud-features
 - Cloud Run, precios: https://cloud.google.com/run/pricing
@@ -581,3 +774,6 @@ El job lleva 1 GiB: trocear e indexar pesa más que atender peticiones y solo cu
 - Neon, precios: https://neon.com/pricing · regiones: https://neon.com/docs/introduction/regions
 - Upstash Redis, precios: https://upstash.com/pricing/redis · compatibilidad: https://upstash.com/docs/redis/overall/rediscompatibility
 - Acciones: https://github.com/google-github-actions/deploy-cloudrun · https://github.com/google-github-actions/auth
+- Corte de gasto en Google: https://docs.cloud.google.com/billing/docs/how-to/disable-billing-with-notifications · alternativa selectiva: https://docs.cloud.google.com/billing/docs/how-to/control-usage
+- Azure Container Apps, precios y capa gratuita: https://azure.microsoft.com/en-us/pricing/details/container-apps/
+- Azure Container Apps, destinos de logs (`none`): https://learn.microsoft.com/en-us/azure/container-apps/log-options
