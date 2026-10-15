@@ -51,6 +51,16 @@ export interface SceneInfo {
   signature: string;
 }
 
+/** Adónde va el robot en modo guía (px del lienzo). */
+export interface GuideTarget {
+  x: number;
+  y: number;
+  widthPx: number;
+  point: boolean;
+  /** Lo lleva el usuario agarrado: sigue al cursor sin retraso, con las piernas colgando. */
+  carried?: boolean;
+}
+
 export interface HeroScene {
   /**
    * Pulsación en (x, y) normalizadas del lienzo: abre el mazo, trae al frente la ficha pulsada,
@@ -102,7 +112,9 @@ export interface HeroScene {
    * Modo guía: el robot deja la silla y camina hasta (x, y) en píxeles del lienzo, a un tamaño que
    * quepa en `widthPx`; si `point`, se encara al contenido y lo señala. `null` lo devuelve a la silla.
    */
-  guide(target: { x: number; y: number; widthPx: number; point: boolean } | null): void;
+  guide(target: GuideTarget | null): void;
+  /** Modo guía: `true` si (x, y), normalizadas del lienzo (-1…1), caen sobre el robot. */
+  hitRobot(x: number, y: number): boolean;
   setPalette(palette: ScenePalette): void;
   dispose(): void;
 }
@@ -1129,7 +1141,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   let scrollPx = 0;
   let scrollWorld = 0;
   let scrollVel = 0;
-  let guideTarget: { x: number; y: number; widthPx: number; point: boolean } | null = null;
+  let guideTarget: GuideTarget | null = null;
+  let carryTilt = 0;
   let guideActive = false;
   let guideStand = 0;
   let guideScale = 1;
@@ -1320,11 +1333,19 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       // Primero se pone de pie; luego camina.
       guideStand += ((guideTarget ? 1 : guidePos.distanceTo(seat) < 0.25 ? 0 : 1) - guideStand) * (1 - Math.exp(-dt * 5));
       if (guideStand > 0.85 || !guideTarget) {
-        const stiffness = 16;
-        const damping = 2 * Math.sqrt(stiffness) * 0.95;
-        const accel = guideGoal.clone().sub(guidePos).multiplyScalar(stiffness).addScaledVector(guideVel, -damping);
-        guideVel.addScaledVector(accel, dt);
-        guidePos.addScaledVector(guideVel, dt);
+        // Agarrado sigue al cursor casi pegado; caminando, con calma.
+        const stiffness = guideTarget?.carried ? 180 : 16;
+        const damping = 2 * Math.sqrt(stiffness) * (guideTarget?.carried ? 0.75 : 0.95);
+        // En pasos de ≤ 8 ms: con el resorte rígido de arrastre, un frame lento lo haría inestable.
+        const span = Math.min(dt, 0.1);
+        const steps = Math.max(1, Math.ceil(span / 0.008));
+        const h = span / steps;
+        const accel = new three.Vector3();
+        for (let i = 0; i < steps; i++) {
+          accel.copy(guideGoal).sub(guidePos).multiplyScalar(stiffness).addScaledVector(guideVel, -damping);
+          guideVel.addScaledVector(accel, h);
+          guidePos.addScaledVector(guideVel, h);
+        }
       }
       const wantScale = guideTarget ? Math.min(fit, (guideTarget.widthPx * worldPerPx) / 3.7) : character.scale.x;
       guideScale += ((guideTarget ? wantScale / fit : 1) - guideScale) * (1 - Math.exp(-dt * 3));
@@ -1334,20 +1355,35 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       walkPhase += dt * (4 + speed * 2.2) * Math.min(1, speed);
       const stride = Math.min(1, speed / 2.5) * guideStand;
       const bob = Math.abs(Math.sin(walkPhase)) * 0.12 * stride;
+      const carried = !!guideTarget?.carried;
       legs.forEach((leg, index) => {
+        if (carried) {
+          // Colgando del cursor: las piernas se balancean al revés de como se mueve.
+          const dangle = Math.max(-0.6, Math.min(0.6, -guideVel.x * 0.05 + (index ? 0.08 : -0.08)));
+          leg.hip.rotation.x += (guideStand * (Math.PI / 2) + dangle - leg.hip.rotation.x) * (1 - Math.exp(-dt * 10));
+          leg.knee.rotation.x += (-guideStand * (Math.PI / 2) + 0.35 + Math.abs(dangle) * 0.4 - leg.knee.rotation.x) * (1 - Math.exp(-dt * 10));
+          return;
+        }
         const swing = Math.sin(walkPhase + index * Math.PI) * 0.5 * stride;
         leg.hip.rotation.x = guideStand * (Math.PI / 2) + swing;
         leg.knee.rotation.x = -guideStand * (Math.PI / 2) + Math.max(0, -Math.sin(walkPhase + index * Math.PI)) * 0.7 * stride;
       });
       standLift = guideStand * 1.75 * character.scale.x;
       character.position.copy(guidePos);
-      character.position.y += standLift + bob * character.scale.x;
+      character.position.y += standLift + (carried ? 0 : bob * character.scale.x);
+      // Agarrado se inclina hacia donde lo llevan, como algo que cuelga de una mano.
+      carryTilt += ((carried ? Math.max(-0.35, Math.min(0.35, -guideVel.x * 0.035)) : 0) - carryTilt) * (1 - Math.exp(-dt * 8));
+      character.rotation.z = carryTilt;
       character.position.z = guidePos.z - guideStand * 0.5 * character.scale.x;
       // Hacia dónde mira: de lado al caminar hacia los lados; hacia el contenido al señalar.
-      const wantFacing = Math.abs(guideVel.x) > 0.4 ? Math.sign(guideVel.x) * 0.9 : guideTarget?.point ? -0.55 : 0;
+      // Si lo dejan en la mitad izquierda, señala hacia la derecha (el contenido le queda a ese lado).
+      const toward = guideTarget && guideTarget.x < viewWidth / 2 ? 0.55 : -0.55;
+      const wantFacing = carried ? 0 : Math.abs(guideVel.x) > 0.4 ? Math.sign(guideVel.x) * 0.9 : guideTarget?.point ? toward : 0;
       facing += (wantFacing - facing) * (1 - Math.exp(-dt * 4));
       if (guideStand < 0.05 && !guideTarget && guidePos.distanceTo(seat) < 0.25) {
         guideActive = false;
+        carryTilt = 0;
+        character.rotation.z = 0;
         guideScale = 1;
         facing = 0;
         settleAt = t; // de vuelta en su silla: ordena el puesto
@@ -1664,6 +1700,11 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     },
     guide(target) {
       guideTarget = target;
+    },
+    hitRobot(x, y) {
+      if (!guideActive || guideStand < 0.5) return false;
+      raycaster.setFromCamera(new three.Vector2(x, y), camera);
+      return raycaster.intersectObject(character, true).some((hit) => hit.object.visible && (hit.object as THREE.Mesh).isMesh);
     },
     dispose() {
       for (const item of disposables) item.dispose();
