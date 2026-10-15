@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output } from '@angular/core';
+import { capturePointer } from '../../../shared/ui/pointer-capture';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { CloudProviderId } from './cloud-topology.data';
@@ -186,7 +187,7 @@ export class ServiceInfoCardComponent {
 
   dragStart(event: PointerEvent): void {
     this.dragFrom = event.clientY;
-    (event.target as Element).setPointerCapture?.(event.pointerId);
+    capturePointer(event.target, event.pointerId);
   }
 
   /** La hoja sigue al dedo, solo hacia abajo. */

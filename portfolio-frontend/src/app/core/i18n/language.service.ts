@@ -1,5 +1,4 @@
-import { DOCUMENT } from '@angular/common';
-import { Injectable, effect, inject, signal } from '@angular/core';
+import { Injectable, effect, inject, signal, DOCUMENT } from '@angular/core';
 
 export type Lang = 'en' | 'es';
 

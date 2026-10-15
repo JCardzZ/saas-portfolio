@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, Injector, afterNextRender, computed, effect, inject, signal, viewChild,
 } from '@angular/core';
+import { capturePointer } from '../../../shared/ui/pointer-capture';
 
 import { runtimeConfig } from '../../../core/config/runtime-config';
 import { DemoNoticeComponent, DemoNoticeHost } from '../../../shared/ui/demo-notice.component';
@@ -489,7 +490,7 @@ export class TraceInspectorComponent {
     this.resizing.set(true);
     // Mientras se arrastra, la página sigue al panel sin la transición con la que se acopla.
     document.documentElement.classList.add('dock-resizing');
-    (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
+    capturePointer(event.currentTarget, event.pointerId);
   }
 
   onResizeMove(event: PointerEvent): void {
@@ -562,7 +563,7 @@ export class TraceInspectorComponent {
       return;
     }
     this.drag = { dx: event.clientX - this.position().x, dy: event.clientY - this.position().y };
-    (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
+    capturePointer(event.currentTarget, event.pointerId);
   }
 
   onDragMove(event: PointerEvent): void {
