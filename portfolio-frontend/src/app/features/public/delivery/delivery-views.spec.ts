@@ -322,6 +322,26 @@ describe('DeployTimelineComponent', () => {
     expect(button(element).disabled).toBeTrue();
   });
 
+  it('keeps the card short: three rows, a health strip and a toggle for the full history', () => {
+    const { fixture, backend, element } = setup(DeployTimelineComponent);
+    serveSnapshot(backend, withHistory([5, 4, 3, 2, 1].map((n) => deployment(n, `${n}`.repeat(11), n !== 4, n === 5 ? 'rollback' : 'deploy'))), fixture);
+    const shown = () => entries(element).filter((entry) => !entry.hidden).length;
+
+    expect(shown()).toBe(3);
+    expect(element.querySelectorAll('.tick').length).toBe(5);
+    expect(element.textContent).toContain('5 despliegues · 4 sanos · 1 rollback');
+
+    const toggle = Array.from(element.querySelectorAll<HTMLButtonElement>('button')).find((item) => item.textContent!.includes('Ver historial completo'))!;
+    expect(toggle.textContent).toContain('(5)');
+    toggle.click();
+    fixture.detectChanges();
+    expect(shown()).toBe(5);
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(shown()).toBe(3);
+  });
+
   it('marks a real rollback in the timeline', () => {
     const { fixture, backend, element } = setup(DeployTimelineComponent);
     serveSnapshot(backend, withHistory([deployment(3, 'aaaaaaabbbb', true, 'rollback'), deployment(2, 'bbbbbbbcccc', false), deployment(1, 'aaaaaaabbbb', true)]), fixture);
