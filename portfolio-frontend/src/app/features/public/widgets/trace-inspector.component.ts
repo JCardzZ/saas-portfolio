@@ -322,7 +322,17 @@ export class TraceInspectorComponent {
   });
   /** Lo que se inspecciona: el nodo concreto si la selección vino de un diagrama, o la tecnología. */
   readonly title = computed(() => this.inspector.label() ?? this.icon()?.title ?? '');
-  readonly live = computed(() => this.telemetry.status() === 'live');
+  /**
+   * «En vivo» si llega el stream real, o si todo lo que muestra ahora es real (p. ej. la respuesta
+   * de «Comprobar ahora»): una comprobación de verdad no se rotula como simulación.
+   */
+  readonly live = computed(() => {
+    if (this.telemetry.status() === 'live') {
+      return true;
+    }
+    const shown = this.inspector.events();
+    return shown.length > 0 && shown.every((event) => event.origin === 'live');
+  });
   readonly layout = this.inspector.layout;
   readonly layoutClasses = computed(() => {
     const layout = this.layout();

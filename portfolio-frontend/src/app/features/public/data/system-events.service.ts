@@ -55,6 +55,14 @@ export class SystemEventsService {
     this.push([[kind, tag, detail]], false, 'live', at, undefined, level);
   }
 
+  /**
+   * Resultado real de una acción del visitante contra la API (p. ej. «Comprobar ahora»): no es una
+   * simulación, así que se marca como real; `component` lo asocia a la pieza que lo pidió.
+   */
+  emitRealFromUser(steps: SystemEventStep[], component?: string, level?: SystemEventLevel): void {
+    this.push(steps, true, 'live', new Date(), component, level);
+  }
+
   /** Secuencia simulada por un widget ante una acción del visitante: entra escalonada y marcada como suya. */
   emitFromUser(steps: SystemEventStep[], component?: string): void {
     this.push(steps, true, 'simulated', new Date(), component);

@@ -276,6 +276,31 @@ describe('ProductionArchitectureComponent', () => {
     expect(element.querySelector('[data-testid="check-now"]')).not.toBeNull();
   });
 
+  it('«Check now» asks the API again and writes its real answer, line by line, to the trace inspector', () => {
+    const checks = signal(1);
+    const state = signal<LiveHealthState>({ kind: 'ready', health: { status: 'UP', database: 'PostgreSQL 16 - Connected', redisCache: 'Redis - Healthy', aiEngine: 'CLOSED', checkedAt: new Date(), latencyMs: 44 } });
+    let refreshed = 0;
+    TestBed.configureTestingModule({ providers: [{ provide: LiveHealthService, useValue: { state, checks, load: () => undefined, refresh: () => refreshed++ } }] });
+    const { fixture, backend, element } = setup(ProductionArchitectureComponent);
+    serveSnapshot(backend, statusFile(), fixture);
+    const inspector = TestBed.inject(TraceInspectorService);
+    const events = TestBed.inject(SystemEventsService);
+
+    element.querySelector<HTMLButtonElement>('[data-testid="check-now"]')!.click();
+    fixture.detectChanges();
+    expect(refreshed).toBe(1);
+    expect(inspector.label()).toContain('/telemetry/health');
+
+    // La API responde: la comprobación termina.
+    checks.set(2);
+    fixture.detectChanges();
+    const lines = events.events().filter((event) => event.component === 'health-check');
+    expect(lines.map((event) => event.tag)).toEqual(['Navegador', 'Cloud Run', 'PostgreSQL', 'Redis', 'Gemini']);
+    expect(lines.every((event) => event.origin === 'live')).withContext('son datos reales, no una simulación').toBeTrue();
+    expect(lines[1].detail).toBe('200 · UP · 44 ms');
+    expect(lines[4].detail).toContain('no llama a Gemini');
+  });
+
   it('opens with a live piece already selected, so the detail panel is never empty', () => {
     const { fixture, backend, element } = setup(ProductionArchitectureComponent);
     serveSnapshot(backend, statusFile(), fixture);
