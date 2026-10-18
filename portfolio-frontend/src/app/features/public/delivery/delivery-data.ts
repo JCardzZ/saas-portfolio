@@ -115,6 +115,16 @@ export interface PipelineStatus {
   deployments: Record<DeployTarget, Deployment[]>;
   /** Últimos PR fusionados en main, del más reciente al más antiguo, con la CI de su merge. */
   merges: MergeEntry[];
+  /** Historial de main (del más reciente al más antiguo) con los padres de cada commit: el grafo. */
+  commits: CommitEntry[];
+}
+
+export interface CommitEntry {
+  sha: string;
+  parents: string[];
+  subject: string;
+  author: string;
+  date: string;
 }
 
 export interface MergeEntry {
@@ -176,10 +186,29 @@ export function parsePipelineStatus(value: unknown): PipelineStatus | null {
     workflows,
     deployments: { frontend: parseDeployments(history['frontend']), backend: parseDeployments(history['backend']) },
     merges: parseMerges(value['merges']),
+    commits: parseCommits(value['commits']),
   };
 }
 
 const MAX_MERGES = 12;
+const MAX_COMMITS = 60;
+
+/** El historial que publica la CI; un commit sin sha válido o con padres raros se descarta. */
+function parseCommits(value: unknown): CommitEntry[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const isSha = (item: unknown): item is string => typeof item === 'string' && /^[0-9a-f]{40}$/.test(item);
+  return value.slice(0, MAX_COMMITS).flatMap((item) => {
+    if (!isRecord(item) || !isSha(item['sha']) || !Array.isArray(item['parents']) || !item['parents'].every(isSha)) {
+      return [];
+    }
+    return [{
+      sha: item['sha'], parents: (item['parents'] as string[]).slice(0, 2),
+      subject: text(item['subject'], 120), author: text(item['author'], 60), date: date(item['date']),
+    }];
+  });
+}
 
 /** Lo publicado por la CI sobre cada PR fusionado; lo que no tiene la forma esperada se descarta. */
 function parseMerges(value: unknown): MergeEntry[] {

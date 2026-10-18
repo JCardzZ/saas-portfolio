@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { MAX_DEPLOYMENTS, MAX_MERGES, deploymentsOf, mergeEntry, mergeMetrics, mergeStatus, withDeployments, withMerges, workflowStatus } from './pipeline-status.mjs';
+import { MAX_COMMITS, MAX_DEPLOYMENTS, MAX_MERGES, commitEntry, deploymentsOf, mergeEntry, withCommits, mergeMetrics, mergeStatus, withDeployments, withMerges, workflowStatus } from './pipeline-status.mjs';
 
 const graph = {
   jobs: [
@@ -150,4 +150,22 @@ test('los PR fusionados: solo datos públicos del resultado, sin repetir, los m�
   assert.equal(status.merges.length, MAX_MERGES);
   // Otro workflow que publica después no borra el historial.
   assert.equal(mergeStatus(status, 'cd', null, { repository: 'a/b', isPublic: true, now: 'x' }).merges.length, MAX_MERGES);
+});
+
+test('el historial de main para el grafo: padres, primera línea del mensaje y autor, nada más', () => {
+  const raw = (n, parents) => ({
+    sha: String(n).repeat(40).slice(0, 40), parents: parents.map((p) => ({ sha: String(p).repeat(40).slice(0, 40) })),
+    commit: { message: `feat: cambio ${n}\n\ncuerpo que no se publica`, author: { name: 'Manuel' }, committer: { date: '2026-10-18T10:00:00Z' } },
+    author: { login: 'JCardzZ' }, files: [{ filename: 'secreto' }],
+  });
+  const entry = commitEntry(raw(1, [2, 3, 4]));
+  assert.equal(entry.subject, 'feat: cambio 1');
+  assert.equal(entry.parents.length, 2);
+  assert.equal(entry.author, 'JCardzZ');
+  assert.equal('files' in entry, false);
+
+  let status = mergeStatus(null, 'ci', null, { repository: 'a/b', isPublic: true, now: 'x' });
+  status = withCommits(status, Array.from({ length: 80 }, (_, n) => commitEntry(raw(n % 9, [1]))));
+  assert.equal(status.commits.length, MAX_COMMITS);
+  assert.equal(mergeStatus(status, 'cd', null, { repository: 'a/b', isPublic: true, now: 'y' }).commits.length, MAX_COMMITS);
 });
