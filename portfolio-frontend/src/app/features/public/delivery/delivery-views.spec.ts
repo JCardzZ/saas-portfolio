@@ -506,3 +506,45 @@ describe('MergeHistoryComponent', () => {
     expect(toneOf(undefined)).toBe('idle');
   });
 });
+
+describe('MergeHistoryComponent as a commit graph', () => {
+  const sha = (char: string) => char.repeat(40);
+  const commits = [
+    { sha: sha('3'), parents: [sha('2'), sha('b')], subject: 'Merge pull request #9 from JCardzZ/feat/x', author: 'JCardzZ', date: '2026-10-18T10:00:00Z' },
+    { sha: sha('b'), parents: [sha('1')], subject: 'feat: x', author: 'JCardzZ', date: '2026-10-18T09:00:00Z' },
+    { sha: sha('2'), parents: [sha('1')], subject: 'fix: y', author: 'JCardzZ', date: '2026-10-18T08:00:00Z' },
+    { sha: sha('1'), parents: [], subject: 'init', author: 'JCardzZ', date: '2026-10-18T07:00:00Z' },
+  ];
+  const merge = { number: 9, title: 'feat: x', branch: 'feat/x', author: 'JCardzZ', mergedAt: '2026-10-18T10:00:00Z', sha: sha('3'), additions: 5, deletions: 1, changedFiles: 2,
+    ci: { runId: 77, runNumber: 7, conclusion: 'success', durationSeconds: 60, jobs: [{ name: 'Build', status: 'success' }] } };
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('draws one row per commit with its lanes, the branch label of each PR merge and its CI', () => {
+    const { fixture, backend, element } = setup(MergeHistoryComponent);
+    serveSnapshot(backend, { ...statusFile({ public: true }), merges: [merge], commits }, fixture);
+    const rows = Array.from(element.querySelectorAll('[data-testid="commit-graph"] li'));
+
+    expect(rows.length).toBe(4);
+    expect(rows[0].textContent).toContain('feat/x');
+    expect(rows[0].textContent).toContain('CI correcta');
+    expect(rows[0].querySelectorAll('svg.lanes path').length).toBeGreaterThan(1);
+    // La rama corre en paralelo a main: dos carriles con trazo en la fila de «fix: y».
+    expect(new Set(Array.from(rows[2].querySelectorAll('svg.lanes path')).map((path) => path.getAttribute('d')!.split(' ')[0])).size).toBe(2);
+  });
+
+  it('opens the PR detail for a merge and the commit detail for any other commit', () => {
+    const { fixture, backend, element } = setup(MergeHistoryComponent);
+    serveSnapshot(backend, { ...statusFile({ public: true }), merges: [merge], commits }, fixture);
+
+    element.querySelector<HTMLButtonElement>(`[data-commit="${sha('3')}"]`)!.click();
+    fixture.detectChanges();
+    expect(element.querySelector('div[aria-live="polite"]')!.textContent).toContain('CI del merge');
+
+    element.querySelector<HTMLButtonElement>(`[data-commit="${sha('2')}"]`)!.click();
+    fixture.detectChanges();
+    const detail = element.querySelector('[data-testid="commit-detail"]')!;
+    expect(detail.textContent).toContain('fix: y');
+    expect(detail.querySelector('a')!.getAttribute('href')).toBe(`https://github.com/owner/repo/commit/${sha('2')}`);
+  });
+});

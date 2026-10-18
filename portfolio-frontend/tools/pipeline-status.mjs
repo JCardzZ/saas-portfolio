@@ -7,7 +7,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { MAX_MERGES, deploymentsOf, mergeEntry, mergeMetrics, mergeStatus, withDeployments, withMerges, workflowStatus } from './lib/pipeline-status.mjs';
+import { MAX_COMMITS, MAX_MERGES, commitEntry, deploymentsOf, mergeEntry, withCommits, mergeMetrics, mergeStatus, withDeployments, withMerges, workflowStatus } from './lib/pipeline-status.mjs';
 
 const arg = (name) => { const index = process.argv.indexOf(`--${name}`); return index < 0 ? null : process.argv[index + 1]; };
 const { GH_TOKEN: token, GITHUB_REPOSITORY: repository, RUN_ID: runId, WORKFLOW_KEY: key } = process.env;
@@ -89,6 +89,8 @@ if (isRollback) {
 if (key === 'ci' && run.event === 'push' && run.head_branch === 'main') {
   try {
     status = withMerges(status, await recentMerges(status.merges ?? []));
+    const commits = await api(`/commits?sha=main&per_page=${MAX_COMMITS}`);
+    status = withCommits(status, commits.map(commitEntry));
   } catch (error) {
     console.warn(`No se pudieron leer los PR fusionados: ${error.message}`);
   }
