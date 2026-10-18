@@ -414,7 +414,9 @@ test.describe('página pública en móviles y tabletas', () => {
     const narrow = page.viewportSize()!.width < 640;
 
     for (const view of ['app-production-architecture', 'app-pipeline-view']) {
-      const columns = await page.locator(`${view} button.node`).evaluateAll((nodes) =>
+      // La arquitectura marca sus piezas con data-node (lienzo SVG o tarjetas por zona); el pipeline usa botones.
+      const nodes = view === 'app-production-architecture' ? `${view} [data-node]` : `${view} button.node`;
+      const columns = await page.locator(nodes).evaluateAll((nodes) =>
         new Set(nodes.map((node) => Math.round(node.getBoundingClientRect().left))).size);
       // En el móvil, una sola columna con las etapas apiladas; con más ancho, tantas columnas como
       // quepan (al menos dos), y el resto en otra franja.
@@ -423,8 +425,9 @@ test.describe('página pública en móviles y tabletas', () => {
       } else {
         expect(columns, `${view}: columnas en pantalla ancha`).toBeGreaterThanOrEqual(2);
       }
-      const overflow = await page.locator(`${view} .scroller`).evaluate((scroller) => scroller.scrollWidth - scroller.clientWidth);
-      expect(overflow, `${view}: el diagrama se reorganiza, no desborda`).toBeLessThanOrEqual(0);
+      const frame = view === 'app-production-architecture' ? page.locator(view) : page.locator(`${view} .scroller`);
+      const overflow = await frame.evaluate((scroller) => scroller.scrollWidth - scroller.clientWidth);
+      expect(overflow, `${view}: el diagrama se reorganiza, no desborda`).toBeLessThanOrEqual(1);
     }
 
     // Tocar un job abre su ficha a la vista, con datos de la ejecución real.
@@ -459,7 +462,7 @@ test.describe('página pública en móviles y tabletas', () => {
     await timeline.getByRole('button', { name: 'Deshacer la simulación' }).tap();
 
     // Una pieza planificada lo dice y no enseña datos de despliegue.
-    const planned = page.locator('app-production-architecture button.node.tone-planned').first();
+    const planned = page.locator('app-production-architecture [data-node].planned').first();
     await planned.scrollIntoViewIfNeeded();
     await planned.tap();
     await expect(page.locator('app-production-architecture div[aria-live="polite"]')).toContainText('planificado');

@@ -7,7 +7,8 @@ import { TheaterDirective } from '../../../shared/ui/theater.directive';
 import { PipelineStatus, TOPOLOGY, TopologyNode, formatDate, formatDuration } from './delivery-data';
 import { DeliveryStatusService } from './delivery-status.service';
 import { ComponentState, LiveHealthService, componentDetail, componentState } from './live-health.service';
-import { StageEdge, StageGraphComponent, StageNode, revealDetail } from './stage-graph.component';
+import { revealDetail } from './stage-graph.component';
+import { ProductionCanvasComponent } from './production-canvas.component';
 
 interface Fact {
   label: string;
@@ -21,7 +22,7 @@ interface Fact {
  */
 @Component({
     selector: 'app-production-architecture',
-    imports: [TranslatePipe, StageGraphComponent, TheaterToggleComponent],
+    imports: [TranslatePipe, ProductionCanvasComponent, TheaterToggleComponent],
     hostDirectives: [TheaterDirective],
     host: { class: 'bento-card block' },
     template: `
@@ -31,20 +32,19 @@ interface Fact {
       <p class="text-xs text-ink-3">{{ 'La de hoy, generada de' | t }} <code class="break-all font-mono">deploy/topology.json</code></p>
     </div>
 
-    <app-stage-graph
-      class="theater-stage mt-6"
-      [nodes]="nodes()"
-      [edges]="edges"
+    <app-production-canvas
+      class="theater-stage mt-6 block"
+      [topology]="topology"
+      [live]="liveStates()"
       [activeId]="activeId()"
-      label="Piezas de la arquitectura en producción"
-      [stageNames]="stageNames"
-      [animated]="true"
       (picked)="pick($event)"
     />
 
     <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2" [attr.aria-label]="'Leyenda' | t">
       <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-ok" aria-hidden="true"></span>{{ 'En producción' | t }}</li>
-      <li class="inline-flex items-center gap-2"><span class="w-4 border-t border-dashed border-line-control" aria-hidden="true"></span>{{ 'Planificado' | t }}</li>
+      <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full border border-ink-2" aria-hidden="true"></span>{{ 'Planificado' | t }}</li>
+      <li class="inline-flex items-center gap-2"><span class="w-5 border-t-2 border-accent-text" aria-hidden="true"></span>{{ 'Petición de un visitante' | t }}</li>
+      <li class="inline-flex items-center gap-2"><span class="w-5 border-t border-dashed border-ink-3" aria-hidden="true"></span>{{ 'Entrega del código' | t }}</li>
       @if (problems() > 0) {
         <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-danger" aria-hidden="true"></span>{{ 'Con fallos ahora' | t }}</li>
       }
@@ -61,10 +61,14 @@ interface Fact {
       </li>
     </ul>
 
+    @if (usesRedisMark) {
+      <!-- Lo exige la política de marca de Redis en cada página donde aparece su logo. -->
+      <p class="mt-2 text-caption text-ink-3" data-testid="trademark-attribution">Redis is a registered trademark of Redis Ltd. Any rights therein are reserved to Redis Ltd.</p>
+    }
     <div #detail class="mt-4 min-h-[7rem] scroll-mb-24 scroll-mt-24 rounded-panel border border-line-subtle bg-surface-2 p-4" aria-live="polite">
       @if (active(); as node) {
         <p class="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink-1">
-          {{ node.label }}
+          {{ en() ? node.en.label : node.label }}
           <span class="rounded-full border px-2 py-0.5 text-xs font-medium"
             [class]="node.status === 'live' ? 'border-status-ok/40 text-status-ok' : 'border-dashed border-line-control text-ink-2'">
             {{ node.status === 'live' ? ('en producción' | t) : 'planificado' }}
@@ -79,12 +83,20 @@ interface Fact {
             @if (live.detail) { <span class="font-mono text-ink-2">{{ live.detail }}</span> }
           </p>
         }
-        <p class="mt-2 text-sm text-ink-2">{{ node.what }}</p>
-        <p class="mt-1 text-sm text-ink-2"><span class="text-ink-2">{{ 'Por qué:' | t }}</span> {{ node.why }}</p>
+        <p class="mt-2 text-sm text-ink-2">{{ en() ? node.en.what : node.what }}</p>
+        <p class="mt-1 text-sm text-ink-2"><span class="text-ink-2">{{ 'Por qué:' | t }}</span> {{ en() ? node.en.why : node.why }}</p>
+        @if (connections().length) {
+          <p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-3" data-testid="node-connections">
+            <span>{{ 'Conexiones:' | t }}</span>
+            @for (item of connections(); track item.text) {
+              <span class="rounded-full border px-2 py-0.5" [class]="item.flow === 'request' ? 'border-accent-text/40 text-accent-text' : 'border-line-strong text-ink-2'">{{ item.text }}</span>
+            }
+          </p>
+        }
         @if (facts().length > 0) {
           <dl class="mt-3 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
             @for (fact of facts(); track fact.label) {
-              <div class="flex justify-between gap-3"><dt class="text-ink-3">{{ fact.label }}</dt><dd class="break-all text-right font-mono text-ink-1">{{ fact.value }}</dd></div>
+              <div class="flex justify-between gap-3"><dt class="text-ink-3">{{ fact.label | t }}</dt><dd class="break-all text-right font-mono text-ink-1">{{ fact.value }}</dd></div>
             }
           </dl>
         } @else if (node.status === 'planned') {
@@ -138,30 +150,30 @@ export class ProductionArchitectureComponent implements OnInit {
     return result;
   });
 
-  /** El punto de cada nodo: verde si está en producción (y sano, cuando la API lo dice), rojo si falla ahora. */
-  readonly nodes = computed<StageNode[]>(() => TOPOLOGY.nodes.map((node) => {
-    const live = this.live().get(node.id)?.state;
-    const failing = live === 'down' || live === 'degraded';
-    return {
-      id: node.id,
-      stage: node.stage,
-      label: node.label,
-      detail: node.role,
-      icon: node.icon,
-      tone: node.status !== 'live' ? 'planned' : failing ? 'failed' : 'ok',
-      toneLabel: node.status !== 'live' ? 'planificado' : failing ? 'en producción · con fallos' : live === 'ok' ? 'en producción · sano' : 'en producción',
+  readonly topology = TOPOLOGY;
+  /** El logo de Redis va con su frase de atribución (política de marca de Redis). */
+  readonly usesRedisMark = TOPOLOGY.nodes.some((node) => node.icon === 'redis');
+  readonly en = computed(() => this.language.lang() === 'en');
+  /** id → estado en vivo, para el lienzo. */
+  readonly liveStates = computed(() => new Map([...this.live()].map(([id, item]) => [id, item.state])));
+
+  /** Con qué se conecta la pieza elegida, y en qué sentido. */
+  readonly connections = computed(() => {
+    const id = this.activeId();
+    const en = this.en();
+    const name = (nodeId: string) => {
+      const node = TOPOLOGY.nodes.find((item) => item.id === nodeId)!;
+      return en ? node.en.label : node.label;
     };
-  }));
+    return TOPOLOGY.links.filter((link) => link.from === id || link.to === id).map((link) => ({
+      flow: link.flow,
+      text: link.from === id ? `→ ${name(link.to)} · ${en ? link.labelEn : link.label}` : `← ${name(link.from)} · ${en ? link.labelEn : link.label}`,
+    }));
+  });
   readonly problems = computed(() => [...this.live().values()].filter((item) => item.state !== 'ok').length);
   private readonly now = signal(Date.now());
 
   /** Una conexión es real solo si lo son sus dos extremos. */
-  readonly edges: StageEdge[] = TOPOLOGY.links.map((link) => ({
-    from: link.from,
-    to: link.to,
-    planned: [link.from, link.to].some((id) => TOPOLOGY.nodes.find((node) => node.id === id)?.status === 'planned'),
-  }));
-
   readonly active = computed(() => TOPOLOGY.nodes.find((node) => node.id === this.activeId()) ?? null);
   readonly facts = computed(() => {
     const node = this.active();

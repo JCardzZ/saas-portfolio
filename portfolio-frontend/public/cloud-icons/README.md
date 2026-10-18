@@ -7,7 +7,7 @@ Archivos SVG copiados **sin modificar** (solo renombrados) de los paquetes ofici
 - `azure/` — Azure Public Service Icons V23 (https://learn.microsoft.com/azure/architecture/icons/).
 - `gcp/` — Google Cloud icons (https://cloud.google.com/icons): paquete "core products" (Apigee, AlloyDB,
   Spanner, Vertex AI, Cloud Run, Cloud SQL, GKE, Compute Engine) y paquete "legacy" (Dataflow, Cloud Armor,
-  App Engine, Workflows), que Google ya no actualiza.
+  App Engine, Workflows, Artifact Registry), que Google ya no actualiza.
 
 ## Condiciones de uso (resumen; revisar las originales antes de publicar)
 

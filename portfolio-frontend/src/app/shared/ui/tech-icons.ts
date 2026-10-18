@@ -65,7 +65,7 @@ export type TechIconKey =
   | 'azServiceBus' | 'azEventGrid' | 'azApiManagement' | 'azWaf' | 'azDns' | 'azStorage' | 'azExternalId'
   | 'awsAppRunner' | 'awsAthena' | 'awsNeptune' | 'awsAurora' | 'awsBedrock' | 'awsFlink' | 'awsStepFunctions'
   | 'azAppService' | 'azStreamAnalytics' | 'azOpenAi' | 'azLogicApps'
-  | 'gcpApigee' | 'gcpAlloyDb' | 'gcpSpanner' | 'gcpVertexAi' | 'gcpDataflow' | 'gcpArmor' | 'gcpCloudRun' | 'gcpCloudSql'
+  | 'gcpApigee' | 'gcpAlloyDb' | 'gcpSpanner' | 'gcpVertexAi' | 'gcpDataflow' | 'gcpArmor' | 'gcpCloudRun' | 'gcpArtifactRegistry' | 'gcpCloudSql'
   | 'gcpGke' | 'gcpComputeEngine' | 'gcpAppEngine' | 'gcpWorkflows'
   | 'dataService' | 'graph';
 
@@ -195,6 +195,7 @@ export const TECH_ICONS: Record<TechIconKey, TechIcon> = {
   gcpDataflow: image('Dataflow', 'gcp/dataflow.svg', GOOGLE_BLUE, 'gcp'),
   gcpArmor: image('Cloud Armor', 'gcp/cloud-armor.svg', GOOGLE_BLUE, 'gcp'),
   gcpCloudRun: image('Cloud Run', 'gcp/cloud-run.svg', GOOGLE_BLUE, 'gcp'),
+  gcpArtifactRegistry: image('Artifact Registry', 'gcp/artifact-registry.svg', GOOGLE_BLUE, 'gcp'),
   gcpCloudSql: image('Cloud SQL', 'gcp/cloud-sql.svg', GOOGLE_BLUE, 'gcp'),
   gcpGke: image('Google Kubernetes Engine', 'gcp/gke.svg', GOOGLE_BLUE, 'gcp'),
   gcpComputeEngine: image('Compute Engine', 'gcp/compute-engine.svg', GOOGLE_BLUE, 'gcp'),
