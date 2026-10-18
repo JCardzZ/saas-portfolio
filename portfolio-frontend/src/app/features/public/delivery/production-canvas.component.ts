@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, output, signal } from '@angular/core';
 
 import { LanguageService } from '../../../core/i18n/language.service';
 import { ContainerWidthDirective } from '../../../shared/ui/container-width.directive';
@@ -8,9 +8,9 @@ import { ComponentState } from './live-health.service';
 
 /** Medidas del lienzo ancho, en unidades del viewBox (px a escala 1). */
 const COL_W = 210;
-const ROW_H = 104;
+const ROW_H = 118;
 const NODE_W = 182;
-const NODE_H = 60;
+const NODE_H = 74;
 const MARGIN = 16;
 /** Franja de la cabecera de cada zona, por encima de su primera fila. */
 const ZONE_HEAD = 30;
@@ -45,6 +45,8 @@ export interface CanvasNode {
   icon: TechIcon | null;
   glyph: string | null;
   live: ComponentState | null;
+  /** Dato en vivo para la tercera línea, si lo hay. */
+  fact: string | null;
 }
 
 export interface CanvasEdge {
@@ -54,6 +56,8 @@ export interface CanvasEdge {
   planned: boolean;
   label: string;
   d: string;
+  /** Tramo que recorre la comprobación de salud (navegador → API → base de datos y caché). */
+  probe: boolean;
   /** Dónde va el rótulo (a mitad de camino); sin rótulo si el tramo es corto (lo dice la ficha). */
   lx: number;
   ly: number;
@@ -108,6 +112,10 @@ export interface CanvasEdge {
               @if (edge.flow === 'request' && !edge.planned) {
                 <path class="pulse" [attr.d]="edge.d" fill="none" />
               }
+              @if (edge.probe && probing()) {
+                <!-- Recorrido de la comprobación real que se acaba de hacer. -->
+                <path class="probe" [attr.d]="edge.d" fill="none" />
+              }
               @if (isLit(edge) && edge.showLabel) {
                 <text class="edge-label" [attr.x]="edge.lx" [attr.y]="edge.ly" [attr.text-anchor]="edge.anchor" font-size="13">{{ edge.label }}</text>
               }
@@ -123,7 +131,7 @@ export interface CanvasEdge {
               (click)="picked.emit(item.node.id)" (keydown.enter)="picked.emit(item.node.id)" (keydown.space)="$event.preventDefault(); picked.emit(item.node.id)"
               (mouseenter)="focusId.set(item.node.id)" (mouseleave)="focusId.set(null)" (focus)="focusId.set(item.node.id)" (blur)="focusId.set(null)">
               <rect class="card" [attr.width]="nodeW" [attr.height]="nodeH" rx="10" />
-              <g transform="translate(12 18)">
+              <g transform="translate(12 16)">
                 @if (item.icon; as icon) {
                   @if (icon.image) {
                     <image [attr.href]="icon.image" width="24" height="24" />
@@ -134,8 +142,12 @@ export interface CanvasEdge {
                   <path [attr.d]="item.glyph" fill="var(--text-2)" />
                 }
               </g>
-              <text x="46" y="27" font-size="14" font-weight="600" fill="var(--text-1)">{{ item.label }}</text>
-              <text x="46" y="45" font-size="13" fill="var(--text-2)">{{ item.role }}</text>
+              <text x="46" y="25" font-size="14" font-weight="600" fill="var(--text-1)">{{ item.label }}</text>
+              <text x="46" y="43" font-size="13" fill="var(--text-2)">{{ item.role }}</text>
+              @if (item.fact) {
+                <!-- El dato en vivo de la pieza (último commit, CI, despliegue, latencia…). -->
+                <text class="fact" x="46" y="61" font-size="13">{{ item.fact }}</text>
+              }
               <circle class="dot" [attr.cx]="nodeW - 13" cy="13" r="4" [attr.data-state]="dotState(item)" />
             </g>
           }
@@ -168,6 +180,7 @@ export interface CanvasEdge {
                       <span class="min-w-0 flex-1 text-left">
                         <span class="block truncate text-body-sm font-semibold text-ink-1">{{ item.label }}</span>
                         <span class="block truncate text-caption text-ink-2">{{ item.role }}</span>
+                        @if (item.fact) { <span class="block truncate font-mono text-caption text-accent-text">{{ item.fact }}</span> }
                       </span>
                       <span class="dot-html" [attr.data-state]="dotState(item)" aria-hidden="true"></span>
                     </button>
@@ -205,7 +218,12 @@ export interface CanvasEdge {
     /* Pulsos de la petición: viajan por el cable hacia su destino. */
     .pulse { stroke: var(--accent-text); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 2 220; animation: pc-pulse 2.6s linear infinite; }
     @keyframes pc-pulse { from { stroke-dashoffset: 222; } to { stroke-dashoffset: 0; } }
-    @media (prefers-reduced-motion: reduce) { .pulse { display: none; } .node, .edge .wire { transition: none; } }
+    .fact { fill: var(--accent-text); font-variant-numeric: tabular-nums; }
+    .node.planned .fact { fill: var(--text-3); }
+    /* Una pasada brillante por el recorrido de la comprobación real. */
+    .probe { stroke: var(--text-1); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 26 400; animation: pc-probe 1.6s ease-out 1 forwards; filter: drop-shadow(0 0 4px var(--accent-text)); }
+    @keyframes pc-probe { from { stroke-dashoffset: 26; } to { stroke-dashoffset: -400; } }
+    @media (prefers-reduced-motion: reduce) { .pulse { display: none; } .probe { animation: none; stroke-dasharray: none; stroke-opacity: 0.6; filter: none; } .node, .edge .wire { transition: none; } }
 
     .node-row {
       display: flex; width: 100%; min-height: 3.25rem; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem;
@@ -227,7 +245,12 @@ export class ProductionCanvasComponent {
   /** Estado en vivo de cada pieza (id → estado), cuando la API lo ha dicho. */
   readonly live = input<ReadonlyMap<string, ComponentState>>(new Map());
   readonly activeId = input<string | null>(null);
+  /** id → dato en vivo de la pieza (sale de pipeline-status.json y de /telemetry/health). */
+  readonly facts = input<ReadonlyMap<string, string>>(new Map());
+  /** Cambia cada vez que termina una comprobación de salud real: anima su recorrido. */
+  readonly probe = input(0);
   readonly picked = output<string>();
+  readonly probing = signal(false);
 
   private readonly language = inject(LanguageService);
   readonly en = computed(() => this.language.lang() === 'en');
@@ -258,6 +281,7 @@ export class ProductionCanvasComponent {
       icon: node.icon ? TECH_ICONS[node.icon as TechIconKey] ?? null : null,
       glyph: node.icon ? null : GLYPHS[GLYPH_FOR_NODE[node.id] ?? 'package'],
       live: this.live().get(node.id) ?? null,
+      fact: this.facts().get(node.id) ?? null,
     };
   }));
 
@@ -312,9 +336,26 @@ export class ProductionCanvasComponent {
       const lx = vertical ? a.x + 8 : (a.x + b.x) / 2;
       // En vertical, justo debajo del origen: a media altura podría cruzarse con otra conexión.
       const ly = vertical ? Math.min(a.y, b.y) + NODE_H / 2 + 20 : a.y - 8;
-      return { from: link.from, to: link.to, flow: link.flow, planned, label: en ? link.labelEn : link.label, d, lx, ly, showLabel, anchor: vertical ? 'start' as const : 'middle' as const };
+      // La comprobación de salud entra por la pieza con salud «status» (la API) y consulta las que
+      // tienen base de datos y caché: es el recorrido real de GET /telemetry/health.
+      const probe = link.flow === 'request' && !planned && (
+        (a.node.zone === null && b.node.health === 'status')
+        || (a.node.health === 'status' && (b.node.health === 'database' || b.node.health === 'redisCache')));
+      return { from: link.from, to: link.to, flow: link.flow, planned, probe, label: en ? link.labelEn : link.label, d, lx, ly, showLabel, anchor: vertical ? 'start' as const : 'middle' as const };
     });
   });
+
+  constructor() {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    effect(() => {
+      if (this.probe() > 0) {
+        this.probing.set(true);
+        clearTimeout(timer);
+        timer = setTimeout(() => this.probing.set(false), 1800);
+      }
+    });
+    inject(DestroyRef).onDestroy(() => clearTimeout(timer));
+  }
 
   isLit(edge: CanvasEdge): boolean {
     const id = this.focusId() ?? this.activeId();

@@ -5,6 +5,13 @@ import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
 import { TheaterDirective } from '../../../shared/ui/theater.directive';
 import { PipelineStatus, TOPOLOGY, TopologyNode, formatDate, formatDuration } from './delivery-data';
+
+/** «hace 2 h», «hace 3 d»: lo justo para la línea de una pieza. */
+function ago(iso: string, en: boolean): string {
+  const minutes = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60_000));
+  const amount = minutes < 60 ? `${minutes} min` : minutes < 2880 ? `${Math.round(minutes / 60)} h` : `${Math.round(minutes / 1440)} d`;
+  return en ? `${amount} ago` : `hace ${amount}`;
+}
 import { DeliveryStatusService } from './delivery-status.service';
 import { ComponentState, LiveHealthService, componentDetail, componentState } from './live-health.service';
 import { revealDetail } from './stage-graph.component';
@@ -36,6 +43,8 @@ interface Fact {
       class="theater-stage mt-6 block"
       [topology]="topology"
       [live]="liveStates()"
+      [facts]="liveFacts()"
+      [probe]="checks()"
       [activeId]="activeId()"
       (picked)="pick($event)"
     />
@@ -48,7 +57,14 @@ interface Fact {
       @if (problems() > 0) {
         <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-danger" aria-hidden="true"></span>{{ 'Con fallos ahora' | t }}</li>
       }
-      <li class="inline-flex basis-full flex-wrap items-center gap-x-2 text-ink-3 sm:ml-auto sm:basis-auto" data-testid="live-health-source">
+      @if (health().kind === 'ready' || health().kind === 'unreachable' || health().kind === 'loading') {
+        <li class="sm:ml-auto">
+          <button type="button" class="ui-btn-secondary tap min-h-8 px-3 py-1 text-xs" [disabled]="health().kind === 'loading'" (click)="checkNow()" data-testid="check-now">
+            {{ health().kind === 'loading' ? ('Comprobando…' | t) : ('Comprobar ahora' | t) }}
+          </button>
+        </li>
+      }
+      <li class="inline-flex basis-full flex-wrap items-center gap-x-2 text-ink-3 sm:basis-auto" data-testid="live-health-source">
         @switch (health().kind) {
           @case ('ready') {
             <span class="relative flex h-2 w-2" aria-hidden="true"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-ok opacity-60 motion-reduce:hidden"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-status-ok"></span></span>
@@ -151,6 +167,47 @@ export class ProductionArchitectureComponent implements OnInit {
   });
 
   readonly topology = TOPOLOGY;
+  readonly checks = this.liveHealth.checks;
+
+  /** Una comprobación real contra la API; el lienzo anima el recorrido que hace. */
+  checkNow(): void {
+    this.liveHealth.refresh();
+  }
+
+  /** El dato en vivo de cada pieza: de la última ejecución publicada y de /telemetry/health. Lo que no se sabe no se muestra. */
+  readonly liveFacts = computed(() => {
+    const facts = new Map<string, string>();
+    const status = this.delivery.status();
+    const en = this.en();
+    const ci = status?.workflows.ci;
+    if (ci) {
+      facts.set('github', `main · ${ci.sha.slice(0, 7)}`);
+      facts.set('actions', `#${ci.runNumber} ${ci.conclusion === 'success' ? '✓' : '✗'}${ci.durationSeconds ? ` · ${Math.max(1, Math.round(ci.durationSeconds / 60))} min` : ''}`);
+      const digest = ci.jobs.find((job) => job.id === 'publish-image' && job.status === 'success')?.metrics['digest'];
+      if (typeof digest === 'string' && digest.startsWith('sha256:')) {
+        facts.set('ghcr', `${digest.slice(0, 13)}…`);
+      }
+    }
+    const frontend = status?.deployments.frontend[0];
+    if (frontend) {
+      facts.set('pages', `#${frontend.runNumber} · ${ago(frontend.at, en)}`);
+    }
+    const state = this.health();
+    if (state.kind === 'ready') {
+      const health = state.health;
+      facts.set('backend', `${health.status} · ${health.latencyMs} ms`);
+      if (health.database) {
+        facts.set('postgres', /unavailable/i.test(health.database) ? (en ? 'no connection' : 'sin conexión') : `${health.database.replace(/\s*-\s*Connected$/i, '')} ✓`);
+      }
+      if (health.redisCache) {
+        facts.set('redis', /unavailable/i.test(health.redisCache) ? (en ? 'not responding' : 'no responde') : (en ? 'responding ✓' : 'responde ✓'));
+      }
+      if (health.aiEngine) {
+        facts.set('gemini', `circuit ${health.aiEngine}`);
+      }
+    }
+    return facts;
+  });
   /** El logo de Redis va con su frase de atribución (política de marca de Redis). */
   readonly usesRedisMark = TOPOLOGY.nodes.some((node) => node.icon === 'redis');
   readonly en = computed(() => this.language.lang() === 'en');

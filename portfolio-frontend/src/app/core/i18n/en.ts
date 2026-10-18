@@ -326,6 +326,7 @@ export const EN: Readonly<Record<string, string>> = {
   'Desde': 'From',
   'Deshacer la simulación': 'Undo the simulation',
   'Despliegues de ': 'Deployments of ',
+  'Comprobar ahora': 'Check now',
   'Repositorio': 'Repository',
   'Último commit verificado': 'Last verified commit',
   'Última CI en main': 'Last CI on main',
