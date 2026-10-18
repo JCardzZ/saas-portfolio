@@ -9,6 +9,15 @@ import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.compon
 import { TheaterDirective } from '../../../shared/ui/theater.directive';
 import { PipelineStatus, TOPOLOGY, TopologyNode, formatDate, formatDuration } from './delivery-data';
 
+/**
+ * Ancho de ventana a partir del cual «Comprobar ahora» acopla el inspector a la derecha (22 rem)
+ * y el lienzo sigue cabiendo a lo ancho junto a él.
+ */
+const WIDE_ENOUGH_FOR_RIGHT_DOCK = 1480;
+
+/** Alto del inspector acoplado abajo para los logs de una comprobación (cabecera y seis líneas). */
+const COMPACT_INSPECTOR_PX = 180;
+
 /** Pieza del inspector de traza a la que van los logs de «Comprobar ahora». */
 const HEALTH_CHECK = 'health-check';
 
@@ -55,7 +64,7 @@ interface Fact {
       (picked)="pick($event)"
     />
 
-    <ul #legend class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2" [attr.aria-label]="'Leyenda' | t">
+    <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2" [attr.aria-label]="'Leyenda' | t">
       <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-ok" aria-hidden="true"></span>{{ 'En producción' | t }}</li>
       <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full border border-ink-2" aria-hidden="true"></span>{{ 'Planificado' | t }}</li>
       <li class="inline-flex items-center gap-2"><span class="w-5 border-t-2 border-accent-text" aria-hidden="true"></span>{{ 'Petición de un visitante' | t }}</li>
@@ -139,7 +148,6 @@ export class ProductionArchitectureComponent implements OnInit {
   readonly health = this.liveHealth.state;
 
   private readonly detail = viewChild<ElementRef<HTMLElement>>('detail');
-  private readonly legend = viewChild<ElementRef<HTMLElement>>('legend');
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly destroyRef = inject(DestroyRef);
   private readonly language = inject(LanguageService);
@@ -187,6 +195,11 @@ export class ProductionArchitectureComponent implements OnInit {
     const en = this.en();
     this.inspector.inspectComponent({ id: HEALTH_CHECK, label: en ? 'Health check · /telemetry/health' : 'Comprobación de salud · /telemetry/health', icon: 'gcpCloudRun', tech: null });
     this.events.emitRealFromUser([['info', en ? 'Browser' : 'Navegador', `GET ${runtimeConfig.apiBaseUrl}/telemetry/health`]], HEALTH_CHECK);
+    // Con sitio de sobra a lo ancho, el inspector va a la derecha: no le quita alto a la tarjeta.
+    if (this.inspector.mode() === 'bottom' || this.inspector.mode() === 'pill') {
+      // Abajo, solo el alto de sus líneas (cabecera + 6 líneas): la tarjeta pierde lo mínimo.
+      this.inspector.dockTemporarily(innerWidth >= WIDE_ENOUGH_FOR_RIGHT_DOCK ? 'right' : 'bottom', COMPACT_INSPECTOR_PX);
+    }
     this.awaitingCheck = this.checks();
     this.liveHealth.refresh();
     this.fitAboveInspector();
@@ -201,23 +214,33 @@ export class ProductionArchitectureComponent implements OnInit {
     if (this.host.classList.contains('theater-expanded') || typeof requestAnimationFrame === 'undefined') {
       return;
     }
-    // Dos fotogramas: el inspector se pinta y publica --dock-bottom antes de medir.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
+    // La inercia de la rueda se detiene ya: si no, seguiría moviendo la página mientras se mide.
+    window.dispatchEvent(new Event('portfolio:cancel-inertia'));
+    // Tras la transición del acople (la página deja sitio al inspector) se mide y se recoloca.
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setTimeout(() => requestAnimationFrame(() => {
       const dock = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-bottom')) || 0;
       const navBottom = document.querySelector('app-public-navbar header')?.getBoundingClientRect().bottom ?? 64;
       const top = navBottom + 12;
       const bottom = innerHeight - dock - 12;
       const card = this.host.getBoundingClientRect();
-      const legend = this.legend()?.nativeElement.getBoundingClientRect();
-      // Lo que hay que ver: la tarjeta entera si cabe; si no, hasta la leyenda.
-      const target = card.height <= bottom - top ? card.bottom : (legend?.bottom ?? card.bottom);
-      let delta = target > bottom ? target - bottom : card.top < top ? card.top - top : 0;
-      delta = Math.min(delta, card.top - top);
+      // Si cabe entera, que se vea entera. Si no, su cabecera justo bajo la barra: así se ve lo
+      // máximo (el diagrama, la leyenda y lo que quepa de la ficha).
+      const fits = card.height <= bottom - top;
+      const delta = fits
+        ? (card.bottom > bottom ? card.bottom - bottom : card.top < top ? card.top - top : 0)
+        : card.top - top;
       if (Math.abs(delta) > 2) {
-        const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        // Que la inercia de la rueda no siga llevando la página a otra parte.
+        window.dispatchEvent(new Event('portfolio:cancel-inertia'));
         window.scrollBy({ top: delta, behavior: reduced ? 'auto' : 'smooth' });
       }
-    }));
+      // Que se note que la tarjeta se ha acomodado: un destello de borde breve.
+      this.host.classList.remove('card-adapted');
+      void this.host.offsetWidth;
+      this.host.classList.add('card-adapted');
+      setTimeout(() => this.host.classList.remove('card-adapted'), 1200);
+    }), reduced ? 0 : 560);
   }
 
   /** Comprobación pedida con el botón cuyo resultado aún no se ha contado en el inspector. */

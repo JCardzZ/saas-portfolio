@@ -154,6 +154,7 @@ export class TraceInspectorService {
   }
 
   setMode(mode: InspectorMode): void {
+    this.compactHeight.set(null);
     if (mode !== 'pill') {
       this.expandedMode = mode;
     }
@@ -164,6 +165,21 @@ export class TraceInspectorService {
       // Sin almacenamiento (modo privado) el modo simplemente no se recuerda.
     }
   }
+
+  /**
+   * Cambia la posición solo para la acción en curso (p. ej. «Comprobar ahora» lo acopla a la derecha
+   * para no tapar el diagrama), sin guardarla: la preferencia del visitante sigue siendo la suya.
+   */
+  dockTemporarily(mode: Exclude<InspectorMode, 'pill'>, compactHeight: number | null = null): void {
+    this._mode.set(mode);
+    this.compactHeight.set(mode === 'bottom' ? compactHeight : null);
+  }
+
+  /**
+   * Alto justo para lo que se va a mostrar (acoplado abajo), mientras el visitante no lo cambie:
+   * el inspector no le quita a la página más alto del que necesita. Lo anula cualquier cambio suyo.
+   */
+  readonly compactHeight = signal<number | null>(null);
 
   /** Despliega la píldora en el modo que tenía antes de minimizarse. */
   restore(): void {
