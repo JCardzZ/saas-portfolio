@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-18T20:41:56.811Z",
+  "updatedAt": "2026-10-18T22:58:33.220Z",
   "workflows": {
     "ci": {
-      "runId": 39163017054,
-      "runNumber": 150,
-      "sha": "3148f03f85901fe3ccae56cf786989139b0d886a",
+      "runId": 39173226242,
+      "runNumber": 153,
+      "sha": "190eb1b6d8978fad610c331c1ea065e1feb1156d",
       "event": "push",
-      "startedAt": "2026-10-18T20:22:33Z",
-      "finishedAt": "2026-10-18T20:41:00.826Z",
-      "durationSeconds": 1108,
+      "startedAt": "2026-10-18T22:40:04Z",
+      "finishedAt": "2026-10-18T22:58:33.220Z",
+      "durationSeconds": 1109,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 8,
+          "durationSeconds": 10,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 14,
+          "durationSeconds": 9,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 139,
+          "durationSeconds": 109,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 26,
+          "durationSeconds": 28,
           "runs": 1
         },
         {
@@ -71,7 +71,7 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 69,
+          "durationSeconds": 72,
           "runs": 3,
           "metrics": {
             "tests": 721
@@ -80,7 +80,7 @@
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 44,
+          "durationSeconds": 29,
           "runs": 1,
           "metrics": {
             "bundleKb": 340.1,
@@ -90,10 +90,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 67,
+          "durationSeconds": 63,
           "runs": 1,
           "metrics": {
-            "performance": 66,
+            "performance": 81,
             "accessibility": 97,
             "bestPractices": 96,
             "seo": 92
@@ -102,7 +102,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 923,
+          "durationSeconds": 939,
           "runs": 2,
           "metrics": {
             "tests": 523,
@@ -404,6 +404,117 @@
     "backend": []
   },
   "merges": [
+    {
+      "number": 61,
+      "title": "feat(frontend): merged branches as an IDE-style git log",
+      "branch": "feat/git-log-style",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-18T22:40:02Z",
+      "sha": "190eb1b6d8978fad610c331c1ea065e1feb1156d",
+      "additions": 101,
+      "deletions": 49,
+      "changedFiles": 2,
+      "ci": {
+        "runId": 39173226242,
+        "runNumber": 153,
+        "conclusion": "success",
+        "durationSeconds": 1109,
+        "jobs": [
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "skipped"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "success"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Móvil (chromium · 2/2)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Móvil (chromium · 1/2)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "success"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "success"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
     {
       "number": 60,
       "title": "fix(frontend): check-now logs in the inspector and the card refits above it",
@@ -1437,117 +1548,6 @@
         "conclusion": "cancelled",
         "durationSeconds": 22,
         "jobs": []
-      }
-    },
-    {
-      "number": 47,
-      "title": "feat(frontend): card spotlight, tilt and staggered reveal",
-      "branch": "feat/cards-ux",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-15T17:45:57Z",
-      "sha": "88838c3fe336b0e344baac8018073ee8a59dbc73",
-      "additions": 106,
-      "deletions": 4,
-      "changedFiles": 7,
-      "ci": {
-        "runId": 38780053766,
-        "runNumber": 127,
-        "conclusion": "success",
-        "durationSeconds": 1114,
-        "jobs": [
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 1/2)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 2/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "success"
-          }
-        ]
       }
     }
   ]
