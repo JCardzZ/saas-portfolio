@@ -9,6 +9,8 @@ info:
   version: 1.0.0
 
 servers:
+  - url: /v1
+    description: Same origin (the Swagger UI served by the API itself)
   - url: http://localhost:8080/v1
     description: Local Sandbox Environment
 

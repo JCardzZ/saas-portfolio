@@ -82,6 +82,9 @@ dependencies {
 
     implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
     implementation 'io.swagger.core.v3:swagger-annotations:2.2.20'
+    // Swagger UI en /v1/swagger-ui.html, sobre el contrato tal cual (/v1/openapi.yaml). Lo que
+    // springdoc genera desde el código (/v3/api-docs) no es público (SecurityConfig).
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
 
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     implementation 'io.github.resilience4j:resilience4j-circuitbreaker:2.2.0'
@@ -143,6 +146,15 @@ openApiGenerate {
 }
 
 compileJava.dependsOn tasks.openApiGenerate
+
+// El contrato se sirve como recurso estático (/v1/openapi.yaml) para Swagger UI: es el mismo
+// archivo del que se generan los controladores, así que la documentación no puede desviarse.
+tasks.named('processResources') {
+    from("$projectDir/../portfolio-api-spec/saas-portfolio-v1.openapi.yaml") {
+        into 'static'
+        rename { 'openapi.yaml' }
+    }
+}
 
 tasks.named('test') {
     useJUnitPlatform()
