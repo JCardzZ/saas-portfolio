@@ -15,6 +15,9 @@ import { PipelineStatus, TOPOLOGY, TopologyNode, formatDate, formatDuration } fr
  */
 const WIDE_ENOUGH_FOR_RIGHT_DOCK = 1480;
 
+/** Entre una línea del resultado y la siguiente (y la pieza que se enciende con ella). */
+const REPORT_STEP_MS = 320;
+
 /** Alto del inspector acoplado abajo para los logs de una comprobación (cabecera y seis líneas). */
 const COMPACT_INSPECTOR_PX = 180;
 
@@ -60,6 +63,7 @@ interface Fact {
       [live]="liveStates()"
       [facts]="liveFacts()"
       [probe]="checks()"
+      [flashId]="flashing()"
       [activeId]="activeId()"
       (picked)="pick($event)"
     />
@@ -247,33 +251,57 @@ export class ProductionArchitectureComponent implements OnInit {
   private awaitingCheck: number | null = null;
 
   /** Lo que respondió la API, línea a línea, tal cual: sin adornos ni datos inventados. */
+  /** Pieza que se enciende en el lienzo mientras su línea entra en el inspector. */
+  readonly flashing = signal<string | null>(null);
+  private reportTimers: ReturnType<typeof setTimeout>[] = [];
+
+  /**
+   * Lo que respondió la API, línea a línea y tal cual. Cada línea entra en el inspector a la vez que
+   * su pieza se enciende en el lienzo: se ve la comprobación recorrer la arquitectura.
+   */
   private reportCheck(): void {
     const state = this.health();
     const en = this.en();
+    this.clearReport();
     if (state.kind === 'unreachable') {
       this.events.emitRealFromUser([['warn', 'Cloud Run', en ? 'no answer in 8 s' : 'sin respuesta en 8 s']], HEALTH_CHECK, 'WARN');
+      this.flashing.set('backend');
       return;
     }
     if (state.kind !== 'ready') {
       return;
     }
     const health = state.health;
-    const steps: SystemEventStep[] = [
-      [health.status === 'UP' ? 'ok' : 'warn', 'Cloud Run', `${health.status === 'DOWN' ? 503 : 200} · ${health.status} · ${health.latencyMs} ms`],
+    const lines: { node: string; step: SystemEventStep }[] = [
+      { node: 'backend', step: [health.status === 'UP' ? 'ok' : 'warn', 'Cloud Run', `${health.status === 'DOWN' ? 503 : 200} · ${health.status} · ${health.latencyMs} ms`] },
     ];
     if (health.database) {
-      steps.push([/unavailable/i.test(health.database) ? 'warn' : 'ok', 'PostgreSQL', health.database]);
+      lines.push({ node: 'postgres', step: [/unavailable/i.test(health.database) ? 'warn' : 'ok', 'PostgreSQL', health.database] });
     }
     if (health.redisCache) {
-      steps.push([/unavailable/i.test(health.redisCache) ? 'warn' : 'ok', 'Redis', health.redisCache]);
+      lines.push({ node: 'redis', step: [/unavailable/i.test(health.redisCache) ? 'warn' : 'ok', 'Redis', health.redisCache] });
     }
     if (health.aiEngine) {
-      steps.push(['info', 'Gemini', en
+      lines.push({ node: 'gemini', step: ['info', 'Gemini', en
         ? `circuit breaker ${health.aiEngine} (state kept by the API; this check does not call Gemini)`
-        : `circuit breaker ${health.aiEngine} (estado que guarda la API; esta comprobación no llama a Gemini)`]);
+        : `circuit breaker ${health.aiEngine} (estado que guarda la API; esta comprobación no llama a Gemini)`] });
     }
-    this.events.emitRealFromUser(steps, HEALTH_CHECK, health.status === 'UP' ? 'SUCCESS' : 'WARN');
+    const level = health.status === 'UP' ? 'SUCCESS' : 'WARN';
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    lines.forEach((line, index) => {
+      this.reportTimers.push(setTimeout(() => {
+        this.events.emitRealFromUser([line.step], HEALTH_CHECK, level);
+        this.flashing.set(line.node);
+      }, reduced ? 0 : index * REPORT_STEP_MS));
+    });
+    this.reportTimers.push(setTimeout(() => this.flashing.set(null), reduced ? 0 : lines.length * REPORT_STEP_MS + 600));
   }
+
+  private clearReport(): void {
+    this.reportTimers.forEach((timer) => clearTimeout(timer));
+    this.reportTimers = [];
+  }
+
 
   /** El dato en vivo de cada pieza: de la última ejecución publicada y de /telemetry/health. Lo que no se sabe no se muestra. */
   readonly liveFacts = computed(() => {
@@ -355,7 +383,7 @@ export class ProductionArchitectureComponent implements OnInit {
     this.liveHealth.load();
     // «Hace 12 s»: se refresca cada 15 s mientras la vista existe.
     const clock = setInterval(() => this.now.set(Date.now()), 15_000);
-    this.destroyRef.onDestroy(() => clearInterval(clock));
+    this.destroyRef.onDestroy(() => { clearInterval(clock); this.clearReport(); });
   }
 
   liveOf(id: string): { state: ComponentState; detail: string | null } | null {
