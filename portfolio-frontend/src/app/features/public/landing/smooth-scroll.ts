@@ -150,7 +150,9 @@ export function startSmoothScroll(): () => void {
 const BACKGROUND = '.dock-aware, .dock-aware > main, main > section, .bento-grid, main > section > div, app-galaxy-backdrop';
 
 const GRAB_CSS = `
-main .bento-card { position: relative; }
+/* Ampliada (modo teatro) la tarjeta es fixed: esta regla, más específica, no debe pisarla. */
+main .bento-card:not(.theater-expanded) { position: relative; }
+main .bento-card.theater-expanded::after { display: none; }
 main .bento-card::after {
   content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
   background: radial-gradient(260px circle at var(--mx, -999px) var(--my, -999px), rgb(var(--c-accent-solid) / 0.7), transparent 65%);
