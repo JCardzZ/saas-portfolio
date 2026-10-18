@@ -28,8 +28,10 @@ RUN gradle bootJar --no-daemon -x test
 FROM eclipse-temurin:21-jre-alpine AS runtime
 WORKDIR /app
 
+# Paquetes del sistema al día al construir: la imagen base puede traer alguno con un parche de
+# seguridad ya publicado (p. ej. libexpat, CVE-2026-77214), que Trivy rechazaría.
 # El CV en PDF se maqueta con librerías que usan AWT: en Alpine necesitan fontconfig y una fuente del sistema.
-RUN apk add --no-cache fontconfig ttf-dejavu
+RUN apk upgrade --no-cache && apk add --no-cache fontconfig ttf-dejavu
 
 # Sin privilegios de root dentro del contenedor.
 RUN addgroup -S app && adduser -S app -G app

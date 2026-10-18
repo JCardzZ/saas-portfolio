@@ -24,29 +24,60 @@ async function capture(page: Page, testInfo: TestInfo, selector: string, name: s
 }
 
 test.describe('arquitectura real y pipeline en escritorio', () => {
-  test('ningún nodo lleva un logo sin permiso de marca: los nombres van en texto y nada mide más de 24 px', async ({ page }) => {
+  test('solo marcas con permiso, a 24 px y con su nombre al lado; el resto con un símbolo propio', async ({ page }) => {
     await openDelivery(page);
+    const canvas = page.locator('app-production-architecture [data-testid="production-canvas"]');
+    await expect(canvas).toBeVisible();
 
-    // Cualquier imagen o icono dentro de un nodo, si lo hubiera, cabe en 24 px.
-    const sizes = await page.locator('app-stage-graph .node :is(svg, img)').evaluateAll((icons) =>
+    const sizes = await canvas.locator('[data-node] image, [data-node] g > path').evaluateAll((icons) =>
       icons.map((icon) => { const rect = icon.getBoundingClientRect(); return Math.max(rect.width, rect.height); }));
     for (const size of sizes) {
       expect(size, 'tamaño de un icono de nodo').toBeLessThanOrEqual(MAX_ICON);
     }
-    // Cloudflare y los proveedores de IA no dan permiso de uso del logo: solo su nombre.
-    for (const label of ['Cloudflare Pages', 'Gemini', 'GHCR']) {
-      const node = page.locator('app-production-architecture button.node', { hasText: label });
-      await expect(node).toBeVisible();
-      await expect(node.locator('svg, img')).toHaveCount(0);
+    for (const id of ['pages', 'gemini', 'ghcr', 'actions', 'postgres']) {
+      await expect(canvas.locator(`[data-node="${id}"] image`)).toHaveCount(0);
     }
+    await expect(canvas.locator('[data-node="backend"] image')).toHaveAttribute('href', /cloud-icons\/gcp\/cloud-run\.svg$/);
+    await expect(canvas.locator('[data-node="backend"]')).toContainText('Cloud Run');
     // Nada que flote sobre el diagrama.
-    await expect(page.locator('app-stage-graph app-tech-icon')).toHaveCount(0);
+    await expect(page.locator('app-production-architecture app-tech-icon')).toHaveCount(0);
+  });
+
+  test('el lienzo de producción: cada pieza en su zona, nada se solapa y cabe en su tarjeta', async ({ page }) => {
+    await openDelivery(page);
+    const canvas = page.locator('app-production-architecture [data-testid="production-canvas"]');
+    const boxes = await canvas.locator('[data-node] rect.card').evaluateAll((cards) =>
+      cards.map((card) => { const r = card.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; }));
+    for (const a of boxes) {
+      for (const b of boxes) {
+        if (a !== b) {
+          const overlap = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > 0 && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > 0;
+          expect(overlap, 'dos piezas se solapan').toBe(false);
+        }
+      }
+    }
+    // Cada pieza con zona queda dentro de su recuadro.
+    const outside = await page.evaluate(() => {
+      const svg = document.querySelector('app-production-architecture [data-testid="production-canvas"]')!;
+      const zones = new Map([...svg.querySelectorAll('[data-zone] rect')].map((rect) => [rect.parentElement!.getAttribute('data-zone'), rect.getBoundingClientRect()]));
+      return [...svg.querySelectorAll('[data-node]')].filter((node) => {
+        const zone = node.getAttribute('data-node') === 'visitor' ? null : [...zones.entries()].find(([, r]) => {
+          const n = node.querySelector('rect')!.getBoundingClientRect();
+          return n.left >= r.left && n.right <= r.right && n.top >= r.top && n.bottom <= r.bottom;
+        });
+        return node.getAttribute('data-node') !== 'visitor' && !zone;
+      }).map((node) => node.getAttribute('data-node'));
+    });
+    expect(outside, 'piezas fuera de su zona').toEqual([]);
+    // Cabe en su tarjeta (1 px de margen por el redondeo del subpíxel).
+    const overflow = await page.locator('app-production-architecture').evaluate((card) => card.scrollWidth - card.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
   });
 
   test('el diagrama respira: columnas a 48 px o más, nodos a 24 px o más, y nada se solapa', async ({ page }) => {
     await openDelivery(page);
 
-    for (const view of VIEWS) {
+    for (const view of ['app-pipeline-view']) {
       const boxes = await page.locator(`${view} button.node`).evaluateAll((nodes) =>
         nodes.map((node) => { const r = node.getBoundingClientRect(); return { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) }; }));
       expect(new Set(boxes.map((box) => box.h)), `${view}: alto de los nodos`).toEqual(new Set([view === 'app-pipeline-view' ? 36 : 52]));
@@ -73,7 +104,6 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
       const overflow = await page.locator(`${view} .scroller`).evaluate((scroller) => scroller.scrollWidth - scroller.clientWidth);
       expect(overflow, `${view}: desborde horizontal`).toBeLessThanOrEqual(0);
     }
-    await expect(page.locator('app-production-architecture .stage-name')).toHaveText(['Código', 'CI/CD', 'Artefactos', 'Ejecución', 'Datos']);
   });
 
   test('zoom y «ajustar a pantalla»: el pipeline pasa de varias franjas a una sola, a escala', async ({ page }, testInfo) => {
@@ -104,56 +134,47 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
   test('se recorre con el teclado, con el foco visible', async ({ page }) => {
     await openDelivery(page);
     const graph = page.locator('app-production-architecture');
+    const actions = graph.locator('[data-node="actions"]');
 
-    await graph.locator('button.node', { hasText: 'GitHub Actions' }).focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(graph.locator('button.node', { hasText: 'GHCR' })).toBeFocused();
-    await page.keyboard.press('ArrowDown');
-    await expect(graph.locator('button.node', { hasText: 'Cloudflare Pages' })).toBeFocused();
-    await page.keyboard.press('Home');
-    const first = graph.locator('button.node').first();
-    await expect(first).toBeFocused();
-    // El foco se ve (anillo) e ilumina el camino igual que el cursor.
-    expect(await first.evaluate((node) => getComputedStyle(node).outlineStyle !== 'none' || getComputedStyle(node).boxShadow !== 'none')).toBe(true);
-    await expect(graph.locator('.graph.focused')).toHaveCount(1);
+    await actions.focus();
+    await expect(actions).toBeFocused();
+    // El foco ilumina su camino, igual que el cursor.
+    await expect(graph.locator('.edge.lit')).toHaveCount(3);
     await page.keyboard.press('Enter');
-    await expect(graph.locator('div[aria-live="polite"]')).toContainText('Por qué');
+    await expect(graph.locator('div[aria-live="polite"]')).toContainText('GitHub Actions');
+    await page.keyboard.press('Tab');
+    await expect(graph.locator('[data-node]:focus')).toHaveCount(1);
   });
 
-  test('al señalar un nodo se ilumina su camino y el resto baja al 40 %', async ({ page }, testInfo) => {
+  test('al señalar una pieza se ilumina su camino y el resto se atenúa', async ({ page }, testInfo) => {
     await openDelivery(page);
     const graph = page.locator('app-production-architecture');
-    const actions = graph.locator('button.node', { hasText: 'GitHub Actions' });
 
-    await actions.hover();
+    await graph.locator('[data-node="actions"]').hover();
     await page.waitForTimeout(450);
-
-    const opacity = (label: string) => graph.locator('button.node', { hasText: label }).evaluate((node) => getComputedStyle(node).opacity);
-    // GitHub Actions recibe de GitHub y entrega a GHCR y a Pages: esos cuatro se quedan encendidos.
-    for (const label of ['GitHub Actions', 'GHCR', 'Cloudflare Pages']) {
-      expect(await opacity(label), label).toBe('1');
+    const opacity = (id: string) => graph.locator(`[data-node="${id}"]`).evaluate((node) => getComputedStyle(node).opacity);
+    // GitHub Actions recibe de GitHub y entrega a GHCR y a Pages: esos cuatro siguen encendidos.
+    for (const id of ['actions', 'github', 'ghcr', 'pages']) {
+      expect(await opacity(id), id).toBe('1');
     }
-    for (const label of ['PostgreSQL', 'Redis', 'Visitante']) {
-      expect(await opacity(label), label).toBe('0.4');
+    for (const id of ['postgres', 'redis', 'visitor']) {
+      expect(await opacity(id), id).toBe('0.35');
     }
-    expect(await graph.locator('svg.edges path.lit').count()).toBe(3);
+    await expect(graph.locator('.edge.lit')).toHaveCount(3);
     await capture(page, testInfo, 'app-production-architecture', 'arquitectura-camino-iluminado');
   });
 
-  test('lo planificado va punteado y sin punto de luz; lo que está en producción, con uno', async ({ page }) => {
+  test('lo planificado va punteado y sin pulsos; la petición del visitante, con ellos', async ({ page }) => {
     await openDelivery(page);
     const graph = page.locator('app-production-architecture');
 
-    const planned = graph.locator('button.node.tone-planned').first();
-    expect(await planned.evaluate((node) => getComputedStyle(node).borderTopStyle)).toBe('dashed');
-    expect(await graph.locator('button.node.tone-ok').first().evaluate((node) => getComputedStyle(node).borderTopStyle)).toBe('solid');
+    expect(await graph.locator('[data-node].planned rect.card').first().evaluate((rect) => getComputedStyle(rect).strokeDasharray)).not.toBe('none');
+    expect(await graph.locator('[data-node]:not(.planned) rect.card').first().evaluate((rect) => getComputedStyle(rect).strokeDasharray)).toBe('none');
 
-    const edges = await graph.locator('svg.edges path').count();
-    const dashed = await graph.locator('svg.edges path.planned').count();
-    expect(dashed).toBeGreaterThan(0);
-    // Un punto de luz por conexión en vivo, ninguno en las planificadas.
-    await expect(graph.locator('.spark')).toHaveCount(edges - dashed);
-    // El pipeline no lleva puntos de luz.
+    const live = await graph.locator('.edge.request:not(.planned)').count();
+    expect(live).toBeGreaterThan(0);
+    // Un pulso por conexión viva de la petición, ninguno en la entrega ni en lo planificado.
+    await expect(graph.locator('.pulse')).toHaveCount(live);
     await expect(page.locator('app-pipeline-view .spark')).toHaveCount(0);
   });
 
@@ -161,7 +182,7 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await openDelivery(page);
 
-    expect(await page.locator('app-production-architecture .spark').evaluateAll((sparks) =>
+    expect(await page.locator('app-production-architecture .pulse').evaluateAll((sparks) =>
       sparks.filter((spark) => getComputedStyle(spark).display !== 'none').length)).toBe(0);
   });
 

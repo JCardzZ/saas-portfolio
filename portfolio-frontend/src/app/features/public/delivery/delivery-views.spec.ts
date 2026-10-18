@@ -35,12 +35,12 @@ function statusFile(options: { public?: boolean; overrides?: Record<string, stri
 }
 
 /** Salud ya leída de la API: lo que devolvería /telemetry/health en producción. */
-function readyHealth(overrides: Partial<LiveHealth>): Pick<LiveHealthService, 'state' | 'load'> {
+function readyHealth(overrides: Partial<LiveHealth>): Pick<LiveHealthService, 'state' | 'load' | 'checks' | 'refresh'> {
   const health: LiveHealth = {
     status: 'UP', database: 'PostgreSQL 16 - Connected', redisCache: 'Redis - Healthy', aiEngine: 'CLOSED',
     checkedAt: new Date(), latencyMs: 42, ...overrides,
   };
-  return { state: signal<LiveHealthState>({ kind: 'ready', health }), load: () => undefined };
+  return { state: signal<LiveHealthState>({ kind: 'ready', health }), load: () => undefined, checks: signal(1), refresh: () => undefined };
 }
 
 function setup<T>(component: Type<T>): { fixture: ComponentFixture<T>; backend: HttpTestingController; element: HTMLElement } {
@@ -57,9 +57,15 @@ function serveSnapshot(backend: HttpTestingController, body: object, fixture: Co
   fixture.detectChanges();
 }
 
-/** El nodo cuyo nombre es exactamente `label` (no basta con que aparezca en su subtítulo). */
+/** La pieza cuyo nombre es exactamente `label`: un nodo del lienzo (SVG) o una fila de las tarjetas. */
 const node = (element: HTMLElement, label: string) =>
-  Array.from(element.querySelectorAll<HTMLButtonElement>('button.node')).find((button) => button.getAttribute('aria-label')!.startsWith(`${label},`))!;
+  Array.from(element.querySelectorAll<SVGElement | HTMLElement>('[data-node]')).find((item) => item.getAttribute('aria-label')!.startsWith(`${label},`))!;
+/** Un job del pipeline (gráfico de etapas: botones). */
+const stageNode = (element: HTMLElement, label: string) =>
+  Array.from(element.querySelectorAll<HTMLButtonElement>('button.node')).find((button) => button.textContent!.includes(label))!;
+/** Pulsar una pieza (un <g> de SVG no tiene .click()). */
+const tap = (item: Element) => item.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+const dot = (item: Element) => item.querySelector('[data-state]')!.getAttribute('data-state');
 
 describe('DeliveryStatusService', () => {
   let service: DeliveryStatusService;
@@ -128,7 +134,7 @@ describe('PipelineViewComponent', () => {
     const { fixture, backend, element } = setup(PipelineViewComponent);
     serveSnapshot(backend, statusFile(), fixture);
 
-    node(element, 'Backend unit').click();
+    stageNode(element, 'Backend unit').click();
     fixture.detectChanges();
 
     const detail = element.querySelector('div[aria-live="polite"]')!.textContent!;
@@ -196,14 +202,23 @@ describe('brand marks in the graphs', () => {
     serveSnapshot(backend, statusFile(), fixture);
     document.body.appendChild(element);
 
-    for (const icon of Array.from(element.querySelectorAll('.node svg, .node img'))) {
-      const rect = icon.getBoundingClientRect();
-      expect(Math.max(rect.width, rect.height)).toBeLessThanOrEqual(24);
+    // Solo marcas cuya guía lo permite (docs/brand-usage.md): los iconos oficiales de Google Cloud,
+    // el logo de GitHub (para indicar que se usa) y el de Redis con su frase de atribución.
+    // GitHub Actions, PostgreSQL, Cloudflare y Gemini llevan un símbolo propio.
+    const allowed = new Set(['github', 'gcpCloudRun', 'gcpArtifactRegistry', 'redis']);
+    for (const item of TOPOLOGY.nodes) {
+      expect(item.icon === null || allowed.has(item.icon)).withContext(item.id).toBeTrue();
     }
-    for (const label of ['Cloudflare Pages', 'Gemini', 'PostgreSQL', 'GHCR']) {
-      expect(node(element, label).querySelector('svg, img')).withContext(label).toBeNull();
-      expect(node(element, label).textContent).toContain(label);
+    expect(element.querySelector('[data-testid="trademark-attribution"]')!.textContent).toContain('Redis is a registered trademark of Redis Ltd.');
+    for (const label of ['Cloudflare Pages', 'Gemini', 'GHCR', 'GitHub Actions', 'PostgreSQL']) {
+      expect(node(element, label).querySelector('image')).withContext(label).toBeNull();
+      expect(node(element, label).querySelector('g path')!.getAttribute('fill')).withContext(label).toBe('var(--text-2)');
     }
+    // Las marcas van a 24 unidades, siempre con su nombre al lado.
+    for (const image of Array.from(element.querySelectorAll('[data-node] image'))) {
+      expect(image.getAttribute('width')).toBe('24');
+    }
+    expect(node(element, 'Cloud Run').textContent).toContain('Cloud Run');
     // No es el componente que hace despegar y flotar el logo.
     expect(element.querySelector('app-tech-icon')).toBeNull();
     element.remove();
@@ -226,12 +241,16 @@ describe('ProductionArchitectureComponent', () => {
     const { fixture, backend, element } = setup(ProductionArchitectureComponent);
     serveSnapshot(backend, statusFile(), fixture);
 
-    expect(element.querySelectorAll('button.node').length).toBe(TOPOLOGY.nodes.length);
+    expect(element.querySelectorAll('[data-node]').length).toBe(TOPOLOGY.nodes.length);
     for (const item of TOPOLOGY.nodes) {
-      const button = node(element, item.label);
-      expect(button.classList).withContext(item.id).toContain(item.status === 'live' ? 'tone-ok' : 'tone-planned');
-      expect(button.getAttribute('aria-label')).withContext(item.id).toContain(item.status === 'live' ? 'en producción' : 'planificado');
+      const piece = node(element, item.label);
+      expect(piece.classList.contains('planned')).withContext(item.id).toBe(item.status === 'planned');
+      expect(dot(piece)).withContext(item.id).toBe(item.status === 'live' ? 'ok' : 'planned');
+      expect(piece.getAttribute('aria-label')).withContext(item.id).toContain(item.status === 'live' ? 'en producción' : 'planificado');
     }
+    // Cada zona con sus piezas, y los dos recorridos dibujados.
+    expect(element.querySelectorAll('[data-zone]').length).toBe(TOPOLOGY.zones.length);
+    expect(element.querySelectorAll('.edge.request').length).toBe(TOPOLOGY.links.filter((link) => link.flow === 'request').length);
     expect(element.querySelector('[aria-label="Leyenda"]')!.textContent).toContain('En producción');
     expect(element.querySelector('[aria-label="Leyenda"]')!.textContent).toContain('Planificado');
   });
@@ -241,17 +260,22 @@ describe('ProductionArchitectureComponent', () => {
     const { fixture, backend, element } = setup(ProductionArchitectureComponent);
     serveSnapshot(backend, statusFile(), fixture);
 
-    expect(node(element, 'Redis').classList).toContain('tone-failed');
+    expect(dot(node(element, 'Redis'))).toBe('down');
     expect(node(element, 'Redis').getAttribute('aria-label')).toContain('con fallos');
-    expect(node(element, 'PostgreSQL').classList).toContain('tone-ok');
+    expect(dot(node(element, 'PostgreSQL'))).toBe('ok');
     expect(node(element, 'PostgreSQL').getAttribute('aria-label')).toContain('sano');
     expect(element.querySelector('[aria-label="Leyenda"]')!.textContent).toContain('Con fallos ahora');
 
-    node(element, 'Redis').click();
+    tap(node(element, 'Redis'));
     fixture.detectChanges();
     const state = element.querySelector('[data-testid="live-node-state"]')!;
     expect(state.textContent).toContain('Caído ahora');
     expect(state.textContent).toContain('Redis - Unavailable');
+    // Cada pieza con su dato real: la latencia de la API y el estado de la base de datos y la caché.
+    expect(node(element, 'Cloud Run').textContent).toContain('DEGRADED · 42 ms');
+    expect(node(element, 'PostgreSQL').textContent).toContain('PostgreSQL 16 ✓');
+    expect(node(element, 'Redis').textContent).toContain('no responde');
+    expect(element.querySelector('[data-testid="check-now"]')).not.toBeNull();
   });
 
   it('opens with a live piece already selected, so the detail panel is never empty', () => {
@@ -267,15 +291,17 @@ describe('ProductionArchitectureComponent', () => {
     serveSnapshot(backend, statusFile(), fixture);
     const detail = () => element.querySelector('div[aria-live="polite"]')!.textContent!;
 
-    node(element, 'GHCR').click();
+    tap(node(element, 'GHCR'));
     fixture.detectChanges();
     expect(detail()).toContain('sha256:abc123');
     expect(detail()).toContain('196');
     expect(detail()).toContain('Por qué');
+    // Con qué se conecta, y en qué sentido.
+    expect(element.querySelector('[data-testid="node-connections"]')!.textContent).toContain('→ Artifact Registry');
 
     const planned = TOPOLOGY.nodes.find((item) => item.status === 'planned');
     if (planned) {
-      node(element, planned.label).click();
+      tap(node(element, planned.label));
       fixture.detectChanges();
       expect(detail()).toContain('planificado');
       expect(detail()).toContain('todavía no existe en producción');

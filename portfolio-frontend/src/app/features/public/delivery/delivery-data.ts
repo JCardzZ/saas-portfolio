@@ -42,13 +42,39 @@ export interface TopologyNode {
   facts: 'repo' | 'ci' | 'image' | 'frontend' | 'backend' | null;
   /** Campo de /telemetry/health que da su estado cuando está desplegado. */
   health: string | null;
+  /** Recuadro del lienzo en el que va (GitHub, Cloudflare, Google Cloud…); `null` = fuera de todos. */
+  zone: string | null;
+  /** Celda del lienzo: columna y fila. */
+  col: number;
+  row: number;
+  /** Textos en inglés. */
+  en: { label: string; role: string; what: string; why: string };
+}
+
+export interface TopologyZone {
+  id: string;
+  label: string;
+  labelEn: string;
+  icon: TechIconKey | null;
+}
+
+/** `request`: lo que recorre la petición de un visitante. `delivery`: cómo llega el código a producción. */
+export type TopologyFlow = 'request' | 'delivery';
+
+export interface TopologyLink {
+  from: string;
+  to: string;
+  label: string;
+  labelEn: string;
+  flow: TopologyFlow;
 }
 
 export interface Topology {
   /** Nombre de cada columna del diagrama, por número de etapa. */
   stages: string[];
+  zones: TopologyZone[];
   nodes: TopologyNode[];
-  links: { from: string; to: string; label: string }[];
+  links: TopologyLink[];
 }
 
 export const WORKFLOWS = workflowsJson as Record<WorkflowKey, WorkflowGraph>;
