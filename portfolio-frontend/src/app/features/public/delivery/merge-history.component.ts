@@ -170,6 +170,8 @@ interface Row {
     .merge { fill: var(--text-1); stroke: var(--bg-surface-1); stroke-width: 2.5; }
     .log-row.active .merge { fill: var(--accent-text); }
     .log-cells { flex: 1; min-width: 0; min-height: 2.5rem; padding: 0.25rem 0.75rem 0.25rem 0; text-align: left; font-size: 0.8125rem; }
+    /* Con el dedo, cada fila es un objetivo de 44 px como el resto de controles. */
+    @media (pointer: coarse) { .log-cells { min-height: 2.75rem; } }
     .subject { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; }
     .title { min-width: 0; flex: 1 1 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-1); }
     .num { color: var(--text-3); font-family: var(--font-mono); }
