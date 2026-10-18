@@ -9,12 +9,6 @@ import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.compon
 import { TheaterDirective } from '../../../shared/ui/theater.directive';
 import { PipelineStatus, TOPOLOGY, TopologyNode, formatDate, formatDuration } from './delivery-data';
 
-/**
- * Ancho de ventana a partir del cual «Comprobar ahora» acopla el inspector a la derecha (22 rem)
- * y el lienzo sigue cabiendo a lo ancho junto a él.
- */
-const WIDE_ENOUGH_FOR_RIGHT_DOCK = 1480;
-
 /** Entre una línea del resultado y la siguiente (y la pieza que se enciende con ella). */
 const REPORT_STEP_MS = 320;
 
@@ -100,6 +94,10 @@ interface Fact {
       <!-- Lo exige la política de marca de Redis en cada página donde aparece su logo. -->
       <p class="mt-2 text-caption text-ink-3" data-testid="trademark-attribution">Redis is a registered trademark of Redis Ltd. Any rights therein are reserved to Redis Ltd.</p>
     }
+    <!-- Con los logs de la comprobación abiertos abajo, la ficha se pliega: la tarjeta cabe entera
+         por encima del inspector. Vuelve al cerrarlos o al tocar una pieza. -->
+    <div class="detail-fold" [class.folded]="detailFolded()" data-testid="detail-fold">
+    <div class="min-h-0 overflow-hidden">
     <div #detail class="mt-4 min-h-[7rem] scroll-mb-24 scroll-mt-24 rounded-panel border border-line-subtle bg-surface-2 p-4" aria-live="polite">
       @if (active(); as node) {
         <p class="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink-1">
@@ -141,6 +139,17 @@ interface Fact {
         <p class="text-sm text-ink-2">{{ 'Toca una pieza para ver qué es, por qué se eligió y sus datos reales.' | t }}</p>
       }
     </div>
+    </div>
+    </div>
+    @if (detailFolded()) {
+      <button type="button" class="ui-btn-ghost tap mt-2 px-2 py-1 text-xs" data-testid="show-detail" (click)="detailOpen.set(true)">{{ 'Ver la ficha de la pieza' | t }} ↓</button>
+    }
+  `,
+    styles: `
+    /* Plegar y desplegar la ficha con su alto real (filas de rejilla de 1fr a 0fr), sin saltos. */
+    .detail-fold { display: grid; grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease-out; }
+    .detail-fold.folded { grid-template-rows: 0fr; opacity: 0; }
+    @media (prefers-reduced-motion: reduce) { .detail-fold { transition: none; } }
   `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -199,11 +208,12 @@ export class ProductionArchitectureComponent implements OnInit {
     const en = this.en();
     this.inspector.inspectComponent({ id: HEALTH_CHECK, label: en ? 'Health check · /telemetry/health' : 'Comprobación de salud · /telemetry/health', icon: 'gcpCloudRun', tech: null });
     this.events.emitRealFromUser([['info', en ? 'Browser' : 'Navegador', `GET ${runtimeConfig.apiBaseUrl}/telemetry/health`]], HEALTH_CHECK);
-    // Con sitio de sobra a lo ancho, el inspector va a la derecha: no le quita alto a la tarjeta.
-    if (this.inspector.mode() === 'bottom' || this.inspector.mode() === 'pill') {
-      // Abajo, solo el alto de sus líneas (cabecera + 6 líneas): la tarjeta pierde lo mínimo.
-      this.inspector.dockTemporarily(innerWidth >= WIDE_ENOUGH_FOR_RIGHT_DOCK ? 'right' : 'bottom', COMPACT_INSPECTOR_PX);
+    // Los logs, abajo y con el alto justo de sus líneas: la tarjeta pierde lo mínimo, y su ficha
+    // se pliega mientras están abiertos (detailFolded) para que todo quepa por encima.
+    if (this.inspector.mode() !== 'floating') {
+      this.inspector.dockTemporarily('bottom', COMPACT_INSPECTOR_PX);
     }
+    this.detailOpen.set(false);
     this.awaitingCheck = this.checks();
     this.liveHealth.refresh();
     this.fitAboveInspector();
@@ -244,13 +254,18 @@ export class ProductionArchitectureComponent implements OnInit {
       void this.host.offsetWidth;
       this.host.classList.add('card-adapted');
       setTimeout(() => this.host.classList.remove('card-adapted'), 1200);
-    }), reduced ? 0 : 560);
+    }), reduced ? 0 : 620);
   }
 
   /** Comprobación pedida con el botón cuyo resultado aún no se ha contado en el inspector. */
   private awaitingCheck: number | null = null;
 
   /** Lo que respondió la API, línea a línea, tal cual: sin adornos ni datos inventados. */
+  /** El visitante pidió ver la ficha aunque los logs sigan abiertos. */
+  readonly detailOpen = signal(false);
+  /** La ficha se pliega mientras el inspector muestra los logs de la comprobación. */
+  readonly detailFolded = computed(() => this.inspector.componentId() === HEALTH_CHECK && !this.detailOpen());
+
   /** Pieza que se enciende en el lienzo mientras su línea entra en el inspector. */
   readonly flashing = signal<string | null>(null);
   private reportTimers: ReturnType<typeof setTimeout>[] = [];
@@ -402,6 +417,8 @@ export class ProductionArchitectureComponent implements OnInit {
 
   pick(id: string): void {
     this.activeId.set(id);
+    // Elegir una pieza es querer ver su ficha, aunque los logs sigan abiertos.
+    this.detailOpen.set(true);
     revealDetail(this.detail());
   }
 }

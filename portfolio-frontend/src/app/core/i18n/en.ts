@@ -326,6 +326,7 @@ export const EN: Readonly<Record<string, string>> = {
   'Desde': 'From',
   'Deshacer la simulación': 'Undo the simulation',
   'Despliegues de ': 'Deployments of ',
+  'Ver la ficha de la pieza': 'Show the piece details',
   'Ramas fusionadas en main': 'Branches merged into main',
   'Datos de GitHub publicados por la CI': 'GitHub data published by the CI',
   'Aún no hay ramas fusionadas publicadas.': 'No merged branches published yet.',

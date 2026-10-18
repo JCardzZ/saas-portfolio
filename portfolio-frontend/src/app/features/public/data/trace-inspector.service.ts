@@ -57,6 +57,8 @@ export class TraceInspectorService {
   private readonly _component = signal<{ id: string; label: string; tech: TechIconKey | null } | null>(null);
   /** Nombre de la pieza inspeccionada (p. ej. «RDS PostgreSQL»); `null` si se inspecciona una tecnología. */
   readonly label = computed(() => this._component()?.label ?? null);
+  /** Pieza de diagrama que se está inspeccionando ahora, si la hay. */
+  readonly componentId = computed(() => this._component()?.id ?? null);
 
   private readonly _mode = signal<InspectorMode>(storedMode());
   /** Modo elegido por el visitante; se recuerda entre visitas. */
