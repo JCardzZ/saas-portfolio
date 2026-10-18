@@ -2,101 +2,85 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-18T20:17:41.639Z",
+  "updatedAt": "2026-10-18T20:41:00.826Z",
   "workflows": {
     "ci": {
-      "runId": 39159465291,
-      "runNumber": 148,
-      "sha": "54264382220bcad59e3cc68b30887b4ec035c50e",
+      "runId": 39163017054,
+      "runNumber": 150,
+      "sha": "3148f03f85901fe3ccae56cf786989139b0d886a",
       "event": "push",
-      "startedAt": "2026-10-18T19:35:30Z",
-      "finishedAt": "2026-10-18T20:16:24.018Z",
-      "durationSeconds": 2454,
+      "startedAt": "2026-10-18T20:22:33Z",
+      "finishedAt": "2026-10-18T20:41:00.826Z",
+      "durationSeconds": 1108,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 7,
+          "durationSeconds": 8,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 12,
+          "durationSeconds": 14,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 126,
+          "durationSeconds": 139,
           "runs": 2
         },
         {
           "id": "spec-lint",
-          "status": "success",
-          "durationSeconds": 15,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
           "id": "spec-breaking",
-          "status": "success",
-          "durationSeconds": 6,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 31,
+          "durationSeconds": 26,
           "runs": 1
         },
         {
           "id": "backend-unit",
-          "status": "success",
-          "durationSeconds": 88,
-          "runs": 1,
-          "metrics": {
-            "tests": 366,
-            "failed": 0,
-            "skipped": 2,
-            "coverage": 89.2
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "backend-integration",
-          "status": "success",
-          "durationSeconds": 143,
-          "runs": 1,
-          "metrics": {
-            "tests": 8,
-            "failed": 0,
-            "skipped": 0
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "backend-arch",
-          "status": "success",
-          "durationSeconds": 44,
-          "runs": 1,
-          "metrics": {
-            "tests": 15,
-            "failed": 0,
-            "skipped": 0
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 72,
+          "durationSeconds": 69,
           "runs": 3,
           "metrics": {
-            "tests": 720
+            "tests": 721
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 29,
+          "durationSeconds": 44,
           "runs": 1,
           "metrics": {
             "bundleKb": 340.1,
@@ -106,10 +90,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 68,
+          "durationSeconds": 67,
           "runs": 1,
           "metrics": {
-            "performance": 72,
+            "performance": 66,
             "accessibility": 97,
             "bestPractices": 96,
             "seo": 92
@@ -118,7 +102,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 1108,
+          "durationSeconds": 923,
           "runs": 2,
           "metrics": {
             "tests": 523,
@@ -134,27 +118,20 @@
         },
         {
           "id": "docker",
-          "status": "success",
-          "durationSeconds": 89,
-          "runs": 1,
-          "metrics": {
-            "vulnerabilities": 0
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "publish-image",
-          "status": "success",
-          "durationSeconds": 57,
-          "runs": 1,
-          "metrics": {
-            "digest": "sha256:f812d12fa9ef43053e4f009f5ff0042730d67b21eeb6c0f9f621c48c38319334",
-            "sbomPackages": 217
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "coverage-badge",
-          "status": "success",
-          "durationSeconds": 6,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
@@ -429,6 +406,117 @@
     "backend": []
   },
   "merges": [
+    {
+      "number": 60,
+      "title": "fix(frontend): check-now logs in the inspector and the card refits above it",
+      "branch": "fix/check-now-fit",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-18T20:22:31Z",
+      "sha": "3148f03f85901fe3ccae56cf786989139b0d886a",
+      "additions": 158,
+      "deletions": 4,
+      "changedFiles": 5,
+      "ci": {
+        "runId": 39163017054,
+        "runNumber": 150,
+        "conclusion": "success",
+        "durationSeconds": 1108,
+        "jobs": [
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "skipped"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "success"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Móvil (chromium · 1/2)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Móvil (chromium · 2/2)",
+            "status": "success"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "success"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
     {
       "number": 57,
       "title": "feat: merged branches as a git graph with their CI",
@@ -1452,105 +1540,6 @@
           {
             "name": "📦 Preview URL",
             "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "success"
-          }
-        ]
-      }
-    },
-    {
-      "number": 50,
-      "title": "docs(deploy): Azure standby cloud and spending cutoff",
-      "branch": "docs/multicloud-standby",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-15T15:45:05Z",
-      "sha": "05137148f819aa7f2868e858df67f49c98226245",
-      "additions": 211,
-      "deletions": 15,
-      "changedFiles": 1,
-      "ci": {
-        "runId": 38763078810,
-        "runNumber": 125,
-        "conclusion": "success",
-        "durationSeconds": 317,
-        "jobs": [
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "success"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Frontend (${{ matrix.shard }}/3)",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "success"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "success"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }}/2)",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "success"
           },
           {
             "name": "✅ CI gate",
