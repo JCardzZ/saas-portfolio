@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
 import { TheaterDirective } from '../../../shared/ui/theater.directive';
 import { PipelineStatus, TOPOLOGY, TopologyNode, formatDate, formatDuration } from './delivery-data';
 import { DeliveryStatusService } from './delivery-status.service';
+import { ComponentState, LiveHealthService, componentDetail, componentState } from './live-health.service';
 import { StageEdge, StageGraphComponent, StageNode, revealDetail } from './stage-graph.component';
 
 interface Fact {
@@ -31,7 +33,7 @@ interface Fact {
 
     <app-stage-graph
       class="theater-stage mt-6"
-      [nodes]="nodes"
+      [nodes]="nodes()"
       [edges]="edges"
       [activeId]="activeId()"
       label="Piezas de la arquitectura en producción"
@@ -43,6 +45,20 @@ interface Fact {
     <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2" [attr.aria-label]="'Leyenda' | t">
       <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-ok" aria-hidden="true"></span>{{ 'En producción' | t }}</li>
       <li class="inline-flex items-center gap-2"><span class="w-4 border-t border-dashed border-line-control" aria-hidden="true"></span>{{ 'Planificado' | t }}</li>
+      @if (problems() > 0) {
+        <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-danger" aria-hidden="true"></span>{{ 'Con fallos ahora' | t }}</li>
+      }
+      <li class="inline-flex basis-full flex-wrap items-center gap-x-2 text-ink-3 sm:ml-auto sm:basis-auto" data-testid="live-health-source">
+        @switch (health().kind) {
+          @case ('ready') {
+            <span class="relative flex h-2 w-2" aria-hidden="true"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-ok opacity-60 motion-reduce:hidden"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-status-ok"></span></span>
+            {{ 'Salud en vivo de' | t }} <code class="font-mono">/telemetry/health</code> · {{ checkedAgo() }}
+          }
+          @case ('loading') { {{ 'Comprobando la API…' | t }} }
+          @case ('unreachable') { {{ 'La API no respondió: sin estado en vivo' | t }} }
+          @case ('demo') { {{ 'Modo demo: sin estado en vivo' | t }} }
+        }
+      </li>
     </ul>
 
     <div #detail class="mt-4 min-h-[7rem] scroll-mb-24 scroll-mt-24 rounded-panel border border-line-subtle bg-surface-2 p-4" aria-live="polite">
@@ -54,7 +70,16 @@ interface Fact {
             {{ node.status === 'live' ? ('en producción' | t) : 'planificado' }}
           </span>
         </p>
-        <p class="mt-1 text-sm text-ink-2">{{ node.what }}</p>
+        @if (liveOf(node.id); as live) {
+          <p class="mt-2 inline-flex flex-wrap items-center gap-2 rounded-control border px-2.5 py-1 text-xs"
+            [class]="live.state === 'ok' ? 'border-status-ok/30 text-status-ok' : live.state === 'degraded' ? 'border-status-warn/40 text-status-warn' : 'border-status-danger/40 text-status-danger'"
+            data-testid="live-node-state">
+            <span class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true"></span>
+            <span class="font-medium">{{ live.state === 'ok' ? ('Sano ahora' | t) : live.state === 'degraded' ? ('Degradado ahora' | t) : ('Caído ahora' | t) }}</span>
+            @if (live.detail) { <span class="font-mono text-ink-2">{{ live.detail }}</span> }
+          </p>
+        }
+        <p class="mt-2 text-sm text-ink-2">{{ node.what }}</p>
         <p class="mt-1 text-sm text-ink-2"><span class="text-ink-2">{{ 'Por qué:' | t }}</span> {{ node.why }}</p>
         @if (facts().length > 0) {
           <dl class="mt-3 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
@@ -74,8 +99,17 @@ interface Fact {
 })
 export class ProductionArchitectureComponent implements OnInit {
   private readonly delivery = inject(DeliveryStatusService);
+  private readonly liveHealth = inject(LiveHealthService);
+  readonly health = this.liveHealth.state;
 
   private readonly detail = viewChild<ElementRef<HTMLElement>>('detail');
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly language = inject(LanguageService);
+
+  private tr(es: string): string {
+    const dictionary = this.language.dictionary();
+    return this.language.lang() === 'en' && dictionary ? (dictionary[es] ?? es) : es;
+  }
 
   /**
    * Abre con una pieza ya elegida (la primera en producción del recorrido de la petición), para
@@ -88,15 +122,38 @@ export class ProductionArchitectureComponent implements OnInit {
   );
   readonly stageNames = TOPOLOGY.stages;
 
-  readonly nodes: StageNode[] = TOPOLOGY.nodes.map((node) => ({
-    id: node.id,
-    stage: node.stage,
-    label: node.label,
-    detail: node.role,
-    icon: node.icon,
-    tone: node.status === 'live' ? 'ok' : 'planned',
-    toneLabel: node.status === 'live' ? 'en producción' : 'planificado',
+  /** Estado en vivo de cada pieza desplegada que la API sabe comprobar. */
+  private readonly live = computed(() => {
+    const state = this.health();
+    const result = new Map<string, { state: ComponentState; detail: string | null }>();
+    if (state.kind !== 'ready') {
+      return result;
+    }
+    for (const node of TOPOLOGY.nodes) {
+      const value = node.status === 'live' && node.health ? componentState(state.health, node.health) : null;
+      if (value) {
+        result.set(node.id, { state: value, detail: componentDetail(state.health, node.health!) });
+      }
+    }
+    return result;
+  });
+
+  /** El punto de cada nodo: verde si está en producción (y sano, cuando la API lo dice), rojo si falla ahora. */
+  readonly nodes = computed<StageNode[]>(() => TOPOLOGY.nodes.map((node) => {
+    const live = this.live().get(node.id)?.state;
+    const failing = live === 'down' || live === 'degraded';
+    return {
+      id: node.id,
+      stage: node.stage,
+      label: node.label,
+      detail: node.role,
+      icon: node.icon,
+      tone: node.status !== 'live' ? 'planned' : failing ? 'failed' : 'ok',
+      toneLabel: node.status !== 'live' ? 'planificado' : failing ? 'en producción · con fallos' : live === 'ok' ? 'en producción · sano' : 'en producción',
+    };
   }));
+  readonly problems = computed(() => [...this.live().values()].filter((item) => item.state !== 'ok').length);
+  private readonly now = signal(Date.now());
 
   /** Una conexión es real solo si lo son sus dos extremos. */
   readonly edges: StageEdge[] = TOPOLOGY.links.map((link) => ({
@@ -114,7 +171,25 @@ export class ProductionArchitectureComponent implements OnInit {
 
   ngOnInit(): void {
     this.delivery.load();
+    this.liveHealth.load();
+    // «Hace 12 s»: se refresca cada 15 s mientras la vista existe.
+    const clock = setInterval(() => this.now.set(Date.now()), 15_000);
+    this.destroyRef.onDestroy(() => clearInterval(clock));
   }
+
+  liveOf(id: string): { state: ComponentState; detail: string | null } | null {
+    return this.live().get(id) ?? null;
+  }
+
+  readonly checkedAgo = computed(() => {
+    const state = this.health();
+    if (state.kind !== 'ready') {
+      return '';
+    }
+    const seconds = Math.max(0, Math.round((this.now() - state.health.checkedAt.getTime()) / 1000));
+    const amount = seconds < 60 ? `${seconds} s` : `${Math.round(seconds / 60)} min`;
+    return seconds < 10 ? this.tr('ahora mismo') : this.language.lang() === 'en' ? `${amount} ago` : `hace ${amount}`;
+  });
 
   pick(id: string): void {
     this.activeId.set(id);

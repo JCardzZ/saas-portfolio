@@ -133,7 +133,7 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
     for (const label of ['GitHub Actions', 'GHCR', 'Cloudflare Pages']) {
       expect(await opacity(label), label).toBe('1');
     }
-    for (const label of ['Neon', 'Upstash', 'Visitante']) {
+    for (const label of ['PostgreSQL', 'Redis', 'Visitante']) {
       expect(await opacity(label), label).toBe('0.4');
     }
     expect(await graph.locator('svg.edges path.lit').count()).toBe(3);

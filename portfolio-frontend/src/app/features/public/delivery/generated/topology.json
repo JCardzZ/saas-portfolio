@@ -56,50 +56,62 @@
       "health": null
     },
     {
+      "id": "artifact-registry",
+      "label": "Artifact Registry",
+      "role": "Copia para Cloud Run",
+      "icon": null,
+      "stage": 2,
+      "status": "planned",
+      "what": "Copia de la imagen firmada, con el mismo digest, desde la que Cloud Run crea cada revisión.",
+      "why": "La imagen de GHCR es privada y Cloud Run no puede descargarla directamente; el CD la copia sin reconstruirla.",
+      "facts": null,
+      "health": null
+    },
+    {
       "id": "visitor",
       "label": "Visitante",
       "role": "Navegador",
       "icon": null,
       "stage": 3,
       "status": "live",
-      "what": "Quien abre el sitio. Hoy recibe la aplicación completa en modo demo, porque la API aún no está desplegada.",
+      "what": "Quien abre el sitio. Recibe la aplicación conectada a la API en Cloud Run; si la API no responde al arrancar, el sitio sigue funcionando en modo demo y lo dice.",
       "why": "Si la API no responde al arrancar, el sitio sigue siendo navegable con datos simulados y lo dice.",
       "facts": null,
       "health": null
     },
     {
       "id": "backend",
-      "label": "VPS",
-      "role": "Docker + Caddy",
+      "label": "Cloud Run",
+      "role": "API · us-east4",
       "icon": null,
       "stage": 3,
-      "status": "planned",
-      "what": "La API en un contenedor detrás de Caddy, que pone HTTPS automático.",
-      "why": "Un VPS con Compose cuesta poco y se entiende entero; a cambio, no hay autoescalado ni alta disponibilidad.",
+      "status": "live",
+      "what": "La API Spring Boot en un contenedor gestionado: escala a cero cuando no hay tráfico y cada versión queda como una revisión a la que se puede volver.",
+      "why": "Se paga por uso y sin servidor que operar; a cambio, la primera petición tras un rato parado arranca la JVM y tarda más.",
       "facts": "backend",
       "health": "status"
     },
     {
-      "id": "neon",
-      "label": "Neon",
-      "role": "PostgreSQL",
+      "id": "postgres",
+      "label": "PostgreSQL",
+      "role": "CMS y vectores",
       "icon": null,
       "stage": 4,
-      "status": "planned",
-      "what": "Base de datos del CMS y de los vectores del asistente.",
-      "why": "PostgreSQL gestionado con pgvector y escala a cero; a cambio, la primera consulta tras un rato parado tarda más.",
+      "status": "live",
+      "what": "Base de datos del CMS, de los usuarios y de los vectores del asistente (pgvector).",
+      "why": "PostgreSQL con pgvector: datos relacionales y búsqueda semántica en el mismo motor, sin otra base que operar.",
       "facts": null,
       "health": "database"
     },
     {
-      "id": "upstash",
-      "label": "Upstash",
-      "role": "Redis",
+      "id": "redis",
+      "label": "Redis",
+      "role": "Caché y límites",
       "icon": null,
       "stage": 4,
-      "status": "planned",
-      "what": "Caché de lectura y contadores del límite de peticiones.",
-      "why": "Redis gestionado de pago por uso; si falla, la API sigue sirviendo desde PostgreSQL.",
+      "status": "live",
+      "what": "Caché de lectura y contadores del límite de peticiones (script Lua).",
+      "why": "Si falla, la API sigue sirviendo desde PostgreSQL: la caché nunca tumba el servicio.",
       "facts": null,
       "health": "redisCache"
     },
@@ -109,7 +121,7 @@
       "role": "IA generativa",
       "icon": null,
       "stage": 4,
-      "status": "planned",
+      "status": "live",
       "what": "Modelo que genera los embeddings y redacta las respuestas del asistente.",
       "why": "API gestionada con cuota gratuita; un circuit breaker corta las llamadas cuando el proveedor falla.",
       "facts": null,
@@ -128,6 +140,16 @@
       "label": "imagen escaneada y firmada"
     },
     {
+      "from": "ghcr",
+      "to": "artifact-registry",
+      "label": "copia por digest"
+    },
+    {
+      "from": "artifact-registry",
+      "to": "backend",
+      "label": "revisión por digest"
+    },
+    {
       "from": "actions",
       "to": "pages",
       "label": "build verificado"
@@ -138,23 +160,18 @@
       "label": "HTTPS"
     },
     {
-      "from": "ghcr",
-      "to": "backend",
-      "label": "pull por digest"
-    },
-    {
       "from": "visitor",
       "to": "backend",
       "label": "API /v1"
     },
     {
       "from": "backend",
-      "to": "neon",
+      "to": "postgres",
       "label": "JDBC"
     },
     {
       "from": "backend",
-      "to": "upstash",
+      "to": "redis",
       "label": "caché y límites"
     },
     {

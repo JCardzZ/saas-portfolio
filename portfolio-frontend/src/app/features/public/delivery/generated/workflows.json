@@ -249,12 +249,12 @@
       },
       {
         "id": "deploy",
-        "name": "🚀 Deploy VPS",
+        "name": "🚀 Cloud Run",
         "needs": [
           "source"
         ],
         "matrix": false,
-        "namePattern": "^🚀 Deploy VPS$",
+        "namePattern": "^🚀 Cloud Run$",
         "stage": 1
       },
       {

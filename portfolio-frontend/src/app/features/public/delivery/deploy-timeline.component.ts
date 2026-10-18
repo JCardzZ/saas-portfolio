@@ -6,6 +6,7 @@ import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.compon
 import { TheaterDirective } from '../../../shared/ui/theater.directive';
 import { DeployTarget, Deployment, TOPOLOGY, formatDate } from './delivery-data';
 import { DeliveryStatusService } from './delivery-status.service';
+import { LiveHealthService, componentDetail, componentState } from './live-health.service';
 
 interface Lane {
   target: DeployTarget;
@@ -95,6 +96,23 @@ const SIMULATION_MS = 900;
                   {{ showAll(lane.target) ? ('Ver menos' | t) : ('Ver historial completo' | t) + ' (' + deployments.length + ')' }}
                 </button>
               }
+            } @else if (!lane.planned && lane.target === 'backend') {
+              <!-- En producción pero sin despliegues del CD todavía: su estado real, y desde cuándo hay historial. -->
+              <div class="mt-3 rounded-control border border-line-subtle bg-surface-2 px-3 py-2.5" data-testid="backend-live">
+                @switch (apiHealth().kind) {
+                  @case ('ready') {
+                    <p class="flex flex-wrap items-center gap-2 text-sm text-ink-1">
+                      <span class="h-2 w-2 rounded-full" [class]="liveStatus() === 'ok' ? 'bg-status-ok' : liveStatus() === 'degraded' ? 'bg-status-warn' : 'bg-status-danger'" aria-hidden="true"></span>
+                      <span class="font-medium">{{ 'En producción' | t }}</span>
+                      <code class="font-mono text-xs text-ink-2">{{ liveSummary() }}</code>
+                    </p>
+                  }
+                  @case ('loading') { <p class="text-sm text-ink-2">{{ 'Comprobando la API…' | t }}</p> }
+                  @case ('unreachable') { <p class="text-sm text-status-warn">{{ 'La API no respondió al comprobarla.' | t }}</p> }
+                  @case ('demo') { <p class="text-sm text-ink-2">{{ 'Modo demo: sin estado en vivo.' | t }}</p> }
+                }
+                <p class="mt-1 text-xs text-ink-3">{{ 'El historial empieza con el primer despliegue hecho por el CD; el despliegue inicial se hizo a mano y no consta aquí.' | t }}</p>
+              </div>
             } @else {
               <p class="mt-3 rounded-control border border-dashed border-line-strong px-3 py-2.5 text-sm text-ink-2">
                 {{ lane.planned ? ('Sin desplegar: todavía no existe en producción.' | t) : (loaded() ? ('Aún no hay despliegues publicados.' | t) : ('Cargando…' | t)) }}
@@ -173,8 +191,19 @@ export class DeployTimelineComponent implements OnInit {
   /** Qué piezas existen ya en producción lo dice la topología, no esta vista. */
   readonly lanes: Lane[] = [
     { target: 'frontend', title: 'Frontend', where: 'Cloudflare Pages', planned: isPlanned('pages') },
-    { target: 'backend', title: 'Backend', where: 'VPS · imagen por digest', planned: isPlanned('backend') },
+    { target: 'backend', title: 'Backend', where: 'Cloud Run · revisión por digest', planned: isPlanned('backend') },
   ];
+
+  private readonly liveHealth = inject(LiveHealthService);
+  readonly apiHealth = this.liveHealth.state;
+  readonly liveStatus = computed(() => {
+    const state = this.apiHealth();
+    return state.kind === 'ready' ? componentState(state.health, 'status') : null;
+  });
+  readonly liveSummary = computed(() => {
+    const state = this.apiHealth();
+    return state.kind === 'ready' ? componentDetail(state.health, 'status') : '';
+  });
 
   private readonly deployments = computed(() => this.delivery.status()?.deployments ?? { frontend: [], backend: [] });
   /** Hay a qué volver: un despliegue anterior del frontend. */
@@ -186,6 +215,9 @@ export class DeployTimelineComponent implements OnInit {
 
   ngOnInit(): void {
     this.delivery.load();
+    if (!isPlanned('backend')) {
+      this.liveHealth.load();
+    }
   }
 
   history(target: DeployTarget): Deployment[] {

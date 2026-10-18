@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Type } from '@angular/core';
+import { LiveHealth, LiveHealthService, LiveHealthState } from './live-health.service';
+import { Type, signal } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { TECH_ICONS } from '../../../shared/ui/tech-icons';
@@ -31,6 +32,15 @@ function statusFile(options: { public?: boolean; overrides?: Record<string, stri
   };
 }
 
+/** Salud ya leída de la API: lo que devolvería /telemetry/health en producción. */
+function readyHealth(overrides: Partial<LiveHealth>): Pick<LiveHealthService, 'state' | 'load'> {
+  const health: LiveHealth = {
+    status: 'UP', database: 'PostgreSQL 16 - Connected', redisCache: 'Redis - Healthy', aiEngine: 'CLOSED',
+    checkedAt: new Date(), latencyMs: 42, ...overrides,
+  };
+  return { state: signal<LiveHealthState>({ kind: 'ready', health }), load: () => undefined };
+}
+
 function setup<T>(component: Type<T>): { fixture: ComponentFixture<T>; backend: HttpTestingController; element: HTMLElement } {
   TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
   const fixture = TestBed.createComponent(component);
@@ -45,8 +55,9 @@ function serveSnapshot(backend: HttpTestingController, body: object, fixture: Co
   fixture.detectChanges();
 }
 
+/** El nodo cuyo nombre es exactamente `label` (no basta con que aparezca en su subtítulo). */
 const node = (element: HTMLElement, label: string) =>
-  Array.from(element.querySelectorAll<HTMLButtonElement>('button.node')).find((button) => button.textContent!.includes(label))!;
+  Array.from(element.querySelectorAll<HTMLButtonElement>('button.node')).find((button) => button.getAttribute('aria-label')!.startsWith(`${label},`))!;
 
 describe('DeliveryStatusService', () => {
   let service: DeliveryStatusService;
@@ -187,7 +198,7 @@ describe('brand marks in the graphs', () => {
       const rect = icon.getBoundingClientRect();
       expect(Math.max(rect.width, rect.height)).toBeLessThanOrEqual(24);
     }
-    for (const label of ['Cloudflare Pages', 'Gemini', 'Neon', 'GHCR']) {
+    for (const label of ['Cloudflare Pages', 'Gemini', 'PostgreSQL', 'GHCR']) {
       expect(node(element, label).querySelector('svg, img')).withContext(label).toBeNull();
       expect(node(element, label).textContent).toContain(label);
     }
@@ -221,6 +232,24 @@ describe('ProductionArchitectureComponent', () => {
     }
     expect(element.querySelector('[aria-label="Leyenda"]')!.textContent).toContain('En producción');
     expect(element.querySelector('[aria-label="Leyenda"]')!.textContent).toContain('Planificado');
+  });
+
+  it('colours each live piece with what /telemetry/health says right now', () => {
+    TestBed.configureTestingModule({ providers: [{ provide: LiveHealthService, useValue: readyHealth({ status: 'DEGRADED', redisCache: 'Redis - Unavailable' }) }] });
+    const { fixture, backend, element } = setup(ProductionArchitectureComponent);
+    serveSnapshot(backend, statusFile(), fixture);
+
+    expect(node(element, 'Redis').classList).toContain('tone-failed');
+    expect(node(element, 'Redis').getAttribute('aria-label')).toContain('con fallos');
+    expect(node(element, 'PostgreSQL').classList).toContain('tone-ok');
+    expect(node(element, 'PostgreSQL').getAttribute('aria-label')).toContain('sano');
+    expect(element.querySelector('[aria-label="Leyenda"]')!.textContent).toContain('Con fallos ahora');
+
+    node(element, 'Redis').click();
+    fixture.detectChanges();
+    const state = element.querySelector('[data-testid="live-node-state"]')!;
+    expect(state.textContent).toContain('Caído ahora');
+    expect(state.textContent).toContain('Redis - Unavailable');
   });
 
   it('opens with a live piece already selected, so the detail panel is never empty', () => {
@@ -280,14 +309,27 @@ describe('DeployTimelineComponent', () => {
     expect(unchecked.textContent).toContain('Salud sin comprobar');
   });
 
-  it('shows the backend lane as planned, with no invented deployments', () => {
+  it('shows the backend in production with no invented deployments: the history starts with the CD', () => {
     const { fixture, backend, element } = setup(DeployTimelineComponent);
     serveSnapshot(backend, withHistory([deployment(1, 'aaaaaaabbbb', true)]), fixture);
     const lane = element.querySelector('[aria-label="Despliegues de Backend"]')!;
 
-    expect(lane.textContent).toContain('planificado');
-    expect(lane.textContent).toContain('todavía no existe en producción');
+    expect(lane.textContent).toContain('Cloud Run');
+    expect(lane.textContent).not.toContain('planificado');
+    expect(lane.textContent).toContain('El historial empieza con el primer despliegue hecho por el CD');
+    // En modo demo (el de los tests) no hay API real: no se inventa un estado.
+    expect(lane.textContent).toContain('Modo demo: sin estado en vivo');
     expect(lane.querySelectorAll('.entry').length).toBe(0);
+  });
+
+  it('shows the live state the API reports when there is no CD history yet', () => {
+    TestBed.configureTestingModule({ providers: [{ provide: LiveHealthService, useValue: readyHealth({ status: 'UP' }) }] });
+    const { fixture, backend, element } = setup(DeployTimelineComponent);
+    serveSnapshot(backend, withHistory([deployment(1, 'aaaaaaabbbb', true)]), fixture);
+    const live = element.querySelector('[data-testid="backend-live"]')!;
+
+    expect(live.textContent).toContain('En producción');
+    expect(live.textContent).toContain('UP · 42 ms');
   });
 
   it('simulates a rollback on screen, labelled as a simulation, without calling anything', fakeAsync(() => {
