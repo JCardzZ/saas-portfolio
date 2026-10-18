@@ -12,6 +12,8 @@ import { DeployTimelineComponent } from './deploy-timeline.component';
 import { DeliveryStatusService, STATUS_REMOTE_URL, STATUS_SNAPSHOT_URL } from './delivery-status.service';
 import { PipelineViewComponent } from './pipeline-view.component';
 import { ProductionArchitectureComponent } from './production-architecture.component';
+import { MergeHistoryComponent, toneOf } from './merge-history.component';
+import { parsePipelineStatus } from './delivery-data';
 
 /** Estado con todos los jobs de la CI correctos menos los que se indiquen. */
 function statusFile(options: { public?: boolean; overrides?: Record<string, string> } = {}) {
@@ -416,5 +418,66 @@ describe('DeployTimelineComponent', () => {
 
     expect(entries(element)[0].textContent).toContain('rollback');
     expect(entries(element)[0].textContent).toContain('en producción');
+  });
+});
+
+describe('MergeHistoryComponent', () => {
+  const sha = (char: string) => char.repeat(40);
+  const merge = (number: number, conclusion: string, char: string) => ({
+    number, title: `feat: cambio ${number}`, branch: `feat/cambio-${number}`, author: 'JCardzZ', mergedAt: `2026-10-1${number % 10}T10:00:00Z`,
+    sha: sha(char), additions: 94, deletions: 2, changedFiles: 6,
+    ci: { runId: 900 + number, runNumber: 130 + number, conclusion, durationSeconds: 1311, jobs: [{ name: '🧪 Backend unit', status: 'success' }, { name: '📦 Imagen + Trivy', status: conclusion }] },
+  });
+  const withMerges = (isPublic: boolean) => ({
+    ...statusFile({ public: isPublic }),
+    deployments: { frontend: [{ kind: 'deploy', sha: sha('a'), at: '2026-10-17T03:00:00Z', by: 'JCardzZ', runNumber: 48, runId: 1, healthy: true }], backend: [] },
+    merges: [merge(5, 'success', 'a'), merge(4, 'failure', 'b')],
+  });
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('draws every merged branch with its CI result and the deployment it produced', () => {
+    const { fixture, backend, element } = setup(MergeHistoryComponent);
+    serveSnapshot(backend, withMerges(true), fixture);
+    const rows = Array.from(element.querySelectorAll('[data-merge]'));
+
+    expect(rows.length).toBe(2);
+    expect(rows[0].textContent).toContain('#5');
+    expect(rows[0].textContent).toContain('feat/cambio-5');
+    expect(rows[0].textContent).toContain('CI correcta');
+    expect(rows[0].textContent).toContain('Frontend #48');
+    expect(rows[1].textContent).toContain('CI fallida');
+  });
+
+  it('opens what happened in a merge: size, CI job by job and links to GitHub only when the repository is public', () => {
+    const { fixture, backend, element } = setup(MergeHistoryComponent);
+    serveSnapshot(backend, withMerges(true), fixture);
+
+    element.querySelector<HTMLButtonElement>('[data-merge="4"]')!.click();
+    fixture.detectChanges();
+    const detail = element.querySelector('div[aria-live="polite"]')!;
+    expect(detail.textContent).toContain('+94');
+    expect(detail.textContent).toContain('6 archivos');
+    expect(detail.textContent).toContain('📦 Imagen + Trivy');
+    expect(detail.querySelector('.job.tone-bad')!.textContent).toContain('Imagen + Trivy');
+    const links = Array.from(detail.querySelectorAll('a')).map((link) => link.getAttribute('href'));
+    expect(links).toContain('https://github.com/owner/repo/pull/4');
+    expect(links).toContain('https://github.com/owner/repo/actions/runs/904');
+  });
+
+  it('shows no GitHub links for a private repository', () => {
+    const { fixture, backend, element } = setup(MergeHistoryComponent);
+    serveSnapshot(backend, withMerges(false), fixture);
+    element.querySelector<HTMLButtonElement>('[data-merge="5"]')!.click();
+    fixture.detectChanges();
+    expect(element.querySelector('div[aria-live="polite"] a')).toBeNull();
+  });
+
+  it('discards merges that do not look like the CI wrote them', () => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    const parsed = parsePipelineStatus({ ...withMerges(true), merges: [merge(5, 'success', 'a'), { number: 'x' }, { ...merge(3, 'success', 'c'), sha: 'not-a-sha' }] })!;
+    expect(parsed.merges.map((item) => item.number)).toEqual([5]);
+    expect(toneOf('cancelled')).toBe('warn');
+    expect(toneOf(undefined)).toBe('idle');
   });
 });

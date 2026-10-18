@@ -13,6 +13,7 @@ import { DataBlueprintsComponent } from '../cloud/data-blueprints.component';
 import { DeployTimelineComponent } from '../delivery/deploy-timeline.component';
 import { PipelineViewComponent } from '../delivery/pipeline-view.component';
 import { ProductionArchitectureComponent } from '../delivery/production-architecture.component';
+import { MergeHistoryComponent } from '../delivery/merge-history.component';
 import { CatalogStore } from '../data/catalog.store';
 import { TraceInspectorService } from '../data/trace-inspector.service';
 import { PublicNavbarComponent } from '../navbar/public-navbar.component';
@@ -52,6 +53,7 @@ import { ScrollBuddyComponent } from './scroll-buddy.component';
         DeployTimelineComponent,
         PipelineViewComponent,
         ProductionArchitectureComponent,
+        MergeHistoryComponent,
         TechIconComponent,
         IconPopLayerComponent,
         ArchitectureCanvasComponent,

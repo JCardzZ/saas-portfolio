@@ -113,6 +113,21 @@ export interface PipelineStatus {
   workflows: Partial<Record<WorkflowKey, WorkflowRun>>;
   /** Línea de tiempo de despliegues, del más reciente al más antiguo. */
   deployments: Record<DeployTarget, Deployment[]>;
+  /** Últimos PR fusionados en main, del más reciente al más antiguo, con la CI de su merge. */
+  merges: MergeEntry[];
+}
+
+export interface MergeEntry {
+  number: number;
+  title: string;
+  branch: string;
+  author: string;
+  mergedAt: string;
+  sha: string;
+  additions: number | null;
+  deletions: number | null;
+  changedFiles: number | null;
+  ci: { runId: number; runNumber: number; conclusion: string; durationSeconds: number | null; jobs: { name: string; status: string }[] } | null;
 }
 
 export type DeployTarget = 'frontend' | 'backend';
@@ -160,7 +175,50 @@ export function parsePipelineStatus(value: unknown): PipelineStatus | null {
     updatedAt: date(value['updatedAt']),
     workflows,
     deployments: { frontend: parseDeployments(history['frontend']), backend: parseDeployments(history['backend']) },
+    merges: parseMerges(value['merges']),
   };
+}
+
+const MAX_MERGES = 12;
+
+/** Lo publicado por la CI sobre cada PR fusionado; lo que no tiene la forma esperada se descarta. */
+function parseMerges(value: unknown): MergeEntry[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const count = (item: unknown) => (typeof item === 'number' && Number.isInteger(item) && item >= 0 ? item : null);
+  const merges: MergeEntry[] = [];
+  for (const item of value.slice(0, MAX_MERGES)) {
+    if (!isRecord(item) || count(item['number']) === null) {
+      continue;
+    }
+    const sha = text(item['sha'], 40);
+    const mergedAt = date(item['mergedAt']);
+    if (!/^[0-9a-f]{40}$/.test(sha) || !mergedAt) {
+      continue;
+    }
+    const ci = isRecord(item['ci']) && count(item['ci']['runId']) !== null ? item['ci'] : null;
+    merges.push({
+      number: item['number'] as number,
+      title: text(item['title'], 140),
+      branch: text(item['branch'], 100),
+      author: text(item['author'], 40),
+      mergedAt,
+      sha,
+      additions: count(item['additions']),
+      deletions: count(item['deletions']),
+      changedFiles: count(item['changedFiles']),
+      ci: ci ? {
+        runId: ci['runId'] as number,
+        runNumber: count(ci['runNumber']) ?? 0,
+        conclusion: text(ci['conclusion'], 20),
+        durationSeconds: count(ci['durationSeconds']),
+        jobs: (Array.isArray(ci['jobs']) ? ci['jobs'] : []).slice(0, 40).filter(isRecord)
+          .map((job) => ({ name: text(job['name'], 60), status: text(job['status'], 20) })),
+      } : null,
+    });
+  }
+  return merges;
 }
 
 const MAX_DEPLOYMENTS = 20;

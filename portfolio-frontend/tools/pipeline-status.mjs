@@ -7,7 +7,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { deploymentsOf, mergeMetrics, mergeStatus, withDeployments, workflowStatus } from './lib/pipeline-status.mjs';
+import { MAX_MERGES, deploymentsOf, mergeEntry, mergeMetrics, mergeStatus, withDeployments, withMerges, workflowStatus } from './lib/pipeline-status.mjs';
 
 const arg = (name) => { const index = process.argv.indexOf(`--${name}`); return index < 0 ? null : process.argv[index + 1]; };
 const { GH_TOKEN: token, GITHUB_REPOSITORY: repository, RUN_ID: runId, WORKFLOW_KEY: key } = process.env;
@@ -84,5 +84,53 @@ if (isRollback) {
   const entry = JSON.parse(process.env.DEPLOYMENT_ENTRY ?? '{}');
   status = withDeployments(status, [{ ...entry, kind: 'rollback', at: now, by, runId: run.id, runNumber: run.run_number }]);
 }
+// Cada push a main: los últimos PR fusionados y el resultado de la CI de su commit de merge. Los que
+// ya están publicados con su CI terminada no se vuelven a pedir.
+if (key === 'ci' && run.event === 'push' && run.head_branch === 'main') {
+  try {
+    status = withMerges(status, await recentMerges(status.merges ?? []));
+  } catch (error) {
+    console.warn(`No se pudieron leer los PR fusionados: ${error.message}`);
+  }
+}
+
+async function recentMerges(known) {
+  const pulls = await api('/pulls?state=closed&base=main&sort=updated&direction=desc&per_page=50');
+  const merged = pulls.filter((pr) => pr.merged_at).sort((a, b) => b.merged_at.localeCompare(a.merged_at)).slice(0, MAX_MERGES);
+  const entries = [];
+  for (const pr of merged) {
+    const previous = known.find((item) => item.number === pr.number);
+    if (previous?.ci?.conclusion && previous.ci.conclusion !== 'in_progress') {
+      continue;
+    }
+    const detail = await api(`/pulls/${pr.number}`);
+    entries.push(mergeEntry(detail, await ciOf(detail.merge_commit_sha)));
+  }
+  return entries;
+}
+
+/** La CI del commit de merge: la ejecución en curso, si es esta, o la que la API tenga para ese commit. */
+async function ciOf(sha) {
+  if (!sha) {
+    return null;
+  }
+  if (sha === run.head_sha && workflow) {
+    return {
+      runId: workflow.runId, runNumber: workflow.runNumber, conclusion: workflow.conclusion,
+      durationSeconds: workflow.durationSeconds, jobs: jobs.map((job) => ({ name: job.name, status: job.conclusion ?? job.status })),
+    };
+  }
+  const found = (await api(`/actions/workflows/ci.yml/runs?branch=main&head_sha=${sha}&per_page=1`)).workflow_runs?.[0];
+  if (!found) {
+    return null;
+  }
+  const runJobs = (await api(`/actions/runs/${found.id}/jobs?per_page=100`)).jobs ?? [];
+  const seconds = found.run_started_at && found.updated_at ? Math.round((Date.parse(found.updated_at) - Date.parse(found.run_started_at)) / 1000) : null;
+  return {
+    runId: found.id, runNumber: found.run_number, conclusion: found.conclusion ?? found.status, durationSeconds: seconds,
+    jobs: runJobs.map((job) => ({ name: job.name, status: job.conclusion ?? job.status })),
+  };
+}
+
 writeFileSync(arg('out') ?? 'pipeline-status.json', `${JSON.stringify(status, null, 2)}\n`);
 console.log(`pipeline-status.json: ${key} · ejecución ${run.run_number}`);
