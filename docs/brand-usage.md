@@ -28,12 +28,18 @@ no se da nada por permitido de memoria. No es asesoría legal.
 | MongoDB | **Sin logo: nombre en texto.** Consulta del 12 de octubre de 2026 | [Trademark usage guidelines](https://www.mongodb.com/legal/trademark-usage-guidelines): no resuelve el caso de un diagrama de terceros y remite a preguntar. Sin permiso claro. |
 | Redis | **Sin logo: nombre en texto**, por coherencia. Consulta del 12 de octubre de 2026 | [Trademark policy](https://redis.io/legal/trademark-policy/): es la única que lo admitiría («You may use the Trademarks to identify Redis… in an informational context»), con una frase de atribución en cada página. No se usa para no mezclar criterios; se puede revisar. |
 | Node.js, NestJS, Angular, React, Flutter, Swift, Kotlin | **Sin logo: nombre en texto** | Guías no leídas (la política de OpenJS es un PDF que no se pudo abrir en la consulta). Regla del proyecto: sin permiso explícito, nombre en texto. |
-| GitHub, GitHub Actions, Docker, Neon, Upstash, Caddy | **Sin logo en las vistas «Arquitectura en producción» y «Pipeline CI/CD»** | Guías no consultadas. Sin confirmar. |
+| GitHub | **Logo (sin modificar) en «Arquitectura en producción»**, con el nombre al lado. Consulta del 18 de octubre de 2026 | [GitHub logo](https://brand.github.com/foundations/logo): «Use a permitted GitHub logo to inform others that your project integrates with GitHub», menos destacado que el nombre propio y sin modificarlo; en fondo oscuro se usa su versión blanca. |
+| GitHub Actions | **Sin logo: símbolo propio y nombre en texto.** Consulta del 18 de octubre de 2026 | La guía de GitHub no menciona un logo de Actions; sin permiso explícito, no se usa. |
+| Redis (vista «Arquitectura en producción») | **Logo con su frase de atribución.** Consulta del 18 de octubre de 2026 | [Trademark policy](https://redis.io/legal/trademark-policy/): uso informativo permitido con la frase «Redis is a registered trademark of Redis Ltd. Any rights therein are reserved to Redis Ltd.» en cada página donde aparece; la vista la muestra bajo el lienzo. En el resto del sitio sigue el nombre en texto. |
+| Docker, Neon, Upstash, Caddy | **Sin logo en las vistas «Arquitectura en producción» y «Pipeline CI/CD»** | Guías no consultadas. Sin confirmar. |
 
 ## Cómo se aplica en el código
 
-- **Vistas «Arquitectura en producción» y «Pipeline CI/CD»**: ningún nodo lleva logo. Los nodos de
-  `deploy/topology.json` tienen `icon: null` y hay tests que fallan si aparece una imagen en un nodo.
+- **Vista «Arquitectura en producción»** (`ProductionCanvasComponent`): solo llevan logo GitHub, Redis
+  (con su frase de atribución bajo el lienzo) y los iconos oficiales de Google Cloud (Cloud Run,
+  Artifact Registry), a 24 px y con el nombre al lado. El resto (`icon: null` en `deploy/topology.json`)
+  lleva un símbolo propio que no imita ningún logo. Un test falla si aparece otra marca.
+- **Vista «Pipeline CI/CD»**: ningún nodo lleva logo.
 - **Resto del sitio** (`shared/ui/tech-icons.ts`): `cloudflare`, `cloudflarePages` y `gemini` usan
   un símbolo neutro (un aro, `official: false`), no el logo, con el nombre siempre al lado.
 - **Productos de datos de terceros** (categoría «Datos y analítica» del Estudio): `icon: 'dataService'`,

@@ -37,11 +37,26 @@ export class LiveHealthService {
   private readonly http = inject(HttpClient);
   private readonly _state = signal<LiveHealthState>({ kind: 'idle' });
   readonly state = this._state.asReadonly();
+  /** Cuántas comprobaciones han terminado: la vista anima el recorrido de cada una. */
+  private readonly _checks = signal(0);
+  readonly checks = this._checks.asReadonly();
 
   load(): void {
     if (this._state().kind !== 'idle') {
       return;
     }
+    this.check();
+  }
+
+  /** Vuelve a preguntar a la API (botón «Comprobar ahora»). En modo demo no hace nada. */
+  refresh(): void {
+    if (this._state().kind === 'loading' || this._state().kind === 'demo') {
+      return;
+    }
+    this.check();
+  }
+
+  private check(): void {
     if (runtimeConfig.mockMode) {
       this._state.set({ kind: 'demo' });
       return;
@@ -55,7 +70,10 @@ export class LiveHealthService {
       catchError((error: unknown) => of(error instanceof HttpErrorResponse && error.status === 503
         ? parseHealth({ status: 'DOWN', database: 'Database - Unavailable' }, started)
         : null)),
-    ).subscribe((health) => this._state.set(health ? { kind: 'ready', health } : { kind: 'unreachable' }));
+    ).subscribe((health) => {
+      this._state.set(health ? { kind: 'ready', health } : { kind: 'unreachable' });
+      this._checks.update((value) => value + 1);
+    });
   }
 }
 
