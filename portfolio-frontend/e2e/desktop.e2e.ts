@@ -376,3 +376,25 @@ test.describe('paleta de comandos en escritorio', () => {
     expect(running).toBe(0);
   });
 });
+
+test.describe('comprobar ahora', () => {
+  test('el inspector se acopla abajo y la tarjeta se recoloca sola por encima de él', async ({ page }) => {
+    await openDelivery(page);
+    const card = page.locator('app-production-architecture');
+    // Con la API simulada no hay comprobación real: se responde la salud como lo haría la API.
+    await page.evaluate(() => document.querySelector('app-production-architecture')!.scrollIntoView({ block: 'start' }));
+    await page.waitForTimeout(300);
+    const button = card.locator('[data-testid="check-now"]');
+    test.skip(!(await button.count()), 'sin API real (modo demo) no hay botón de comprobación');
+    await button.click();
+    await page.waitForTimeout(1500);
+    const { legendBottom, visibleBottom } = await page.evaluate(() => {
+      const dock = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-bottom')) || 0;
+      return {
+        legendBottom: document.querySelector('app-production-architecture ul[aria-label="Leyenda"]')!.getBoundingClientRect().bottom,
+        visibleBottom: innerHeight - dock,
+      };
+    });
+    expect(legendBottom, 'la leyenda queda por encima del inspector').toBeLessThanOrEqual(visibleBottom);
+  });
+});

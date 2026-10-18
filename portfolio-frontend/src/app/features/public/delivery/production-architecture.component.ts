@@ -55,7 +55,7 @@ interface Fact {
       (picked)="pick($event)"
     />
 
-    <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2" [attr.aria-label]="'Leyenda' | t">
+    <ul #legend class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2" [attr.aria-label]="'Leyenda' | t">
       <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-ok" aria-hidden="true"></span>{{ 'En producción' | t }}</li>
       <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full border border-ink-2" aria-hidden="true"></span>{{ 'Planificado' | t }}</li>
       <li class="inline-flex items-center gap-2"><span class="w-5 border-t-2 border-accent-text" aria-hidden="true"></span>{{ 'Petición de un visitante' | t }}</li>
@@ -139,6 +139,8 @@ export class ProductionArchitectureComponent implements OnInit {
   readonly health = this.liveHealth.state;
 
   private readonly detail = viewChild<ElementRef<HTMLElement>>('detail');
+  private readonly legend = viewChild<ElementRef<HTMLElement>>('legend');
+  private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly destroyRef = inject(DestroyRef);
   private readonly language = inject(LanguageService);
 
@@ -187,6 +189,35 @@ export class ProductionArchitectureComponent implements OnInit {
     this.events.emitRealFromUser([['info', en ? 'Browser' : 'Navegador', `GET ${runtimeConfig.apiBaseUrl}/telemetry/health`]], HEALTH_CHECK);
     this.awaitingCheck = this.checks();
     this.liveHealth.refresh();
+    this.fitAboveInspector();
+  }
+
+  /**
+   * El inspector se acopla abajo y le quita alto a la página: tras abrirlo, se desplaza lo justo para
+   * que la tarjeta quepa en lo que queda visible. Si no cabe entera, al menos el diagrama y su
+   * leyenda (con el botón). Nunca sube la cabecera de la tarjeta bajo la barra de navegación.
+   */
+  private fitAboveInspector(): void {
+    if (this.host.classList.contains('theater-expanded') || typeof requestAnimationFrame === 'undefined') {
+      return;
+    }
+    // Dos fotogramas: el inspector se pinta y publica --dock-bottom antes de medir.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const dock = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-bottom')) || 0;
+      const navBottom = document.querySelector('app-public-navbar header')?.getBoundingClientRect().bottom ?? 64;
+      const top = navBottom + 12;
+      const bottom = innerHeight - dock - 12;
+      const card = this.host.getBoundingClientRect();
+      const legend = this.legend()?.nativeElement.getBoundingClientRect();
+      // Lo que hay que ver: la tarjeta entera si cabe; si no, hasta la leyenda.
+      const target = card.height <= bottom - top ? card.bottom : (legend?.bottom ?? card.bottom);
+      let delta = target > bottom ? target - bottom : card.top < top ? card.top - top : 0;
+      delta = Math.min(delta, card.top - top);
+      if (Math.abs(delta) > 2) {
+        const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        window.scrollBy({ top: delta, behavior: reduced ? 'auto' : 'smooth' });
+      }
+    }));
   }
 
   /** Comprobación pedida con el botón cuyo resultado aún no se ha contado en el inspector. */
