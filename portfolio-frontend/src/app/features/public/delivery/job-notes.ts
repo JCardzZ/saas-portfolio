@@ -95,8 +95,8 @@ export const JOB_NOTES: Record<WorkflowKey, Record<string, JobNote>> = {
       why: 'La dirección de la API se inyecta al desplegar, así que el mismo build vale para cualquier entorno.',
     },
     deploy: {
-      what: 'Verifica la firma de la imagen y la pone en marcha en el servidor.',
-      why: 'Es manual y pide aprobación; si el contenedor no arranca sano, vuelve él solo a la imagen anterior.',
+      what: 'Copia la imagen verificada a Artifact Registry, con el mismo digest, y crea con ella una revisión de Cloud Run.',
+      why: 'Es manual y pide aprobación; la revisión nueva no recibe tráfico hasta responder sana en su propia URL.',
     },
     smoke: {
       what: 'Pruebas de humo contra la API pública, pasando por HTTPS.',
@@ -107,8 +107,8 @@ export const JOB_NOTES: Record<WorkflowKey, Record<string, JobNote>> = {
       why: 'Solo se etiqueta lo que está desplegado y sano.',
     },
     rollback: {
-      what: 'Vuelve a la imagen anterior si las pruebas de humo fallan.',
-      why: 'El camino de vuelta está automatizado y no espera aprobación.',
+      what: 'Devuelve el tráfico a la revisión anterior de Cloud Run si las pruebas de humo fallan.',
+      why: 'La revisión anterior sigue ahí: volver es mover el tráfico, sin desplegar nada ni esperar aprobación.',
     },
     'pipeline-status': {
       what: 'Publica el resultado de este despliegue.',

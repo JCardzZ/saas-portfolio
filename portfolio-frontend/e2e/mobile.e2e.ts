@@ -448,7 +448,7 @@ test.describe('página pública en móviles y tabletas', () => {
     const timeline = page.locator('app-deploy-timeline');
     await timeline.scrollIntoViewIfNeeded();
     await expect(timeline.locator('.entry').first()).toContainText('en producción');
-    await expect(timeline.getByLabel('Despliegues de Backend')).toContainText('planificado');
+    await expect(timeline.getByLabel('Despliegues de Backend')).toContainText('Cloud Run');
     const requests: string[] = [];
     page.on('request', (request) => requests.push(`${request.method()} ${request.url()}`));
     await timeline.getByRole('button', { name: 'Simular rollback' }).tap();

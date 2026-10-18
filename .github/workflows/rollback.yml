@@ -6,12 +6,11 @@ name: Rollback
 #   frontend: pone en producción un despliegue anterior de Cloudflare Pages con el endpoint oficial
 #             POST /accounts/{account_id}/pages/projects/{project}/deployments/{deployment_id}/rollback
 #             (solo valen despliegues de producción que se construyeron bien).
-#   backend:  vuelve a desplegar por digest una imagen anterior de GHCR, tras verificar su firma.
-#             Hasta que exista el servidor, este destino falla al no encontrar los secrets del VPS.
+#   backend:  vuelve a desplegar en Cloud Run, por digest, una imagen anterior de GHCR, tras verificar su firma.
 #
 # Secrets:   CLOUDFLARE_API_TOKEN (permiso Pages: Edit), CLOUDFLARE_ACCOUNT_ID
-#            VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_KNOWN_HOSTS (backend)
-# Variables: CLOUDFLARE_PAGES_PROJECT, API_BASE_URL (pruebas de humo del backend)
+# Variables: CLOUDFLARE_PAGES_PROJECT, API_BASE_URL (pruebas de humo del backend),
+#            GCP_WIF_PROVIDER, GCP_DEPLOY_SA, GCP_PROJECT_ID, GCP_REGION, GCP_ARTIFACT_REPO, CLOUD_RUN_SERVICE
 
 on:
   workflow_dispatch:
@@ -141,12 +140,14 @@ jobs:
     permissions:
       contents: read
       packages: read
+      id-token: write   # Workload Identity Federation hacia Google Cloud
     outputs:
       sha: ${{ steps.image.outputs.sha }}
       healthy: ${{ steps.smoke.outcome == 'success' }}
     env:
-      DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH || 'saas-portfolio' }}
       VERSION: ${{ inputs.version }}
+      REGION: ${{ vars.GCP_REGION }}
+      SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
@@ -179,25 +180,27 @@ jobs:
           cosign verify "$REF" \
             --certificate-identity-regexp "^$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com > /dev/null
-      - uses: ./.github/actions/ssh-setup
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
-          host: ${{ secrets.VPS_HOST }}
-          user: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          known-hosts: ${{ secrets.VPS_KNOWN_HOSTS }}
-          port: ${{ vars.VPS_SSH_PORT || '22' }}
-      - name: Desplegar esa imagen
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+      - name: Desplegar esa imagen en Cloud Run
         env:
           IMAGE: ${{ steps.image.outputs.ref }}
-          GHCR_USER: ${{ github.actor }}
+          REGISTRY: ${{ vars.GCP_REGION }}-docker.pkg.dev
+          TARGET: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/saas-portfolio-backend
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Misma imagen y mismo digest que la firma verificada: se copia a Artifact Registry (GHCR es
+        # privado) y pasa a ser la revisión con todo el tráfico.
         run: |
-          {
-            printf 'export IMAGE=%q GHCR_USER=%q GHCR_TOKEN=%q DEPLOY_PATH=%q\n' \
-              "$IMAGE" "$GHCR_USER" "$GHCR_TOKEN" "$DEPLOY_PATH"
-            echo 'set -- deploy'
-            cat deploy/remote-deploy.sh
-          } | ssh vps 'bash -s' | tee deploy.log
+          set -euo pipefail
+          DIGEST="${IMAGE##*@}"
+          echo "$GHCR_TOKEN" | skopeo login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          gcloud auth print-access-token | skopeo login "$REGISTRY" -u oauth2accesstoken --password-stdin
+          skopeo copy --all --preserve-digests "docker://$IMAGE" "docker://$TARGET:rollback-${GITHUB_RUN_NUMBER}"
+          gcloud run services describe "$SERVICE" --region "$REGION" --format 'value(status.latestReadyRevisionName)' > previous.txt
+          gcloud run deploy "$SERVICE" --region "$REGION" --image "$TARGET@$DIGEST" --quiet
       - name: Pruebas de humo
         id: smoke
         env:
@@ -210,7 +213,7 @@ jobs:
         env:
           IMAGE: ${{ steps.image.outputs.ref }}
         run: |
-          PREVIOUS="$(sed -n 's/^Desplegando .* (anterior: \(.*\))$/\1/p' deploy.log 2>/dev/null | tail -n 1)"
+          PREVIOUS="$(cat previous.txt 2>/dev/null)"
           {
             echo "### Rollback del backend"
             echo ""
@@ -219,9 +222,6 @@ jobs:
             echo "- **Resultado:** ${{ job.status }} · pruebas de humo: ${{ steps.smoke.outcome }}."
             echo "- **Lanzado por:** $GITHUB_ACTOR."
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Borrar la clave
-        if: always()
-        run: rm -f ~/.ssh/deploy_key
 
   # Deja el rollback en la línea de tiempo pública (rama badges).
   record:

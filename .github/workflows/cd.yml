@@ -3,19 +3,20 @@ name: CD
 # Build once, deploy many: este workflow NO construye nada. Se dispara cuando la CI termina bien
 # en main y despliega exactamente lo que esa ejecución construyó y verificó:
 #   - el artefacto `frontend-dist`           → 🚀 Cloudflare Pages
-#   - la imagen de GHCR que pasó Trivy       → 🚀 Deploy VPS → 🧪 Health + smoke
+#   - la imagen de GHCR que pasó Trivy       → 🚀 Cloud Run → 🧪 Health + smoke
 #     (artefacto `backend-image`, por digest)   → ✅ Release (semver) o 🚀 Rollback
 #
-# El despliegue al VPS es SOLO manual (Run workflow → "Desplegar el backend en el VPS") hasta que
-# exista el servidor. A mano se despliega lo último que la CI publicó en main: el frontend y la
-# imagen pueden venir de ejecuciones distintas, porque cada una solo se construye si cambió.
+# El despliegue del backend es SOLO manual (Run workflow → "Desplegar el backend en Cloud Run").
+# A mano se despliega lo último que la CI publicó en main: el frontend y la imagen pueden venir de
+# ejecuciones distintas, porque cada una solo se construye si cambió.
 #
 # Secrets:   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID            (frontend)
-#            VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_KNOWN_HOSTS        (backend; el último, recomendado)
+#            ninguno para Google Cloud: el job se autentica con Workload Identity Federation
 # Variables: CLOUDFLARE_PAGES_PROJECT   sin ella el frontend no se despliega
 #            API_BASE_URL               dirección pública de la API (p. ej. https://api.ejemplo.dev/v1);
 #                                       la usan el frontend y las pruebas de humo
-#            VPS_SSH_PORT, VPS_DEPLOY_PATH   opcionales (22 y "saas-portfolio")
+#            GCP_WIF_PROVIDER, GCP_DEPLOY_SA, GCP_PROJECT_ID, GCP_REGION,
+#            GCP_ARTIFACT_REPO, CLOUD_RUN_SERVICE   backend en Cloud Run (sin ellas no se despliega)
 # Environment "production": añade ahí revisores obligatorios para que el despliegue pida aprobación.
 
 on:
@@ -26,7 +27,7 @@ on:
   workflow_dispatch:
     inputs:
       deploy_backend:
-        description: Desplegar el backend en el VPS
+        description: Desplegar el backend en Cloud Run
         type: boolean
         default: false
 
@@ -263,10 +264,13 @@ jobs:
 
   # ───────────────────────────── Backend ─────────────────────────────
   deploy:
-    name: 🚀 Deploy VPS
+    name: 🚀 Cloud Run
     needs: source
     # Solo a mano y pidiéndolo expresamente: la CI nunca despliega el backend por sí sola.
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy_backend && needs.source.outputs.image-ref != '' && needs.source.outputs.signature == 'success'
+    if: >-
+      github.event_name == 'workflow_dispatch' && inputs.deploy_backend
+      && needs.source.outputs.image-ref != '' && needs.source.outputs.signature == 'success'
+      && vars.GCP_WIF_PROVIDER != ''
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     # La aprobación se configura en el environment (Settings → Environments → production).
@@ -275,49 +279,71 @@ jobs:
     permissions:
       contents: read
       packages: read
+      id-token: write   # OIDC para Workload Identity Federation: sin claves de Google en GitHub
+    outputs:
+      previous-revision: ${{ steps.deploy.outputs.previous }}
     env:
-      DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH || 'saas-portfolio' }}
+      REGION: ${{ vars.GCP_REGION }}
+      SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
+      TAG: rc-${{ github.run_number }}
     steps:
-      # Compose, Caddyfile y script de despliegue del mismo commit que la imagen.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.source.outputs.image-sha }}
-      - uses: ./.github/actions/ssh-setup
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
-          host: ${{ secrets.VPS_HOST }}
-          user: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          known-hosts: ${{ secrets.VPS_KNOWN_HOSTS }}
-          port: ${{ vars.VPS_SSH_PORT || '22' }}
-      - name: Copiar Compose y Caddyfile
-        run: |
-          ssh vps "mkdir -p '$DEPLOY_PATH'"
-          scp deploy/docker-compose.yml deploy/Caddyfile "vps:$DEPLOY_PATH/"
-      - name: Desplegar la imagen que verificó la CI
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+      - name: Copiar la imagen verificada a Artifact Registry (mismo digest)
+        id: copy
         env:
           IMAGE: ${{ needs.source.outputs.image-ref }}
-          GHCR_USER: ${{ github.actor }}
+          IMAGE_SHA: ${{ needs.source.outputs.image-sha }}
+          REGISTRY: ${{ vars.GCP_REGION }}-docker.pkg.dev
+          TARGET: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPO }}/saas-portfolio-backend
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # Las variables viajan por la entrada estándar junto al script, no en la línea de órdenes
-        # del servidor, donde las vería cualquier usuario con `ps`.
+        # GHCR es privado y Cloud Run no puede descargar de él: se copia la misma imagen, sin
+        # reconstruirla. --preserve-digests garantiza que lo desplegado es lo que verificó cosign.
         run: |
+          DIGEST="${IMAGE##*@}"
+          echo "$GHCR_TOKEN" | skopeo login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          gcloud auth print-access-token | skopeo login "$REGISTRY" -u oauth2accesstoken --password-stdin
+          skopeo copy --all --preserve-digests "docker://$IMAGE" "docker://$TARGET:sha-${IMAGE_SHA:0:7}"
+          echo "image=$TARGET@$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+      - name: Crear la revisión sin tráfico, comprobarla y pasarle el tráfico
+        id: deploy
+        env:
+          IMAGE: ${{ steps.copy.outputs.image }}
+        # Las variables y los secretos de la API ya están en el servicio y se conservan: aquí solo
+        # cambia la imagen. La revisión nueva no recibe tráfico hasta responder sana en su URL propia.
+        run: |
+          PREVIOUS="$(gcloud run services describe "$SERVICE" --region "$REGION" --format 'value(status.latestReadyRevisionName)')"
+          echo "previous=$PREVIOUS" >> "$GITHUB_OUTPUT"
+          gcloud run deploy "$SERVICE" --region "$REGION" --image "$IMAGE" --no-traffic --tag "$TAG" --quiet
+          URL="$(gcloud run services describe "$SERVICE" --region "$REGION" --format json | jq -r --arg t "$TAG" '.status.traffic[] | select(.tag == $t) | .url')"
+          for attempt in $(seq 1 24); do
+            if curl -fsS -m 10 "$URL/v1/telemetry/health" > /dev/null; then HEALTHY=true; break; fi
+            sleep 5
+          done
+          if [ "${HEALTHY:-}" != "true" ]; then
+            echo "::error::La revisión nueva no respondió sana en 2 minutos: el tráfico sigue en $PREVIOUS."
+            exit 1
+          fi
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" --to-tags "$TAG=100" --quiet
+          REVISION="$(gcloud run services describe "$SERVICE" --region "$REGION" --format 'value(status.latestReadyRevisionName)')"
           {
-            printf 'export IMAGE=%q GHCR_USER=%q GHCR_TOKEN=%q DEPLOY_PATH=%q\n' \
-              "$IMAGE" "$GHCR_USER" "$GHCR_TOKEN" "$DEPLOY_PATH"
-            echo 'set -- deploy'
-            cat deploy/remote-deploy.sh
-          } | ssh vps 'bash -s' | tee deploy.log
-          PREVIOUS="$(sed -n 's/^Desplegando .* (anterior: \(.*\))$/\1/p' deploy.log | tail -n 1)"
-          {
-            echo "### Desplegado en el VPS"
+            echo "### Desplegado en Cloud Run"
             echo ""
-            echo "- **Ahora:** \`$IMAGE\` (firma verificada)."
+            echo "- **Ahora:** revisión \`$REVISION\` con \`$IMAGE\` (firma verificada en el job Origen)."
             echo "- **Antes:** \`${PREVIOUS:-ninguna}\`."
-            echo "- **Salud dentro del contenedor:** ✅ \`/v1/telemetry/health\` responde."
-            echo "- **Para volver atrás:** si las pruebas de humo fallan, el job Rollback lo hace solo. A mano, en el servidor: \`bash remote-deploy.sh rollback\`."
+            echo "- **Salud de la revisión nueva:** ✅ \`/v1/telemetry/health\` respondió antes de recibir tráfico."
+            echo "- **Para volver atrás:** si las pruebas de humo fallan, el job Rollback lo hace solo. A mano: \`gcloud run services update-traffic $SERVICE --region $REGION --to-revisions=$PREVIOUS=100\`."
           } >> "$GITHUB_STEP_SUMMARY"
           mkdir -p metrics
-          jq -n --arg digest "${IMAGE##*@}" --arg previous "${PREVIOUS:-}" '{digest: $digest} + (if $previous != "" and $previous != "ninguna" then {previousDigest: ($previous | split("@") | last)} else {} end)' > metrics/deploy.json
+          jq -n --arg digest "${{ steps.copy.outputs.digest }}" --arg revision "$REVISION" --arg previous "$PREVIOUS" \
+            '{digest: $digest, revision: $revision} + (if $previous != "" then {previousRevision: $previous} else {} end)' > metrics/deploy.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
@@ -325,9 +351,6 @@ jobs:
           path: metrics
           retention-days: 1
           if-no-files-found: ignore
-      - name: Borrar la clave
-        if: always()
-        run: rm -f ~/.ssh/deploy_key
 
   smoke:
     name: 🧪 Health + smoke
@@ -379,36 +402,27 @@ jobs:
   rollback:
     name: 🚀 Rollback
     needs: [source, deploy, smoke]
-    # El despliegue terminó pero las pruebas de humo fallaron: se vuelve a la imagen anterior.
-    # (Si falla el propio despliegue, remote-deploy.sh ya vuelve atrás él solo.)
-    if: ${{ always() && needs.deploy.result == 'success' && needs.smoke.result == 'failure' }}
+    # El despliegue terminó pero las pruebas de humo fallaron: el tráfico vuelve a la revisión
+    # anterior, que sigue en Cloud Run (no hay que volver a desplegar nada).
+    if: ${{ always() && needs.deploy.result == 'success' && needs.smoke.result == 'failure' && needs.deploy.outputs.previous-revision != '' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     # Sin environment a propósito: volver atrás no debe quedarse esperando una aprobación.
-    env:
-      DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH || 'saas-portfolio' }}
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
-          ref: ${{ needs.source.outputs.image-sha }}
-      - uses: ./.github/actions/ssh-setup
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          user: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          known-hosts: ${{ secrets.VPS_KNOWN_HOSTS }}
-          port: ${{ vars.VPS_SSH_PORT || '22' }}
-      - name: Volver a la imagen anterior
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+      - name: Devolver el tráfico a la revisión anterior
+        env:
+          PREVIOUS: ${{ needs.deploy.outputs.previous-revision }}
         run: |
-          {
-            printf 'export DEPLOY_PATH=%q\n' "$DEPLOY_PATH"
-            echo 'set -- rollback'
-            cat deploy/remote-deploy.sh
-          } | ssh vps 'bash -s'
-          echo "### Rollback hecho — el servidor volvió a la imagen anterior, que responde." >> "$GITHUB_STEP_SUMMARY"
-      - name: Borrar la clave
-        if: always()
-        run: rm -f ~/.ssh/deploy_key
+          gcloud run services update-traffic "${{ vars.CLOUD_RUN_SERVICE }}" --region "${{ vars.GCP_REGION }}" --to-revisions="$PREVIOUS=100" --quiet
+          echo "### Rollback hecho — el tráfico volvió a la revisión \`$PREVIOUS\`." >> "$GITHUB_STEP_SUMMARY"
 
   # Cierre: duración total y resultado de cada paso, y el estado publicado para el sitio.
   pipeline-status:
