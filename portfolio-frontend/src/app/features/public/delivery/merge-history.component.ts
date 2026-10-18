@@ -42,7 +42,7 @@ interface Row {
   selector: 'app-merge-history',
   imports: [TranslatePipe, TheaterToggleComponent],
   hostDirectives: [TheaterDirective],
-  host: { class: 'bento-card block' },
+  host: { class: 'bento-card block', style: 'container-type: inline-size' },
   template: `
     <app-theater-toggle name="Ramas fusionadas en main" />
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pr-10">
@@ -55,34 +55,44 @@ interface Row {
         {{ loaded() ? ('Aún no hay ramas fusionadas publicadas.' | t) : ('Cargando…' | t) }}
       </p>
     } @else {
-      <ol class="mt-4" [attr.aria-label]="'Ramas fusionadas, de la más reciente a la más antigua' | t" data-testid="merge-list">
-        @for (row of rows(); track row.merge.number; let first = $first; let last = $last) {
-          <li class="merge-row" [class.first]="first" [class.last]="last" [class.active]="row.merge.number === activeNumber()">
-            <!-- El trazo de main y la rama que vuelve a ella: decorativo, el texto dice lo mismo. -->
-            <svg class="graph" viewBox="0 0 44 56" aria-hidden="true">
-              <path d="M34 0 C34 18 34 18 20 26" [class]="'branch tone-' + row.tone" fill="none" />
-              <circle cx="34" cy="2" r="3" [class]="'tip tone-' + row.tone" />
-              <circle cx="12" cy="28" r="5" [class]="'commit tone-' + row.tone" />
+      <!-- Estilo «Git log» de un IDE: grafo de carriles, mensaje con sus etiquetas, CI, autor, fecha y commit. -->
+      <div class="log-head" aria-hidden="true">
+        <span>{{ 'Rama y mensaje' | t }}</span><span class="text-center">CI</span>
+        <span class="col-meta">{{ 'Autor' | t }}</span><span class="col-meta">{{ 'Fecha' | t }}</span><span class="col-meta">Commit</span>
+      </div>
+      <ol [attr.aria-label]="'Ramas fusionadas, de la más reciente a la más antigua' | t" data-testid="merge-list">
+        @for (row of rows(); track row.merge.number; let first = $first; let last = $last; let i = $index) {
+          <li class="log-row" [class.first]="first" [class.last]="last" [class.active]="row.merge.number === activeNumber()" [style.--lane]="laneColor(i)">
+            <!-- main a la izquierda; la rama sube por su carril y se une a main en el commit de merge. -->
+            <svg class="graph" viewBox="0 0 56 40" aria-hidden="true">
+              <path class="lane" d="M42 40 L42 30 C42 22 30 20 18 20" fill="none" />
+              <circle class="tip" cx="42" cy="34" r="3" />
+              <circle class="merge" cx="14" cy="20" r="5" />
             </svg>
-            <button type="button" class="merge-button focus-ring" [attr.aria-pressed]="row.merge.number === activeNumber()"
+            <button type="button" class="log-cells focus-ring" [attr.aria-pressed]="row.merge.number === activeNumber()"
               [attr.data-merge]="row.merge.number" (click)="pick(row.merge.number)">
-              <span class="min-w-0 flex-1">
-                <span class="flex min-w-0 items-center gap-2">
-                  <code class="shrink-0 font-mono text-mono-sm text-ink-3">#{{ row.merge.number }}</code>
-                  <span class="truncate text-body-sm font-medium text-ink-1">{{ row.merge.title }}</span>
-                </span>
-                <span class="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 text-caption text-ink-3">
-                  <code class="truncate font-mono">{{ row.merge.branch }}</code>
-                  <span aria-hidden="true">→</span><code class="font-mono">main</code>
-                  <span>· {{ when(row.merge.mergedAt) }}</span>
-                </span>
-              </span>
-              <span class="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-                <span [class]="'pill tone-' + row.tone">{{ ciLabel(row.merge) }}</span>
-                @for (item of row.deployed; track item.target) {
-                  <span class="pill tone-deploy">{{ item.target === 'frontend' ? 'Frontend' : 'Backend' }} #{{ item.deployment.runNumber }}</span>
+              <span class="subject">
+                @if (first) {
+                  <span class="ref ref-head" title="HEAD → main">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2.5h7l3 3-3 3H3z" fill="currentColor" /></svg>main
+                  </span>
                 }
+                <span class="ref ref-branch">
+                  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm-.75 1.37v7.26a1.5 1.5 0 1 1-1.5 0V4.37a1.5 1.5 0 0 0 1.5 0ZM13 4.5a1.5 1.5 0 1 1-2.25-1.3V5c0 1.66-1.34 3-3 3h-1v-1.5h1A1.5 1.5 0 0 0 9.25 5V3.2A1.5 1.5 0 0 1 13 4.5Z" fill="currentColor" /></svg>{{ row.merge.branch }}
+                </span>
+                <span class="title"><span class="num">#{{ row.merge.number }}</span> {{ row.merge.title }}</span>
+                @for (item of row.deployed; track item.target) {
+                  <span class="ref ref-deploy">▲ {{ item.target === 'frontend' ? 'Frontend' : 'Backend' }} #{{ item.deployment.runNumber }}</span>
+                }
+                <span class="meta-inline">{{ row.merge.author }} · {{ when(row.merge.mergedAt) }} · <code>{{ row.merge.sha.slice(0, 7) }}</code></span>
               </span>
+              <span class="ci" [attr.title]="ciLabel(row.merge)">
+                <span [class]="'ci-icon tone-' + row.tone" aria-hidden="true">{{ row.tone === 'ok' ? '✓' : row.tone === 'bad' ? '✕' : row.tone === 'warn' ? '⊘' : '·' }}</span>
+                <span class="sr-only">{{ ciLabel(row.merge) }}</span>
+              </span>
+              <span class="col-meta author">{{ row.merge.author }}</span>
+              <span class="col-meta date">{{ when(row.merge.mergedAt) }}</span>
+              <code class="col-meta hash">{{ row.merge.sha.slice(0, 7) }}</code>
             </button>
           </li>
         }
@@ -108,9 +118,13 @@ interface Row {
             <span [class]="'pill tone-' + row.tone">#{{ ci.runNumber }} · {{ ciLabel(row.merge) }}</span>
             @if (ci.durationSeconds !== null) { <span>{{ duration(ci.durationSeconds) }}</span> }
           </p>
-          <ul class="mt-2 flex flex-wrap gap-1.5" [attr.aria-label]="'Jobs de la CI' | t">
+          <!-- Jobs como en el panel de ejecución de un IDE: icono de estado y nombre, en columnas. -->
+          <ul class="jobs mt-2" [attr.aria-label]="'Jobs de la CI' | t">
             @for (job of ci.jobs; track job.name) {
-              <li [class]="'job tone-' + tone(job.status)" [attr.title]="job.status">{{ job.name }}</li>
+              <li [class]="'job tone-' + tone(job.status)" [attr.title]="job.status">
+                <span class="job-icon" aria-hidden="true">{{ tone(job.status) === 'ok' ? '✓' : tone(job.status) === 'bad' ? '✕' : tone(job.status) === 'warn' ? '⊘' : '–' }}</span>
+                <span class="job-name">{{ job.name }}</span>
+              </li>
             }
           </ul>
         } @else {
@@ -140,37 +154,64 @@ interface Row {
     </div>
   `,
   styles: `
-    .merge-row { position: relative; display: flex; align-items: stretch; gap: 0.25rem; border-radius: var(--radius-control); transition: background-color 0.2s ease-out; }
-    /* La línea de main: continua aunque una fila crezca (texto ampliado, móvil). */
-    .merge-row::before { content: ''; position: absolute; left: 11px; top: 0; bottom: 0; width: 2px; background: var(--text-2); }
-    .merge-row.first::before { top: 28px; }
-    .merge-row.last::before { bottom: auto; height: 28px; }
-    .merge-row.first.last::before { display: none; }
-    .merge-row.active { background: var(--bg-surface-2); }
-    .graph { position: relative; width: 44px; height: 56px; flex: none; }
-    .branch { stroke-width: 2; }
-    .branch.tone-ok, .tip.tone-ok { stroke: var(--status-ok); }
-    .branch.tone-bad, .tip.tone-bad { stroke: var(--status-danger); }
-    .branch.tone-warn, .tip.tone-warn { stroke: var(--status-warn); }
-    .branch.tone-idle, .tip.tone-idle { stroke: var(--text-3); }
-    .tip { fill: var(--bg-surface-1); stroke-width: 1.5; }
-    .commit { stroke: var(--bg-surface-1); stroke-width: 2; }
-    .commit.tone-ok { fill: var(--status-ok); }
-    .commit.tone-bad { fill: var(--status-danger); }
-    .commit.tone-warn { fill: var(--status-warn); }
-    .commit.tone-idle { fill: var(--text-3); }
-    .merge-button { display: flex; min-width: 0; flex: 1; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; padding: 0.5rem 0.5rem 0.5rem 0; text-align: left; min-height: 3.5rem; border-radius: var(--radius-control); }
+    /* Cabecera y filas comparten columnas: grafo, mensaje, CI, autor, fecha, commit. */
+    .log-head, .log-cells { display: grid; grid-template-columns: minmax(0, 1fr) 2rem 7.5rem 6.5rem 4.5rem; align-items: center; column-gap: 0.75rem; }
+    .log-head { margin-top: 1rem; padding: 0 0.75rem 0.375rem 56px; border-bottom: 1px solid var(--border-subtle); font-size: 0.75rem; color: var(--text-3); }
+    .log-row { position: relative; display: flex; align-items: stretch; border-radius: var(--radius-mark); transition: background-color 0.15s ease-out; }
+    .log-row:hover { background: rgb(var(--c-ink-1) / 0.04); }
+    .log-row.active { background: color-mix(in srgb, var(--accent-text) 14%, transparent); }
+    /* El carril de main, continuo aunque una fila crezca. */
+    .log-row::before { content: ''; position: absolute; left: 13px; top: 0; bottom: 0; width: 2px; background: var(--text-2); }
+    .log-row.first::before { top: 20px; }
+    .log-row.last::before { bottom: auto; height: 20px; }
+    .graph { width: 56px; height: 40px; flex: none; position: relative; }
+    .lane { stroke: var(--lane); stroke-width: 2; stroke-linecap: round; }
+    .tip { fill: var(--bg-surface-1); stroke: var(--lane); stroke-width: 2; }
+    .merge { fill: var(--text-1); stroke: var(--bg-surface-1); stroke-width: 2.5; }
+    .log-row.active .merge { fill: var(--accent-text); }
+    .log-cells { flex: 1; min-width: 0; min-height: 2.5rem; padding: 0.25rem 0.75rem 0.25rem 0; text-align: left; font-size: 0.8125rem; }
+    /* Con el dedo, cada fila es un objetivo de 44 px como el resto de controles. */
+    @media (pointer: coarse) { .log-cells { min-height: 2.75rem; } }
+    .subject { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; }
+    .title { min-width: 0; flex: 1 1 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-1); }
+    .num { color: var(--text-3); font-family: var(--font-mono); }
+    .ref { display: inline-flex; align-items: center; gap: 0.25rem; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: var(--radius-mark); padding: 0.0625rem 0.375rem; font-family: var(--font-mono); font-size: 0.75rem; line-height: 1.125rem; }
+    .ref svg { width: 0.75rem; height: 0.75rem; flex: none; }
+    .ref-branch { color: var(--lane); background: color-mix(in srgb, var(--lane) 14%, transparent); border: 1px solid color-mix(in srgb, var(--lane) 40%, transparent); }
+    .ref-head { color: var(--accent-on); background: var(--accent-solid); font-weight: 600; }
+    .ref-deploy { color: var(--accent-text); border: 1px dashed color-mix(in srgb, var(--accent-text) 50%, transparent); }
+    .ci { display: flex; justify-content: center; }
+    .ci-icon { display: inline-flex; width: 1.25rem; height: 1.25rem; align-items: center; justify-content: center; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; }
+    .ci-icon.tone-ok { color: var(--status-ok); background: rgb(var(--c-status-ok) / 0.14); }
+    .ci-icon.tone-bad { color: var(--status-danger); background: color-mix(in srgb, var(--status-danger) 16%, transparent); }
+    .ci-icon.tone-warn { color: var(--status-warn); background: color-mix(in srgb, var(--status-warn) 16%, transparent); }
+    .ci-icon.tone-idle { color: var(--text-3); }
+    .col-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); font-size: 0.75rem; }
+    .hash { font-family: var(--font-mono); color: var(--text-3); }
+    .meta-inline { display: none; width: 100%; color: var(--text-3); font-size: 0.75rem; }
+    /* Estrecho: el mensaje y la CI; autor, fecha y commit bajan a una línea bajo el mensaje. */
+    @container (max-width: 720px) {
+      .log-head { display: none; }
+      .log-cells { grid-template-columns: minmax(0, 1fr) 2rem; }
+      .col-meta { display: none; }
+      .meta-inline { display: block; }
+    }
     .pill { display: inline-flex; align-items: center; min-height: 1.5rem; border-radius: 9999px; border: 1px solid; padding: 0 0.5rem; font-size: 0.75rem; line-height: 1rem; white-space: nowrap; }
     .pill.tone-ok { border-color: rgb(var(--c-status-ok) / 0.4); color: var(--status-ok); }
     .pill.tone-bad { border-color: color-mix(in srgb, var(--status-danger) 45%, transparent); color: var(--status-danger); }
     .pill.tone-warn { border-color: color-mix(in srgb, var(--status-warn) 45%, transparent); color: var(--status-warn); }
     .pill.tone-idle { border-color: var(--border-strong); color: var(--text-2); }
     .pill.tone-deploy { border-color: color-mix(in srgb, var(--accent-text) 45%, transparent); color: var(--accent-text); }
-    .job { border-radius: var(--radius-mark); border: 1px solid var(--border-subtle); padding: 0.125rem 0.5rem; font-size: 0.75rem; line-height: 1rem; color: var(--text-2); }
-    .job.tone-ok { border-color: rgb(var(--c-status-ok) / 0.3); }
-    .job.tone-bad { border-color: color-mix(in srgb, var(--status-danger) 50%, transparent); color: var(--status-danger); }
-    .job.tone-warn { color: var(--status-warn); }
+    .jobs { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.125rem 1rem; }
+    .job { display: flex; min-width: 0; align-items: center; gap: 0.5rem; padding: 0.1875rem 0.25rem; border-radius: var(--radius-mark); font-size: 0.8125rem; color: var(--text-2); }
+    .job-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .job-icon { display: inline-flex; width: 1rem; height: 1rem; flex: none; align-items: center; justify-content: center; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; }
+    .job.tone-ok .job-icon { color: var(--status-ok); background: rgb(var(--c-status-ok) / 0.14); }
+    .job.tone-bad { color: var(--status-danger); background: color-mix(in srgb, var(--status-danger) 8%, transparent); }
+    .job.tone-bad .job-icon { color: var(--status-danger); background: color-mix(in srgb, var(--status-danger) 18%, transparent); }
+    .job.tone-warn .job-icon { color: var(--status-warn); background: color-mix(in srgb, var(--status-warn) 16%, transparent); }
     .job.tone-idle { color: var(--text-3); }
+    .job.tone-idle .job-icon { color: var(--text-3); }
     @media (prefers-reduced-motion: reduce) { .merge-row { transition: none; } }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -197,6 +238,15 @@ export class MergeHistoryComponent implements OnInit {
     });
     return status.merges.map((merge) => ({ merge, tone: toneOf(merge.ci?.conclusion), deployed: deploymentsOf(merge.sha) }));
   });
+
+  /**
+   * Color del carril de cada rama, como en el log de un IDE: el acento de la paleta girado en el
+   * círculo de color (sin colores escritos a mano). Se repite cada seis ramas.
+   */
+  laneColor(index: number): string {
+    const turns = [0, 140, 220, 60, 300, 180];
+    return `oklch(from var(--accent-text) l c calc(h + ${turns[index % turns.length]}))`;
+  }
 
   readonly active = computed(() => this.rows().find((row) => row.merge.number === this.activeNumber()) ?? null);
 
