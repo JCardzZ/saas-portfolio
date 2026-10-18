@@ -48,6 +48,15 @@ spring:
       ssl:
         enabled: ${REDIS_SSL_ENABLED:false}
 
+# DOCUMENTACIÓN: Swagger UI sobre el contrato OpenAPI (contract-first). springdoc necesita
+# api-docs activo para registrar la UI, pero /v3/api-docs (lo generado desde el código) no es
+# público: SecurityConfig solo abre /v3/api-docs/swagger-config. La única fuente es portfolio-api-spec.
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    url: /openapi.yaml
+    try-it-out-enabled: true
+
 server:
   port: 8080
   servlet:

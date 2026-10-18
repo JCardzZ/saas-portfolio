@@ -45,7 +45,12 @@ public class SecurityConfig {
             "/ai/rag/query",
             "/ai/architecture/copilot",
             // Servidor MCP: sin autenticación, con límite por origen y tope diario (McpAccessService).
-            "/mcp"
+            "/mcp",
+            // Documentación: Swagger UI y el contrato que muestra (público, igual que el repositorio).
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/api-docs/swagger-config",
+            "/openapi.yaml"
     };
 
     @Bean
