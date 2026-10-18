@@ -547,4 +547,24 @@ describe('MergeHistoryComponent as a commit graph', () => {
     expect(detail.textContent).toContain('fix: y');
     expect(detail.querySelector('a')!.getAttribute('href')).toBe(`https://github.com/owner/repo/commit/${sha('2')}`);
   });
+
+  it('lights up the branch of the commit under the cursor, from where it forks to where it merges, and dims the rest', () => {
+    const { fixture, backend, element } = setup(MergeHistoryComponent);
+    serveSnapshot(backend, { ...statusFile({ public: true }), merges: [merge], commits }, fixture);
+    const rows = () => Array.from(element.querySelectorAll<HTMLElement>('[data-testid="commit-graph"] li'));
+
+    rows()[1].dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+    // La rama feat/x: sale del merge (fila 0), pasa por su commit y por la fila de main, y vuelve a init.
+    expect(rows().map((row) => row.querySelectorAll('.seg.hl').length > 0)).toEqual([true, true, true, true]);
+    expect(rows()[1].querySelector('.dot.hl')).not.toBeNull();
+    expect(rows()[2].querySelector('.dot.hl')).toBeNull();
+    expect(element.querySelector('.commit-log.has-path')).not.toBeNull();
+
+    rows()[1].dispatchEvent(new MouseEvent('mouseleave'));
+    fixture.detectChanges();
+    // Sin cursor, vuelve a la rama del commit seleccionado (HEAD, en main).
+    expect(rows()[1].querySelector('.dot.hl')).toBeNull();
+    expect(rows()[2].querySelector('.dot.hl')).not.toBeNull();
+  });
 });

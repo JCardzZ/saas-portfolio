@@ -5,7 +5,7 @@ import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
 import { TheaterDirective } from '../../../shared/ui/theater.directive';
 import { CommitEntry, Deployment, MergeEntry, formatDate, formatDuration } from './delivery-data';
-import { GraphRow, layoutGraph, pullRequestOf } from './git-graph';
+import { GraphRow, LaneSegment, layoutGraph, pullRequestOf } from './git-graph';
 import { DeliveryStatusService } from './delivery-status.service';
 import { revealDetail } from './stage-graph.component';
 
@@ -83,18 +83,18 @@ interface Row {
         <span>{{ 'Rama y mensaje' | t }}</span><span class="text-center">CI</span>
         <span class="col-meta">{{ 'Autor' | t }}</span><span class="col-meta">{{ 'Fecha' | t }}</span><span class="col-meta">Commit</span>
       </div>
-      <ol class="commit-log" [attr.aria-label]="'Historial de main, del commit más reciente al más antiguo' | t" data-testid="commit-graph">
-        @for (row of g.rows; track row.commit.sha; let first = $first) {
-          <li class="commit-row" [id]="'c-' + row.commit.sha" role="option" [attr.aria-selected]="row.commit.sha === activeSha()"
+      <ol class="commit-log" [class.has-path]="!!path()" [attr.aria-label]="'Historial de main, del commit más reciente al más antiguo' | t" data-testid="commit-graph">
+        @for (row of g.rows; track row.commit.sha; let first = $first; let r = $index) {
+          <li class="commit-row" [id]="'c-' + row.commit.sha" (mouseenter)="hoverSha.set(row.commit.sha)" (mouseleave)="hoverSha.set(null)" role="option" [attr.aria-selected]="row.commit.sha === activeSha()"
             [class.active]="row.commit.sha === activeSha()" [class.is-merge]="row.merge" [class.dimmed]="filtering() && !matches(row.commit)" [style.height.px]="rowHeight()">
             <svg class="lanes" [attr.width]="laneX(g.width) + 6" [attr.height]="rowHeight()" [attr.viewBox]="'0 0 ' + (laneX(g.width) + 6) + ' ' + rowHeight()" aria-hidden="true">
               @for (segment of row.top; track $index) {
-                <path [attr.d]="topPath(segment.from, segment.to)" [attr.stroke]="laneColor(segment.colorLane)" fill="none" class="seg" />
+                <path [attr.d]="topPath(segment.from, segment.to)" stroke="currentColor" [style.color]="laneColor(segment.colorLane)" fill="none" class="seg" [class.hl]="lit(r, segment)" />
               }
               @for (segment of row.bottom; track $index) {
-                <path [attr.d]="bottomPath(segment.from, segment.to)" [attr.stroke]="laneColor(segment.colorLane)" fill="none" class="seg" />
+                <path [attr.d]="bottomPath(segment.from, segment.to)" stroke="currentColor" [style.color]="laneColor(segment.colorLane)" fill="none" class="seg" [class.hl]="lit(r, segment)" />
               }
-              <circle [attr.cx]="laneX(row.lane)" [attr.cy]="rowHeight() / 2" [attr.r]="row.merge ? 3 : 3.5" class="dot"
+              <circle [attr.cx]="laneX(row.lane)" [attr.cy]="rowHeight() / 2" [attr.r]="row.merge ? 3 : 3.5" class="dot" [class.hl]="litDot(r, row.lane)"
                 [attr.fill]="row.merge ? 'var(--bg-surface-1)' : laneColor(row.lane)" [attr.stroke]="laneColor(row.lane)" />
             </svg>
             <button type="button" class="log-cells" tabindex="-1" [attr.data-commit]="row.commit.sha" [attr.data-merge]="prOf(row.commit)?.number ?? null"
@@ -333,8 +333,13 @@ interface Row {
       .commit-row .meta-inline { display: none; }
     }
     .lanes { flex: none; overflow: visible; }
-    .seg { stroke-width: 1.5; stroke-linecap: round; }
-    .dot { stroke-width: 1.5; }
+    .seg { stroke-width: 1.5; stroke-linecap: round; transition: opacity 0.18s ease-out, stroke-width 0.18s ease-out; }
+    .dot { stroke-width: 1.5; transition: opacity 0.18s ease-out; }
+    /* La rama del commit elegido se ilumina (más gruesa y con brillo) y el resto del grafo se apaga. */
+    .commit-log.has-path .seg:not(.hl), .commit-log.has-path .dot:not(.hl) { opacity: 0.38; }
+    .seg.hl { stroke-width: 2.6; filter: drop-shadow(0 0 3px currentColor); }
+    .dot.hl { stroke-width: 2; }
+    @media (prefers-reduced-motion: reduce) { .seg, .dot { transition: none; } }
     .title.muted { color: var(--text-3); }
     .jobs { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.125rem 1rem; }
     .job { display: flex; min-width: 0; align-items: center; gap: 0.5rem; padding: 0.1875rem 0.25rem; border-radius: var(--radius-mark); font-size: 0.8125rem; color: var(--text-2); }
@@ -388,6 +393,8 @@ export class MergeHistoryComponent implements OnInit {
     return commits.length ? layoutGraph(commits) : null;
   });
   readonly activeSha = signal<string | null>(null);
+  /** Commit bajo el cursor: ilumina su rama sin cambiar la selección, como el log del IDE. */
+  readonly hoverSha = signal<string | null>(null);
   readonly activeCommit = computed(() => this.delivery.status()?.commits.find((commit) => commit.sha === this.activeSha()) ?? null);
   /** Filas compactas como en el IDE; con el dedo, 44 px para poder tocarlas. */
   readonly rowHeight = signal(typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches ? 44 : 32);
@@ -480,6 +487,40 @@ export class MergeHistoryComponent implements OnInit {
 
   icon(tone: Tone): string {
     return tone === 'ok' ? '✓' : tone === 'bad' ? '✕' : tone === 'warn' ? '⊘' : '·';
+  }
+
+  /**
+   * El recorrido de la rama del commit elegido, como lo resalta el IDE: su carril mientras está
+   * ocupado sin cortes (desde donde nace hasta donde se une a otra rama), con los tramos de entrada
+   * y de salida. Filas y carril del recorrido.
+   */
+  readonly path = computed(() => {
+    const rows = this.graph()?.rows ?? [];
+    const focus = this.hoverSha() ?? this.activeSha();
+    const index = rows.findIndex((row) => row.commit.sha === focus);
+    if (index < 0) return null;
+    const lane = rows[index].lane;
+    const touches = (row: GraphRow<CommitEntry>) => row.lane === lane
+      || row.top.some((segment) => segment.colorLane === lane || segment.to === lane)
+      || row.bottom.some((segment) => segment.colorLane === lane || segment.from === lane);
+    let start = index;
+    while (start > 0 && rows[start - 1].bottom.some((segment) => segment.to === lane) && touches(rows[start - 1])) start--;
+    let end = index;
+    while (end < rows.length - 1 && rows[end].bottom.some((segment) => segment.from === lane) && touches(rows[end + 1])) end++;
+    return { lane, start, end };
+  });
+
+  /** ¿Este tramo es parte del recorrido iluminado? */
+  lit(rowIndex: number, segment: LaneSegment): boolean {
+    const path = this.path();
+    if (!path || rowIndex < path.start || rowIndex > path.end) return false;
+    return segment.colorLane === path.lane || segment.from === path.lane && segment.to === path.lane
+      || (rowIndex === path.end && segment.from === path.lane) || (rowIndex === path.start && segment.to === path.lane);
+  }
+
+  litDot(rowIndex: number, lane: number): boolean {
+    const path = this.path();
+    return !!path && lane === path.lane && rowIndex >= path.start && rowIndex <= path.end;
   }
 
   /** Carril por el que llega la rama de un merge (el de su segundo padre). */
