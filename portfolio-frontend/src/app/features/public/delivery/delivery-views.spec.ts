@@ -33,12 +33,12 @@ function statusFile(options: { public?: boolean; overrides?: Record<string, stri
 }
 
 /** Salud ya leída de la API: lo que devolvería /telemetry/health en producción. */
-function readyHealth(overrides: Partial<LiveHealth>): Pick<LiveHealthService, 'state' | 'load'> {
+function readyHealth(overrides: Partial<LiveHealth>): Pick<LiveHealthService, 'state' | 'load' | 'checks' | 'refresh'> {
   const health: LiveHealth = {
     status: 'UP', database: 'PostgreSQL 16 - Connected', redisCache: 'Redis - Healthy', aiEngine: 'CLOSED',
     checkedAt: new Date(), latencyMs: 42, ...overrides,
   };
-  return { state: signal<LiveHealthState>({ kind: 'ready', health }), load: () => undefined };
+  return { state: signal<LiveHealthState>({ kind: 'ready', health }), load: () => undefined, checks: signal(1), refresh: () => undefined };
 }
 
 function setup<T>(component: Type<T>): { fixture: ComponentFixture<T>; backend: HttpTestingController; element: HTMLElement } {
@@ -269,6 +269,11 @@ describe('ProductionArchitectureComponent', () => {
     const state = element.querySelector('[data-testid="live-node-state"]')!;
     expect(state.textContent).toContain('Caído ahora');
     expect(state.textContent).toContain('Redis - Unavailable');
+    // Cada pieza con su dato real: la latencia de la API y el estado de la base de datos y la caché.
+    expect(node(element, 'Cloud Run').textContent).toContain('DEGRADED · 42 ms');
+    expect(node(element, 'PostgreSQL').textContent).toContain('PostgreSQL 16 ✓');
+    expect(node(element, 'Redis').textContent).toContain('no responde');
+    expect(element.querySelector('[data-testid="check-now"]')).not.toBeNull();
   });
 
   it('opens with a live piece already selected, so the detail panel is never empty', () => {
