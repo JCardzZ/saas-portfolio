@@ -65,7 +65,51 @@ export function mergeStatus(existing, key, workflow, { repository, isPublic, now
     updatedAt: now,
     workflows: workflow ? { ...previous, [key]: workflow } : previous,
     deployments: valid && existing.deployments ? existing.deployments : { frontend: [], backend: [] },
+    merges: valid && Array.isArray(existing.merges) ? existing.merges : [],
   };
+}
+
+/** PR fusionados en main que se conservan (los más recientes). */
+export const MAX_MERGES = 12;
+
+const clip = (value, max) => (typeof value === 'string' ? value.slice(0, max) : '');
+const count = (value) => (Number.isInteger(value) && value >= 0 ? value : null);
+
+/**
+ * Un PR fusionado en main y lo que pasó en la CI de su commit de merge. Solo datos públicos del
+ * resultado (título, rama, autor, tamaño, estado de cada job): nada de logs, cuerpos ni revisores.
+ */
+export function mergeEntry(pr, ci) {
+  return {
+    number: pr.number,
+    title: clip(pr.title, 140),
+    branch: clip(pr.head?.ref, 100),
+    author: clip(pr.user?.login, 40),
+    mergedAt: pr.merged_at,
+    sha: clip(pr.merge_commit_sha, 40),
+    additions: count(pr.additions),
+    deletions: count(pr.deletions),
+    changedFiles: count(pr.changed_files),
+    ci: ci
+      ? {
+          runId: ci.runId,
+          runNumber: ci.runNumber,
+          conclusion: clip(ci.conclusion, 20),
+          durationSeconds: count(ci.durationSeconds),
+          jobs: (ci.jobs ?? []).slice(0, 40).map((job) => ({ name: clip(job.name, 60), status: clip(job.status, 20) })),
+        }
+      : null,
+  };
+}
+
+/** Añade PR fusionados: sin repetir, del más reciente al más antiguo, como mucho MAX_MERGES. */
+export function withMerges(status, entries) {
+  const byNumber = new Map((status.merges ?? []).map((item) => [item.number, item]));
+  for (const entry of entries) {
+    byNumber.set(entry.number, entry);
+  }
+  const merges = [...byNumber.values()].sort((a, b) => String(b.mergedAt).localeCompare(String(a.mergedAt))).slice(0, MAX_MERGES);
+  return { ...status, merges };
 }
 
 /** Despliegues que se conservan por destino en la línea de tiempo. */

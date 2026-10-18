@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { MAX_DEPLOYMENTS, deploymentsOf, mergeMetrics, mergeStatus, withDeployments, workflowStatus } from './pipeline-status.mjs';
+import { MAX_DEPLOYMENTS, MAX_MERGES, deploymentsOf, mergeEntry, mergeMetrics, mergeStatus, withDeployments, withMerges, workflowStatus } from './pipeline-status.mjs';
 
 const graph = {
   jobs: [
@@ -119,4 +119,35 @@ test('un rollback se anota como tal junto a los despliegues', () => {
 
   assert.deepEqual(status.workflows, {});
   assert.equal(status.deployments.frontend[0].kind, 'rollback');
+});
+
+test('los PR fusionados: solo datos públicos del resultado, sin repetir, los más recientes primero', () => {
+  const pr = (number, mergedAt) => ({
+    number, title: `feat: cambio ${number} ${'x'.repeat(200)}`, head: { ref: `feat/cambio-${number}` }, user: { login: 'JCardzZ' },
+    merged_at: mergedAt, merge_commit_sha: 'a'.repeat(40), additions: 10, deletions: 2, changed_files: 3,
+    body: 'no se publica', requested_reviewers: [{ login: 'nadie' }],
+  });
+  const ci = { runId: 7, runNumber: 70, conclusion: 'success', durationSeconds: 900, jobs: [{ name: '🧪 Backend unit', status: 'success' }] };
+
+  const entry = mergeEntry(pr(1, '2026-10-01T00:00:00Z'), ci);
+  assert.equal(entry.title.length, 140);
+  assert.equal(entry.branch, 'feat/cambio-1');
+  assert.equal('body' in entry, false);
+  assert.equal('requested_reviewers' in entry, false);
+  assert.deepEqual(entry.ci.jobs, [{ name: '🧪 Backend unit', status: 'success' }]);
+  assert.equal(mergeEntry(pr(2, '2026-10-02T00:00:00Z'), null).ci, null);
+
+  let status = mergeStatus(null, 'ci', null, { repository: 'a/b', isPublic: true, now: '2026-10-03T00:00:00Z' });
+  assert.deepEqual(status.merges, []);
+  status = withMerges(status, [entry, mergeEntry(pr(2, '2026-10-02T00:00:00Z'), ci)]);
+  status = withMerges(status, [mergeEntry(pr(1, '2026-10-01T00:00:00Z'), { ...ci, conclusion: 'failure' })]);
+  assert.deepEqual(status.merges.map((item) => item.number), [2, 1]);
+  assert.equal(status.merges[1].ci.conclusion, 'failure');
+
+  for (let n = 3; n < 30; n++) {
+    status = withMerges(status, [mergeEntry(pr(n, `2026-10-${String(n).padStart(2, '0')}T00:00:00Z`), ci)]);
+  }
+  assert.equal(status.merges.length, MAX_MERGES);
+  // Otro workflow que publica después no borra el historial.
+  assert.equal(mergeStatus(status, 'cd', null, { repository: 'a/b', isPublic: true, now: 'x' }).merges.length, MAX_MERGES);
 });
