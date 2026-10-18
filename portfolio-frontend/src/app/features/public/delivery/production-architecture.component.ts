@@ -1,10 +1,16 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
+import { runtimeConfig } from '../../../core/config/runtime-config';
+import { SystemEventStep, SystemEventsService } from '../data/system-events.service';
+import { TraceInspectorService } from '../data/trace-inspector.service';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.component';
 import { TheaterDirective } from '../../../shared/ui/theater.directive';
 import { PipelineStatus, TOPOLOGY, TopologyNode, formatDate, formatDuration } from './delivery-data';
+
+/** Pieza del inspector de traza a la que van los logs de «Comprobar ahora». */
+const HEALTH_CHECK = 'health-check';
 
 /** «hace 2 h», «hace 3 d»: lo justo para la línea de una pieza. */
 function ago(iso: string, en: boolean): string {
@@ -128,6 +134,8 @@ interface Fact {
 export class ProductionArchitectureComponent implements OnInit {
   private readonly delivery = inject(DeliveryStatusService);
   private readonly liveHealth = inject(LiveHealthService);
+  private readonly inspector = inject(TraceInspectorService);
+  private readonly events = inject(SystemEventsService);
   readonly health = this.liveHealth.state;
 
   private readonly detail = viewChild<ElementRef<HTMLElement>>('detail');
@@ -169,9 +177,48 @@ export class ProductionArchitectureComponent implements OnInit {
   readonly topology = TOPOLOGY;
   readonly checks = this.liveHealth.checks;
 
-  /** Una comprobación real contra la API; el lienzo anima el recorrido que hace. */
+  /** Una comprobación real contra la API; el lienzo anima el recorrido y el inspector cuenta lo que respondió. */
   checkNow(): void {
+    if (this.health().kind === 'loading') {
+      return;
+    }
+    const en = this.en();
+    this.inspector.inspectComponent({ id: HEALTH_CHECK, label: en ? 'Health check · /telemetry/health' : 'Comprobación de salud · /telemetry/health', icon: 'gcpCloudRun', tech: null });
+    this.events.emitRealFromUser([['info', en ? 'Browser' : 'Navegador', `GET ${runtimeConfig.apiBaseUrl}/telemetry/health`]], HEALTH_CHECK);
+    this.awaitingCheck = this.checks();
     this.liveHealth.refresh();
+  }
+
+  /** Comprobación pedida con el botón cuyo resultado aún no se ha contado en el inspector. */
+  private awaitingCheck: number | null = null;
+
+  /** Lo que respondió la API, línea a línea, tal cual: sin adornos ni datos inventados. */
+  private reportCheck(): void {
+    const state = this.health();
+    const en = this.en();
+    if (state.kind === 'unreachable') {
+      this.events.emitRealFromUser([['warn', 'Cloud Run', en ? 'no answer in 8 s' : 'sin respuesta en 8 s']], HEALTH_CHECK, 'WARN');
+      return;
+    }
+    if (state.kind !== 'ready') {
+      return;
+    }
+    const health = state.health;
+    const steps: SystemEventStep[] = [
+      [health.status === 'UP' ? 'ok' : 'warn', 'Cloud Run', `${health.status === 'DOWN' ? 503 : 200} · ${health.status} · ${health.latencyMs} ms`],
+    ];
+    if (health.database) {
+      steps.push([/unavailable/i.test(health.database) ? 'warn' : 'ok', 'PostgreSQL', health.database]);
+    }
+    if (health.redisCache) {
+      steps.push([/unavailable/i.test(health.redisCache) ? 'warn' : 'ok', 'Redis', health.redisCache]);
+    }
+    if (health.aiEngine) {
+      steps.push(['info', 'Gemini', en
+        ? `circuit breaker ${health.aiEngine} (state kept by the API; this check does not call Gemini)`
+        : `circuit breaker ${health.aiEngine} (estado que guarda la API; esta comprobación no llama a Gemini)`]);
+    }
+    this.events.emitRealFromUser(steps, HEALTH_CHECK, health.status === 'UP' ? 'SUCCESS' : 'WARN');
   }
 
   /** El dato en vivo de cada pieza: de la última ejecución publicada y de /telemetry/health. Lo que no se sabe no se muestra. */
@@ -237,6 +284,17 @@ export class ProductionArchitectureComponent implements OnInit {
     const status = this.delivery.status();
     return node && status && node.status === 'live' ? factsOf(node, status) : [];
   });
+
+  constructor() {
+    // Cuando termina la comprobación pedida con el botón, su resultado va al inspector.
+    effect(() => {
+      const done = this.checks();
+      if (this.awaitingCheck !== null && done > this.awaitingCheck) {
+        this.awaitingCheck = null;
+        untracked(() => this.reportCheck());
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.delivery.load();
