@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-18T19:33:25.151Z",
+  "updatedAt": "2026-10-18T19:53:47.337Z",
   "workflows": {
     "ci": {
-      "runId": 39157784648,
-      "runNumber": 143,
-      "sha": "17a75439643c5b9e1ff7c8e4143107746c0ad9da",
+      "runId": 39157871534,
+      "runNumber": 146,
+      "sha": "c42efba3d0adf6ef5f45d93fdd94788688c7079d",
       "event": "push",
-      "startedAt": "2026-10-18T19:13:36Z",
-      "finishedAt": "2026-10-18T19:33:25.151Z",
-      "durationSeconds": 1189,
-      "conclusion": "failure",
+      "startedAt": "2026-10-18T19:14:44Z",
+      "finishedAt": "2026-10-18T19:53:47.337Z",
+      "durationSeconds": 2343,
+      "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 6,
+          "durationSeconds": 8,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 14,
+          "durationSeconds": 9,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 109,
+          "durationSeconds": 143,
           "runs": 2
         },
         {
@@ -47,47 +47,31 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 29,
+          "durationSeconds": 28,
           "runs": 1
         },
         {
           "id": "backend-unit",
-          "status": "success",
-          "durationSeconds": 103,
-          "runs": 1,
-          "metrics": {
-            "tests": 366,
-            "failed": 0,
-            "skipped": 2,
-            "coverage": 89.2
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "backend-integration",
-          "status": "success",
-          "durationSeconds": 136,
-          "runs": 1,
-          "metrics": {
-            "tests": 8,
-            "failed": 0,
-            "skipped": 0
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "backend-arch",
-          "status": "success",
-          "durationSeconds": 47,
-          "runs": 1,
-          "metrics": {
-            "tests": 15,
-            "failed": 0,
-            "skipped": 0
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 65,
+          "durationSeconds": 59,
           "runs": 3,
           "metrics": {
             "tests": 716
@@ -96,7 +80,7 @@
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 38,
+          "durationSeconds": 44,
           "runs": 1,
           "metrics": {
             "bundleKb": 340.1,
@@ -106,10 +90,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 72,
+          "durationSeconds": 79,
           "runs": 1,
           "metrics": {
-            "performance": 83,
+            "performance": 77,
             "accessibility": 97,
             "bestPractices": 96,
             "seo": 92
@@ -118,10 +102,10 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 946,
+          "durationSeconds": 1047,
           "runs": 2,
           "metrics": {
-            "tests": 509,
+            "tests": 510,
             "failed": 0,
             "profiles": 33
           }
@@ -134,8 +118,8 @@
         },
         {
           "id": "docker",
-          "status": "failure",
-          "durationSeconds": 55,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
@@ -146,13 +130,13 @@
         },
         {
           "id": "coverage-badge",
-          "status": "success",
-          "durationSeconds": 5,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
           "id": "gate",
-          "status": "failure",
+          "status": "success",
           "durationSeconds": 3,
           "runs": 1
         }
