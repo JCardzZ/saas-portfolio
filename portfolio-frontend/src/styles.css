@@ -18,6 +18,13 @@
     overflow-wrap: anywhere;
   }
 
+  /* La vista pública es oscura: el cuerpo también, para que el rebote del scroll en iOS y los
+     lectores de contraste no vean el gris claro de la administración detrás de la página. */
+  body:has(.dark) {
+    background-color: var(--bg-canvas);
+    color: var(--text-1);
+  }
+
   html {
     /* Administración y login son claros; la página pública declara `dark` en su raíz. Así los
        controles nativos y las barras de scroll siguen al diseño y no al modo del sistema. */

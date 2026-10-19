@@ -198,7 +198,7 @@ const LEVELS: C4Level[] = [
                   [style.--brand]="iconOf(placed.node)?.color"
                   tabindex="0"
                   role="button"
-                  [attr.aria-label]="placed.node.label + ': ' + placed.node.role"
+                  [attr.aria-label]="(placed.node.label | t) + ' ' + (placed.node.role | t)"
                   [attr.aria-pressed]="placed.node.id === activeId()"
                   (mouseenter)="activate(placed.node); hoverPop(placed.node, $event)"
                   (mouseleave)="hoverLeave($event)"

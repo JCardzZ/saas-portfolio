@@ -27,6 +27,7 @@ export const LANDING_COPY = {
     en: 'A studio to draw the same platform on AWS, Google Cloud or Azure, with security checks, indicative cost and a Terraform skeleton.',
     es: 'Un estudio para dibujar la misma plataforma en AWS, Google Cloud o Azure, con comprobaciones de seguridad, coste orientativo y un esqueleto de Terraform.',
   },
+  platformLoading: { en: 'Loading the platform diagrams…', es: 'Cargando los diagramas de la plataforma…' },
   cloudLoading: { en: 'Loading the architecture studio…', es: 'Cargando el estudio de arquitectura…' },
   mcpTitle: { en: 'Use my platform from your AI', es: 'Usa mi plataforma desde tu IA' },
   mcpIntro: {

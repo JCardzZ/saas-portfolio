@@ -26,7 +26,9 @@
       <h1 id="hero-titulo" class="hero-name hero-letters pointer-events-auto relative z-0 mt-2 text-center font-bold uppercase leading-[0.95] text-ink-1" [attr.aria-label]="i18n.t(copy.heroTitle)">
         @for (letter of nameLetters(); track $index) {<span class="hero-letter" aria-hidden="true" [style.--i]="$index" [style.--n]="nameLetters().length">{{ letter }}</span>}
       </h1>
-      <p class="hero-role hero-letters pointer-events-auto relative z-10 mx-auto mt-4 text-center font-medium uppercase text-accent-text" data-testid="hero-role" [attr.aria-label]="heroRole()">
+      <p class="hero-role hero-letters pointer-events-auto relative z-10 mx-auto mt-4 text-center font-medium uppercase text-accent-text" data-testid="hero-role">
+        <!-- Un <p> no admite aria-label: el rol se lee de este texto y las letras animadas se ocultan. -->
+        <span class="sr-only">{{ heroRole() }}</span>
         @for (letter of roleLetters(); track $index) {<span class="hero-letter" aria-hidden="true" [style.--i]="$index" [style.--n]="roleLetters().length">{{ letter }}</span>}
       </p>
       <!-- Hueco para el robot: crece lo que haga falta para que la frase y los botones queden dentro de la pantalla. -->
@@ -55,6 +57,10 @@
 
     <section id="plataforma" class="scroll-mt-24" aria-labelledby="plataforma-titulo">
       <app-section-header headingId="plataforma-titulo" [title]="i18n.t(copy.platformTitle)" [intro]="i18n.t(copy.platformIntro)" />
+      <!-- Seis widgets con temporizadores y animaciones: se montan cuando el navegador queda libre tras
+           el arranque, no durante él (antes sumaban segundos de JavaScript en el arranque de un móvil).
+           No «on viewport»: el hueco provisional cambiaría de alto a mitad de un salto a otra sección. -->
+      @defer (on idle) {
       <div class="bento-grid">
         <app-architecture-canvas class="animate-slide-up md:col-span-4" />
         <app-telemetry-monitor class="animate-slide-up md:col-span-2 [animation-delay:80ms]" />
@@ -64,6 +70,9 @@
         <app-resilience-pipeline class="animate-slide-up md:col-span-6 lg:col-span-3" />
         <app-multi-tenant-shield class="animate-slide-up md:col-span-6 lg:col-span-3" />
       </div>
+      } @placeholder {
+        <div class="bento-card flex min-h-[60rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.platformLoading) }}</div>
+      }
     </section>
 
     <!-- Lo que hay desplegado de verdad y cómo llega hasta ahí. Datos reales o etiquetados como planificados. -->

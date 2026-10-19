@@ -43,7 +43,7 @@ const REPLAY_STEP_MS = 900;
         </div>
         <div id="mcp-client-panel" role="tabpanel" class="mt-3" [attr.aria-label]="client().name">
           <p class="text-sm text-ink-2">{{ client().how }}</p>
-          <pre class="mt-2 overflow-x-auto rounded-panel border border-line-subtle bg-surface-2 p-3 text-xs leading-relaxed text-ink-1" data-testid="mcp-copy-text"><code>{{ client().copy }}</code></pre>
+          <pre class="ui-focus mt-2 overflow-x-auto rounded-panel border border-line-subtle bg-surface-2 p-3 text-xs leading-relaxed text-ink-1" data-testid="mcp-copy-text" tabindex="0" [attr.aria-label]="'Orden para copiar' | t"><code>{{ client().copy }}</code></pre>
           <div class="mt-3 flex flex-wrap items-center gap-2">
             @if (client().link; as link) {
               <a class="ui-btn-primary" [href]="safe(link.href)" data-testid="mcp-install-link">{{ link.label }}</a>
