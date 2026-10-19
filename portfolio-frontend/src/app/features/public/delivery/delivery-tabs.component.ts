@@ -183,7 +183,9 @@ const TABS: readonly TabMeta[] = [
     .tour-q { font-size: 0.875rem; color: var(--text-2); }
     .tour-count { font: 500 0.75rem var(--font-mono); color: var(--text-3); }
 
-    .panel:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; animation: enter var(--duration-slow) var(--ease-emphasized) both; }
+    /* Solo \`backwards\`: al terminar no queda ninguna animación aplicada. Con \`both\` el panel seguiría
+       siendo un contexto de apilamiento y el foco por hover de las tarjetas quedaría debajo del velo. */
+    .panel:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; animation: enter var(--duration-slow) var(--ease-emphasized) backwards; }
     /* Como antes en la rejilla de la página: una vista nunca empuja la tarjeta más allá de su ancho. */
     .panel > * { min-width: 0; }
     .panel[data-dir='back']:not([hidden]) { animation-name: enter-back; }
