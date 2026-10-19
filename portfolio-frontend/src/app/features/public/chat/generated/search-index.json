@@ -1,24 +1,10 @@
 [
   {
-    "id": "seccion-plataforma",
+    "id": "seccion-trayectoria",
     "group": "secciones",
-    "title": "Arquitectura",
-    "text": "Arquitectura en vivo: diagramas C4, consola de eventos, telemetría, resiliencia y multi-tenant",
-    "target": "plataforma"
-  },
-  {
-    "id": "seccion-entrega",
-    "group": "secciones",
-    "title": "Entrega",
-    "text": "Arquitectura en producción, pipeline CI/CD, despliegues y rollback",
-    "target": "entrega"
-  },
-  {
-    "id": "seccion-cloud",
-    "group": "secciones",
-    "title": "Cloud",
-    "text": "Estudio de arquitectura multi-cloud: AWS, Azure, Google Cloud, Terraform, FinOps y patrones de datos",
-    "target": "cloud"
+    "title": "Trayectoria",
+    "text": "Trayectoria profesional, experiencia y CV",
+    "target": "trayectoria"
   },
   {
     "id": "seccion-proyectos",
@@ -35,18 +21,32 @@
     "target": "tecnologias"
   },
   {
+    "id": "seccion-entrega",
+    "group": "secciones",
+    "title": "Entrega",
+    "text": "Arquitectura en producción, pipeline CI/CD, despliegues y rollback",
+    "target": "entrega"
+  },
+  {
+    "id": "seccion-plataforma",
+    "group": "secciones",
+    "title": "Arquitectura",
+    "text": "Arquitectura en vivo: diagramas C4, consola de eventos, telemetría, resiliencia y multi-tenant",
+    "target": "plataforma"
+  },
+  {
+    "id": "seccion-cloud",
+    "group": "secciones",
+    "title": "Cloud",
+    "text": "Estudio de arquitectura multi-cloud: AWS, Azure, Google Cloud, Terraform, FinOps y patrones de datos",
+    "target": "cloud"
+  },
+  {
     "id": "seccion-articulos",
     "group": "secciones",
     "title": "Artículos",
     "text": "Artículos y notas técnicas",
     "target": "articulos"
-  },
-  {
-    "id": "seccion-trayectoria",
-    "group": "secciones",
-    "title": "Trayectoria",
-    "text": "Trayectoria profesional, experiencia y CV",
-    "target": "trayectoria"
   },
   {
     "id": "seccion-entrega-arquitectura",

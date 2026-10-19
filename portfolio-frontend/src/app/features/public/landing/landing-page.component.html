@@ -26,7 +26,9 @@
       <h1 id="hero-titulo" class="hero-name hero-letters pointer-events-auto relative z-0 mt-2 text-center font-bold uppercase leading-[0.95] text-ink-1" [attr.aria-label]="i18n.t(copy.heroTitle)">
         @for (letter of nameLetters(); track $index) {<span class="hero-letter" aria-hidden="true" [style.--i]="$index" [style.--n]="nameLetters().length">{{ letter }}</span>}
       </h1>
-      <p class="hero-role hero-letters pointer-events-auto relative z-10 mx-auto mt-4 text-center font-medium uppercase text-accent-text" data-testid="hero-role" [attr.aria-label]="heroRole()">
+      <p class="hero-role hero-letters pointer-events-auto relative z-10 mx-auto mt-4 text-center font-medium uppercase text-accent-text" data-testid="hero-role">
+        <!-- Un <p> no admite aria-label: el rol se lee de este texto y las letras animadas se ocultan. -->
+        <span class="sr-only">{{ heroRole() }}</span>
         @for (letter of roleLetters(); track $index) {<span class="hero-letter" aria-hidden="true" [style.--i]="$index" [style.--n]="roleLetters().length">{{ letter }}</span>}
       </p>
       <!-- Hueco para el robot: crece lo que haga falta para que la frase y los botones queden dentro de la pantalla. -->
@@ -53,53 +55,12 @@
       </div>
     }
 
-    <section id="plataforma" class="scroll-mt-24" aria-labelledby="plataforma-titulo">
-      <app-section-header headingId="plataforma-titulo" [title]="i18n.t(copy.platformTitle)" [intro]="i18n.t(copy.platformIntro)" />
-      <div class="bento-grid">
-        <app-architecture-canvas class="animate-slide-up md:col-span-4" />
-        <app-telemetry-monitor class="animate-slide-up md:col-span-2 [animation-delay:80ms]" />
-        <!-- Sin consola propia: los eventos del sistema se ven en el Inspector de traza (abajo). -->
-        <app-vector-matrix class="animate-slide-up md:col-span-6 [animation-delay:160ms]" />
-        <app-ingestion-sandbox class="animate-slide-up md:col-span-6 [animation-delay:320ms]" />
-        <app-resilience-pipeline class="animate-slide-up md:col-span-6 lg:col-span-3" />
-        <app-multi-tenant-shield class="animate-slide-up md:col-span-6 lg:col-span-3" />
-      </div>
+    <!-- Orden de lectura de quien selecciona: experiencia, trabajo y stack primero; después, las pruebas
+         de ingeniería (lo que está en producción, cómo está hecho, el Estudio, MCP) y las notas. -->
+    <section id="trayectoria" class="scroll-mt-24" aria-labelledby="trayectoria-titulo">
+      <app-section-header headingId="trayectoria-titulo" [title]="i18n.t(copy.careerTitle)" [intro]="i18n.t(copy.careerIntro)" />
+      <app-career-timeline />
     </section>
-
-    <!-- Lo que hay desplegado de verdad y cómo llega hasta ahí. Datos reales o etiquetados como planificados. -->
-    <section id="entrega" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="entrega-titulo">
-      <app-section-header headingId="entrega-titulo" [title]="i18n.t(copy.deliveryTitle)" [intro]="i18n.t(copy.deliveryIntro)" />
-      @defer (on viewport; prefetch on idle) {
-        <!-- Una tarjeta con cuatro pestañas (como el Estudio): la sección no ocupa cuatro pantallas. -->
-        <app-delivery-tabs class="animate-slide-up" />
-      } @placeholder {
-        <div class="bento-card flex min-h-[24rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.deliveryLoading) }}</div>
-      }
-    </section>
-
-    <section id="cloud" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="cloud-titulo">
-      <app-section-header headingId="cloud-titulo" [title]="i18n.t(copy.cloudTitle)" [intro]="i18n.t(copy.cloudIntro)" />
-      <!-- El estudio pesa: su código se descarga cuando la sección está a punto de verse. -->
-      @defer (on viewport; prefetch on idle) {
-        <div class="grid gap-4 [&>*]:min-w-0">
-          <app-cloud-infra class="animate-slide-up" />
-          <app-data-blueprints class="animate-slide-up" />
-        </div>
-      } @placeholder {
-        <div class="bento-card flex min-h-[36rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.cloudLoading) }}</div>
-      }
-    </section>
-
-    @if (mcpSection()) {
-      <section id="mcp" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="mcp-titulo">
-        <app-section-header headingId="mcp-titulo" overline="Model Context Protocol" [title]="i18n.t(copy.mcpTitle)" [intro]="i18n.t(copy.mcpIntro)" />
-        @defer (on viewport; prefetch on idle) {
-          <app-mcp-section class="animate-slide-up" />
-        } @placeholder {
-          <div class="bento-card flex min-h-[24rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.mcpLoading) }}</div>
-        }
-      </section>
-    }
 
     <section id="proyectos" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="proyectos-titulo">
       <app-section-header headingId="proyectos-titulo" [title]="i18n.t(copy.projectsTitle)" [intro]="i18n.t(copy.projectsIntro)" />
@@ -231,15 +192,66 @@
       </div>
     </section>
 
+    <!-- Lo que hay desplegado de verdad y cómo llega hasta ahí. Datos reales o etiquetados como planificados. -->
+    <section id="entrega" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="entrega-titulo">
+      <app-section-header headingId="entrega-titulo" [title]="i18n.t(copy.deliveryTitle)" [intro]="i18n.t(copy.deliveryIntro)" />
+      @defer (on viewport; prefetch on idle) {
+        <!-- Una tarjeta con cuatro pestañas (como el Estudio): la sección no ocupa cuatro pantallas. -->
+        <app-delivery-tabs class="animate-slide-up" />
+      } @placeholder {
+        <div class="bento-card flex min-h-[24rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.deliveryLoading) }}</div>
+      }
+    </section>
+
+    <section id="plataforma" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="plataforma-titulo">
+      <app-section-header headingId="plataforma-titulo" [title]="i18n.t(copy.platformTitle)" [intro]="i18n.t(copy.platformIntro)" />
+      <!-- Seis widgets con temporizadores y animaciones: se montan cuando el navegador queda libre tras
+           el arranque, no durante él (antes sumaban segundos de JavaScript en el arranque de un móvil).
+           No «on viewport»: el hueco provisional cambiaría de alto a mitad de un salto a otra sección. -->
+      @defer (on idle) {
+      <div class="bento-grid">
+        <app-architecture-canvas class="animate-slide-up md:col-span-4" />
+        <app-telemetry-monitor class="animate-slide-up md:col-span-2 [animation-delay:80ms]" />
+        <!-- Sin consola propia: los eventos del sistema se ven en el Inspector de traza (abajo). -->
+        <app-vector-matrix class="animate-slide-up md:col-span-6 [animation-delay:160ms]" />
+        <app-ingestion-sandbox class="animate-slide-up md:col-span-6 [animation-delay:320ms]" />
+        <app-resilience-pipeline class="animate-slide-up md:col-span-6 lg:col-span-3" />
+        <app-multi-tenant-shield class="animate-slide-up md:col-span-6 lg:col-span-3" />
+      </div>
+      } @placeholder {
+        <div class="bento-card flex min-h-[60rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.platformLoading) }}</div>
+      }
+    </section>
+
+    <section id="cloud" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="cloud-titulo">
+      <app-section-header headingId="cloud-titulo" [title]="i18n.t(copy.cloudTitle)" [intro]="i18n.t(copy.cloudIntro)" />
+      <!-- El estudio pesa: su código se descarga cuando la sección está a punto de verse. -->
+      @defer (on viewport; prefetch on idle) {
+        <div class="grid gap-4 [&>*]:min-w-0">
+          <app-cloud-infra class="animate-slide-up" />
+          <app-data-blueprints class="animate-slide-up" />
+        </div>
+      } @placeholder {
+        <div class="bento-card flex min-h-[36rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.cloudLoading) }}</div>
+      }
+    </section>
+
+    @if (mcpSection()) {
+      <section id="mcp" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="mcp-titulo">
+        <app-section-header headingId="mcp-titulo" overline="Model Context Protocol" [title]="i18n.t(copy.mcpTitle)" [intro]="i18n.t(copy.mcpIntro)" />
+        @defer (on viewport; prefetch on idle) {
+          <app-mcp-section class="animate-slide-up" />
+        } @placeholder {
+          <div class="bento-card flex min-h-[24rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.mcpLoading) }}</div>
+        }
+      </section>
+    }
+
     <section id="articulos" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="articulos-titulo">
       <app-section-header headingId="articulos-titulo" [title]="i18n.t(copy.articlesTitle)" [intro]="i18n.t(copy.articlesIntro)" />
       <app-articles-hub />
     </section>
 
-    <section id="trayectoria" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="trayectoria-titulo">
-      <app-section-header headingId="trayectoria-titulo" [title]="i18n.t(copy.careerTitle)" [intro]="i18n.t(copy.careerIntro)" />
-      <app-career-timeline />
-    </section>
   </main>
 
   <!-- El pie deja sitio a la píldora del inspector (o del aviso de demo) y a la barra de gestos. -->
