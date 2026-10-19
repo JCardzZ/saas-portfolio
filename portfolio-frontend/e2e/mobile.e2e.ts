@@ -35,7 +35,7 @@ async function loadEverything(page: Page): Promise<void> {
     window.scrollTo(0, 0);
   });
   await expect(page.locator('#cloud app-cloud-infra')).toBeVisible({ timeout: 15_000 });
-  await expect(page.locator('#entrega app-pipeline-view button.node').first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('#entrega [data-delivery-tab]').first()).toBeVisible({ timeout: 15_000 });
   await page.waitForTimeout(400);
 }
 
@@ -413,7 +413,8 @@ test.describe('página pública en móviles y tabletas', () => {
     await loadEverything(page);
     const narrow = page.viewportSize()!.width < 640;
 
-    for (const view of ['app-production-architecture', 'app-pipeline-view']) {
+    for (const [view, tab] of [['app-production-architecture', 'arquitectura'], ['app-pipeline-view', 'pipeline']]) {
+      await page.locator(`[data-delivery-tab="${tab}"]`).tap();
       // La arquitectura marca sus piezas con data-node (lienzo SVG o tarjetas por zona); el pipeline usa botones.
       const nodes = view === 'app-production-architecture' ? `${view} [data-node]` : `${view} button.node`;
       const columns = await page.locator(nodes).evaluateAll((nodes) =>
@@ -448,6 +449,8 @@ test.describe('página pública en móviles y tabletas', () => {
     await page.getByRole('button', { name: 'Cerrar el inspector de traza' }).first().tap();
 
     // Línea de tiempo de despliegues: el rollback simulado se anuncia y no cambia nada de verdad.
+    await page.locator('[data-delivery-tab="despliegues"]').scrollIntoViewIfNeeded();
+    await page.locator('[data-delivery-tab="despliegues"]').tap();
     const timeline = page.locator('app-deploy-timeline');
     await timeline.scrollIntoViewIfNeeded();
     await expect(timeline.locator('.entry').first()).toContainText('en producción');
@@ -462,6 +465,8 @@ test.describe('página pública en móviles y tabletas', () => {
     await timeline.getByRole('button', { name: 'Deshacer la simulación' }).tap();
 
     // Una pieza planificada lo dice y no enseña datos de despliegue.
+    await page.locator('[data-delivery-tab="arquitectura"]').scrollIntoViewIfNeeded();
+    await page.locator('[data-delivery-tab="arquitectura"]').tap();
     const planned = page.locator('app-production-architecture [data-node].planned').first();
     await planned.scrollIntoViewIfNeeded();
     await planned.tap();

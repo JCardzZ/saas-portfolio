@@ -3,17 +3,27 @@ import { join } from 'node:path';
 
 /** Tamaño máximo de un logo dentro de un nodo: 16 px, 20 px en el activo. */
 const MAX_ICON = 24;
-const VIEWS = ['app-production-architecture', 'app-pipeline-view'];
-const CAPTURED = [...VIEWS, 'app-deploy-timeline'];
+/** Cada vista y la pestaña que la muestra. */
+const CAPTURED: [string, string][] = [
+  ['app-production-architecture', 'arquitectura'], ['app-merge-history', 'historial'],
+  ['app-pipeline-view', 'pipeline'], ['app-deploy-timeline', 'despliegues'],
+];
 
-async function openDelivery(page: Page): Promise<void> {
+/** Abre una pestaña de la sección de entrega (las vistas comparten tarjeta). */
+async function showTab(page: Page, tab: string): Promise<void> {
+  await page.locator(`[data-delivery-tab="${tab}"]`).click();
+  await expect(page.locator(`#panel-${tab}`)).toBeVisible();
+}
+
+async function openDelivery(page: Page, tab = 'arquitectura'): Promise<void> {
   await page.route(/^https:\/\/api\.example\.com\//, (route) => route.abort());
   await page.route(/^https:\/\/raw\.githubusercontent\.com\//, (route) => route.abort());
   await page.goto('/');
   await expect(page.locator('h1')).toBeVisible();
   await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
   await page.evaluate(() => document.getElementById('entrega')?.scrollIntoView({ block: 'start' }));
-  await expect(page.locator('app-pipeline-view button.node').first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('[data-delivery-tab]').first()).toBeVisible({ timeout: 15_000 });
+  await showTab(page, tab);
   await page.waitForTimeout(500);
 }
 
@@ -75,7 +85,7 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
   });
 
   test('el diagrama respira: columnas a 48 px o más, nodos a 24 px o más, y nada se solapa', async ({ page }) => {
-    await openDelivery(page);
+    await openDelivery(page, 'pipeline');
 
     for (const view of ['app-pipeline-view']) {
       const boxes = await page.locator(`${view} button.node`).evaluateAll((nodes) =>
@@ -107,7 +117,7 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
   });
 
   test('zoom y «ajustar a pantalla»: el pipeline pasa de varias franjas a una sola, a escala', async ({ page }, testInfo) => {
-    await openDelivery(page);
+    await openDelivery(page, 'pipeline');
     const view = page.locator('app-pipeline-view');
     const rows = () => view.locator('button.node', { hasText: /^Cambios|gate/ }).evaluateAll((nodes) =>
       nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
@@ -188,9 +198,11 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
 
   test('capturas de las dos vistas, con la ficha abierta debajo del diagrama', async ({ page }, testInfo) => {
     await openDelivery(page);
-    for (const view of CAPTURED) {
+    for (const [view, tab] of CAPTURED) {
+      await showTab(page, tab);
       await capture(page, testInfo, view, `${view.replace('app-', '')}`);
     }
+    await showTab(page, 'pipeline');
 
     await page.locator('app-pipeline-view button.node', { hasText: 'Backend unit' }).click();
     const detail = page.locator('app-pipeline-view div[aria-live="polite"]');
@@ -329,7 +341,8 @@ test.describe('paleta de comandos en escritorio', () => {
     await field.fill('pipeline');
     const options = dialog.getByRole('option');
     await expect(options.first()).toHaveAttribute('aria-selected', 'true');
-    await expect(options.first()).toContainText('Entrega');
+    // La pestaña del pipeline, no solo la sección: Enter la abre.
+    await expect(options.first()).toContainText('Pipeline CI/CD');
     await expect(field).toHaveAttribute('aria-activedescendant', (await options.first().getAttribute('id'))!);
     const path = join('e2e-screens', testInfo.project.name, 'paleta-resultados.png');
     await page.screenshot({ path, animations: 'disabled' });
@@ -345,6 +358,8 @@ test.describe('paleta de comandos en escritorio', () => {
     await expect(dialog).toBeHidden();
     await expect.poll(async () => (await page.locator('#entrega').boundingBox())!.y, { message: 'la sección queda arriba' })
       .toBeLessThan(200);
+    await expect(page.locator('#panel-pipeline')).toBeVisible();
+    await expect(page).toHaveURL(/#entrega-pipeline$/);
   });
 
   test('un acceso rápido limita la búsqueda y lo escrito se puede llevar al asistente', async ({ page }) => {

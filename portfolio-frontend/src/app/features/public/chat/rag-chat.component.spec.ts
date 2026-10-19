@@ -292,14 +292,17 @@ describe('RagChatComponent (command palette)', () => {
     open();
     type('pipeline');
 
-    expect(active()!.textContent).toContain('Entrega');
+    // Lleva a la pestaña del pipeline, no solo a la sección: su ancla la abre.
+    expect(active()!.textContent).toContain('Pipeline CI/CD');
     enter();
     tick();
 
     expect(element.querySelector('[role="dialog"]')).toBeNull();
     expect(scroll).toHaveBeenCalledTimes(1);
+    expect(location.hash).toBe('#entrega-pipeline');
     expect(fixture.componentInstance.store.messages()).toEqual([]);
     section.remove();
+    history.replaceState(null, '', location.pathname);
   }));
 
   it('takes what was typed to the assistant from the last option and keeps the conversation going', fakeAsync(() => {

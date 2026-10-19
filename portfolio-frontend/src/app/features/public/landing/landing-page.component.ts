@@ -10,10 +10,7 @@ import { CareerTimelineComponent } from '../career/career-timeline.component';
 import { RagChatComponent } from '../chat/rag-chat.component';
 import { CloudInfraComponent } from '../cloud/cloud-infra.component';
 import { DataBlueprintsComponent } from '../cloud/data-blueprints.component';
-import { DeployTimelineComponent } from '../delivery/deploy-timeline.component';
-import { PipelineViewComponent } from '../delivery/pipeline-view.component';
-import { ProductionArchitectureComponent } from '../delivery/production-architecture.component';
-import { MergeHistoryComponent } from '../delivery/merge-history.component';
+import { DeliveryTabsComponent } from '../delivery/delivery-tabs.component';
 import { CatalogStore } from '../data/catalog.store';
 import { TraceInspectorService } from '../data/trace-inspector.service';
 import { PublicNavbarComponent } from '../navbar/public-navbar.component';
@@ -50,10 +47,7 @@ import { ScrollBuddyComponent } from './scroll-buddy.component';
         ArticlesHubComponent,
         CloudInfraComponent,
         DataBlueprintsComponent,
-        DeployTimelineComponent,
-        PipelineViewComponent,
-        ProductionArchitectureComponent,
-        MergeHistoryComponent,
+        DeliveryTabsComponent,
         TechIconComponent,
         IconPopLayerComponent,
         ArchitectureCanvasComponent,
