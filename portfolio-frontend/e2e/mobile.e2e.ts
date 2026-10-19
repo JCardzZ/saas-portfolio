@@ -417,7 +417,9 @@ test.describe('página pública en móviles y tabletas', () => {
       await page.locator(`[data-delivery-tab="${tab}"]`).tap();
       if (tab === 'pipeline') {
         await page.locator('app-pipeline-view [data-view="graph"]').tap();
+        await expect(page.locator('app-pipeline-view [data-view="graph"]')).toHaveAttribute('aria-selected', 'true');
       }
+      await expect(page.locator(view === 'app-production-architecture' ? `${view} [data-node]` : `${view} button.node`).first()).toBeVisible();
       // La arquitectura marca sus piezas con data-node (lienzo SVG o tarjetas por zona); el pipeline usa botones.
       const nodes = view === 'app-production-architecture' ? `${view} [data-node]` : `${view} button.node`;
       const columns = await page.locator(nodes).evaluateAll((nodes) =>
