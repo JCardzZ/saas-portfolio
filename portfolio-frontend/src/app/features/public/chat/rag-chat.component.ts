@@ -193,7 +193,11 @@ export class RagChatComponent {
     this.close();
     // Tras cerrar, el foco vuelve a donde estaba; el desplazamiento va después para que no lo deshaga.
     setTimeout(() => {
-      const element = document.getElementById(target) ?? document.getElementById(target.startsWith('proyecto-') ? 'proyectos' : target);
+      // Una pestaña de la sección de entrega: su ancla la abre (la sección la lee al montarse o al cambiar).
+      if (target.startsWith('entrega-')) {
+        location.hash = target;
+      }
+      const element = document.getElementById(target.startsWith('entrega-') ? 'entrega' : target) ?? document.getElementById(target.startsWith('proyecto-') ? 'proyectos' : target);
       const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
       element?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
     });

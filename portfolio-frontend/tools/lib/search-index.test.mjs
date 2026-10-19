@@ -14,7 +14,8 @@ test('every entry has a unique id, a title and an anchor to go to', async () => 
   assert.equal(new Set(entries.map((entry) => entry.id)).size, entries.length);
   for (const entry of entries) {
     assert.ok(entry.title.trim(), entry.id);
-    assert.match(entry.target, /^[a-z]+$/, entry.id);
+    // Una sección (`cloud`) o una pestaña de la de entrega (`entrega-pipeline`).
+    assert.match(entry.target, /^[a-z]+(-[a-z]+)?$/, entry.id);
     assert.ok(['secciones', 'plantillas'].includes(entry.group), entry.id);
   }
   assert.ok(entries.some((entry) => entry.group === 'secciones'));
