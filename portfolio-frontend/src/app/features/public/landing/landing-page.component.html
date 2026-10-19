@@ -70,12 +70,8 @@
     <section id="entrega" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="entrega-titulo">
       <app-section-header headingId="entrega-titulo" [title]="i18n.t(copy.deliveryTitle)" [intro]="i18n.t(copy.deliveryIntro)" />
       @defer (on viewport; prefetch on idle) {
-        <div class="grid gap-4 [&>*]:min-w-0">
-          <app-production-architecture class="animate-slide-up" />
-          <app-merge-history class="animate-slide-up" />
-          <app-pipeline-view class="animate-slide-up" />
-          <app-deploy-timeline class="animate-slide-up" />
-        </div>
+        <!-- Una tarjeta con cuatro pestañas (como el Estudio): la sección no ocupa cuatro pantallas. -->
+        <app-delivery-tabs class="animate-slide-up" />
       } @placeholder {
         <div class="bento-card flex min-h-[24rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.deliveryLoading) }}</div>
       }

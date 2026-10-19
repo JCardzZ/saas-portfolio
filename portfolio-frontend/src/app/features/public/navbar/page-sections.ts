@@ -11,3 +11,14 @@ export const PAGE_SECTIONS: readonly { id: string; label: string; labelEn: strin
   { id: 'articulos', label: 'Artículos', labelEn: 'Articles', about: 'Artículos y notas técnicas' },
   { id: 'trayectoria', label: 'Trayectoria', labelEn: 'Career', about: 'Trayectoria profesional, experiencia y CV' },
 ];
+
+/**
+ * Pestañas de la sección de entrega. `id` es su ancla (`#entrega-pipeline` abre esa pestaña): así la
+ * paleta de comandos lleva a cada vista y no solo a la sección.
+ */
+export const DELIVERY_VIEWS: readonly { id: string; label: string; about: string }[] = [
+  { id: 'entrega-arquitectura', label: 'Arquitectura en producción', about: 'Lo desplegado hoy: Cloud Run, Cloudflare Pages, PostgreSQL, Redis, salud en vivo y «Comprobar ahora»' },
+  { id: 'entrega-historial', label: 'Historial Git', about: 'Grafo de commits y ramas fusionadas en main, con la CI de cada merge' },
+  { id: 'entrega-pipeline', label: 'Pipeline CI/CD', about: 'GitHub Actions: CI, CD y seguridad nocturna, con estados y duraciones reales' },
+  { id: 'entrega-despliegues', label: 'Despliegues y rollback', about: 'Línea de tiempo de despliegues, salud y vuelta atrás' },
+];

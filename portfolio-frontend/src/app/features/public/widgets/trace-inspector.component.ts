@@ -353,7 +353,7 @@ export class TraceInspectorComponent {
 
   readonly height = computed(() => {
     switch (this.layout()) {
-      case 'bottom': return this.tall() ? BOTTOM_HEIGHT_TALL : `${this.bottomHeight()}px`;
+      case 'bottom': return this.tall() ? BOTTOM_HEIGHT_TALL : `${this.inspector.compactHeight() ?? this.bottomHeight()}px`;
       case 'sheet': return this.tall() ? SHEET_HEIGHT_TALL : SHEET_HEIGHT;
       case 'floating': return `${FLOATING_HEIGHT}px`;
       default: return null;
@@ -546,6 +546,8 @@ export class TraceInspectorComponent {
   }
 
   private setHeight(height: number): void {
+    // Si el visitante lo redimensiona, manda su alto, no el compacto de una acción.
+    this.inspector.compactHeight.set(null);
     this.tall.set(false);
     this.bottomHeight.set(clampHeight(height));
   }

@@ -49,6 +49,34 @@
     "target": "trayectoria"
   },
   {
+    "id": "seccion-entrega-arquitectura",
+    "group": "secciones",
+    "title": "Arquitectura en producción",
+    "text": "Lo desplegado hoy: Cloud Run, Cloudflare Pages, PostgreSQL, Redis, salud en vivo y «Comprobar ahora»",
+    "target": "entrega-arquitectura"
+  },
+  {
+    "id": "seccion-entrega-historial",
+    "group": "secciones",
+    "title": "Historial Git",
+    "text": "Grafo de commits y ramas fusionadas en main, con la CI de cada merge",
+    "target": "entrega-historial"
+  },
+  {
+    "id": "seccion-entrega-pipeline",
+    "group": "secciones",
+    "title": "Pipeline CI/CD",
+    "text": "GitHub Actions: CI, CD y seguridad nocturna, con estados y duraciones reales",
+    "target": "entrega-pipeline"
+  },
+  {
+    "id": "seccion-entrega-despliegues",
+    "group": "secciones",
+    "title": "Despliegues y rollback",
+    "text": "Línea de tiempo de despliegues, salud y vuelta atrás",
+    "target": "entrega-despliegues"
+  },
+  {
     "id": "plantilla-reference",
     "group": "plantillas",
     "title": "Arquitectura de referencia",

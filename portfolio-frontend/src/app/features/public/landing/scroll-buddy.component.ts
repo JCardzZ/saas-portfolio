@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, afterNextRender, computed, inject, signal } from '@angular/core';
 
 import { LanguageService } from '../../../core/i18n/language.service';
+import { DeliveryTabsService, DeliveryTab } from '../delivery/delivery-tabs.service';
 import { PAGE_SECTIONS } from '../navbar/page-sections';
 
 /** Lo que dice el robot de cada sección. */
@@ -13,6 +14,14 @@ const LINES: Record<string, { en: string; es: string }> = {
   tecnologias: { en: 'My stack, by area', es: 'Mi stack, por área' },
   articulos: { en: 'Notes I’ve written', es: 'Notas que he escrito' },
   trayectoria: { en: 'Where I’ve been', es: 'Por dónde he pasado' },
+};
+
+/** En la sección de entrega, la frase sigue a la pestaña abierta. */
+const DELIVERY_LINES: Record<DeliveryTab, { en: string; es: string }> = {
+  arquitectura: { en: 'All of this is running right now', es: 'Todo esto está corriendo ahora' },
+  historial: { en: 'Every merge went through CI', es: 'Cada merge pasó por la CI' },
+  pipeline: { en: 'This runs on every change', es: 'Esto corre en cada cambio' },
+  despliegues: { en: 'And this is how it rolls back', es: 'Y así vuelve atrás si falla' },
 };
 
 /**
@@ -71,10 +80,11 @@ const LINES: Record<string, { en: string; es: string }> = {
 })
 export class ScrollBuddyComponent {
   private readonly language = inject(LanguageService);
+  private readonly deliveryTabs = inject(DeliveryTabsService);
   private readonly active = signal<string | null>(null);
   readonly line = computed(() => {
     const id = this.active();
-    const text = id ? LINES[id] : undefined;
+    const text = id === 'entrega' ? DELIVERY_LINES[this.deliveryTabs.active()] : id ? LINES[id] : undefined;
     return text ? text[this.language.lang()] : null;
   });
 

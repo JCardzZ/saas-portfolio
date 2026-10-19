@@ -17,16 +17,20 @@ export async function buildSearchIndex() {
   const bundle = join(tmpdir(), `search-index-${process.pid}.mjs`);
   await build({
     stdin: {
-      contents: "export { PAGE_SECTIONS } from './src/app/features/public/navbar/page-sections'; export { STUDIO_PRESETS } from './src/app/features/public/cloud/studio-project'; export { DATA_BLUEPRINTS } from './src/app/features/public/cloud/data-blueprints';",
+      contents: "export { PAGE_SECTIONS, DELIVERY_VIEWS } from './src/app/features/public/navbar/page-sections'; export { STUDIO_PRESETS } from './src/app/features/public/cloud/studio-project'; export { DATA_BLUEPRINTS } from './src/app/features/public/cloud/data-blueprints';",
       resolveDir: root, loader: 'ts',
     },
     bundle: true, format: 'esm', platform: 'node', outfile: bundle, logLevel: 'error',
   });
   try {
-    const { PAGE_SECTIONS, STUDIO_PRESETS, DATA_BLUEPRINTS } = await import(pathToFileURL(bundle).href);
+    const { PAGE_SECTIONS, DELIVERY_VIEWS, STUDIO_PRESETS, DATA_BLUEPRINTS } = await import(pathToFileURL(bundle).href);
     return [
       ...PAGE_SECTIONS.map((section) => ({
         id: `seccion-${section.id}`, group: 'secciones', title: section.label, text: section.about, target: section.id,
+      })),
+      // Cada pestaña de la sección de entrega, con su ancla: la paleta abre esa vista.
+      ...DELIVERY_VIEWS.map((view) => ({
+        id: `seccion-${view.id}`, group: 'secciones', title: view.label, text: view.about, target: view.id,
       })),
       // Una plantilla se abre desde el menú del Estudio: el resultado lleva hasta él.
       ...[...STUDIO_PRESETS, ...DATA_BLUEPRINTS].map((template) => ({
