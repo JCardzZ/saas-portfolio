@@ -66,6 +66,7 @@ export function mergeStatus(existing, key, workflow, { repository, isPublic, now
     workflows: workflow ? { ...previous, [key]: workflow } : previous,
     deployments: valid && existing.deployments ? existing.deployments : { frontend: [], backend: [] },
     merges: valid && Array.isArray(existing.merges) ? existing.merges : [],
+    commits: valid && Array.isArray(existing.commits) ? existing.commits : [],
   };
 }
 
@@ -100,6 +101,28 @@ export function mergeEntry(pr, ci) {
         }
       : null,
   };
+}
+
+/** Commits de main que se publican para el grafo (los más recientes, con sus ramas). */
+export const MAX_COMMITS = 60;
+
+/**
+ * Un commit del historial de main, con sus padres (lo que dibuja el grafo de ramas). Solo la
+ * primera línea del mensaje, el autor y la fecha: nada del cuerpo ni de los archivos.
+ */
+export function commitEntry(commit) {
+  return {
+    sha: clip(commit.sha, 40),
+    parents: (commit.parents ?? []).slice(0, 2).map((parent) => clip(parent.sha, 40)),
+    subject: clip(String(commit.commit?.message ?? '').split('\n')[0], 120),
+    author: clip(commit.author?.login ?? commit.commit?.author?.name, 60),
+    date: commit.commit?.committer?.date ?? commit.commit?.author?.date ?? null,
+  };
+}
+
+/** El historial publicado se sustituye entero: es una foto de main en esta ejecución. */
+export function withCommits(status, entries) {
+  return { ...status, commits: entries.slice(0, MAX_COMMITS) };
 }
 
 /** Añade PR fusionados: sin repetir, del más reciente al más antiguo, como mucho MAX_MERGES. */
