@@ -233,7 +233,8 @@ export class McpSectionComponent implements OnInit {
     if (!live) {
       return '—';
     }
-    return live.latency.p95Ms === undefined ? 'sin llamadas todavía' : `${Math.round(live.latency.p95Ms)} ms · ${live.latency.calls} ${this.calls()}`;
+    // Sin llamadas, el servidor da p95 = 0: eso no es una latencia, es que no hay datos.
+    return live.latency.p95Ms === undefined || !live.latency.calls ? 'sin llamadas todavía' : `${Math.round(live.latency.p95Ms)} ms · ${live.latency.calls} ${this.calls()}`;
   });
   readonly limit = computed(() => {
     const limits = this.status()?.limits;
