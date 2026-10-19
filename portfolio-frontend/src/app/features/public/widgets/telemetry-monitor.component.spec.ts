@@ -33,7 +33,10 @@ describe('TelemetryMonitorComponent', () => {
 
     expect(element.querySelector('[data-testid="telemetry-badge"]')!.textContent).toContain('Modo demo');
     expect(element.querySelector('[data-testid="telemetry-demo"]')).not.toBeNull();
-    expect(element.textContent).not.toMatch(/\d+\s?%|12[.,]4/);
+    // La misma estructura, con guiones en lugar de cifras.
+    expect(element.querySelector('[data-testid="telemetry-status"]')!.textContent).toContain('API —');
+    expect(element.querySelectorAll('svg rect.bar').length).toBe(0);
+    expect(element.textContent).not.toMatch(/\d+\s?%|\d+ ms|12[.,]4/);
   });
 
   it('shows the real health of the API and of each piece, and the latency it measured', () => {

@@ -683,7 +683,6 @@ export const EN: Readonly<Record<string, string>> = {
   'bundle inicial (gzip)': 'initial bundle (gzip)',
   'paquetes en el SBOM': 'packages in the SBOM',
   'firma de la imagen verificada': 'image signature verified',
-  'correcto': 'passed',
   'omitido': 'skipped',
   'fallido': 'failed',
   'cancelado': 'cancelled',
@@ -702,4 +701,5 @@ export const EN: Readonly<Record<string, string>> = {
   'Datos de la ejecución del': 'Data from the run of',
   'Estructura del workflow · sin datos publicados de su última ejecución': 'Workflow structure · no published data from its last run',
   'Cargando la última ejecución…': 'Loading the last run…',
+  'Modo demo: sin API no hay cifras reales que enseñar.': 'Demo mode: with no API there are no real figures to show.',
 };
