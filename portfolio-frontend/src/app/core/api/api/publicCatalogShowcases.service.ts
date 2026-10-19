@@ -155,16 +155,28 @@ export class PublicCatalogShowcasesService extends BaseService {
 
     /**
      * Fetch career timeline milestones
-     * Milestones in the order they appear in the career story document, most recent first.
+     * Milestones in the order they appear in the career story document, most recent first. &#x60;en&#x60; reads the English translation of the same document; if it has no milestones, the Spanish ones are returned so the timeline is never empty because of a missing translation. 
      * @endpoint get /public/career-timeline
+     * @param lang Language of the milestones.
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      * @param options additional options
      */
-    public publicCareerTimelineGet(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Array<CareerMilestone>>;
-    public publicCareerTimelineGet(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<CareerMilestone>>>;
-    public publicCareerTimelineGet(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<CareerMilestone>>>;
-    public publicCareerTimelineGet(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+    public publicCareerTimelineGet(lang?: 'es' | 'en', observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<Array<CareerMilestone>>;
+    public publicCareerTimelineGet(lang?: 'es' | 'en', observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<CareerMilestone>>>;
+    public publicCareerTimelineGet(lang?: 'es' | 'en', observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<CareerMilestone>>>;
+    public publicCareerTimelineGet(lang?: 'es' | 'en', observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'lang',
+            <any>lang,
+            QueryParamStyle.Form,
+            true,
+        );
+
 
         let localVarHeaders = this.defaultHeaders;
 
@@ -196,6 +208,7 @@ export class PublicCatalogShowcasesService extends BaseService {
         return this.httpClient.request<Array<CareerMilestone>>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

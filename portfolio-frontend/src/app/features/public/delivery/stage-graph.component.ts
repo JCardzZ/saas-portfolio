@@ -114,8 +114,8 @@ const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5];
                     </svg>
                   }
                   <span class="text">
-                    <span class="name">{{ node.label }}</span>
-                    <span class="detail">{{ node.detail || node.toneLabel }}</span>
+                    <span class="name">{{ node.label | t }}</span>
+                    <span class="detail">{{ (node.detail || node.toneLabel) | t }}</span>
                   </span>
                   <span class="dot" aria-hidden="true"></span>
                 </button>

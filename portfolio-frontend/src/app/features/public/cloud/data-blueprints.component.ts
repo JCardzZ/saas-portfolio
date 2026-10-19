@@ -35,8 +35,7 @@ interface Card {
       <p class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Patrones de datos' | t }}</p>
       <h3 id="data-blueprints-title" class="mt-1 text-xl font-semibold tracking-tight text-ink-1">{{ 'CDC, streaming y analítica, listos para el lienzo' | t }}</h3>
       <p class="mt-1 max-w-2xl text-sm text-ink-2">
-        Tres patrones de referencia. Cada uno se traduce a {{ providerName() }} y a las otras dos nubes; son ilustrativos, no la
-        infraestructura de ninguna entidad.
+        {{ 'Tres patrones de referencia. Cada uno se traduce a' | t }} {{ providerName() }} {{ 'y a las otras dos nubes; son ilustrativos, no la infraestructura de ninguna entidad.' | t }}
       </p>
 
       <ul class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -55,18 +54,18 @@ interface Card {
             </svg>
 
             <div class="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <h4 class="text-base font-semibold text-ink-1">{{ card.blueprint.name }}</h4>
+              <h4 class="text-base font-semibold text-ink-1">{{ card.blueprint.name | t }}</h4>
               <span class="rounded-full border border-line-strong px-1.5 font-mono text-xs text-ink-2" [attr.title]="'Versión del blueprint' | t">v{{ card.blueprint.version }}</span>
             </div>
-            <p class="mt-0.5 font-mono text-xs text-ink-2">{{ card.blueprint.summary }}</p>
+            <p class="mt-0.5 font-mono text-xs text-ink-2">{{ card.blueprint.summary | t }}</p>
             <dl class="mt-3 flex-1 space-y-2 text-[13px] leading-snug">
               <div>
                 <dt class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Problema' | t }}</dt>
-                <dd class="text-ink-1">{{ card.blueprint.problem }}</dd>
+                <dd class="text-ink-1">{{ card.blueprint.problem | t }}</dd>
               </div>
               <div>
                 <dt class="text-xs font-medium uppercase tracking-wider text-ink-3">Trade-off</dt>
-                <dd class="text-ink-1">{{ card.blueprint.tradeoff }}</dd>
+                <dd class="text-ink-1">{{ card.blueprint.tradeoff | t }}</dd>
               </div>
               <div>
                 <dt class="text-xs font-medium uppercase tracking-wider text-ink-3">En {{ providerName() }}</dt>

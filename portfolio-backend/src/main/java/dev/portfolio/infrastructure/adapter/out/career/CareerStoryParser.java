@@ -116,9 +116,10 @@ final class CareerStoryParser {
             if (field.matches()) {
                 String value = field.group(2).strip();
                 switch (normalize(field.group(1))) {
-                    case "rol" -> role = value;
-                    case "organizacion" -> organization = value;
-                    case "tecnologias" -> technologies = Arrays.stream(value.split(","))
+                    // Campos del original y de su traducción al inglés.
+                    case "rol", "role" -> role = value;
+                    case "organizacion", "organisation", "organization" -> organization = value;
+                    case "tecnologias", "technologies" -> technologies = Arrays.stream(value.split(","))
                             .map(String::strip).filter(item -> !item.isEmpty()).toList();
                     default -> appendSummary(line);
                 }

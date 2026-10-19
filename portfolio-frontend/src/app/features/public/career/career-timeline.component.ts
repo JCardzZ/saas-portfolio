@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { finalize } from 'rxjs';
 
@@ -61,23 +62,28 @@ import { techIconFor } from '../../../shared/ui/tech-icons';
   `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class CareerTimelineComponent implements OnInit {
+export class CareerTimelineComponent {
   private readonly api = inject(PublicCatalogShowcasesService);
+  private readonly language = inject(LanguageService);
 
   readonly milestones = signal<CareerMilestone[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly iconFor = techIconFor;
 
-  ngOnInit(): void {
-    this.load();
+  constructor() {
+    // La trayectoria llega en el idioma de la página y se vuelve a pedir al cambiarlo.
+    effect(() => {
+      const lang = this.language.lang();
+      untracked(() => this.load(lang));
+    });
   }
 
-  load(): void {
+  load(lang = this.language.lang()): void {
     this.loading.set(true);
     this.error.set(null);
     this.api
-      .publicCareerTimelineGet()
+      .publicCareerTimelineGet(lang)
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (milestones) => this.milestones.set(milestones),

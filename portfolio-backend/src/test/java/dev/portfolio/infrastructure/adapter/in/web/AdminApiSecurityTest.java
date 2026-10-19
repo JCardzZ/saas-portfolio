@@ -216,7 +216,7 @@ class AdminApiSecurityTest {
 
     @Test
     void careerTimelineIsServedWithoutToken() throws Exception {
-        given(careerUseCase.timeline()).willReturn(List.of(new CareerMilestoneDomain(
+        given(careerUseCase.timeline(dev.portfolio.domain.model.CvLanguage.ES)).willReturn(List.of(new CareerMilestoneDomain(
                 "2023 - 2025", "Plataforma de pagos", "Staff Engineer", "Acme",
                 List.of("Java 21", "PostgreSQL"), "Rediseño del núcleo transaccional.")));
 
@@ -228,6 +228,18 @@ class AdminApiSecurityTest {
                 .andExpect(jsonPath("$[0].organization").value("Acme"))
                 .andExpect(jsonPath("$[0].technologies[1]").value("PostgreSQL"))
                 .andExpect(jsonPath("$[0].summary").value("Rediseño del núcleo transaccional."));
+    }
+
+    @Test
+    void careerTimelineIsServedInTheLanguageAskedForAndRejectsOthers() throws Exception {
+        given(careerUseCase.timeline(dev.portfolio.domain.model.CvLanguage.EN)).willReturn(List.of(new CareerMilestoneDomain(
+                "2023 - 2025", "Payments platform", "Staff Engineer", "Acme", List.of("Java 21"), "Rebuilt the core.")));
+
+        mockMvc.perform(get("/public/career-timeline").param("lang", "en"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("Payments platform"));
+        mockMvc.perform(get("/public/career-timeline").param("lang", "fr"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

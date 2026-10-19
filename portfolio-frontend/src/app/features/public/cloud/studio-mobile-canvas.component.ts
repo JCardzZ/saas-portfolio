@@ -104,8 +104,8 @@ export function fitText(text: string, width: number, charWidth: number): string 
                 </svg>
               }
             }
-            <text class="node-service" [attr.x]="placed.textX" [attr.y]="placed.y + 22">{{ placed.label }}</text>
-            <text class="node-role" [attr.x]="placed.textX" [attr.y]="placed.y + 39">{{ placed.role }}</text>
+            <text class="node-service" [attr.x]="placed.textX" [attr.y]="placed.y + 22">{{ placed.label | t }}</text>
+            <text class="node-role" [attr.x]="placed.textX" [attr.y]="placed.y + 39">{{ placed.role | t }}</text>
             <text class="node-meta" [class.node-meta-live]="placed.row.live" [attr.x]="placed.textX" [attr.y]="placed.y + 56">{{ placed.meta }}</text>
           </g>
         }

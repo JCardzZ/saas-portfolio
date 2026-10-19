@@ -43,7 +43,7 @@
         [class.dimmed]="isDimmed(search.tenant.id)"
         tabindex="0"
         role="button"
-        [attr.aria-label]="('Resaltar la consulta de ' | t) + search.tenant.name"
+        [attr.aria-label]="('Resaltar la consulta de ' | t) + (search.tenant.name | t)"
         [attr.aria-pressed]="focused() === search.tenant.id"
         (mouseenter)="focused.set(search.tenant.id)"
         (mouseleave)="focused.set(null)"
@@ -51,7 +51,7 @@
         (blur)="focused.set(null)"
       >
         <rect [attr.x]="geo().lanes[search.tenant.id].client.x" [attr.y]="geo().lanes[search.tenant.id].client.y" [attr.width]="geo().lanes[search.tenant.id].client.w" height="44" rx="14" [attr.stroke]="search.tenant.color" />
-        <text [attr.x]="geo().lanes[search.tenant.id].client.x + geo().lanes[search.tenant.id].client.w / 2" [attr.y]="geo().lanes[search.tenant.id].client.y + 21" text-anchor="middle" fill="var(--text-1)" font-size="12.5" font-weight="600">{{ search.tenant.name }}</text>
+        <text [attr.x]="geo().lanes[search.tenant.id].client.x + geo().lanes[search.tenant.id].client.w / 2" [attr.y]="geo().lanes[search.tenant.id].client.y + 21" text-anchor="middle" fill="var(--text-1)" font-size="12.5" font-weight="600">{{ search.tenant.name | t }}</text>
         <text [attr.x]="geo().lanes[search.tenant.id].client.x + geo().lanes[search.tenant.id].client.w / 2" [attr.y]="geo().lanes[search.tenant.id].client.y + 35" text-anchor="middle" fill="var(--text-2)" font-size="12">{{ 'consulta vectorial' | t }}</text>
       </g>
     }

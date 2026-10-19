@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { capturePointer } from '../../../shared/ui/pointer-capture';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { IconPopService } from '../../../shared/ui/icon-pop.service';
@@ -121,6 +122,7 @@ export class CloudInfraComponent {
   private readonly events = inject(SystemEventsService);
   readonly inspector = inject(TraceInspectorService);
   private readonly pricing = inject(LivePricingService);
+  private readonly language = inject(LanguageService);
   private readonly iconPop = inject(IconPopService);
 
   /**
@@ -232,14 +234,15 @@ export class CloudInfraComponent {
   /** Coste de cada nodo, para su etiqueta: importe y si es un precio real, o «sin estimación». */
   readonly nodeCosts = computed(() => {
     const estimate = this.cost();
+    const english = this.language.lang() === 'en';
     const byNode = new Map<string, { label: string; live: boolean; title: string }>();
     for (const item of estimate.categories.flatMap((category) => category.items)) {
       const quote = item.live ? this.pricing.quotesFor(this.selectedId())[item.type] : undefined;
       byNode.set(item.nodeId, {
-        label: `${formatUsd(item.usd)}/mes`, live: item.live === true,
+        label: `${formatUsd(item.usd)}${english ? '/mo' : '/mes'}`, live: item.live === true,
         title: quote
-          ? `Precio de lista real · ${quote.sku} · ${quote.source ?? ''} (${quote.region ?? ''}). ${quote.note ?? ''}`
-          : 'Estimación orientativa, no un precio consultado',
+          ? `${english ? 'Real list price' : 'Precio de lista real'} · ${quote.sku} · ${quote.source ?? ''} (${quote.region ?? ''}). ${quote.note ?? ''}`
+          : english ? 'Indicative estimate, not a queried price' : 'Estimación orientativa, no un precio consultado',
       });
     }
     for (const item of estimate.unestimated) {
