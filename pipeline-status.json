@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-19T02:55:22.275Z",
+  "updatedAt": "2026-10-19T03:15:21.861Z",
   "workflows": {
     "ci": {
-      "runId": 39190632104,
-      "runNumber": 161,
-      "sha": "36ecd44d8465e92a726abf62905fed40217362ad",
+      "runId": 39190680307,
+      "runNumber": 162,
+      "sha": "c85b4bec75db40fef3044954dccece31e66c9da3",
       "event": "push",
-      "startedAt": "2026-10-19T02:34:49Z",
-      "finishedAt": "2026-10-19T02:54:28.156Z",
-      "durationSeconds": 1179,
-      "conclusion": "success",
+      "startedAt": "2026-10-19T02:35:22Z",
+      "finishedAt": "2026-10-19T03:15:21.861Z",
+      "durationSeconds": 2400,
+      "conclusion": "failure",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 8,
+          "durationSeconds": 6,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 9,
+          "durationSeconds": 11,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 115,
+          "durationSeconds": 127,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 21,
+          "durationSeconds": 30,
           "runs": 1
         },
         {
@@ -71,16 +71,16 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 64,
+          "durationSeconds": 65,
           "runs": 3,
           "metrics": {
-            "tests": 727
+            "tests": 733
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 42,
+          "durationSeconds": 46,
           "runs": 1,
           "metrics": {
             "bundleKb": 340.6,
@@ -90,10 +90,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 67,
+          "durationSeconds": 56,
           "runs": 1,
           "metrics": {
-            "performance": 76,
+            "performance": 83,
             "accessibility": 97,
             "bestPractices": 96,
             "seo": 92
@@ -101,12 +101,12 @@
         },
         {
           "id": "responsive",
-          "status": "success",
-          "durationSeconds": 1015,
+          "status": "failure",
+          "durationSeconds": 1070,
           "runs": 2,
           "metrics": {
             "tests": 523,
-            "failed": 0,
+            "failed": 1,
             "profiles": 33
           }
         },
@@ -136,8 +136,8 @@
         },
         {
           "id": "gate",
-          "status": "success",
-          "durationSeconds": 4,
+          "status": "failure",
+          "durationSeconds": 3,
           "runs": 1
         }
       ]
