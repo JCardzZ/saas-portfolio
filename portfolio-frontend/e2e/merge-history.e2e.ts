@@ -10,6 +10,7 @@ test.describe('ramas fusionadas en main', () => {
     await expect(page.locator('h1')).toBeVisible();
     await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
     await page.evaluate(() => document.getElementById('entrega')?.scrollIntoView({ block: 'start' }));
+    await page.locator('[data-delivery-tab="historial"]').click();
     const card = page.locator('app-merge-history');
     const first = card.locator('[data-merge]').first();
     await first.scrollIntoViewIfNeeded();
