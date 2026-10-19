@@ -9,6 +9,9 @@
  * Además, «la manita»: con el ratón, el fondo de la página (no las tarjetas, textos ni controles)
  * se puede agarrar y arrastrar para desplazarse, y al soltar sigue con la inercia del gesto.
  */
+/** Evento de ventana con el que otra parte de la página detiene la inercia antes de desplazarla. */
+export const CANCEL_INERTIA = 'portfolio:cancel-inertia';
+
 export function startSmoothScroll(): () => void {
   const fine = matchMedia('(pointer: fine)').matches;
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -56,6 +59,13 @@ export function startSmoothScroll(): () => void {
   // Teclado, anclas, barra de desplazamiento: se adopta su posición.
   const onScroll = () => {
     if (!animating && !raf) target = current = scrollY;
+  };
+
+  /** Otra parte de la página va a desplazarla (p. ej. para recolocar una tarjeta): la inercia se detiene. */
+  const onCancel = () => {
+    cancelAnimationFrame(raf);
+    raf = 0;
+    target = current = scrollY;
   };
 
   // ---- La manita --------------------------------------------------------------------------
@@ -123,6 +133,7 @@ export function startSmoothScroll(): () => void {
   addEventListener('pointermove', onCardMove, { passive: true });
   addEventListener('wheel', onWheel, { passive: false });
   addEventListener('scroll', onScroll, { passive: true });
+  addEventListener(CANCEL_INERTIA, onCancel);
   addEventListener('pointerdown', onDown);
   addEventListener('pointermove', onMove, { passive: true });
   addEventListener('pointerup', onUp);
@@ -136,6 +147,7 @@ export function startSmoothScroll(): () => void {
     cancelAnimationFrame(raf);
     removeEventListener('wheel', onWheel);
     removeEventListener('scroll', onScroll);
+    removeEventListener(CANCEL_INERTIA, onCancel);
     removeEventListener('pointerdown', onDown);
     removeEventListener('pointermove', onMove);
     removeEventListener('pointerup', onUp);

@@ -326,6 +326,7 @@ export const EN: Readonly<Record<string, string>> = {
   'Desde': 'From',
   'Deshacer la simulación': 'Undo the simulation',
   'Despliegues de ': 'Deployments of ',
+  'Ver la ficha de la pieza': 'Show the piece details',
   'Buscar por texto o hash': 'Search by text or hash',
   'Texto o hash': 'Text or hash',
   'Autor: todos': 'Author: all',

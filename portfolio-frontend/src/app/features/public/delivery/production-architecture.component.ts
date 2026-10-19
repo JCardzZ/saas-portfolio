@@ -9,6 +9,12 @@ import { TheaterToggleComponent } from '../../../shared/ui/theater-toggle.compon
 import { TheaterDirective } from '../../../shared/ui/theater.directive';
 import { PipelineStatus, TOPOLOGY, TopologyNode, formatDate, formatDuration } from './delivery-data';
 
+/** Entre una línea del resultado y la siguiente (y la pieza que se enciende con ella). */
+const REPORT_STEP_MS = 320;
+
+/** Alto del inspector acoplado abajo para los logs de una comprobación (cabecera y seis líneas). */
+const COMPACT_INSPECTOR_PX = 180;
+
 /** Pieza del inspector de traza a la que van los logs de «Comprobar ahora». */
 const HEALTH_CHECK = 'health-check';
 
@@ -51,11 +57,12 @@ interface Fact {
       [live]="liveStates()"
       [facts]="liveFacts()"
       [probe]="checks()"
+      [flashId]="flashing()"
       [activeId]="activeId()"
       (picked)="pick($event)"
     />
 
-    <ul #legend class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2" [attr.aria-label]="'Leyenda' | t">
+    <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2" [attr.aria-label]="'Leyenda' | t">
       <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-ok" aria-hidden="true"></span>{{ 'En producción' | t }}</li>
       <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full border border-ink-2" aria-hidden="true"></span>{{ 'Planificado' | t }}</li>
       <li class="inline-flex items-center gap-2"><span class="w-5 border-t-2 border-accent-text" aria-hidden="true"></span>{{ 'Petición de un visitante' | t }}</li>
@@ -87,6 +94,10 @@ interface Fact {
       <!-- Lo exige la política de marca de Redis en cada página donde aparece su logo. -->
       <p class="mt-2 text-caption text-ink-3" data-testid="trademark-attribution">Redis is a registered trademark of Redis Ltd. Any rights therein are reserved to Redis Ltd.</p>
     }
+    <!-- Con los logs de la comprobación abiertos abajo, la ficha se pliega: la tarjeta cabe entera
+         por encima del inspector. Vuelve al cerrarlos o al tocar una pieza. -->
+    <div class="detail-fold" [class.folded]="detailFolded()" data-testid="detail-fold">
+    <div class="min-h-0 overflow-hidden">
     <div #detail class="mt-4 min-h-[7rem] scroll-mb-24 scroll-mt-24 rounded-panel border border-line-subtle bg-surface-2 p-4" aria-live="polite">
       @if (active(); as node) {
         <p class="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink-1">
@@ -128,6 +139,17 @@ interface Fact {
         <p class="text-sm text-ink-2">{{ 'Toca una pieza para ver qué es, por qué se eligió y sus datos reales.' | t }}</p>
       }
     </div>
+    </div>
+    </div>
+    @if (detailFolded()) {
+      <button type="button" class="ui-btn-ghost tap mt-2 px-2 py-1 text-xs" data-testid="show-detail" (click)="detailOpen.set(true)">{{ 'Ver la ficha de la pieza' | t }} ↓</button>
+    }
+  `,
+    styles: `
+    /* Plegar y desplegar la ficha con su alto real (filas de rejilla de 1fr a 0fr), sin saltos. */
+    .detail-fold { display: grid; grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease-out; }
+    .detail-fold.folded { grid-template-rows: 0fr; opacity: 0; }
+    @media (prefers-reduced-motion: reduce) { .detail-fold { transition: none; } }
   `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -139,7 +161,6 @@ export class ProductionArchitectureComponent implements OnInit {
   readonly health = this.liveHealth.state;
 
   private readonly detail = viewChild<ElementRef<HTMLElement>>('detail');
-  private readonly legend = viewChild<ElementRef<HTMLElement>>('legend');
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly destroyRef = inject(DestroyRef);
   private readonly language = inject(LanguageService);
@@ -187,6 +208,12 @@ export class ProductionArchitectureComponent implements OnInit {
     const en = this.en();
     this.inspector.inspectComponent({ id: HEALTH_CHECK, label: en ? 'Health check · /telemetry/health' : 'Comprobación de salud · /telemetry/health', icon: 'gcpCloudRun', tech: null });
     this.events.emitRealFromUser([['info', en ? 'Browser' : 'Navegador', `GET ${runtimeConfig.apiBaseUrl}/telemetry/health`]], HEALTH_CHECK);
+    // Los logs, abajo y con el alto justo de sus líneas: la tarjeta pierde lo mínimo, y su ficha
+    // se pliega mientras están abiertos (detailFolded) para que todo quepa por encima.
+    if (this.inspector.mode() !== 'floating') {
+      this.inspector.dockTemporarily('bottom', COMPACT_INSPECTOR_PX);
+    }
+    this.detailOpen.set(false);
     this.awaitingCheck = this.checks();
     this.liveHealth.refresh();
     this.fitAboveInspector();
@@ -201,56 +228,95 @@ export class ProductionArchitectureComponent implements OnInit {
     if (this.host.classList.contains('theater-expanded') || typeof requestAnimationFrame === 'undefined') {
       return;
     }
-    // Dos fotogramas: el inspector se pinta y publica --dock-bottom antes de medir.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
+    // La inercia de la rueda se detiene ya: si no, seguiría moviendo la página mientras se mide.
+    window.dispatchEvent(new Event('portfolio:cancel-inertia'));
+    // Tras la transición del acople (la página deja sitio al inspector) se mide y se recoloca.
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setTimeout(() => requestAnimationFrame(() => {
       const dock = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-bottom')) || 0;
       const navBottom = document.querySelector('app-public-navbar header')?.getBoundingClientRect().bottom ?? 64;
       const top = navBottom + 12;
       const bottom = innerHeight - dock - 12;
       const card = this.host.getBoundingClientRect();
-      const legend = this.legend()?.nativeElement.getBoundingClientRect();
-      // Lo que hay que ver: la tarjeta entera si cabe; si no, hasta la leyenda.
-      const target = card.height <= bottom - top ? card.bottom : (legend?.bottom ?? card.bottom);
-      let delta = target > bottom ? target - bottom : card.top < top ? card.top - top : 0;
-      delta = Math.min(delta, card.top - top);
+      // Si cabe entera, que se vea entera. Si no, su cabecera justo bajo la barra: así se ve lo
+      // máximo (el diagrama, la leyenda y lo que quepa de la ficha).
+      const fits = card.height <= bottom - top;
+      const delta = fits
+        ? (card.bottom > bottom ? card.bottom - bottom : card.top < top ? card.top - top : 0)
+        : card.top - top;
       if (Math.abs(delta) > 2) {
-        const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        // Que la inercia de la rueda no siga llevando la página a otra parte.
+        window.dispatchEvent(new Event('portfolio:cancel-inertia'));
         window.scrollBy({ top: delta, behavior: reduced ? 'auto' : 'smooth' });
       }
-    }));
+      // Que se note que la tarjeta se ha acomodado: un destello de borde breve.
+      this.host.classList.remove('card-adapted');
+      void this.host.offsetWidth;
+      this.host.classList.add('card-adapted');
+      setTimeout(() => this.host.classList.remove('card-adapted'), 1200);
+    }), reduced ? 0 : 620);
   }
 
   /** Comprobación pedida con el botón cuyo resultado aún no se ha contado en el inspector. */
   private awaitingCheck: number | null = null;
 
   /** Lo que respondió la API, línea a línea, tal cual: sin adornos ni datos inventados. */
+  /** El visitante pidió ver la ficha aunque los logs sigan abiertos. */
+  readonly detailOpen = signal(false);
+  /** La ficha se pliega mientras el inspector muestra los logs de la comprobación. */
+  readonly detailFolded = computed(() => this.inspector.componentId() === HEALTH_CHECK && !this.detailOpen());
+
+  /** Pieza que se enciende en el lienzo mientras su línea entra en el inspector. */
+  readonly flashing = signal<string | null>(null);
+  private reportTimers: ReturnType<typeof setTimeout>[] = [];
+
+  /**
+   * Lo que respondió la API, línea a línea y tal cual. Cada línea entra en el inspector a la vez que
+   * su pieza se enciende en el lienzo: se ve la comprobación recorrer la arquitectura.
+   */
   private reportCheck(): void {
     const state = this.health();
     const en = this.en();
+    this.clearReport();
     if (state.kind === 'unreachable') {
       this.events.emitRealFromUser([['warn', 'Cloud Run', en ? 'no answer in 8 s' : 'sin respuesta en 8 s']], HEALTH_CHECK, 'WARN');
+      this.flashing.set('backend');
       return;
     }
     if (state.kind !== 'ready') {
       return;
     }
     const health = state.health;
-    const steps: SystemEventStep[] = [
-      [health.status === 'UP' ? 'ok' : 'warn', 'Cloud Run', `${health.status === 'DOWN' ? 503 : 200} · ${health.status} · ${health.latencyMs} ms`],
+    const lines: { node: string; step: SystemEventStep }[] = [
+      { node: 'backend', step: [health.status === 'UP' ? 'ok' : 'warn', 'Cloud Run', `${health.status === 'DOWN' ? 503 : 200} · ${health.status} · ${health.latencyMs} ms`] },
     ];
     if (health.database) {
-      steps.push([/unavailable/i.test(health.database) ? 'warn' : 'ok', 'PostgreSQL', health.database]);
+      lines.push({ node: 'postgres', step: [/unavailable/i.test(health.database) ? 'warn' : 'ok', 'PostgreSQL', health.database] });
     }
     if (health.redisCache) {
-      steps.push([/unavailable/i.test(health.redisCache) ? 'warn' : 'ok', 'Redis', health.redisCache]);
+      lines.push({ node: 'redis', step: [/unavailable/i.test(health.redisCache) ? 'warn' : 'ok', 'Redis', health.redisCache] });
     }
     if (health.aiEngine) {
-      steps.push(['info', 'Gemini', en
+      lines.push({ node: 'gemini', step: ['info', 'Gemini', en
         ? `circuit breaker ${health.aiEngine} (state kept by the API; this check does not call Gemini)`
-        : `circuit breaker ${health.aiEngine} (estado que guarda la API; esta comprobación no llama a Gemini)`]);
+        : `circuit breaker ${health.aiEngine} (estado que guarda la API; esta comprobación no llama a Gemini)`] });
     }
-    this.events.emitRealFromUser(steps, HEALTH_CHECK, health.status === 'UP' ? 'SUCCESS' : 'WARN');
+    const level = health.status === 'UP' ? 'SUCCESS' : 'WARN';
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    lines.forEach((line, index) => {
+      this.reportTimers.push(setTimeout(() => {
+        this.events.emitRealFromUser([line.step], HEALTH_CHECK, level);
+        this.flashing.set(line.node);
+      }, reduced ? 0 : index * REPORT_STEP_MS));
+    });
+    this.reportTimers.push(setTimeout(() => this.flashing.set(null), reduced ? 0 : lines.length * REPORT_STEP_MS + 600));
   }
+
+  private clearReport(): void {
+    this.reportTimers.forEach((timer) => clearTimeout(timer));
+    this.reportTimers = [];
+  }
+
 
   /** El dato en vivo de cada pieza: de la última ejecución publicada y de /telemetry/health. Lo que no se sabe no se muestra. */
   readonly liveFacts = computed(() => {
@@ -332,7 +398,7 @@ export class ProductionArchitectureComponent implements OnInit {
     this.liveHealth.load();
     // «Hace 12 s»: se refresca cada 15 s mientras la vista existe.
     const clock = setInterval(() => this.now.set(Date.now()), 15_000);
-    this.destroyRef.onDestroy(() => clearInterval(clock));
+    this.destroyRef.onDestroy(() => { clearInterval(clock); this.clearReport(); });
   }
 
   liveOf(id: string): { state: ComponentState; detail: string | null } | null {
@@ -351,6 +417,8 @@ export class ProductionArchitectureComponent implements OnInit {
 
   pick(id: string): void {
     this.activeId.set(id);
+    // Elegir una pieza es querer ver su ficha, aunque los logs sigan abiertos.
+    this.detailOpen.set(true);
     revealDetail(this.detail());
   }
 }
