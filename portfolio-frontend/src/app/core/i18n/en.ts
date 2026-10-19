@@ -584,4 +584,5 @@ export const EN: Readonly<Record<string, string>> = {
   'vistas': 'views',
   'Has visto las cuatro vistas': 'You have seen all four views',
   'Volver a la arquitectura': 'Back to the architecture',
+  'Modo demo: sin API no hay cifras reales que enseñar.': 'Demo mode: with no API there are no real figures to show.',
 };

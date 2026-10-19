@@ -42,18 +42,14 @@ const TAGS = { hit: '200 OK CacheHit Redis', miss: 'CacheMiss → PostgreSQL', r
     </div>
 
     @if (pulse(); as state) {
-      @if (state.kind === 'demo') {
-        <p class="mt-5 text-sm leading-relaxed text-ink-2" data-testid="telemetry-demo">
-          {{ 'Sin backend no hay métricas que enseñar. Con la API en marcha, aquí se ve su estado, la latencia medida desde tu navegador y lo que hace mientras navegas.' | t }}
-        </p>
-      } @else {
+      <!-- En modo demo se ve la misma estructura, con guiones: la tarjeta no queda vacía ni inventa cifras. -->
         <div class="mt-5 flex items-baseline justify-between gap-3">
           <p class="api-status" [attr.data-tone]="statusTone()" data-testid="telemetry-status">
-            API {{ state.kind === 'ready' ? state.health.status : state.kind === 'unreachable' ? ('sin respuesta' | t) : '…' }}
+            API {{ state.kind === 'ready' ? state.health.status : state.kind === 'unreachable' ? ('sin respuesta' | t) : state.kind === 'demo' ? '—' : '…' }}
           </p>
           <p class="font-mono text-sm tabular-nums text-ink-1" data-testid="telemetry-latency">{{ latest() ?? '—' }}<span class="text-ink-3"> ms</span></p>
         </div>
-        @if (state.kind === 'ready') {
+        @if (pieces().length) {
           <ul class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-2" [attr.aria-label]="'Piezas' | t">
             @for (piece of pieces(); track piece.name) {
               <li class="inline-flex items-center gap-1.5" [attr.data-piece]="piece.name">
@@ -85,14 +81,15 @@ const TAGS = { hit: '200 OK CacheHit Redis', miss: 'CacheMiss → PostgreSQL', r
           <p class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Desde que abriste la página' | t }}</p>
           <dl class="mt-2 grid grid-cols-3 gap-2" data-testid="telemetry-session">
             <div><dt class="text-xs text-ink-3">{{ 'Caché' | t }}</dt><dd class="font-mono text-base tabular-nums text-ink-1">{{ hitRatio() }}</dd></div>
-            <div><dt class="text-xs text-ink-3">RAG</dt><dd class="font-mono text-base tabular-nums text-ink-1">{{ counts().rag }}</dd></div>
-            <div><dt class="text-xs text-ink-3">{{ 'Vectores' | t }}</dt><dd class="font-mono text-base tabular-nums text-ink-1">{{ counts().vector }}</dd></div>
+            <div><dt class="text-xs text-ink-3">RAG</dt><dd class="font-mono text-base tabular-nums text-ink-1">{{ state.kind === 'demo' ? '—' : counts().rag }}</dd></div>
+            <div><dt class="text-xs text-ink-3">{{ 'Vectores' | t }}</dt><dd class="font-mono text-base tabular-nums text-ink-1">{{ state.kind === 'demo' ? '—' : counts().vector }}</dd></div>
           </dl>
-          @if (!counts().hit && !counts().miss && !counts().rag) {
+          @if (state.kind === 'demo') {
+            <p class="mt-1.5 text-xs leading-snug text-ink-3" data-testid="telemetry-demo">{{ 'Modo demo: sin API no hay cifras reales que enseñar.' | t }}</p>
+          } @else if (!counts().hit && !counts().miss && !counts().rag) {
             <p class="mt-1.5 text-xs leading-snug text-ink-3">{{ 'Pregúntale algo a la IA y lo verás aquí.' | t }}</p>
           }
         </div>
-      }
     }
   `,
   styles: `
@@ -147,7 +144,8 @@ export class TelemetryMonitorComponent {
   });
   readonly pieces = computed(() => {
     const state = this.pulse();
-    if (state.kind !== 'ready') return [];
+    // Sin datos todavía (o en demo), las piezas se nombran sin estado: punto gris.
+    if (state.kind !== 'ready') return [{ name: 'PostgreSQL', state: null }, { name: 'Redis', state: null }, { name: 'Gemini', state: null }];
     return [
       { name: 'PostgreSQL', state: componentState(state.health, 'database') },
       { name: 'Redis', state: componentState(state.health, 'redisCache') },
