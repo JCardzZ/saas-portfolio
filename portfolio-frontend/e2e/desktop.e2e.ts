@@ -392,6 +392,20 @@ test.describe('paleta de comandos en escritorio', () => {
   });
 });
 
+test.describe('pestañas de entrega', () => {
+  test('el foco por hover adelanta la tarjeta de la pestaña abierta por encima del velo', async ({ page }) => {
+    await openDelivery(page, 'pipeline');
+    const card = page.locator('app-pipeline-view');
+    await card.hover();
+    await expect(card).toHaveClass(/theater-focus/);
+    // Lo que hay en la esquina de la tarjeta es la propia tarjeta, no el velo que atenúa el resto.
+    expect(await card.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return element.contains(document.elementFromPoint(box.x + 40, box.y + 40));
+    })).toBe(true);
+  });
+});
+
 test.describe('comprobar ahora', () => {
   test('el inspector se acopla abajo y la tarjeta se recoloca sola por encima de él', async ({ page }) => {
     await openDelivery(page);
