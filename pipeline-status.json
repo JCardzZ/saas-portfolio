@@ -2,16 +2,16 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-18T23:47:15.317Z",
+  "updatedAt": "2026-10-19T02:54:28.156Z",
   "workflows": {
     "ci": {
-      "runId": 39176364507,
-      "runNumber": 158,
-      "sha": "2675bfb782e493a1e712db9d8a555cbc8004d204",
+      "runId": 39190632104,
+      "runNumber": 161,
+      "sha": "36ecd44d8465e92a726abf62905fed40217362ad",
       "event": "push",
-      "startedAt": "2026-10-18T23:24:10Z",
-      "finishedAt": "2026-10-18T23:46:22.093Z",
-      "durationSeconds": 1332,
+      "startedAt": "2026-10-19T02:34:49Z",
+      "finishedAt": "2026-10-19T02:54:28.156Z",
+      "durationSeconds": 1179,
       "conclusion": "success",
       "jobs": [
         {
@@ -23,13 +23,13 @@
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 11,
+          "durationSeconds": 9,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 116,
+          "durationSeconds": 115,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 24,
+          "durationSeconds": 21,
           "runs": 1
         },
         {
@@ -71,7 +71,7 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 58,
+          "durationSeconds": 64,
           "runs": 3,
           "metrics": {
             "tests": 727
@@ -80,20 +80,20 @@
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 38,
+          "durationSeconds": 42,
           "runs": 1,
           "metrics": {
-            "bundleKb": 340.1,
-            "bundleGzipKb": 82.5
+            "bundleKb": 340.6,
+            "bundleGzipKb": 82.7
           }
         },
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 70,
+          "durationSeconds": 67,
           "runs": 1,
           "metrics": {
-            "performance": 75,
+            "performance": 76,
             "accessibility": 97,
             "bestPractices": 96,
             "seo": 92
@@ -102,7 +102,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 1174,
+          "durationSeconds": 1015,
           "runs": 2,
           "metrics": {
             "tests": 523,
@@ -404,6 +404,135 @@
     "backend": []
   },
   "merges": [
+    {
+      "number": 64,
+      "title": "feat(frontend): show the delivery section as one card with four tabs",
+      "branch": "feat/delivery-tabs",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-19T02:35:20Z",
+      "sha": "c85b4bec75db40fef3044954dccece31e66c9da3",
+      "additions": 607,
+      "deletions": 34,
+      "changedFiles": 17,
+      "ci": {
+        "runId": 39190680307,
+        "runNumber": 162,
+        "conclusion": "pending",
+        "durationSeconds": 1,
+        "jobs": []
+      }
+    },
+    {
+      "number": 62,
+      "title": "fix(frontend): check-now logs at the bottom with the card folded, synced highlights",
+      "branch": "fix/check-now-fold",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-19T02:34:46Z",
+      "sha": "36ecd44d8465e92a726abf62905fed40217362ad",
+      "additions": 159,
+      "deletions": 27,
+      "changedFiles": 8,
+      "ci": {
+        "runId": 39190632104,
+        "runNumber": 161,
+        "conclusion": "success",
+        "durationSeconds": 1179,
+        "jobs": [
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "skipped"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "success"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Móvil (chromium · 2/2)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Móvil (chromium · 1/2)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "success"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
     {
       "number": 63,
       "title": "feat: real commit graph of main, like an IDE git log",
@@ -1420,231 +1549,48 @@
           }
         ]
       }
-    },
-    {
-      "number": 52,
-      "title": "feat(frontend): drag the guide robot anywhere",
-      "branch": "feat/robot-drag",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-15T18:05:56Z",
-      "sha": "cf365da75fd1de48dd5c9d6906fe9cbea7b024b4",
-      "additions": 189,
-      "deletions": 12,
-      "changedFiles": 3,
-      "ci": {
-        "runId": 38782795958,
-        "runNumber": 131,
-        "conclusion": "success",
-        "durationSeconds": 2519,
-        "jobs": [
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 2/2)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 1/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "success"
-          }
-        ]
-      }
-    },
-    {
-      "number": 48,
-      "title": "feat(frontend): compact deployments card",
-      "branch": "feat/compact-deploy-timeline",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-15T17:46:56Z",
-      "sha": "caa4216830c777168fb0dd6e42477eddadc97411",
-      "additions": 133,
-      "deletions": 36,
-      "changedFiles": 3,
-      "ci": {
-        "runId": 38780189843,
-        "runNumber": 129,
-        "conclusion": "success",
-        "durationSeconds": 2259,
-        "jobs": [
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 1/2)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 2/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "success"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "success"
-          }
-        ]
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "c85b4bec75db40fef3044954dccece31e66c9da3",
+      "parents": [
+        "36ecd44d8465e92a726abf62905fed40217362ad",
+        "d1f992cfc89dcf14b3d9c5d995c456116122133b"
+      ],
+      "subject": "Merge pull request #64 from JCardzZ/feat/delivery-tabs",
+      "author": "JCardzZ",
+      "date": "2026-10-19T02:35:20Z"
+    },
+    {
+      "sha": "36ecd44d8465e92a726abf62905fed40217362ad",
+      "parents": [
+        "2675bfb782e493a1e712db9d8a555cbc8004d204",
+        "344d98a55bb2c8166a28769be88d78ba5afbdb5e"
+      ],
+      "subject": "Merge pull request #62 from JCardzZ/fix/check-now-fold",
+      "author": "JCardzZ",
+      "date": "2026-10-19T02:34:46Z"
+    },
+    {
+      "sha": "d1f992cfc89dcf14b3d9c5d995c456116122133b",
+      "parents": [
+        "2675bfb782e493a1e712db9d8a555cbc8004d204"
+      ],
+      "subject": "feat(frontend): show the delivery section as one card with four tabs",
+      "author": "JCardzZ",
+      "date": "2026-10-19T02:16:56Z"
+    },
+    {
+      "sha": "344d98a55bb2c8166a28769be88d78ba5afbdb5e",
+      "parents": [
+        "d3f7c79cedb4f29af2bbe9d2e067a8057b377ba3",
+        "2675bfb782e493a1e712db9d8a555cbc8004d204"
+      ],
+      "subject": "Merge remote-tracking branch 'origin/main' into fix/check-now-fold",
+      "author": "JCardzZ",
+      "date": "2026-10-19T02:16:42Z"
+    },
     {
       "sha": "2675bfb782e493a1e712db9d8a555cbc8004d204",
       "parents": [
@@ -1654,6 +1600,16 @@
       "subject": "Merge pull request #63 from JCardzZ/feat/commit-graph",
       "author": "JCardzZ",
       "date": "2026-10-18T23:24:08Z"
+    },
+    {
+      "sha": "d3f7c79cedb4f29af2bbe9d2e067a8057b377ba3",
+      "parents": [
+        "12f4f296a9b9e90d0905a4ed52aabb8535a6ab52",
+        "190eb1b6d8978fad610c331c1ea065e1feb1156d"
+      ],
+      "subject": "Merge remote-tracking branch 'origin/main' into fix/check-now-fold",
+      "author": "JCardzZ",
+      "date": "2026-10-18T23:19:44Z"
     },
     {
       "sha": "f19bb5740fa62ab2dd34df955e60db7415bd6891",
@@ -1703,6 +1659,16 @@
       "date": "2026-10-18T22:40:01Z"
     },
     {
+      "sha": "12f4f296a9b9e90d0905a4ed52aabb8535a6ab52",
+      "parents": [
+        "a91a44a378584e15b9bb7da2176033f6e35c8fe2",
+        "3148f03f85901fe3ccae56cf786989139b0d886a"
+      ],
+      "subject": "Merge remote-tracking branch 'origin/main' into fix/check-now-fold",
+      "author": "JCardzZ",
+      "date": "2026-10-18T22:39:29Z"
+    },
+    {
       "sha": "1a7a53d442c39c6761b83a2aaf1a6170b229cbfa",
       "parents": [
         "ed0fee5b35ebd4ada53df1a3f09a48b5e8f9861f"
@@ -1719,6 +1685,33 @@
       "subject": "feat(frontend): show merged branches like an IDE git log",
       "author": "JCardzZ",
       "date": "2026-10-18T21:01:03Z"
+    },
+    {
+      "sha": "a91a44a378584e15b9bb7da2176033f6e35c8fe2",
+      "parents": [
+        "841dfe90904f101b9c3733da5a1f2c34900ff222"
+      ],
+      "subject": "fix(frontend): keep the check-now logs at the bottom and fold the card's detail",
+      "author": "JCardzZ",
+      "date": "2026-10-18T20:56:10Z"
+    },
+    {
+      "sha": "841dfe90904f101b9c3733da5a1f2c34900ff222",
+      "parents": [
+        "738c2b008b6e9236ebd8c0da7e29b7eafa3d0bc6"
+      ],
+      "subject": "feat(frontend): each check-now log line lights its piece on the canvas",
+      "author": "JCardzZ",
+      "date": "2026-10-18T20:46:01Z"
+    },
+    {
+      "sha": "738c2b008b6e9236ebd8c0da7e29b7eafa3d0bc6",
+      "parents": [
+        "af8e302d1ed3066438ce6452fc8739e8884f3930"
+      ],
+      "subject": "fix(frontend): make room for the inspector so the whole card stays in view",
+      "author": "JCardzZ",
+      "date": "2026-10-18T20:37:34Z"
     },
     {
       "sha": "3148f03f85901fe3ccae56cf786989139b0d886a",
@@ -2125,88 +2118,6 @@
       "subject": "Merge pull request #43 from JCardzZ/feat/robot-desk-ritual",
       "author": "JCardzZ",
       "date": "2026-10-14T19:43:07Z"
-    },
-    {
-      "sha": "46088dbd5cb1f1eda40a4af515dd423d1d2c0a91",
-      "parents": [
-        "ff588dc3fac92077562ffd46d35c699f6432edf9"
-      ],
-      "subject": "feat(frontend): uppercase name and role in Space Grotesk, and the robot pushes the hologram, the bubble and the letters ",
-      "author": "JCardzZ",
-      "date": "2026-10-14T17:05:03Z"
-    },
-    {
-      "sha": "ff588dc3fac92077562ffd46d35c699f6432edf9",
-      "parents": [
-        "f9155c55e8c337f58f30c248be4410cc1ce56bbd"
-      ],
-      "subject": "style(frontend): hero polish: titles that fit in the hologram, a brighter heading, the hint inside the bubble, a steady ",
-      "author": "JCardzZ",
-      "date": "2026-10-14T16:51:03Z"
-    },
-    {
-      "sha": "f9155c55e8c337f58f30c248be4410cc1ce56bbd",
-      "parents": [
-        "c8de91922f61e404f11f54ce0cfc60000f203802"
-      ],
-      "subject": "feat(frontend): the hologram retracts into the laptop while the card globe is open, and comes back out when it closes",
-      "author": "JCardzZ",
-      "date": "2026-10-14T16:30:52Z"
-    },
-    {
-      "sha": "c8de91922f61e404f11f54ce0cfc60000f203802",
-      "parents": [
-        "65bf96d24c114375c13c672b65c70076ec064b9a"
-      ],
-      "subject": "feat(frontend): genie-style hologram from the laptop drawing a high-level architecture in two seconds",
-      "author": "JCardzZ",
-      "date": "2026-10-14T16:10:25Z"
-    },
-    {
-      "sha": "65bf96d24c114375c13c672b65c70076ec064b9a",
-      "parents": [
-        "849fce6e739f8ec4e8bd9430b4f9e07559639042"
-      ],
-      "subject": "feat(frontend): a higher, curved code hologram with a halo, a scanning sweep, rising light motes and a subtle glitch",
-      "author": "JCardzZ",
-      "date": "2026-10-14T16:00:12Z"
-    },
-    {
-      "sha": "849fce6e739f8ec4e8bd9430b4f9e07559639042",
-      "parents": [
-        "19983238068d679d1a9192c348e0bfc581dc0678"
-      ],
-      "subject": "style(frontend): a bigger code hologram, higher and further left",
-      "author": "JCardzZ",
-      "date": "2026-10-14T15:57:05Z"
-    },
-    {
-      "sha": "19983238068d679d1a9192c348e0bfc581dc0678",
-      "parents": [
-        "e569bef3f55bbd0d61392d79f24be877ec382365"
-      ],
-      "subject": "feat(frontend): a bigger holographic code screen projected from the laptop, and the robot tidies its desk when it sits",
-      "author": "JCardzZ",
-      "date": "2026-10-14T15:50:56Z"
-    },
-    {
-      "sha": "e569bef3f55bbd0d61392d79f24be877ec382365",
-      "parents": [
-        "aab3c6feda7d7a4715fc13c5a4914ebd7891189d",
-        "d06e92cb6d80fe0a6b29ed3f2b31e1050c4f5177"
-      ],
-      "subject": "Merge pull request #42 from JCardzZ/feat/robot-grab-sheet",
-      "author": "JCardzZ",
-      "date": "2026-10-14T15:31:05Z"
-    },
-    {
-      "sha": "d06e92cb6d80fe0a6b29ed3f2b31e1050c4f5177",
-      "parents": [
-        "b3dcd6950d871c27fa1e72842a7500cc2d9b8ccc"
-      ],
-      "subject": "feat(frontend): the robot holds a holographic panel of the section with bigger hands, and parts the cards as it walks",
-      "author": "JCardzZ",
-      "date": "2026-10-14T14:58:29Z"
     }
   ]
 }
