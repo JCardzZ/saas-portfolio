@@ -117,31 +117,81 @@ describe('DeliveryStatusService', () => {
 describe('PipelineViewComponent', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('draws the jobs of the workflow with the real result of the last run', () => {
-    const { fixture, backend, element } = setup(PipelineViewComponent);
-    serveSnapshot(backend, statusFile({ overrides: { codeql: 'skipped', lighthouse: 'failure' } }), fixture);
+  const job = (element: HTMLElement, id: string) => element.querySelector<HTMLButtonElement>(`[data-job="${id}"]`)!;
+  const phase = (element: HTMLElement, id: string) => element.querySelector<HTMLButtonElement>(`[data-phase="${id}"]`)!;
+  const showGraph = (element: HTMLElement, fixture: ComponentFixture<unknown>) => {
+    element.querySelector<HTMLButtonElement>('[data-view="graph"]')!.click();
+    fixture.detectChanges();
+  };
 
-    expect(element.querySelectorAll('button.node').length).toBe(WORKFLOWS.ci.jobs.length);
-    expect(node(element, 'Backend unit').classList).toContain('tone-ok');
-    expect(node(element, 'CodeQL').classList).toContain('tone-skipped');
-    expect(node(element, 'Lighthouse').classList).toContain('tone-failed');
-    expect(node(element, 'Backend unit').getAttribute('aria-label')).toContain('correcto');
-    expect(element.textContent).toContain('Datos de la ejecución del');
+  it('shows the run by phases, each with how many jobs passed, and opens the tests phase', () => {
+    const { fixture, backend, element } = setup(PipelineViewComponent);
+    serveSnapshot(backend, statusFile({ overrides: { codeql: 'skipped' } }), fixture);
+
+    expect(Array.from(element.querySelectorAll('[data-phase]')).map((item) => item.getAttribute('data-phase')))
+      .toEqual(['detect', 'security', 'contract', 'tests', 'build', 'gate']);
+    expect(phase(element, 'contract').getAttribute('data-tone')).toBe('ok');
+    expect(phase(element, 'contract').textContent).toContain('3/3');
+    // CodeQL omitido: la fase cuenta solo lo que corrió.
+    expect(phase(element, 'security').textContent).toContain('1/1');
+    expect(phase(element, 'tests').getAttribute('aria-pressed')).toBe('true');
+    expect(job(element, 'backend-unit').getAttribute('data-tone')).toBe('ok');
+    expect(job(element, 'backend-unit').textContent).toContain('Tests unitarios y de rebanada');
+    expect(element.textContent).toContain('CI #25');
     expect(element.textContent).toContain('d562113');
+  });
+
+  it('opens the phase that failed first, so a red run is explained at a glance', () => {
+    const { fixture, backend, element } = setup(PipelineViewComponent);
+    serveSnapshot(backend, statusFile({ overrides: { lighthouse: 'failure' } }), fixture);
+
+    expect(phase(element, 'build').getAttribute('data-tone')).toBe('failed');
+    expect(phase(element, 'build').getAttribute('aria-pressed')).toBe('true');
+    expect(job(element, 'lighthouse').getAttribute('data-tone')).toBe('failed');
+  });
+
+  it('puts the real figures of the run in a scoreboard, each opening the job that published it', () => {
+    const { fixture, backend, element } = setup(PipelineViewComponent);
+    serveSnapshot(backend, statusFile(), fixture);
+
+    const tests = element.querySelector<HTMLButtonElement>('[data-score="tests"]')!;
+    expect(tests.textContent).toContain('186');
+    expect(element.querySelector('[data-score="coverage"]')!.textContent).toContain('88.9 %');
+    expect(element.querySelector('[data-score="sbom"]')!.textContent).toContain('196');
+    // Sin dato publicado, no hay cifra.
+    expect(element.querySelector('[data-score="performance"]')).toBeNull();
+
+    element.querySelector<HTMLButtonElement>('[data-score="sbom"]')!.click();
+    fixture.detectChanges();
+    expect(phase(element, 'build').getAttribute('aria-pressed')).toBe('true');
+    expect(element.textContent).toContain('Publicar imagen');
+    expect(element.textContent).toContain('sha256:abc123');
   });
 
   it('explains a job and shows its real metrics when it is picked', () => {
     const { fixture, backend, element } = setup(PipelineViewComponent);
     serveSnapshot(backend, statusFile(), fixture);
 
-    stageNode(element, 'Backend unit').click();
+    job(element, 'backend-unit').click();
     fixture.detectChanges();
 
-    const detail = element.querySelector('div[aria-live="polite"]')!.textContent!;
+    const detail = element.querySelector('[data-testid="job-detail"]')!.textContent!;
     expect(detail).toContain('Por qué existe');
     expect(detail).toContain('186');
     expect(detail).toContain('Cobertura de líneas');
     expect(detail).toContain('Cambios');
+  });
+
+  it('keeps the full dependency graph one click away, with the real result of every job', () => {
+    const { fixture, backend, element } = setup(PipelineViewComponent);
+    serveSnapshot(backend, statusFile({ overrides: { codeql: 'skipped', lighthouse: 'failure' } }), fixture);
+    showGraph(element, fixture);
+
+    expect(element.querySelectorAll('button.node').length).toBe(WORKFLOWS.ci.jobs.length);
+    expect(node(element, 'Backend unit').classList).toContain('tone-ok');
+    expect(node(element, 'CodeQL').classList).toContain('tone-skipped');
+    expect(node(element, 'Lighthouse').classList).toContain('tone-failed');
+    expect(node(element, 'Backend unit').getAttribute('aria-label')).toContain('correcto');
   });
 
   it('shows the structure, clearly labelled, when a workflow has no published run', () => {
@@ -151,10 +201,13 @@ describe('PipelineViewComponent', () => {
     Array.from(element.querySelectorAll<HTMLButtonElement>('[role="tab"]')).find((tab) => tab.textContent!.includes('Nightly'))!.click();
     fixture.detectChanges();
 
-    expect(element.querySelectorAll('button.node').length).toBe(WORKFLOWS.nightly.jobs.length);
     expect(element.textContent).toContain('sin datos publicados');
+    expect(element.querySelector('[data-score]')).toBeNull();
+    expect(Array.from(element.querySelectorAll('[data-phase]')).every((item) => item.getAttribute('data-tone') === 'idle')).toBeTrue();
+    expect(element.querySelector<HTMLButtonElement>('button.replay')!.disabled).toBeTrue();
+    showGraph(element, fixture);
+    expect(element.querySelectorAll('button.node').length).toBe(WORKFLOWS.nightly.jobs.length);
     expect(element.querySelector('button.node')!.classList).toContain('tone-idle');
-    expect(Array.from(element.querySelectorAll<HTMLButtonElement>('button')).find((button) => button.textContent!.includes('Reproducir'))!.disabled).toBeTrue();
   });
 
   it('links to GitHub only when the repository is public', () => {
@@ -174,19 +227,21 @@ describe('PipelineViewComponent', () => {
     serveSnapshot(backend, statusFile({ overrides: { preview: 'skipped' } }), fixture);
     const events = TestBed.inject(SystemEventsService);
 
-    Array.from(element.querySelectorAll<HTMLButtonElement>('button')).find((button) => button.textContent!.includes('Reproducir'))!.click();
+    element.querySelector<HTMLButtonElement>('button.replay')!.click();
     fixture.detectChanges();
 
     expect(element.textContent).toContain('Reproducción animada');
     expect(TestBed.inject(TraceInspectorService).selected()).toBe('githubActions');
-    expect(node(element, 'Cambios').classList).toContain('tone-running');
-    expect(node(element, 'CI gate').classList).toContain('tone-pending');
+    // Las fases se encienden según llega la reproducción.
+    expect(phase(element, 'detect').getAttribute('data-tone')).toBe('running');
+    expect(phase(element, 'gate').getAttribute('data-tone')).toBe('pending');
+    expect(job(element, 'backend-unit').getAttribute('data-tone')).toBe('pending');
 
     tick(20_000);
     fixture.detectChanges();
 
     expect(element.textContent).toContain('Datos de la ejecución del');
-    expect(node(element, 'CI gate').classList).toContain('tone-ok');
+    expect(phase(element, 'gate').getAttribute('data-tone')).toBe('ok');
     const told = events.events().map((event) => `${event.tag} ${event.detail}`);
     expect(told.some((text) => text.includes('Backend unit → correcto (30 s)'))).toBeTrue();
     expect(told.some((text) => text.includes('Preview URL → omitido'))).toBeTrue();
