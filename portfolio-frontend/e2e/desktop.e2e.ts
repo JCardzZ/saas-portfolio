@@ -15,6 +15,12 @@ async function showTab(page: Page, tab: string): Promise<void> {
   await expect(page.locator(`#panel-${tab}`)).toBeVisible();
 }
 
+/** El pipeline abre por fases; el grafo de dependencias está a un clic. */
+async function showPipelineGraph(page: Page): Promise<void> {
+  await page.locator('app-pipeline-view [data-view="graph"]').click();
+  await expect(page.locator('app-pipeline-view button.node').first()).toBeVisible();
+}
+
 async function openDelivery(page: Page, tab = 'arquitectura'): Promise<void> {
   await page.route(/^https:\/\/api\.example\.com\//, (route) => route.abort());
   await page.route(/^https:\/\/raw\.githubusercontent\.com\//, (route) => route.abort());
@@ -86,6 +92,7 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
 
   test('el diagrama respira: columnas a 48 px o más, nodos a 24 px o más, y nada se solapa', async ({ page }) => {
     await openDelivery(page, 'pipeline');
+    await showPipelineGraph(page);
 
     for (const view of ['app-pipeline-view']) {
       const boxes = await page.locator(`${view} button.node`).evaluateAll((nodes) =>
@@ -118,6 +125,7 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
 
   test('zoom y «ajustar a pantalla»: el pipeline pasa de varias franjas a una sola, a escala', async ({ page }, testInfo) => {
     await openDelivery(page, 'pipeline');
+    await showPipelineGraph(page);
     const view = page.locator('app-pipeline-view');
     const rows = () => view.locator('button.node', { hasText: /^Cambios|gate/ }).evaluateAll((nodes) =>
       nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
@@ -203,6 +211,7 @@ test.describe('arquitectura real y pipeline en escritorio', () => {
       await capture(page, testInfo, view, `${view.replace('app-', '')}`);
     }
     await showTab(page, 'pipeline');
+    await showPipelineGraph(page);
 
     await page.locator('app-pipeline-view button.node', { hasText: 'Backend unit' }).click();
     const detail = page.locator('app-pipeline-view div[aria-live="polite"]');
@@ -389,6 +398,20 @@ test.describe('paleta de comandos en escritorio', () => {
     const running = await page.getByRole('dialog').evaluate((dialog) =>
       dialog.getAnimations({ subtree: true }).filter((animation) => animation.playState === 'running').length);
     expect(running).toBe(0);
+  });
+});
+
+test.describe('pestañas de entrega', () => {
+  test('el foco por hover adelanta la tarjeta de la pestaña abierta por encima del velo', async ({ page }) => {
+    await openDelivery(page, 'pipeline');
+    const card = page.locator('app-pipeline-view');
+    await card.hover();
+    await expect(card).toHaveClass(/theater-focus/);
+    // Lo que hay en la esquina de la tarjeta es la propia tarjeta, no el velo que atenúa el resto.
+    expect(await card.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return element.contains(document.elementFromPoint(box.x + 40, box.y + 40));
+    })).toBe(true);
   });
 });
 
