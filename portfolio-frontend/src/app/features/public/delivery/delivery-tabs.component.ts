@@ -44,8 +44,12 @@ const TABS: readonly TabMeta[] = [
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslatePipe, ProductionArchitectureComponent, MergeHistoryComponent, PipelineViewComponent, DeployTimelineComponent],
-  host: { class: 'block', style: 'container-type: inline-size' },
+  host: { class: 'block' },
   template: `
+    <!-- La consulta de contenedor va en este envoltorio y no en el host: un contenedor con
+         \`container-type\` es el bloque de referencia de los \`fixed\` interiores, y el modo teatro
+         de las tarjetas de las vistas dejaría de ocupar la ventana. -->
+    <div class="tabbar-wrap">
     <div class="tabbar" role="tablist" [attr.aria-label]="'Vistas de entrega' | t" (keydown)="onKey($event)" data-testid="delivery-tabs">
       @for (tab of tabs; track tab.id; let i = $index) {
         <button
@@ -73,6 +77,7 @@ const TABS: readonly TabMeta[] = [
         </button>
       }
       <span class="ink" aria-hidden="true" [style.--i]="activeIndex()"></span>
+    </div>
     </div>
 
     <p class="tour" aria-live="polite">
@@ -114,6 +119,7 @@ const TABS: readonly TabMeta[] = [
   `,
   styles: `
     :host { --tabs: 4; }
+    .tabbar-wrap { container-type: inline-size; }
     .tabbar {
       position: relative;
       display: grid;
@@ -187,6 +193,9 @@ const TABS: readonly TabMeta[] = [
     /* Como antes en la rejilla de la página: una vista nunca empuja la tarjeta más allá de su ancho. */
     .panel > * { min-width: 0; }
     .panel[data-dir='back']:not([hidden]) { animation-name: enter-back; }
+    /* Una animación con transform convierte al panel (y a la sección) en el bloque de referencia de
+       los fixed: si se amplía una tarjeta mientras aún entra, el modo teatro no ocuparía la ventana. */
+    :host(:has(.theater-expanded)), .panel:has(.theater-expanded) { animation: none !important; }
     @keyframes enter { from { opacity: 0; transform: translateX(1.5rem); } }
     @keyframes enter-back { from { opacity: 0; transform: translateX(-1.5rem); } }
 
