@@ -60,13 +60,14 @@ const TAGS = { hit: '200 OK CacheHit Redis', miss: 'CacheMiss → PostgreSQL', r
           </ul>
         }
 
-        <div class="mb-4 mt-4">
+        <!-- El gráfico ocupa el alto que deje la tarjeta (se estira junto al diagrama de al lado). -->
+        <div class="mb-4 mt-4 flex min-h-[5rem] flex-1 flex-col justify-end">
           <!-- Altura fija: las mediciones llegan de una en una y los huecos que faltan se ven como tales. -->
-          <svg viewBox="0 0 180 48" class="h-14 w-full" preserveAspectRatio="none" role="img"
+          <svg viewBox="0 0 180 48" class="max-h-40 min-h-14 w-full flex-1" preserveAspectRatio="none" role="img"
             [attr.aria-label]="('Latencia de las últimas comprobaciones, en milisegundos: ' | t) + (samples().join(', ') || '—')">
             @for (slot of slots(); track $index) {
               @if (slot === null) {
-                <rect class="slot" [attr.x]="$index * 10 + 1" y="44" width="7" height="4" rx="2" />
+                <rect class="slot" [attr.x]="$index * 10 + 1" y="46" width="7" height="2" rx="1" />
               } @else {
                 <rect class="bar" [class.bar-latest]="$last" [attr.x]="$index * 10 + 1" y="0" width="7" height="48" rx="2"
                   [style.transform]="'scaleY(' + barScale(slot) + ')'" />
