@@ -125,7 +125,7 @@ export interface CanvasEdge {
           @for (item of canvasNodes(); track item.node.id) {
             <g class="node" tabindex="0" role="button" [attr.data-node]="item.node.id"
               [attr.transform]="'translate(' + (item.x - nodeW / 2) + ' ' + (item.y - nodeH / 2) + ')'"
-              [class.planned]="item.node.status === 'planned'" [class.active]="item.node.id === activeId()"
+              [class.planned]="item.node.status === 'planned'" [class.active]="item.node.id === activeId()" [class.flash]="item.node.id === flashId()"
               [class.dim]="focusId() !== null && !isNear(item.node.id)"
               [attr.aria-label]="ariaOf(item)" [attr.aria-pressed]="item.node.id === activeId()"
               (click)="picked.emit(item.node.id)" (keydown.enter)="picked.emit(item.node.id)" (keydown.space)="$event.preventDefault(); picked.emit(item.node.id)"
@@ -219,11 +219,20 @@ export interface CanvasEdge {
     .pulse { stroke: var(--accent-text); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 2 220; animation: pc-pulse 2.6s linear infinite; }
     @keyframes pc-pulse { from { stroke-dashoffset: 222; } to { stroke-dashoffset: 0; } }
     .fact { fill: var(--accent-text); font-variant-numeric: tabular-nums; }
+    /* La pieza que acaba de responder: su borde se enciende y la tarjeta late una vez. */
+    .node.flash .card { animation: pc-flash 0.9s cubic-bezier(0.22, 1, 0.36, 1) 1; }
+    .node.flash .fact { animation: pc-fact 0.9s ease-out 1; }
+    @keyframes pc-flash {
+      0% { stroke: var(--accent-text); stroke-width: 1; filter: drop-shadow(0 0 0 transparent); }
+      30% { stroke: var(--accent-text); stroke-width: 2.5; filter: drop-shadow(0 0 10px var(--accent-text)); }
+      100% { stroke: var(--border-strong); stroke-width: 1; filter: drop-shadow(0 0 0 transparent); }
+    }
+    @keyframes pc-fact { 0%, 40% { fill: var(--text-1); } 100% { fill: var(--accent-text); } }
     .node.planned .fact { fill: var(--text-3); }
     /* Una pasada brillante por el recorrido de la comprobación real. */
     .probe { stroke: var(--text-1); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 26 400; animation: pc-probe 1.6s ease-out 1 forwards; filter: drop-shadow(0 0 4px var(--accent-text)); }
     @keyframes pc-probe { from { stroke-dashoffset: 26; } to { stroke-dashoffset: -400; } }
-    @media (prefers-reduced-motion: reduce) { .pulse { display: none; } .probe { animation: none; stroke-dasharray: none; stroke-opacity: 0.6; filter: none; } .node, .edge .wire { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .node.flash .card, .node.flash .fact { animation: none; } .pulse { display: none; } .probe { animation: none; stroke-dasharray: none; stroke-opacity: 0.6; filter: none; } .node, .edge .wire { transition: none; } }
 
     .node-row {
       display: flex; width: 100%; min-height: 3.25rem; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem;
@@ -249,6 +258,8 @@ export class ProductionCanvasComponent {
   readonly facts = input<ReadonlyMap<string, string>>(new Map());
   /** Cambia cada vez que termina una comprobación de salud real: anima su recorrido. */
   readonly probe = input(0);
+  /** Pieza que acaba de responder en la comprobación (su línea llega al inspector a la vez). */
+  readonly flashId = input<string | null>(null);
   readonly picked = output<string>();
   readonly probing = signal(false);
 

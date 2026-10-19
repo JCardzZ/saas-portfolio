@@ -7,14 +7,15 @@ import { join } from 'node:path';
  * horizontal de la página no basta: un diagrama puede caber en ella y aun así tener nodos cortados
  * dentro de su propio marco, tras un `overflow`.
  */
-const DIAGRAMS: { name: string; host: string }[] = [
+/** `tab`: la pestaña de la sección de entrega que lo muestra. */
+const DIAGRAMS: { name: string; host: string; tab?: string }[] = [
   { name: 'arquitectura-en-vivo', host: 'app-architecture-canvas' },
   { name: 'resiliencia', host: 'app-resilience-pipeline' },
   { name: 'multi-tenant', host: 'app-multi-tenant-shield' },
   { name: 'busqueda-vectorial', host: 'app-vector-matrix' },
   { name: 'estudio', host: 'app-cloud-infra' },
-  { name: 'arquitectura-en-produccion', host: 'app-production-architecture' },
-  { name: 'pipeline', host: 'app-pipeline-view' },
+  { name: 'arquitectura-en-produccion', host: 'app-production-architecture', tab: 'arquitectura' },
+  { name: 'pipeline', host: 'app-pipeline-view', tab: 'pipeline' },
 ];
 
 /** Tamaño mínimo del texto dentro de un SVG, tal como se ve en pantalla. */
@@ -36,7 +37,7 @@ async function openLanding(page: Page): Promise<void> {
     window.scrollTo(0, 0);
   });
   await expect(page.locator('#cloud app-cloud-infra')).toBeVisible({ timeout: 15_000 });
-  await expect(page.locator('#entrega app-pipeline-view button.node').first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('#entrega [data-delivery-tab]').first()).toBeVisible({ timeout: 15_000 });
   await page.waitForTimeout(500);
 }
 
@@ -144,6 +145,9 @@ test.describe('diagramas: nada recortado, texto legible y nada fijo encima', () 
 
     const failures: string[] = [];
     for (const diagram of DIAGRAMS) {
+      if (diagram.tab) {
+        await page.locator(`[data-delivery-tab="${diagram.tab}"]`).click();
+      }
       const host = page.locator(diagram.host).first();
       await host.scrollIntoViewIfNeeded();
       await page.waitForTimeout(250);
@@ -203,6 +207,9 @@ test.describe('diagramas: nada recortado, texto legible y nada fijo encima', () 
 
     const failures: string[] = [];
     for (const diagram of DIAGRAMS) {
+      if (diagram.tab) {
+        await page.locator(`[data-delivery-tab="${diagram.tab}"]`).click();
+      }
       await page.locator(diagram.host).first().scrollIntoViewIfNeeded();
       const problems = await smallText(page, diagram.host, MIN_TEXT);
       if (problems.length) {
