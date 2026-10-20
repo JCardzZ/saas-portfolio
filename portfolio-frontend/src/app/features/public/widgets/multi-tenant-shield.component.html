@@ -7,7 +7,7 @@
 <!-- Sin sitio para el esquema en horizontal (620 px): los dos clientes arriba, su filtro debajo y la tabla al final, a todo el ancho. -->
 <div class="theater-stage mt-3" appContainerWidth>
   <svg [attr.viewBox]="'0 0 ' + geo().width + ' ' + geo().height" class="block w-full" [attr.data-layout]="geo().vertical ? 'vertical' : 'horizontal'" role="group" [attr.aria-label]="('Dos tenants consultan la misma tabla de vectores. ' | t) + (filterOff() ? ('Sin filtro, ' | t) + leaks() + (' resultados pertenecen a otro tenant.' | t) : ('Con el filtro por tenant_id, cada uno solo alcanza sus propios vectores.' | t))">
-    <rect [attr.x]="geo().table.x" [attr.y]="geo().table.y" [attr.width]="geo().table.w" [attr.height]="geo().table.h" rx="22" fill="rgb(var(--c-ink-1) / 0.03)" stroke="rgb(var(--c-ink-1) / 0.14)" />
+    <rect [attr.x]="geo().table.x" [attr.y]="geo().table.y" [attr.width]="geo().table.w" [attr.height]="geo().table.h" rx="22" fill="rgb(var(--c-ink-1) / 0.025)" stroke="none" />
     <g class="database" tabindex="0" role="button" [attr.aria-label]="'Inspeccionar la traza de PostgreSQL' | t" [style.--brand]="postgresql.color" (mouseenter)="inspectDatabase($event)" (mouseleave)="leaveDatabase($event)" (focus)="inspectDatabase()" (click)="inspectDatabase($event)">
       <!-- Zona que responde al toque: el rótulo solo mide 13 de alto. -->
       <rect [attr.x]="geo().caption.x" [attr.y]="geo().caption.y" [attr.width]="geo().caption.w" height="44" fill="transparent" />
@@ -58,7 +58,7 @@
   </svg>
 </div>
 
-<pre class="mt-2 whitespace-pre-wrap break-words rounded-panel border border-line-subtle bg-surface-2 p-3 font-mono text-xs leading-relaxed text-ink-2">SELECT … FROM document_embeddings
+<pre class="mt-2 whitespace-pre-wrap break-words rounded-control bg-surface-2 p-3 font-mono text-xs leading-relaxed text-ink-2">SELECT … FROM document_embeddings
 @if (filterOff()) {<span class="text-status-danger line-through">WHERE tenant_id = ?</span>} @else {WHERE tenant_id = <span [style.color]="sqlTenant().color">'{{ sqlTenant().slug }}'</span>}
 ORDER BY embedding &lt;=&gt; ?::vector LIMIT 5</pre>
 

@@ -81,6 +81,10 @@ const TENANTS: Tenant[] = [
     host: { class: 'bento-card block' },
     templateUrl: './multi-tenant-shield.component.html',
     styles: `
+    /* Etiquetas de cada inquilino y de su filtro sin borde: el color del inquilino va en sus líneas. */
+    .tenant rect, .gate rect { stroke: none; fill: rgb(var(--c-ink-1) / 0.05); }
+    .tenant:focus-visible rect { stroke: var(--text-1); stroke-width: 1.5; }
+
     /* Al pasar por la tarjeta (o en modo teatro) los haces y los vectores ganan contraste. */
     :host(:hover) .beam,
     :host(.theater-expanded) .beam {

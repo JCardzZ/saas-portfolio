@@ -84,17 +84,10 @@
            el arranque, no durante él (antes sumaban segundos de JavaScript en el arranque de un móvil).
            No «on viewport»: el hueco provisional cambiaría de alto a mitad de un salto a otra sección. -->
       @defer (on idle) {
-      <div class="bento-grid">
-        <app-architecture-canvas class="animate-slide-up md:col-span-4" />
-        <app-telemetry-monitor class="animate-slide-up md:col-span-2 [animation-delay:80ms]" />
-        <!-- Sin consola propia: los eventos del sistema se ven en el Inspector de traza (abajo). -->
-        <app-vector-matrix class="animate-slide-up md:col-span-6 [animation-delay:160ms]" />
-        <app-ingestion-sandbox class="animate-slide-up md:col-span-6 [animation-delay:320ms]" />
-        <app-resilience-pipeline class="animate-slide-up md:col-span-6 lg:col-span-3" />
-        <app-multi-tenant-shield class="animate-slide-up md:col-span-6 lg:col-span-3" />
-      </div>
+        <!-- Una tarjeta con pestañas (como Entrega) y la telemetría al lado: antes, seis tarjetas apiladas. -->
+        <app-platform-tabs class="animate-slide-up" />
       } @placeholder {
-        <div class="bento-card flex min-h-[60rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.platformLoading) }}</div>
+        <div class="bento-card flex min-h-[40rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.platformLoading) }}</div>
       }
     </section>
 

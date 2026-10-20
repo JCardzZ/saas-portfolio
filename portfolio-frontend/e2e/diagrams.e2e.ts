@@ -7,15 +7,17 @@ import { join } from 'node:path';
  * horizontal de la página no basta: un diagrama puede caber en ella y aun así tener nodos cortados
  * dentro de su propio marco, tras un `overflow`.
  */
-/** `tab`: la pestaña de la sección de entrega que lo muestra. */
+/** `tab`: la pestaña (de Arquitectura o de Entrega) que lo muestra; se abre antes de medirlo. */
+const platformTab = (id: string) => `[data-platform-tab="${id}"]`;
+const deliveryTab = (id: string) => `[data-delivery-tab="${id}"]`;
 const DIAGRAMS: { name: string; host: string; tab?: string }[] = [
-  { name: 'arquitectura-en-vivo', host: 'app-architecture-canvas' },
-  { name: 'resiliencia', host: 'app-resilience-pipeline' },
-  { name: 'multi-tenant', host: 'app-multi-tenant-shield' },
-  { name: 'busqueda-vectorial', host: 'app-vector-matrix' },
+  { name: 'arquitectura-en-vivo', host: 'app-architecture-canvas', tab: platformTab('c4') },
+  { name: 'resiliencia', host: 'app-resilience-pipeline', tab: platformTab('resiliencia') },
+  { name: 'multi-tenant', host: 'app-multi-tenant-shield', tab: platformTab('tenants') },
+  { name: 'busqueda-vectorial', host: 'app-vector-matrix', tab: platformTab('vectores') },
   { name: 'estudio', host: 'app-cloud-infra' },
-  { name: 'arquitectura-en-produccion', host: 'app-production-architecture', tab: 'arquitectura' },
-  { name: 'pipeline', host: 'app-pipeline-view', tab: 'pipeline' },
+  { name: 'arquitectura-en-produccion', host: 'app-production-architecture', tab: deliveryTab('arquitectura') },
+  { name: 'pipeline', host: 'app-pipeline-view', tab: deliveryTab('pipeline') },
 ];
 
 /** Tamaño mínimo del texto dentro de un SVG, tal como se ve en pantalla. */
@@ -146,7 +148,7 @@ test.describe('diagramas: nada recortado, texto legible y nada fijo encima', () 
     const failures: string[] = [];
     for (const diagram of DIAGRAMS) {
       if (diagram.tab) {
-        await page.locator(`[data-delivery-tab="${diagram.tab}"]`).click();
+        await page.locator(diagram.tab).click();
       }
       const host = page.locator(diagram.host).first();
       await host.scrollIntoViewIfNeeded();
@@ -158,6 +160,7 @@ test.describe('diagramas: nada recortado, texto legible y nada fijo encima', () 
       }
     }
     // Los cuatro niveles del modelo C4 tienen nodos y anchos distintos: se comprueban todos.
+    await page.locator(platformTab('c4')).click();
     for (const level of ['Contexto', 'Componentes', 'Código']) {
       await page.locator('app-architecture-canvas').getByRole('tab', { name: level }).click();
       await page.waitForTimeout(700);
@@ -168,12 +171,12 @@ test.describe('diagramas: nada recortado, texto legible y nada fijo encima', () 
       }
     }
     // Con los fallos simulados aparecen el desvío y los avisos: tampoco pueden salirse.
-    for (const toggle of await page.locator('app-resilience-pipeline [role="switch"]').all()) {
-      await toggle.click();
-    }
-    await page.locator('app-multi-tenant-shield [role="switch"]').click();
-    await page.waitForTimeout(700);
-    for (const [host, name] of [['app-resilience-pipeline', 'resiliencia-con-fallos'], ['app-multi-tenant-shield', 'multi-tenant-sin-filtro']]) {
+    for (const [host, name, tab] of [['app-resilience-pipeline', 'resiliencia-con-fallos', 'resiliencia'], ['app-multi-tenant-shield', 'multi-tenant-sin-filtro', 'tenants']]) {
+      await page.locator(platformTab(tab)).click();
+      for (const toggle of await page.locator(`${host} [role="switch"]`).all()) {
+        await toggle.click();
+      }
+      await page.waitForTimeout(700);
       await capture(page, testInfo, host, name);
       const problems = await clipped(page, host);
       if (problems.length) {
@@ -208,7 +211,7 @@ test.describe('diagramas: nada recortado, texto legible y nada fijo encima', () 
     const failures: string[] = [];
     for (const diagram of DIAGRAMS) {
       if (diagram.tab) {
-        await page.locator(`[data-delivery-tab="${diagram.tab}"]`).click();
+        await page.locator(diagram.tab).click();
       }
       await page.locator(diagram.host).first().scrollIntoViewIfNeeded();
       const problems = await smallText(page, diagram.host, MIN_TEXT);

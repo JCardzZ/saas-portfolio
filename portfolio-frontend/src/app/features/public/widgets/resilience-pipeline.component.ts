@@ -153,7 +153,7 @@ function vertical(width: number): Geometry {
     }
     :host(:hover) .stage rect,
     :host(.theater-expanded) .stage rect {
-      stroke-width: 1.4;
+      stroke: rgb(var(--c-ink-1) / 0.12);
     }
     :host(:hover) .stage svg,
     :host(.theater-expanded) .stage svg {
@@ -213,9 +213,11 @@ function vertical(width: number): Geometry {
       stroke: var(--text-1);
       stroke-width: 2;
     }
+    /* Sin caja: la etapa es su nombre sobre la tubería. El recuadro solo aparece cuando dice algo
+       (la pieza cae o es la ruta que asume el tráfico). */
     .stage rect {
-      fill: rgb(var(--c-ink-1) / 0.05);
-      stroke: rgb(var(--c-ink-1) / 0.16);
+      fill: var(--bg-surface-1);
+      stroke: transparent;
       transition: fill 0.6s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.6s cubic-bezier(0.16, 1, 0.3, 1),
         filter 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
