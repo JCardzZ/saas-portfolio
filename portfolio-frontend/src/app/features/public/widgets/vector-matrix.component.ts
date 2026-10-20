@@ -68,7 +68,7 @@ const POINTS_PER_CLUSTER = 14;
     <div class="mt-4 grid gap-5 md:grid-cols-3 lg:grid-cols-5 [&>*]:min-w-0">
       <svg
         [attr.viewBox]="viewBox"
-        class="w-full cursor-crosshair touch-none rounded-panel border border-line-subtle bg-surface-2 md:col-span-2 lg:col-span-3"
+        class="w-full cursor-crosshair touch-none rounded-panel bg-surface-2 md:col-span-2 lg:col-span-3"
         role="img"
         [attr.aria-label]="'Mapa de fragmentos indexados; la pregunta se conecta con los cinco más afines' | t"
         (pointermove)="follow($event)"
@@ -87,9 +87,9 @@ const POINTS_PER_CLUSTER = 14;
 
       <div aria-live="polite">
         <p class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Más afines' | t }}</p>
-        <ol class="mt-2 space-y-1.5">
+        <ol class="mt-1 divide-y divide-line-subtle">
           @for (match of matches(); track match.id) {
-            <li class="flex animate-fade-in items-center justify-between gap-3 rounded-panel border border-line-subtle bg-surface-2 px-3 py-1.5">
+            <li class="flex animate-fade-in items-center justify-between gap-3 py-2">
               <span class="min-w-0 truncate font-mono text-xs text-ink-1">{{ match.source }}</span>
               <span class="shrink-0 font-mono text-xs tabular-nums text-accent-text">{{ match.similarity.toFixed(2) }}</span>
             </li>

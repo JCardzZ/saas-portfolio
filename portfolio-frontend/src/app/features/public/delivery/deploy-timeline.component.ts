@@ -44,7 +44,7 @@ const SIMULATION_MS = 900;
         <section [attr.aria-label]="('Despliegues de ' | t) + lane.title">
           <p class="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.06em] text-ink-3">
             {{ lane.title }}
-            <span class="normal-case tracking-normal text-ink-3">{{ lane.where }}</span>
+            <span class="normal-case tracking-normal text-ink-3">{{ lane.where | t }}</span>
             @if (lane.planned) {
               <span class="rounded-full border border-dashed border-line-control px-2 py-0.5 normal-case tracking-normal text-ink-2">{{ 'planificado' | t }}</span>
             }
@@ -133,9 +133,9 @@ const SIMULATION_MS = 900;
       <p class="min-w-0 flex-1 text-xs text-ink-3" aria-live="polite">
         @if (simulating()) {
           <span class="mr-1 rounded-full border border-status-warn/50 px-2 py-0.5 font-medium text-status-warn">{{ 'Simulación' | t }}</span>
-          Producción no ha cambiado: el marcador se movió solo en esta pantalla.
+          {{ 'Producción no ha cambiado: el marcador se movió solo en esta pantalla.' | t }}
         } @else {
-          Desde aquí no se puede revertir producción. El rollback real es un workflow manual, con aprobación.
+          {{ 'Desde aquí no se puede revertir producción. El rollback real es un workflow manual, con aprobación.' | t }}
         }
       </p>
     </div>

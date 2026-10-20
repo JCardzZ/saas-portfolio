@@ -19,6 +19,8 @@ Jenkins.
 
 # Professional experience
 
+<!-- timeline:start -->
+
 ## 2024 - present — Modernisation of BCR services
 
 - **Role:** Backend Developer
@@ -66,6 +68,8 @@ container-based deployment.
 Integration of the voting system and technical training for its users. Real-time electoral
 systems, with attention to cybersecurity and protection against denial-of-service (anti-DDoS)
 attacks.
+
+<!-- timeline:end -->
 
 # Skills
 

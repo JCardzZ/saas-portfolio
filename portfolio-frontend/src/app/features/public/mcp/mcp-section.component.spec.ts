@@ -206,6 +206,14 @@ describe('McpSectionComponent', () => {
       expect(text(element, 'mcp-status')).toContain('sin llamadas todavía');
     });
 
+    it('does not show a p95 of 0 ms as a latency when the server has had no calls', () => {
+      status = () => of({ ...STATUS, latency: { calls: 0, p50Ms: 0, p95Ms: 0 } });
+      const { element } = create();
+
+      expect(text(element, 'mcp-status')).toContain('sin llamadas todavía');
+      expect(text(element, 'mcp-status')).not.toContain('0 ms');
+    });
+
     it('shows the calls that arrive on the telemetry channel, and nothing but tool, outcome and latency', () => {
       const { fixture, element } = create();
       expect(element.querySelector('[data-testid="mcp-activity"]')).toBeNull();

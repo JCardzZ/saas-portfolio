@@ -21,8 +21,9 @@ function stored(): Lang | null {
 
 /**
  * Idioma del sitio público (inglés por defecto). La elección se recuerda en `localStorage` y se
- * refleja en `<html lang>`. Hoy traduce la estructura de la landing (barra, hero, cabeceras de
- * sección y pie); los widgets interiores siguen en español.
+ * refleja en `<html lang>`. Traduce la landing y sus widgets; la trayectoria se pide a la API en el
+ * idioma elegido. Lo que no se traduce son datos reales (mensajes de commit, nombres de jobs de CI).
+ * `en-coverage.spec.ts` exige traducción para lo que el Estudio pinta de sus datos.
  */
 @Injectable({ providedIn: 'root' })
 export class LanguageService {

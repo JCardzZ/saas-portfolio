@@ -8,6 +8,7 @@ import { LanguageSwitchComponent } from '../../../core/i18n/language-switch.comp
 import { LanguageService } from '../../../core/i18n/language.service';
 import { ThemeService } from '../../../core/theme/theme.service';
 import { CvDownloadComponent } from '../../../shared/ui/cv-download.component';
+import { CatalogStore } from '../data/catalog.store';
 import { PAGE_SECTIONS } from './page-sections';
 
 export { PAGE_SECTIONS } from './page-sections';
@@ -30,7 +31,7 @@ export { PAGE_SECTIONS } from './page-sections';
         <a routerLink="/" class="ui-focus tap rounded-mark text-title-3 text-ink-1">Manuel Cardoza</a>
 
         <ul class="hidden items-center gap-1 lg:flex">
-          @for (section of sections; track section.id) {
+          @for (section of sections(); track section.id) {
             <li>
               <a
                 routerLink="/"
@@ -60,7 +61,7 @@ export { PAGE_SECTIONS } from './page-sections';
             </button>
             @if (menuOpen()) {
               <ul id="menu-secciones" class="absolute right-0 top-[calc(100%+0.5rem)] z-10 w-56 animate-fade-in rounded-panel border border-line-strong bg-surface-2 p-1 shadow-floating">
-                @for (section of sections; track section.id) {
+                @for (section of sections(); track section.id) {
                   <li>
                     <a
                       routerLink="/"
@@ -161,7 +162,10 @@ export class PublicNavbarComponent {
   readonly menuOpen = signal(false);
   /** Ancla de la sección que cruza el centro de la ventana, o `null` sobre el hero. */
   readonly active = signal<string | null>(null);
-  readonly sections = PAGE_SECTIONS;
+  /** El catálogo de la landing; otras páginas con esta barra no lo tienen. */
+  private readonly catalog = inject(CatalogStore, { optional: true });
+  /** Secciones con contenido: Proyectos y Tecnologías no se enlazan mientras el CMS no tenga nada. */
+  readonly sections = computed(() => PAGE_SECTIONS.filter((section) => !emptySection(section.id, this.catalog)));
   readonly shortcut = /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘K' : 'Ctrl K';
 
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
@@ -216,4 +220,12 @@ export class PublicNavbarComponent {
       this.menuOpen.set(false);
     }
   }
+}
+
+/** ¿Esta sección del CMS está vacía? Mientras carga (o sin catálogo) se considera que no. */
+export function emptySection(id: string, catalog: Pick<CatalogStore, 'loading' | 'projects' | 'technologies'> | null): boolean {
+  if (!catalog || catalog.loading()) return false;
+  if (id === 'proyectos') return catalog.projects().length === 0;
+  if (id === 'tecnologias') return catalog.technologies().length === 0;
+  return false;
 }

@@ -55,8 +55,8 @@ public class PublicCatalogController implements PublicCatalogShowcasesApi {
     }
 
     @Override
-    public ResponseEntity<List<CareerMilestone>> publicCareerTimelineGet() {
-        return ResponseEntity.ok(careerMapper.toDto(careerUseCase.timeline()));
+    public ResponseEntity<List<CareerMilestone>> publicCareerTimelineGet(String lang) {
+        return ResponseEntity.ok(careerMapper.toDto(careerUseCase.timeline(CvLanguage.fromCode(lang == null ? "es" : lang))));
     }
 
     @Override

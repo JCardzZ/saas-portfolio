@@ -20,7 +20,7 @@ import { LivePricingState } from './live-pricing.service';
           @for (category of estimate().categories; track category.id) {
             <li>
               <div class="flex items-baseline justify-between gap-3 text-xs">
-                <span class="text-ink-1">{{ category.name }}</span>
+                <span class="text-ink-1">{{ category.name | t }}</span>
                 <span class="font-mono tabular-nums text-ink-1">{{ usd(category.usd) }}</span>
               </div>
               <div class="mt-1 h-1 overflow-hidden rounded-full bg-surface-3" aria-hidden="true">
@@ -28,7 +28,7 @@ import { LivePricingState } from './live-pricing.service';
               </div>
               <p class="mt-0.5 text-xs leading-snug text-ink-3">
                 @for (item of category.items; track item.nodeId; let last = $last) {
-                  <span [class.text-accent-text]="item.live" [title]="item.live ? ('Precio de lista real' | t) : ('Estimación orientativa' | t)">{{ item.name }} {{ usd(item.usd) }}{{ item.live ? ' ●' : '' }}</span>{{ last ? '' : ' · ' }}
+                  <span [class.text-accent-text]="item.live" [title]="item.live ? ('Precio de lista real' | t) : ('Estimación orientativa' | t)">{{ item.name | t }} {{ usd(item.usd) }}{{ item.live ? ' ●' : '' }}</span>{{ last ? '' : ' · ' }}
                 }
               </p>
             </li>
@@ -64,7 +64,7 @@ import { LivePricingState } from './live-pricing.service';
       }
       <span class="text-xs text-ink-2">{{ '/mes' | t }}</span>
       @if (estimate().liveUsd > 0) {
-        <span class="rounded-full border border-status-ok/40 px-1.5 text-xs text-status-ok" data-testid="cost-live" [attr.title]="'Parte del total que son precios de lista reales, leídos de la API del proveedor' | t">{{ usd(estimate().liveUsd) }} reales</span>
+        <span class="rounded-full border border-status-ok/40 px-1.5 text-xs text-status-ok" data-testid="cost-live" [attr.title]="'Parte del total que son precios de lista reales, leídos de la API del proveedor' | t">{{ usd(estimate().liveUsd) }} {{ 'reales' | t }}</span>
       }
       @if (estimate().unestimated.length) {
         <span class="rounded-full border border-status-warn/40 px-1.5 text-xs text-status-warn" [title]="('Sin estimación: ' | t) + unestimatedNames()">+{{ estimate().unestimated.length }} sin estimación</span>

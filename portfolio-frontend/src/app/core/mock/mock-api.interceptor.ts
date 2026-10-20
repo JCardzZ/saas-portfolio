@@ -4,7 +4,7 @@ import { of, switchMap, throwError, timer } from 'rxjs';
 import { runtimeConfig } from '../config/runtime-config';
 import { BUILD_DEFAULTS, FEATURE_FLAGS, FeatureFlagKey, demoOverrides, isFeatureFlagKey, saveDemoOverride } from '../flags/feature-flags';
 import { Article, ArticleRequest, FeatureFlagAuditEntry, FeatureFlagDetail, Project, ProjectRequest, RoleDefinition, Technology, TechnologyRequest, UserAccount, UserProfile } from '../api';
-import { MOCK_ARTICLES, MOCK_CAREER, MOCK_FLAG_DESCRIPTIONS, MOCK_PROJECTS, MOCK_TECHNOLOGIES, mockRagAnswer } from './mock-data';
+import { MOCK_ARTICLES, MOCK_CAREER, MOCK_CAREER_EN, MOCK_FLAG_DESCRIPTIONS, MOCK_PROJECTS, MOCK_TECHNOLOGIES, mockRagAnswer } from './mock-data';
 // El modo demo sirve las mismas plantillas y el mismo Terraform que el backend, con el código del estudio.
 import { catalogRows } from '../../features/public/cloud/cloud-costs.data';
 import { mockCopilotAdvice } from '../../features/public/cloud/copilot';
@@ -38,7 +38,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (request, next) => {
     return next(request);
   }
   const path = request.url.slice(runtimeConfig.apiBaseUrl.length);
-  const response = route(request.method, path, request.body);
+  const response = route(request.method, path, request.body, request.params.get('lang'));
 
   return timer(MOCK_LATENCY_MS).pipe(
     switchMap(() =>
@@ -54,7 +54,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (request, next) => {
   );
 };
 
-function route(method: string, path: string, body: unknown): MockResponse {
+function route(method: string, path: string, body: unknown, lang: string | null = null): MockResponse {
   const [, resource, id] = /^\/admin\/(technologies|projects)(?:\/([^/]+))?$/.exec(path) ?? [];
   if (resource === 'technologies') {
     return technologiesCrud(method, id, body as TechnologyRequest);
@@ -99,7 +99,7 @@ function route(method: string, path: string, body: unknown): MockResponse {
     case 'GET /public/projects':
       return ok(projects);
     case 'GET /public/career-timeline':
-      return ok(MOCK_CAREER);
+      return ok(lang === 'en' ? MOCK_CAREER_EN : MOCK_CAREER);
     case 'GET /public/articles':
       return ok(articles);
     case 'POST /admin/articles':
