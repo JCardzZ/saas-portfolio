@@ -11,10 +11,11 @@ import { LivePricingState } from './live-pricing.service';
 @Component({
     selector: 'app-cost-badge',
     imports: [TranslatePipe],
-    host: { class: 'block', '(mouseenter)': 'hovered.set(true)', '(mouseleave)': 'hovered.set(false)', '(keydown.escape)': 'pinned.set(false)' },
+    host: { class: 'relative block', '(mouseenter)': 'hovered.set(true)', '(mouseleave)': 'hovered.set(false)', '(keydown.escape)': 'pinned.set(false)' },
     template: `
     @if (open()) {
-      <div id="cost-breakdown" class="mb-2 w-64 animate-scale-up rounded-panel border border-line-strong bg-surface-1/95 p-3 text-left shadow-2xl backdrop-blur-2xl" role="region" [attr.aria-label]="'Desglose del coste mensual estimado' | t">
+      <!-- Encima de la línea de estado, sin empujar nada. -->
+      <div id="cost-breakdown" class="absolute bottom-full left-0 z-20 mb-2 w-64 animate-scale-up rounded-panel border border-line-strong bg-surface-1/95 p-3 text-left shadow-2xl backdrop-blur-2xl" role="region" [attr.aria-label]="'Desglose del coste mensual estimado' | t">
         <p class="text-xs font-medium uppercase tracking-wider text-ink-2">FinOps · {{ providerName() }}</p>
         <ul class="mt-2 space-y-2">
           @for (category of estimate().categories; track category.id) {
@@ -51,7 +52,7 @@ import { LivePricingState } from './live-pricing.service';
     }
     <button
       type="button"
-      class="focus-ring glass flex max-w-full flex-wrap items-center gap-x-2 gap-y-0.5 rounded-control px-3 py-1.5 text-left transition duration-500 ease-spring hover:bg-surface-3"
+      class="focus-ring flex max-w-full flex-wrap items-center gap-x-2 gap-y-0.5 rounded-control px-2 py-1 text-left transition duration-300 hover:bg-surface-3"
       [attr.aria-expanded]="open()"
       aria-controls="cost-breakdown"
       [attr.aria-label]="('Coste estimado: ' | t) + usd(estimate().total) + (' al mes en ' | t) + providerName() + ('. Ver desglose' | t)"

@@ -208,6 +208,10 @@ test.describe('Oracle Cloud en el Estudio (cloud.oracle)', () => {
     const foreign = await page.locator(`${view} :is(image, img)`).evaluateAll((images) =>
       images.map((image) => image.getAttribute('href') ?? image.getAttribute('src') ?? '').filter((href) => /cloud-icons\/(aws|gcp|azure)\//.test(href)));
     expect(foreign, 'ningún icono de arquitectura de otra nube').toEqual([]);
+    // En el lienzo ancho, el coste de cada pieza sale con «Funciones y costes».
+    if (view !== MOBILE) {
+      await page.getByTestId('details-switch').click();
+    }
     const unpriced = view === MOBILE
       ? page.locator(`${MOBILE} [data-node-id][aria-label*="sin estimación"]`)
       : page.locator(`${CANVAS} [data-testid="node-cost"]`, { hasText: 'sin estimación' });

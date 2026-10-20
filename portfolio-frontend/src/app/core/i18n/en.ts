@@ -1014,4 +1014,7 @@ export const EN: Readonly<Record<string, string>> = {
   'Texto → vector': 'Text → vector',
   'Fail-open · breaker': 'Fail-open · breaker',
   'Filtro tenant_id': 'tenant_id filter',
+  'Así se desplegaría en': 'This is how it would deploy on',
+  '. Misma forma en cada nube; cambia el servicio de cada pieza.': '. Same shape on every cloud; only the service behind each piece changes.',
+  'Funciones y costes': 'Roles and costs',
 };

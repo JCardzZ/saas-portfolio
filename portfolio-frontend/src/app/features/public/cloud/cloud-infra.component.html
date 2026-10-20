@@ -5,15 +5,15 @@
 <!-- Barra con jerarquía (docs/DESIGN.md §9.5): contexto a la izquierda, menús agrupados en el centro
      y, a la derecha, las dos acciones principales. Los menús están siempre en el DOM y se ocultan con
      `hidden`, para que sus acciones sigan siendo las mismas se abra o no el menú. -->
-@if (systemDesign()) {
-  <!-- Las dos vistas del mismo proyecto: lo que se construye y dónde corre. Van en su propia fila,
-       encima de la barra, para no desplazar los menús de esta. -->
-  <div class="mt-4 ui-segmented" role="tablist" [attr.aria-label]="'Vista del proyecto' | t">
-    <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'infra'" (click)="view.set('infra')">{{ 'Infraestructura' | t }}</button>
-    <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'app'" (click)="view.set('app')">{{ 'Aplicación' | t }}</button>
-  </div>
-}
-<div [class.mt-4]="!systemDesign()" [class.mt-2]="systemDesign()" class="flex flex-wrap items-center gap-2" role="toolbar" [attr.aria-label]="'Estudio de arquitectura' | t">
+<!-- Una sola fila de controles: vista del proyecto, nube, menús y, a la derecha, las dos acciones. -->
+<div class="mt-4 flex flex-wrap items-center gap-2" role="toolbar" [attr.aria-label]="'Estudio de arquitectura' | t">
+  @if (systemDesign()) {
+    <!-- Las dos vistas del mismo proyecto: lo que se construye y dónde corre. -->
+    <div class="ui-segmented" role="tablist" [attr.aria-label]="'Vista del proyecto' | t">
+      <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'infra'" (click)="view.set('infra')">{{ 'Infraestructura' | t }}</button>
+      <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'app'" (click)="view.set('app')">{{ 'Aplicación' | t }}</button>
+    </div>
+  }
   <div class="ui-segmented" role="radiogroup" [attr.aria-label]="'Proveedor de nube' | t">
     @for (provider of providers(); track provider.id) {
       <button type="button" role="radio" class="ui-segment gap-2" [attr.aria-checked]="provider.id === selectedId()" (click)="select(provider.id)">
@@ -25,7 +25,9 @@
 
   <div class="relative" data-menu>
     <button type="button" class="ui-btn-secondary" [attr.aria-expanded]="menu() === 'project'" aria-controls="menu-project" (click)="menu.set(menu() === 'project' ? null : 'project')">
-      {{ 'Proyecto' | t }} <span aria-hidden="true">▾</span>
+      {{ 'Proyecto' | t }}
+      @if (modified()) { <span class="h-1.5 w-1.5 rounded-full bg-accent-text" [attr.title]="'Guardado en este navegador' | t" aria-hidden="true"></span> }
+      <span aria-hidden="true">▾</span>
     </button>
     <ul id="menu-project" class="project-menu w-64" [hidden]="menu() !== 'project'">
       <li><button type="button" class="project-item" [attr.aria-expanded]="menu() === 'presets'" aria-controls="menu-presets" (click)="menu.set(menu() === 'presets' ? null : 'presets')">{{ 'Plantillas' | t }}<span class="float-right text-ink-3" aria-hidden="true">›</span></button></li>
@@ -189,7 +191,7 @@
   </div>
 
   @if (modified()) {
-    <p class="w-full text-caption font-normal text-ink-3" role="status">{{ 'Guardado en este navegador' | t }}</p>
+    <p class="sr-only" role="status">{{ 'Guardado en este navegador' | t }}</p>
   }
   @if (cloudNotice(); as notice) {
     <p class="w-full text-caption font-normal text-status-ok" role="status">{{ notice }}</p>
@@ -256,7 +258,7 @@
   </div>
 } @else {
   <p class="mt-3 text-sm text-ink-2">
-    {{ 'Cómo se desplegaría esta plataforma en' | t }} <span class="font-medium text-ink-1">{{ selected().name | t }}</span>{{ '. La forma es la misma en las tres nubes; cambia el servicio que cubre cada pieza.' | t }}
+    {{ 'Así se desplegaría en' | t }} <span class="font-medium text-ink-1">{{ selected().name | t }}</span>{{ '. Misma forma en cada nube; cambia el servicio de cada pieza.' | t }}
   </p>
 }
 
@@ -323,6 +325,7 @@
       class="block w-full"
       [class.canvas-fitted]="fitted()"
       [class.canvas-editing]="editing()"
+      [class.nodes-min]="!showDetails() && !editing()"
       role="group"
       [style.--provider]="providerColor()"
       [attr.aria-label]="('Arquitectura de referencia en ' | t) + selected().name + (editing() ? (', en edición' | t) : '')"
@@ -341,7 +344,7 @@
           [class.zone-selected]="editing() && zone.id === activeZoneId()"
           [class.zone-target]="zone.id === dropZoneId()"
           [attr.data-zone-id]="zone.id"
-          [attr.x]="zone.x" [attr.y]="zone.y" [attr.width]="zone.w" [attr.height]="zone.h"
+          [attr.x]="zone.x" [attr.y]="zone.y" [attr.width]="zone.w" [attr.height]="shownHeight(zone)"
           [attr.rx]="zone.kind === 'cloud' || zone.kind === 'region' ? 18 : zone.kind === 'vpc' ? 14 : 10"
         />
         @if (zone.kind === 'public' || zone.kind === 'private') {
@@ -558,10 +561,16 @@
 
   <!-- Con la vista ajustada el diagrama se ve entero: los dos paneles bajan debajo del lienzo en vez de flotar encima. -->
   <!-- En estrecho también: métricas y FinOps van en una fila bajo el diagrama, nunca encima. -->
-  <div [class]="fitted() || compact() ? 'mt-2 flex flex-wrap items-start gap-2' : 'contents'" data-testid="studio-panels">
-  <app-live-vitals [class]="fitted() || compact() ? 'block min-w-0 max-w-full flex-1 basis-56' : 'absolute left-2 top-2 z-10 max-w-[calc(100%-1rem)]'" [vitals]="vitals()" (beat)="onBeat()" />
-
-  <app-cost-badge [class]="fitted() || compact() ? 'block w-fit max-w-full' : 'absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)]'" [estimate]="cost()" [providerName]="selected().name" [pricingState]="pricingState()" />
+  <!-- Línea de estado bajo el lienzo, sin cajas: métricas, FinOps y el interruptor de detalles de cada pieza. -->
+  <div class="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line-subtle pt-3" data-testid="studio-panels">
+    <app-live-vitals class="block min-w-0 max-w-full" [vitals]="vitals()" (beat)="onBeat()" />
+    <app-cost-badge class="block w-fit max-w-full" [estimate]="cost()" [providerName]="selected().name" [pricingState]="pricingState()" />
+    @if (!compact()) {
+      <button type="button" role="switch" class="details-switch focus-ring ml-auto" [attr.aria-checked]="showDetails() || editing()" [disabled]="editing()" (click)="showDetails.set(!showDetails())" data-testid="details-switch">
+        <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+        {{ 'Funciones y costes' | t }}
+      </button>
+    }
   </div>
 
   @if (tooltip(); as tip) {

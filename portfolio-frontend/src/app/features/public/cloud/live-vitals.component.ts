@@ -15,8 +15,9 @@ import { Vitals } from './live-traffic';
     imports: [TranslatePipe],
     host: { class: 'block' },
     template: `
-    <section class="glass rounded-panel px-3 py-2" [attr.aria-label]="'Métricas en vivo (simulación)' | t">
-      <p class="flex flex-wrap items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-ink-2">
+    <!-- Una línea de estado, sin caja: punto, estado y cifras. -->
+    <section class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" [attr.aria-label]="'Métricas en vivo (simulación)' | t">
+      <p class="flex items-center gap-1.5 font-medium uppercase tracking-wider text-ink-3">
         <span
           class="vitals-clock h-1.5 w-1.5 rounded-full"
           [class]="vitals().status === 'ok' ? 'bg-status-ok' : vitals().status === 'warn' ? 'bg-status-warn' : 'bg-status-danger'"
@@ -25,19 +26,19 @@ import { Vitals } from './live-traffic';
         ></span>
         {{ 'Métricas en vivo' | t }} <span class="font-normal normal-case tracking-normal text-ink-3">{{ '· simulación' | t }}</span>
       </p>
-      <dl class="mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-0.5 text-xs [&>dd]:break-words">
+      <dl class="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 [&>dd]:mr-3">
         <dt class="text-ink-2">RPS</dt>
-        <dd class="text-right font-mono tabular-nums text-ink-1">{{ number(vitals().rps) }} <span class="text-ink-3">req/s</span></dd>
+        <dd class="font-mono tabular-nums text-ink-1">{{ number(vitals().rps) }} <span class="text-ink-3">req/s</span></dd>
         <dt class="text-ink-2">{{ 'Latencia p95' | t }}</dt>
-        <dd class="text-right font-mono tabular-nums" [class]="vitals().status === 'ok' ? 'text-ink-1' : vitals().status === 'warn' ? 'text-status-warn' : 'text-status-danger'">
+        <dd class="font-mono tabular-nums" [class]="vitals().status === 'ok' ? 'text-ink-1' : vitals().status === 'warn' ? 'text-status-warn' : 'text-status-danger'">
           {{ vitals().p95 }} <span class="text-ink-3">ms</span>
         </dd>
         <dt class="text-ink-2" [attr.title]="'Coste fijo orientativo de FinOps; no cambia con el tráfico' | t">{{ 'Coste' | t }}</dt>
-        <dd class="text-right font-mono tabular-nums text-ink-1">
+        <dd class="font-mono tabular-nums text-ink-1">
           {{ '$' + vitals().costPerHour.toFixed(2) }}<span class="text-ink-3">/h</span> · {{ usd(vitals().costPerMonth) }}<span class="text-ink-3">{{ '/mes' | t }}</span>
         </dd>
       </dl>
-      <p class="mt-1 max-w-[13rem] text-xs leading-snug text-ink-3" role="status">{{ vitals().note | t }}</p>
+      <p class="text-ink-2" role="status">{{ vitals().note | t }}</p>
     </section>
   `,
     changeDetection: ChangeDetectionStrategy.OnPush

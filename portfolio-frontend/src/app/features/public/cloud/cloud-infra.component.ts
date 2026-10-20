@@ -149,7 +149,8 @@ export class CloudInfraComponent {
   readonly fitted = signal(false);
   readonly viewBox = computed(() => {
     if (!this.fitted()) {
-      return `0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`;
+      // Fuera de la edición, el lienzo acaba donde acaba lo dibujado: sin franja vacía debajo.
+      return `0 0 ${CANVAS_WIDTH} ${this.editing() ? CANVAS_HEIGHT : this.shownCanvasHeight()}`;
     }
     const { x, y, w, h } = contentBounds(this.nodes(), this.zones());
     return `${x} ${y} ${w} ${h}`;
@@ -164,6 +165,49 @@ export class CloudInfraComponent {
   /** Recuadros del lienzo (nube, red, subredes...), de mayor a menor para que los pequeños queden encima. */
   readonly zones = signal<StudioZone[]>(structuredClone(BASE_ZONES));
   readonly zonesByArea = computed(() => [...this.zones()].sort((a, b) => b.w * b.h - a.w * a.h));
+
+  /**
+   * Alto con el que se dibuja cada zona: fuera de la edición se ajusta a lo que contiene (sus
+   * piezas y las zonas de dentro), así las subredes no bajan vacías hasta el fondo. Es solo
+   * presentación: la zona guardada, el arrastre y las comprobaciones usan su alto real.
+   */
+  private readonly shownHeights = computed(() => {
+    const heights = new Map<string, number>();
+    if (this.editing()) {
+      return heights;
+    }
+    const inside = (outer: StudioZone, x: number, y: number) => x >= outer.x && x <= outer.x + outer.w && y >= outer.y && y <= outer.y + outer.h;
+    // De la más pequeña a la más grande: las de dentro se resuelven antes que la que las contiene.
+    for (const zone of [...this.zones()].sort((a, b) => a.w * a.h - b.w * b.h)) {
+      const bottoms = this.nodes().filter((node) => inside(zone, node.x, node.y)).map((node) => node.y + NODE_HEIGHT / 2);
+      for (const child of this.zones()) {
+        if (child !== zone && inside(zone, child.x, child.y) && inside(zone, child.x + child.w, child.y + child.h)) {
+          bottoms.push(child.y + (heights.get(child.id) ?? child.h));
+        }
+      }
+      if (bottoms.length) {
+        const pad = zone.kind === 'public' || zone.kind === 'private' ? 12 : 16;
+        heights.set(zone.id, Math.min(zone.h, Math.max(...bottoms) + pad - zone.y));
+      }
+    }
+    return heights;
+  });
+
+  shownHeight(zone: StudioZone): number {
+    return this.shownHeights().get(zone.id) ?? zone.h;
+  }
+
+  /** Hasta dónde llega lo dibujado (zonas ya ajustadas y piezas), con un margen. */
+  private readonly shownCanvasHeight = computed(() => {
+    const bottoms = [
+      ...this.zones().map((zone) => zone.y + this.shownHeight(zone)),
+      ...this.nodes().map((node) => node.y + NODE_HEIGHT / 2 + 12),
+    ];
+    return Math.min(CANVAS_HEIGHT, Math.ceil(Math.max(...bottoms, 0) + 16));
+  });
+
+  /** «Funciones y costes»: cada pieza muestra su función y su coste mensual. En edición, siempre. */
+  readonly showDetails = signal(false);
   readonly hasCloudZone = computed(() => this.zones().some((zone) => zone.id === 'cloud'));
   readonly editing = signal(false);
   readonly catalogDocked = signal(true);

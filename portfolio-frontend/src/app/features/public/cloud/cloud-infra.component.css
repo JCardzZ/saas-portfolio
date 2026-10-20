@@ -2,10 +2,11 @@
    el acento marca la selección y verde, ámbar y rojo solo el estado. */
 
 /* Zonas: se distinguen por el patrón de su borde y su rótulo, no por el color. */
-.zone { fill: rgb(var(--c-surface-1) / 0.5); stroke: var(--border-strong); stroke-width: 1; transition: stroke var(--duration-base); }
-.zone-cloud { stroke-dasharray: 10 6; }
-.zone-network { stroke-dasharray: none; }
-.zone-public, .zone-private { stroke: var(--border-subtle); stroke-dasharray: none; fill: rgb(var(--c-surface-2) / 0.55); }
+/* Zonas sin punteado (el punteado es solo de lo planificado): la nube y la red, un plano apenas
+   teñido con borde de 1 px; las subredes, solo tinte y rótulo. */
+.zone { fill: rgb(var(--c-ink-1) / 0.012); stroke: var(--border-subtle); stroke-width: 1; transition: stroke var(--duration-base), height var(--duration-slow) var(--ease-emphasized); }
+.zone-cloud, .zone-network { stroke-dasharray: none; }
+.zone-public, .zone-private { stroke: transparent; stroke-dasharray: none; fill: rgb(var(--c-ink-1) / 0.025); }
 .zone-label { fill: var(--text-2); font-size: 12px; font-weight: 500; letter-spacing: 0.04em; }
 .zone-sub { fill: var(--text-3); font-size: 12px; }
 
@@ -57,6 +58,10 @@
 /* El nombre del servicio cambia con el proveedor: entra con un fundido. */
 .node-service { fill: var(--text-1); font-size: 12px; font-weight: 600; transform-box: fill-box; transform-origin: center; animation: node-in 0.4s var(--ease-emphasized) backwards; }
 .node-role { fill: var(--text-2); font-size: 10px; }
+/* Por defecto, cada pieza es icono y nombre: la función y el coste salen con «Funciones y costes».
+   Siguen en el DOM (lectores de pantalla, exportación) y se recolocan icono y nombre al centro. */
+.nodes-min .node-role, .nodes-min .node-cost { display: none; }
+.nodes-min .node-icon, .nodes-min .node-service { transform: translateY(7px); }
 
 .remove { cursor: pointer; outline: none; }
 .remove circle { fill: var(--status-danger); }
@@ -102,3 +107,15 @@
 
 /* «Ajustar a pantalla»: el diagrama se ve entero en su marco, sin el ancho mínimo de trabajo ni más alto que la ventana. */
 .canvas-fitted { min-width: 0; max-height: 70dvh; }
+
+/* Interruptor «Funciones y costes», en la línea de estado. */
+.details-switch { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2rem; padding: 0 0.25rem; font-size: 0.8125rem; color: var(--text-2); border-radius: var(--radius-control); }
+.details-switch:hover:not(:disabled) { color: var(--text-1); }
+.details-switch:disabled { opacity: 0.6; }
+.details-switch .track { position: relative; width: 1.875rem; height: 1.125rem; flex: none; border-radius: 999px; background: rgb(var(--c-ink-1) / 0.12); transition: background-color var(--duration-base) var(--ease-standard); }
+.details-switch .thumb { position: absolute; top: 0.1875rem; left: 0.1875rem; width: 0.75rem; height: 0.75rem; border-radius: 999px; background: var(--text-1); transition: transform var(--duration-base) var(--ease-emphasized); }
+.details-switch[aria-checked='true'] { color: var(--text-1); }
+.details-switch[aria-checked='true'] .track { background: var(--accent-solid); }
+.details-switch[aria-checked='true'] .thumb { transform: translateX(0.75rem); background: var(--accent-on); }
+@media (pointer: coarse) { .details-switch { min-height: 2.75rem; } }
+@media (prefers-reduced-motion: reduce) { .details-switch .track, .details-switch .thumb, .zone { transition: none; } }
