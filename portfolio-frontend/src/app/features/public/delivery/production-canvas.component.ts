@@ -8,9 +8,12 @@ import { ComponentState } from './live-health.service';
 
 /** Medidas del lienzo ancho, en unidades del viewBox (px a escala 1). */
 const COL_W = 210;
-const ROW_H = 118;
 const NODE_W = 182;
-const NODE_H = 74;
+/** Nodo mínimo (icono, nombre y papel) y con su dato en vivo debajo. */
+const NODE_H = 56;
+const NODE_H_FACTS = 74;
+/** Fila = nodo + 44 de pasillo para cables y rótulos. */
+const ROW_GAP = 44;
 const MARGIN = 16;
 /** Franja de la cabecera de cada zona, por encima de su primera fila. */
 const ZONE_HEAD = 30;
@@ -85,13 +88,14 @@ export interface CanvasEdge {
               <path d="M0 0 10 5 0 10z" fill="var(--text-3)" />
             </marker>
             <marker id="pc-arrow-req" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M0 0 10 5 0 10z" fill="var(--accent-text)" />
+              <path d="M0 0 10 5 0 10z" fill="var(--text-3)" />
             </marker>
           </defs>
 
           @for (zone of zones(); track zone.id) {
             <g class="zone" [attr.data-zone]="zone.id">
-              <rect [attr.x]="zone.x" [attr.y]="zone.y" [attr.width]="zone.w" [attr.height]="zone.h" rx="14" fill="var(--bg-surface-1)" stroke="var(--border-strong)" stroke-dasharray="5 5" />
+              <!-- Zona: un plano apenas más claro con borde de 1 px; sin punteado (el punteado es solo de lo planificado). -->
+              <rect class="zone-plate" [attr.x]="zone.x" [attr.y]="zone.y" [attr.width]="zone.w" [attr.height]="zone.h" rx="14" />
               @if (zone.icon; as icon) {
                 <g [attr.transform]="'translate(' + (zone.x + 12) + ' ' + (zone.y + 8) + ') scale(0.75)'">
                   @if (icon.image) {
@@ -101,7 +105,7 @@ export interface CanvasEdge {
                   }
                 </g>
               }
-              <text [attr.x]="zone.x + (zone.icon ? 36 : 14)" [attr.y]="zone.y + 21" font-size="13" font-weight="600" fill="var(--text-2)">{{ zone.label }}</text>
+              <text [attr.x]="zone.x + (zone.icon ? 36 : 14)" [attr.y]="zone.y + 21" font-size="13" font-weight="500" fill="var(--text-3)">{{ zone.label }}</text>
             </g>
           }
 
@@ -124,13 +128,13 @@ export interface CanvasEdge {
 
           @for (item of canvasNodes(); track item.node.id) {
             <g class="node" tabindex="0" role="button" [attr.data-node]="item.node.id"
-              [attr.transform]="'translate(' + (item.x - nodeW / 2) + ' ' + (item.y - nodeH / 2) + ')'"
+              [attr.transform]="'translate(' + (item.x - nodeW / 2) + ' ' + (item.y - nodeH() / 2) + ')'"
               [class.planned]="item.node.status === 'planned'" [class.active]="item.node.id === activeId()" [class.flash]="item.node.id === flashId()"
               [class.dim]="focusId() !== null && !isNear(item.node.id)"
               [attr.aria-label]="ariaOf(item)" [attr.aria-pressed]="item.node.id === activeId()"
               (click)="picked.emit(item.node.id)" (keydown.enter)="picked.emit(item.node.id)" (keydown.space)="$event.preventDefault(); picked.emit(item.node.id)"
               (mouseenter)="focusId.set(item.node.id)" (mouseleave)="focusId.set(null)" (focus)="focusId.set(item.node.id)" (blur)="focusId.set(null)">
-              <rect class="card" [attr.width]="nodeW" [attr.height]="nodeH" rx="10" />
+              <rect class="card" [attr.width]="nodeW" [attr.height]="nodeH()" rx="10" />
               <g transform="translate(12 16)">
                 @if (item.icon; as icon) {
                   @if (icon.image) {
@@ -142,10 +146,10 @@ export interface CanvasEdge {
                   <path [attr.d]="item.glyph" fill="var(--text-2)" />
                 }
               </g>
-              <text x="46" y="25" font-size="14" font-weight="600" fill="var(--text-1)">{{ item.label }}</text>
-              <text x="46" y="43" font-size="13" fill="var(--text-2)">{{ item.role }}</text>
-              @if (item.fact) {
-                <!-- El dato en vivo de la pieza (último commit, CI, despliegue, latencia…). -->
+              <text x="46" y="24" font-size="14" font-weight="600" fill="var(--text-1)">{{ item.label }}</text>
+              <text x="46" y="42" font-size="13" fill="var(--text-3)">{{ item.role }}</text>
+              @if (showFacts() && item.fact) {
+                <!-- El dato en vivo de la pieza (último commit, CI, despliegue, latencia…), con «Datos en vivo». -->
                 <text class="fact" x="46" y="61" font-size="13">{{ item.fact }}</text>
               }
               <circle class="dot" [attr.cx]="nodeW - 13" cy="13" r="4" [attr.data-state]="dotState(item)" />
@@ -156,7 +160,7 @@ export interface CanvasEdge {
         <!-- Estrecho: una tarjeta por zona, con sus piezas. Mismo contenido, sin cables. -->
         <div class="grid items-start gap-3 sm:grid-cols-2 [&>*]:min-w-0" data-testid="production-cards">
           @for (group of groups(); track group.id) {
-            <section class="rounded-panel border border-dashed border-line-strong p-3" [attr.aria-label]="group.label">
+            <section class="rounded-panel border border-line-subtle bg-surface-1 p-3" [attr.aria-label]="group.label">
               <p class="flex items-center gap-2 text-caption font-semibold text-ink-2">
                 @if (group.icon; as icon) {
                   <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0" aria-hidden="true">
@@ -180,7 +184,7 @@ export interface CanvasEdge {
                       <span class="min-w-0 flex-1 text-left">
                         <span class="block truncate text-body-sm font-semibold text-ink-1">{{ item.label }}</span>
                         <span class="block truncate text-caption text-ink-2">{{ item.role }}</span>
-                        @if (item.fact) { <span class="block truncate font-mono text-caption text-accent-text">{{ item.fact }}</span> }
+                        @if (showFacts() && item.fact) { <span class="block truncate font-mono text-caption text-ink-2">{{ item.fact }}</span> }
                       </span>
                       <span class="dot-html" [attr.data-state]="dotState(item)" aria-hidden="true"></span>
                     </button>
@@ -194,40 +198,41 @@ export interface CanvasEdge {
     </div>
   `,
   styles: `
+    /* Monocromo: grises y bordes de 1 px; el verde queda para lo que está vivo (pulsos y puntos de estado). */
     .zone text { pointer-events: none; }
+    .zone-plate { fill: rgb(var(--c-ink-1) / 0.015); stroke: var(--border-subtle); stroke-width: 1; }
     .node { cursor: pointer; outline: none; transition: opacity 0.2s ease-out; }
-    .node .card { fill: var(--bg-surface-2); stroke: var(--border-strong); stroke-width: 1; transition: stroke 0.2s ease-out; }
-    .node.planned .card { stroke-dasharray: 5 4; fill: transparent; }
+    .node .card { fill: var(--bg-surface-2); stroke: var(--border-subtle); stroke-width: 1; transition: stroke 0.2s ease-out; }
+    .node.planned .card { stroke: var(--border-strong); stroke-dasharray: 5 4; fill: transparent; }
     .node.planned text, .node.planned image, .node.planned path { opacity: 0.6; }
-    .node:hover .card, .node:focus-visible .card { stroke: var(--text-2); }
-    .node.active .card { stroke: var(--accent-text); stroke-width: 1.5; }
-    .node:focus-visible .card { stroke: var(--accent-text); stroke-width: 2; }
+    .node:hover .card { stroke: var(--border-strong); }
+    .node.active .card { stroke: var(--text-2); stroke-width: 1.25; }
+    .node:focus-visible .card { stroke: var(--text-1); stroke-width: 1.5; }
     .node.dim { opacity: 0.35; }
     .dot[data-state='ok'] { fill: var(--status-ok); }
     .dot[data-state='warn'] { fill: var(--status-warn); }
     .dot[data-state='down'] { fill: var(--status-danger); }
     .dot[data-state='planned'] { fill: transparent; stroke: var(--text-2); stroke-width: 1.2; }
 
-    .edge .wire { stroke: var(--text-3); stroke-width: 1.2; stroke-dasharray: 4 4; transition: opacity 0.2s ease-out, stroke 0.2s ease-out; }
-    .edge.request .wire { stroke: var(--accent-text); stroke-opacity: 0.55; stroke-width: 1.6; stroke-dasharray: none; }
-    .edge.planned .wire { stroke-opacity: 0.4; stroke-dasharray: 3 5; }
-    .edge.lit .wire { stroke-opacity: 1; stroke-width: 2; }
-    .edge.lit:not(.request) .wire { stroke: var(--text-1); }
+    .edge .wire { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 4 4; transition: opacity 0.2s ease-out, stroke 0.2s ease-out; }
+    .edge.request .wire { stroke: var(--text-3); stroke-dasharray: none; }
+    .edge.planned .wire { stroke-opacity: 0.5; stroke-dasharray: 3 5; }
+    .edge.lit .wire { stroke: var(--text-1); stroke-width: 1.5; }
     svg.has-focus .edge:not(.lit) { opacity: 0.25; }
     .edge-label { fill: var(--text-1); paint-order: stroke; stroke: var(--bg-surface-1); stroke-width: 5px; stroke-linejoin: round; pointer-events: none; }
     /* Pulsos de la petición: viajan por el cable hacia su destino. */
-    .pulse { stroke: var(--accent-text); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 2 220; animation: pc-pulse 2.6s linear infinite; }
+    .pulse { stroke: var(--accent-text); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 2 220; animation: pc-pulse 2.6s linear infinite; }
     @keyframes pc-pulse { from { stroke-dashoffset: 222; } to { stroke-dashoffset: 0; } }
-    .fact { fill: var(--accent-text); font-variant-numeric: tabular-nums; }
+    .fact { fill: var(--text-2); font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
     /* La pieza que acaba de responder: su borde se enciende y la tarjeta late una vez. */
     .node.flash .card { animation: pc-flash 0.9s cubic-bezier(0.22, 1, 0.36, 1) 1; }
     .node.flash .fact { animation: pc-fact 0.9s ease-out 1; }
     @keyframes pc-flash {
       0% { stroke: var(--accent-text); stroke-width: 1; filter: drop-shadow(0 0 0 transparent); }
       30% { stroke: var(--accent-text); stroke-width: 2.5; filter: drop-shadow(0 0 10px var(--accent-text)); }
-      100% { stroke: var(--border-strong); stroke-width: 1; filter: drop-shadow(0 0 0 transparent); }
+      100% { stroke: var(--border-subtle); stroke-width: 1; filter: drop-shadow(0 0 0 transparent); }
     }
-    @keyframes pc-fact { 0%, 40% { fill: var(--text-1); } 100% { fill: var(--accent-text); } }
+    @keyframes pc-fact { 0%, 40% { fill: var(--accent-text); } 100% { fill: var(--text-2); } }
     .node.planned .fact { fill: var(--text-3); }
     /* Una pasada brillante por el recorrido de la comprobación real. */
     .probe { stroke: var(--text-1); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 26 400; animation: pc-probe 1.6s ease-out 1 forwards; filter: drop-shadow(0 0 4px var(--accent-text)); }
@@ -236,11 +241,11 @@ export interface CanvasEdge {
 
     .node-row {
       display: flex; width: 100%; min-height: 3.25rem; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem;
-      border-radius: var(--radius-control); border: 1px solid var(--border-strong); background: var(--bg-surface-2);
+      border-radius: var(--radius-control); border: 1px solid var(--border-subtle); background: var(--bg-surface-2);
       transition: border-color 0.2s ease-out;
     }
     .node-row.planned { border-style: dashed; background: transparent; }
-    .node-row.active { border-color: var(--accent-text); }
+    .node-row.active { border-color: var(--text-2); }
     .dot-html { width: 0.5rem; height: 0.5rem; border-radius: 9999px; flex: none; }
     .dot-html[data-state='ok'] { background: var(--status-ok); }
     .dot-html[data-state='warn'] { background: var(--status-warn); }
@@ -260,6 +265,8 @@ export class ProductionCanvasComponent {
   readonly probe = input(0);
   /** Pieza que acaba de responder en la comprobación (su línea llega al inspector a la vez). */
   readonly flashId = input<string | null>(null);
+  /** «Datos en vivo»: cada pieza enseña su dato real (commit, latencia, versión…) debajo. */
+  readonly showFacts = input(false);
   readonly picked = output<string>();
   readonly probing = signal(false);
 
@@ -269,17 +276,18 @@ export class ProductionCanvasComponent {
   readonly focusId = signal<string | null>(null);
 
   readonly nodeW = NODE_W;
-  readonly nodeH = NODE_H;
+  readonly nodeH = computed(() => (this.showFacts() ? NODE_H_FACTS : NODE_H));
+  private readonly rowH = computed(() => this.nodeH() + ROW_GAP);
 
   private readonly cols = computed(() => Math.max(...this.topology().nodes.map((node) => node.col)) + 1);
   private readonly rows = computed(() => Math.max(...this.topology().nodes.map((node) => node.row)) + 1);
   get width(): number { return MARGIN * 2 + this.cols() * COL_W; }
-  get height(): number { return MARGIN * 2 + ZONE_HEAD + this.rows() * ROW_H; }
+  get height(): number { return MARGIN * 2 + ZONE_HEAD + this.rows() * this.rowH(); }
   /** Ancho a partir del cual el lienzo se ve con su texto a 12 px o más. */
   get minWidth(): number { return Math.ceil(this.width * MIN_SCALE); }
 
   private center(node: TopologyNode): { x: number; y: number } {
-    return { x: MARGIN + node.col * COL_W + COL_W / 2, y: MARGIN + ZONE_HEAD + node.row * ROW_H + ROW_H / 2 };
+    return { x: MARGIN + node.col * COL_W + COL_W / 2, y: MARGIN + ZONE_HEAD + node.row * this.rowH() + this.rowH() / 2 };
   }
 
   readonly canvasNodes = computed<CanvasNode[]>(() => this.topology().nodes.map((node) => {
@@ -305,8 +313,8 @@ export class ProductionCanvasComponent {
       }
       const x0 = Math.min(...members.map((item) => item.x)) - NODE_W / 2 - ZONE_PAD;
       const x1 = Math.max(...members.map((item) => item.x)) + NODE_W / 2 + ZONE_PAD;
-      const y0 = Math.min(...members.map((item) => item.y)) - NODE_H / 2 - ZONE_HEAD - 4;
-      const y1 = Math.max(...members.map((item) => item.y)) + NODE_H / 2 + ZONE_PAD;
+      const y0 = Math.min(...members.map((item) => item.y)) - this.nodeH() / 2 - ZONE_HEAD - 4;
+      const y1 = Math.max(...members.map((item) => item.y)) + this.nodeH() / 2 + ZONE_PAD;
       const icon = zone.icon ? TECH_ICONS[zone.icon as TechIconKey] ?? null : null;
       return [{ id: zone.id, label: en ? zone.labelEn : zone.label, icon, x: x0, y: y0, w: x1 - x0, h: y1 - y0 }];
     });
@@ -330,8 +338,8 @@ export class ProductionCanvasComponent {
       if (a.node.col === b.node.col) {
         // Misma columna: de un borde (arriba o abajo) al otro, en recto.
         const down = b.y > a.y;
-        const y1 = a.y + (down ? NODE_H / 2 : -NODE_H / 2);
-        const y2 = b.y + (down ? -NODE_H / 2 : NODE_H / 2) + (down ? -2 : 2);
+        const y1 = a.y + (down ? this.nodeH() / 2 : -this.nodeH() / 2);
+        const y2 = b.y + (down ? -this.nodeH() / 2 : this.nodeH() / 2) + (down ? -2 : 2);
         d = `M${a.x} ${y1} L${b.x} ${y2}`;
       } else {
         const right = b.x > a.x;
@@ -342,11 +350,11 @@ export class ProductionCanvasComponent {
       }
       const vertical = a.node.col === b.node.col;
       // Rótulo junto a la línea: a su derecha si es vertical; encima, si es horizontal y hay sitio.
-      const gap = vertical ? Math.abs(b.y - a.y) - NODE_H : Math.abs(b.x - a.x) - NODE_W;
+      const gap = vertical ? Math.abs(b.y - a.y) - this.nodeH() : Math.abs(b.x - a.x) - NODE_W;
       const showLabel = vertical ? gap >= 36 : gap >= 120 && a.node.row === b.node.row;
       const lx = vertical ? a.x + 8 : (a.x + b.x) / 2;
       // En vertical, justo debajo del origen: a media altura podría cruzarse con otra conexión.
-      const ly = vertical ? Math.min(a.y, b.y) + NODE_H / 2 + 20 : a.y - 8;
+      const ly = vertical ? Math.min(a.y, b.y) + this.nodeH() / 2 + 20 : a.y - 8;
       // La comprobación de salud entra por la pieza con salud «status» (la API) y consulta las que
       // tienen base de datos y caché: es el recorrido real de GET /telemetry/health.
       const probe = link.flow === 'request' && !planned && (

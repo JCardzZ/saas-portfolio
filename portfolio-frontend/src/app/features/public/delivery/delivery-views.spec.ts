@@ -326,6 +326,13 @@ describe('ProductionArchitectureComponent', () => {
     const state = element.querySelector('[data-testid="live-node-state"]')!;
     expect(state.textContent).toContain('Caído ahora');
     expect(state.textContent).toContain('Redis - Unavailable');
+    // Por defecto, solo la forma: el dato real de cada pieza sale con «Datos en vivo».
+    expect(node(element, 'Cloud Run').textContent).not.toContain('42 ms');
+    const toggle = element.querySelector<HTMLButtonElement>('[data-testid="facts-switch"]')!;
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-checked')).toBe('true');
     // Cada pieza con su dato real: la latencia de la API y el estado de la base de datos y la caché.
     expect(node(element, 'Cloud Run').textContent).toContain('DEGRADED · 42 ms');
     expect(node(element, 'PostgreSQL').textContent).toContain('PostgreSQL 16 ✓');

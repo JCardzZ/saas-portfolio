@@ -46,9 +46,16 @@ interface Fact {
     host: { class: 'bento-card block' },
     template: `
     <app-theater-toggle name="Arquitectura en producción" />
-    <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pr-10">
-      <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Arquitectura en producción' | t }}</h3>
-      <p class="text-xs text-ink-3">{{ 'La de hoy, generada de' | t }} <code class="break-all font-mono">deploy/topology.json</code></p>
+    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pr-10">
+      <div class="min-w-0">
+        <h3 class="text-xl font-semibold tracking-tight text-ink-1">{{ 'Arquitectura en producción' | t }}</h3>
+        <p class="mt-0.5 text-xs text-ink-3">{{ 'La de hoy, generada de' | t }} <code class="break-all font-mono">deploy/topology.json</code></p>
+      </div>
+      <!-- Por defecto, solo la forma; con el interruptor, cada pieza enseña su dato real. -->
+      <button type="button" role="switch" class="facts-switch focus-ring tap" [attr.aria-checked]="showFacts()" (click)="showFacts.set(!showFacts())" data-testid="facts-switch">
+        <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+        {{ 'Datos en vivo' | t }}
+      </button>
     </div>
 
     <app-production-canvas
@@ -56,6 +63,7 @@ interface Fact {
       [topology]="topology"
       [live]="liveStates()"
       [facts]="liveFacts()"
+      [showFacts]="showFacts()"
       [probe]="checks()"
       [flashId]="flashing()"
       [activeId]="activeId()"
@@ -65,7 +73,7 @@ interface Fact {
     <ul class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink-2" [attr.aria-label]="'Leyenda' | t">
       <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-ok" aria-hidden="true"></span>{{ 'En producción' | t }}</li>
       <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full border border-ink-2" aria-hidden="true"></span>{{ 'Planificado' | t }}</li>
-      <li class="inline-flex items-center gap-2"><span class="w-5 border-t-2 border-accent-text" aria-hidden="true"></span>{{ 'Petición de un visitante' | t }}</li>
+      <li class="inline-flex items-center gap-2"><span class="w-5 border-t border-ink-3" aria-hidden="true"></span>{{ 'Petición de un visitante' | t }}</li>
       <li class="inline-flex items-center gap-2"><span class="w-5 border-t border-dashed border-ink-3" aria-hidden="true"></span>{{ 'Entrega del código' | t }}</li>
       @if (problems() > 0) {
         <li class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-status-danger" aria-hidden="true"></span>{{ 'Con fallos ahora' | t }}</li>
@@ -146,6 +154,24 @@ interface Fact {
     }
   `,
     styles: `
+    .facts-switch {
+      display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2rem; padding: 0 0.25rem;
+      font-size: 0.8125rem; color: var(--text-2); border-radius: var(--radius-control);
+    }
+    .facts-switch:hover { color: var(--text-1); }
+    .track {
+      position: relative; width: 1.875rem; height: 1.125rem; flex: none; border-radius: 999px;
+      background: rgb(var(--c-ink-1) / 0.12); transition: background-color var(--duration-base) var(--ease-standard);
+    }
+    .thumb {
+      position: absolute; top: 0.1875rem; left: 0.1875rem; width: 0.75rem; height: 0.75rem; border-radius: 999px;
+      background: var(--text-1); transition: transform var(--duration-base) var(--ease-emphasized);
+    }
+    .facts-switch[aria-checked='true'] { color: var(--text-1); }
+    .facts-switch[aria-checked='true'] .track { background: var(--accent-solid); }
+    .facts-switch[aria-checked='true'] .thumb { transform: translateX(0.75rem); background: var(--accent-on); }
+    @media (pointer: coarse) { .facts-switch { min-height: 2.75rem; } }
+    @media (prefers-reduced-motion: reduce) { .track, .thumb { transition: none; } }
     /* Plegar y desplegar la ficha con su alto real (filas de rejilla de 1fr a 0fr), sin saltos. */
     .detail-fold { display: grid; grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease-out; }
     .detail-fold.folded { grid-template-rows: 0fr; opacity: 0; }
@@ -202,6 +228,8 @@ export class ProductionArchitectureComponent implements OnInit {
 
   /** Una comprobación real contra la API; el lienzo anima el recorrido y el inspector cuenta lo que respondió. */
   checkNow(): void {
+    // La comprobación escribe datos reales en cada pieza: se enseñan para que se vea qué respondió.
+    this.showFacts.set(true);
     if (this.health().kind === 'loading') {
       return;
     }
@@ -263,6 +291,8 @@ export class ProductionArchitectureComponent implements OnInit {
   /** Lo que respondió la API, línea a línea, tal cual: sin adornos ni datos inventados. */
   /** El visitante pidió ver la ficha aunque los logs sigan abiertos. */
   readonly detailOpen = signal(false);
+  /** «Datos en vivo»: apagado, el diagrama solo enseña la forma. «Comprobar ahora» lo enciende. */
+  readonly showFacts = signal(false);
   /** La ficha se pliega mientras el inspector muestra los logs de la comprobación. */
   readonly detailFolded = computed(() => this.inspector.componentId() === HEALTH_CHECK && !this.detailOpen());
 
