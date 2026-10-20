@@ -41,7 +41,12 @@
         <div class="flex flex-wrap gap-3">
           <app-cv-download variant="primary" />
           <button type="button" class="ui-btn-secondary ui-btn-lg" (click)="chatOpen.set(true)">{{ i18n.t(copy.askAi) }}</button>
-          <a href="#proyectos" class="ui-btn-secondary ui-btn-lg tap">{{ i18n.t(copy.seeProjects) }}</a>
+          <!-- Sin proyectos publicados, la sección no existe: el botón lleva a la experiencia. -->
+          @if (catalog.projects().length) {
+            <a href="#proyectos" class="ui-btn-secondary ui-btn-lg tap">{{ i18n.t(copy.seeProjects) }}</a>
+          } @else {
+            <a href="#trayectoria" class="ui-btn-secondary ui-btn-lg tap">{{ i18n.t(copy.seeCareer) }}</a>
+          }
         </div>
       </div>
     </section>
@@ -55,141 +60,11 @@
       </div>
     }
 
-    <!-- Orden de lectura de quien selecciona: experiencia, trabajo y stack primero; después, las pruebas
-         de ingeniería (lo que está en producción, cómo está hecho, el Estudio, MCP) y las notas. -->
+    <!-- Orden: experiencia primero (lo que busca quien selecciona) y, justo después, lo que está en
+         producción y cómo está hecho; el contenido del CMS, cuando lo hay; MCP y las notas al final. -->
     <section id="trayectoria" class="scroll-mt-24" aria-labelledby="trayectoria-titulo">
       <app-section-header headingId="trayectoria-titulo" [title]="i18n.t(copy.careerTitle)" [intro]="i18n.t(copy.careerIntro)" />
       <app-career-timeline />
-    </section>
-
-    <section id="proyectos" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="proyectos-titulo">
-      <app-section-header headingId="proyectos-titulo" [title]="i18n.t(copy.projectsTitle)" [intro]="i18n.t(copy.projectsIntro)" />
-
-      <div class="bento-grid">
-        @if (catalog.loading()) {
-          @for (skeleton of skeletons; track skeleton) {
-            <div class="h-44 animate-pulse rounded-card border border-line-subtle bg-surface-1 md:col-span-2" aria-hidden="true"></div>
-          }
-        } @else {
-          @for (project of catalog.projects(); track project.id; let index = $index) {
-            <article
-              [id]="'proyecto-' + project.id"
-              class="bento-card flex animate-slide-up scroll-mt-24 flex-col"
-              [class]="index === 0 ? 'md:col-span-4' : 'md:col-span-2'"
-              [style.animation-delay.ms]="index * 60"
-            >
-              <h3 class="text-ink-1" [class]="index === 0 ? 'text-title-1-sm' : 'text-title-2'">
-                {{ project.title }}
-              </h3>
-              <p class="mt-2 text-ink-2" [class]="index === 0 ? 'max-w-xl text-body' : 'text-body-sm'">{{ project.summary }}</p>
-
-              @if (project.metricsImpact) {
-                <p class="mt-4 text-body-sm font-medium text-ink-1">{{ project.metricsImpact }}</p>
-              }
-
-              @if (project.technologiesUsed?.length) {
-                <ul class="mt-4 flex flex-wrap gap-1.5" [attr.aria-label]="i18n.t(copy.technologiesUsed)">
-                  @for (id of project.technologiesUsed; track id) {
-                    <li class="ui-badge">
-                      @if (iconFor(catalog.technologyName(id)); as icon) {
-                        <app-tech-icon [icon]="icon" [size]="12" />
-                      }
-                      {{ catalog.technologyName(id) }}
-                    </li>
-                  }
-                </ul>
-              }
-
-              <div class="mt-auto flex gap-4 pt-6 text-body-sm font-medium">
-                @if (project.githubRepoUrl) {
-                  <a class="ui-focus tap inline-flex items-center rounded-mark text-accent-text hover:underline" [href]="project.githubRepoUrl" target="_blank" rel="noopener noreferrer">{{ i18n.t(copy.code) }}</a>
-                }
-                @if (project.demoVideoUrl) {
-                  <a class="ui-focus tap inline-flex items-center rounded-mark text-accent-text hover:underline" [href]="project.demoVideoUrl" target="_blank" rel="noopener noreferrer">Demo ↗</a>
-                }
-              </div>
-            </article>
-          } @empty {
-            @if (!catalog.error()) {
-              <p class="ui-card text-body-sm text-ink-2 md:col-span-6">{{ i18n.t(copy.noProjects) }}</p>
-            }
-          }
-
-          <!-- Cierra la fila: ocupa las columnas que queden libres. -->
-          <!-- Invitación al asistente: llena el hueco de la fila con contenido, no con aire. -->
-          <button type="button" class="ask-card bento-card ui-card-interactive group flex flex-col gap-5 text-left" [class]="askSpan()" (click)="chatOpen.set(true)">
-            <span class="flex items-center gap-3">
-              <span class="grid h-10 w-10 place-items-center rounded-control bg-accent-solid/15 text-accent-text" aria-hidden="true">
-                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l-3 3 3 3M16 9l3 3-3 3M13.5 6.5l-3 11" /></svg>
-              </span>
-              <span class="text-title-2 text-ink-1">{{ i18n.t(copy.askTitle) }}</span>
-            </span>
-            <span class="text-body-sm text-ink-2">{{ i18n.t(copy.askBody) }}</span>
-            <!-- Pregunta de ejemplo, como se vería en el chat. -->
-            <span class="flex items-center justify-between gap-3 rounded-control border border-line-subtle bg-surface-2 px-4 py-3 font-mono text-mono-sm text-ink-2 transition-colors duration-fast group-hover:border-accent-text/60">
-              <span class="min-w-0 truncate">{{ i18n.lang() === 'en' ? '› How does the cache-aside work?' : '› ¿Cómo funciona el cache-aside?' }}</span>
-              <span class="shrink-0 text-accent-text" aria-hidden="true">↵</span>
-            </span>
-          </button>
-        }
-      </div>
-    </section>
-
-    <section id="tecnologias" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="tecnologias-titulo">
-      <app-section-header headingId="tecnologias-titulo" [title]="i18n.t(copy.technologiesTitle)" [intro]="i18n.t(copy.technologiesIntro)" />
-
-      <div class="bento-grid">
-        @if (catalog.loading()) {
-          @for (skeleton of skeletons; track skeleton) {
-            <div class="h-36 animate-pulse rounded-card border border-line-subtle bg-surface-1 md:col-span-2" aria-hidden="true"></div>
-          }
-        } @else {
-          @for (group of catalog.technologyGroups(); track group.category; let index = $index) {
-            <article class="bento-card animate-slide-up md:col-span-2" [style.animation-delay.ms]="index * 60">
-              <h3 class="text-overline uppercase text-ink-3">{{ group.category }}</h3>
-              <ul class="mt-4 space-y-3">
-                @for (technology of group.technologies; track technology.id) {
-                  <li class="group flex items-center gap-3">
-                    @if (iconFor(technology.name); as icon) {
-                      @if (inspectable(technology.name); as tech) {
-                        <button
-                          type="button"
-                          class="ui-focus brand-glow rounded-mark transition duration-300 ease-spring hover:scale-110"
-                          [attr.aria-label]="i18n.t(copy.inspectTrace) + icon.title"
-                          (mouseenter)="inspector.select(tech)"
-                          (focus)="inspector.select(tech)"
-                          (click)="inspector.select(tech)"
-                        >
-                          <app-tech-icon [icon]="icon" [size]="24" />
-                        </button>
-                      } @else {
-                        <app-tech-icon class="brand-glow" [icon]="icon" [size]="24" />
-                      }
-                    } @else if (technology.iconUrl) {
-                      <img class="h-6 w-6 shrink-0" [src]="technology.iconUrl" alt="" loading="lazy" (error)="hideBrokenIcon($event)" />
-                    } @else {
-                      <span class="h-6 w-6 shrink-0 rounded-mark border border-line-subtle bg-surface-2" aria-hidden="true"></span>
-                    }
-                    <span class="min-w-0">
-                      <span class="block truncate text-body-sm font-medium text-ink-1">
-                        {{ technology.name }}
-                        @if (technology.isFeatured) {
-                          <span class="ui-badge ui-badge-accent ml-1 align-middle">{{ i18n.t(copy.featured) }}</span>
-                        }
-                      </span>
-                      <span class="block truncate text-caption font-normal text-ink-3">{{ technology.proficiencyLevel }}</span>
-                    </span>
-                  </li>
-                }
-              </ul>
-            </article>
-          } @empty {
-            @if (!catalog.error()) {
-              <p class="ui-card text-body-sm text-ink-2 md:col-span-6">{{ i18n.t(copy.noTechnologies) }}</p>
-            }
-          }
-        }
-      </div>
     </section>
 
     <!-- Lo que hay desplegado de verdad y cómo llega hasta ahí. Datos reales o etiquetados como planificados. -->
@@ -235,6 +110,142 @@
         <div class="bento-card flex min-h-[36rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.cloudLoading) }}</div>
       }
     </section>
+
+    <!-- Sale del CMS: sin proyectos publicados, la sección no se pinta (ni su enlace en la barra). -->
+    @if (catalog.loading() || catalog.projects().length) {
+      <section id="proyectos" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="proyectos-titulo">
+        <app-section-header headingId="proyectos-titulo" [title]="i18n.t(copy.projectsTitle)" [intro]="i18n.t(copy.projectsIntro)" />
+
+        <div class="bento-grid">
+          @if (catalog.loading()) {
+            @for (skeleton of skeletons; track skeleton) {
+              <div class="h-44 animate-pulse rounded-card border border-line-subtle bg-surface-1 md:col-span-2" aria-hidden="true"></div>
+            }
+          } @else {
+            @for (project of catalog.projects(); track project.id; let index = $index) {
+              <article
+                [id]="'proyecto-' + project.id"
+                class="bento-card flex animate-slide-up scroll-mt-24 flex-col"
+                [class]="index === 0 ? 'md:col-span-4' : 'md:col-span-2'"
+                [style.animation-delay.ms]="index * 60"
+              >
+                <h3 class="text-ink-1" [class]="index === 0 ? 'text-title-1-sm' : 'text-title-2'">
+                  {{ project.title }}
+                </h3>
+                <p class="mt-2 text-ink-2" [class]="index === 0 ? 'max-w-xl text-body' : 'text-body-sm'">{{ project.summary }}</p>
+
+                @if (project.metricsImpact) {
+                  <p class="mt-4 text-body-sm font-medium text-ink-1">{{ project.metricsImpact }}</p>
+                }
+
+                @if (project.technologiesUsed?.length) {
+                  <ul class="mt-4 flex flex-wrap gap-1.5" [attr.aria-label]="i18n.t(copy.technologiesUsed)">
+                    @for (id of project.technologiesUsed; track id) {
+                      <li class="ui-badge">
+                        @if (iconFor(catalog.technologyName(id)); as icon) {
+                          <app-tech-icon [icon]="icon" [size]="12" />
+                        }
+                        {{ catalog.technologyName(id) }}
+                      </li>
+                    }
+                  </ul>
+                }
+
+                <div class="mt-auto flex gap-4 pt-6 text-body-sm font-medium">
+                  @if (project.githubRepoUrl) {
+                    <a class="ui-focus tap inline-flex items-center rounded-mark text-accent-text hover:underline" [href]="project.githubRepoUrl" target="_blank" rel="noopener noreferrer">{{ i18n.t(copy.code) }}</a>
+                  }
+                  @if (project.demoVideoUrl) {
+                    <a class="ui-focus tap inline-flex items-center rounded-mark text-accent-text hover:underline" [href]="project.demoVideoUrl" target="_blank" rel="noopener noreferrer">Demo ↗</a>
+                  }
+                </div>
+              </article>
+            } @empty {
+              @if (!catalog.error()) {
+                <p class="ui-card text-body-sm text-ink-2 md:col-span-6">{{ i18n.t(copy.noProjects) }}</p>
+              }
+            }
+
+            <!-- Cierra la fila: ocupa las columnas que queden libres. -->
+            <!-- Invitación al asistente: llena el hueco de la fila con contenido, no con aire. -->
+            <button type="button" class="ask-card bento-card ui-card-interactive group flex flex-col gap-5 text-left" [class]="askSpan()" (click)="chatOpen.set(true)">
+              <span class="flex items-center gap-3">
+                <span class="grid h-10 w-10 place-items-center rounded-control bg-accent-solid/15 text-accent-text" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l-3 3 3 3M16 9l3 3-3 3M13.5 6.5l-3 11" /></svg>
+                </span>
+                <span class="text-title-2 text-ink-1">{{ i18n.t(copy.askTitle) }}</span>
+              </span>
+              <span class="text-body-sm text-ink-2">{{ i18n.t(copy.askBody) }}</span>
+              <!-- Pregunta de ejemplo, como se vería en el chat. -->
+              <span class="flex items-center justify-between gap-3 rounded-control border border-line-subtle bg-surface-2 px-4 py-3 font-mono text-mono-sm text-ink-2 transition-colors duration-fast group-hover:border-accent-text/60">
+                <span class="min-w-0 truncate">{{ i18n.lang() === 'en' ? '› How does the cache-aside work?' : '› ¿Cómo funciona el cache-aside?' }}</span>
+                <span class="shrink-0 text-accent-text" aria-hidden="true">↵</span>
+              </span>
+            </button>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Igual que Proyectos: solo con tecnologías publicadas. -->
+    @if (catalog.loading() || catalog.technologies().length) {
+      <section id="tecnologias" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="tecnologias-titulo">
+        <app-section-header headingId="tecnologias-titulo" [title]="i18n.t(copy.technologiesTitle)" [intro]="i18n.t(copy.technologiesIntro)" />
+
+        <div class="bento-grid">
+          @if (catalog.loading()) {
+            @for (skeleton of skeletons; track skeleton) {
+              <div class="h-36 animate-pulse rounded-card border border-line-subtle bg-surface-1 md:col-span-2" aria-hidden="true"></div>
+            }
+          } @else {
+            @for (group of catalog.technologyGroups(); track group.category; let index = $index) {
+              <article class="bento-card animate-slide-up md:col-span-2" [style.animation-delay.ms]="index * 60">
+                <h3 class="text-overline uppercase text-ink-3">{{ group.category }}</h3>
+                <ul class="mt-4 space-y-3">
+                  @for (technology of group.technologies; track technology.id) {
+                    <li class="group flex items-center gap-3">
+                      @if (iconFor(technology.name); as icon) {
+                        @if (inspectable(technology.name); as tech) {
+                          <button
+                            type="button"
+                            class="ui-focus brand-glow rounded-mark transition duration-300 ease-spring hover:scale-110"
+                            [attr.aria-label]="i18n.t(copy.inspectTrace) + icon.title"
+                            (mouseenter)="inspector.select(tech)"
+                            (focus)="inspector.select(tech)"
+                            (click)="inspector.select(tech)"
+                          >
+                            <app-tech-icon [icon]="icon" [size]="24" />
+                          </button>
+                        } @else {
+                          <app-tech-icon class="brand-glow" [icon]="icon" [size]="24" />
+                        }
+                      } @else if (technology.iconUrl) {
+                        <img class="h-6 w-6 shrink-0" [src]="technology.iconUrl" alt="" loading="lazy" (error)="hideBrokenIcon($event)" />
+                      } @else {
+                        <span class="h-6 w-6 shrink-0 rounded-mark border border-line-subtle bg-surface-2" aria-hidden="true"></span>
+                      }
+                      <span class="min-w-0">
+                        <span class="block truncate text-body-sm font-medium text-ink-1">
+                          {{ technology.name }}
+                          @if (technology.isFeatured) {
+                            <span class="ui-badge ui-badge-accent ml-1 align-middle">{{ i18n.t(copy.featured) }}</span>
+                          }
+                        </span>
+                        <span class="block truncate text-caption font-normal text-ink-3">{{ technology.proficiencyLevel }}</span>
+                      </span>
+                    </li>
+                  }
+                </ul>
+              </article>
+            } @empty {
+              @if (!catalog.error()) {
+                <p class="ui-card text-body-sm text-ink-2 md:col-span-6">{{ i18n.t(copy.noTechnologies) }}</p>
+              }
+            }
+          }
+        </div>
+      </section>
+    }
 
     @if (mcpSection()) {
       <section id="mcp" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="mcp-titulo">

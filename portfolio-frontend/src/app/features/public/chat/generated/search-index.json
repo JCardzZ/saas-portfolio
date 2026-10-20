@@ -7,20 +7,6 @@
     "target": "trayectoria"
   },
   {
-    "id": "seccion-proyectos",
-    "group": "secciones",
-    "title": "Proyectos",
-    "text": "Proyectos del portafolio",
-    "target": "proyectos"
-  },
-  {
-    "id": "seccion-tecnologias",
-    "group": "secciones",
-    "title": "Tecnologías",
-    "text": "Tecnologías y stack",
-    "target": "tecnologias"
-  },
-  {
     "id": "seccion-entrega",
     "group": "secciones",
     "title": "Entrega",
@@ -40,6 +26,20 @@
     "title": "Cloud",
     "text": "Estudio de arquitectura multi-cloud: AWS, Azure, Google Cloud, Terraform, FinOps y patrones de datos",
     "target": "cloud"
+  },
+  {
+    "id": "seccion-proyectos",
+    "group": "secciones",
+    "title": "Proyectos",
+    "text": "Proyectos del portafolio",
+    "target": "proyectos"
+  },
+  {
+    "id": "seccion-tecnologias",
+    "group": "secciones",
+    "title": "Tecnologías",
+    "text": "Tecnologías y stack",
+    "target": "tecnologias"
   },
   {
     "id": "seccion-articulos",
