@@ -10,7 +10,12 @@ import java.util.Optional;
 public interface CareerStoryPort {
 
     /** @return los hitos completos de la historia profesional, en el orden del documento; vacío si no hay documento */
-    List<CareerMilestoneDomain> loadMilestones();
+    default List<CareerMilestoneDomain> loadMilestones() {
+        return loadMilestones(CvLanguage.ES);
+    }
+
+    /** @return los hitos de la trayectoria en ese idioma; vacío si no existe ese documento */
+    List<CareerMilestoneDomain> loadMilestones(CvLanguage language);
 
     /**
      * @return el documento completo (hitos, casos de estudio y biografía) para indexarlo en RAG;

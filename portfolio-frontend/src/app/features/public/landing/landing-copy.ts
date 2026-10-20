@@ -10,6 +10,7 @@ export const LANDING_COPY = {
   },
   askAi: { en: 'Ask the AI', es: 'Preguntar a la IA' },
   seeProjects: { en: 'See projects', es: 'Ver proyectos' },
+  seeCareer: { en: 'See experience', es: 'Ver experiencia' },
   retry: { en: 'Retry', es: 'Reintentar' },
   platformTitle: { en: 'Architecture', es: 'Arquitectura' },
   platformIntro: {

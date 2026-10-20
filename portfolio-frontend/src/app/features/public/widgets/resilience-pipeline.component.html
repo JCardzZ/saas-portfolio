@@ -78,8 +78,8 @@
   </button>
 </div>
 
-<div class="mt-4 grid gap-3 sm:grid-cols-2" aria-live="polite">
-  <div class="rounded-panel border border-line-subtle bg-surface-2 p-3">
+<div class="mt-4 grid gap-x-6 gap-y-3 border-t border-line-subtle pt-3 sm:grid-cols-2" aria-live="polite">
+  <div class="min-w-0">
     <p class="font-mono text-xs text-ink-3">GET /public/projects</p>
     @if (redisDown()) {
       <p class="mt-1 animate-slide-up text-sm font-medium text-status-ok">200 OK · Fail-open</p>
@@ -90,11 +90,11 @@
     }
   </div>
 
-  <div class="min-w-0 rounded-panel border border-line-subtle bg-surface-2 p-3">
+  <div class="min-w-0">
     <p class="font-mono text-xs text-ink-3">POST /ai/rag/query</p>
     @if (geminiDown()) {
       <p class="mt-1 animate-slide-up text-sm font-medium text-status-danger">503 Service Unavailable · RFC 7807</p>
-      <pre class="mt-2 max-h-40 animate-slide-up overflow-auto rounded-panel border border-line-subtle bg-surface-2 p-2.5 font-mono text-xs leading-relaxed text-ink-2">{{ problem }}</pre>
+      <pre class="mt-2 max-h-40 animate-slide-up overflow-auto rounded-control bg-surface-2 p-2.5 font-mono text-xs leading-relaxed text-ink-2">{{ problem }}</pre>
     } @else {
       <p class="mt-1 animate-slide-up text-sm font-medium text-status-ok">{{ '200 OK · respuesta con citas' | t }}</p>
       <p class="animate-slide-up text-xs text-ink-2">{{ 'Circuito cerrado. Se abre con un 50 % de fallos del proveedor y reintenta a los 30 s.' | t }}</p>

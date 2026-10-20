@@ -52,7 +52,7 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
           <span class="text-ink-2">{{ 'Subred / zona de red' | t }}</span>
           <select class="field" [value]="node().zone" (change)="changed.emit({ zone: $any(value($event)) })">
             @for (zone of zones; track zone.id) {
-              <option [value]="zone.id" [selected]="zone.id === node().zone">{{ zone.name }}</option>
+              <option [value]="zone.id" [selected]="zone.id === node().zone">{{ zone.name | t }}</option>
             }
           </select>
         </label>
@@ -84,12 +84,12 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
               <li class="flex items-center gap-2 rounded-control bg-surface-2 px-2 py-1">
                 <span class="font-mono text-ink-3" aria-hidden="true">{{ link.outgoing ? '→' : '←' }}</span>
                 <span class="min-w-0 flex-1 truncate">
-                  <span class="sr-only">{{ link.outgoing ? ('Hacia' | t) : ('Desde' | t) }}</span> {{ link.label }}
+                  <span class="sr-only">{{ link.outgoing ? ('Hacia' | t) : ('Desde' | t) }}</span> {{ link.label | t }}
                 </span>
                 <select class="field !w-auto !py-0.5 text-xs" [attr.aria-label]="('Tipo de la conexión con ' | t) + link.label" (change)="onKind(link, $event)">
                   <option value="" [selected]="!link.kind">{{ 'Peticiones' | t }}</option>
                   @for (option of linkKinds; track option.kind) {
-                    <option [value]="option.kind" [selected]="link.kind === option.kind" [title]="option.hint">{{ option.name }}</option>
+                    <option [value]="option.kind" [selected]="link.kind === option.kind" [title]="option.hint">{{ option.name | t }}</option>
                   }
                 </select>
                 <button type="button" class="rounded-control px-1.5 text-ink-2 hover:text-ink-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-text" [attr.aria-label]="('Quitar la conexión con ' | t) + link.label" (click)="disconnected.emit({ from: link.from, to: link.to })">×</button>
@@ -103,7 +103,7 @@ const INSTANCE_HINTS: Record<CloudProviderId, string[]> = {
             <select id="connect-with" class="field" (change)="onConnect($event)">
               <option value="">{{ 'Conectar con…' | t }}</option>
               @for (target of targets(); track target.id) {
-                <option [value]="target.id">{{ target.label }}</option>
+                <option [value]="target.id">{{ target.label | t }}</option>
               }
             </select>
           }

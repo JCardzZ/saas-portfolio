@@ -31,8 +31,8 @@ public class MarkdownCareerStoryAdapter implements CareerStoryPort {
     private final CareerProperties properties;
 
     @Override
-    public List<CareerMilestoneDomain> loadMilestones() {
-        return read().map(CareerStoryParser::parse).orElseGet(List::of);
+    public List<CareerMilestoneDomain> loadMilestones(CvLanguage language) {
+        return loadStory(language).map(CareerStoryParser::parse).orElseGet(List::of);
     }
 
     @Override

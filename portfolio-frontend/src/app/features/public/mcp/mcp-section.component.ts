@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { MCPService, McpStatus } from '../../../core/api';
@@ -42,13 +43,13 @@ const REPLAY_STEP_MS = 900;
           }
         </div>
         <div id="mcp-client-panel" role="tabpanel" class="mt-3" [attr.aria-label]="client().name">
-          <p class="text-sm text-ink-2">{{ client().how }}</p>
-          <pre class="ui-focus mt-2 overflow-x-auto rounded-panel border border-line-subtle bg-surface-2 p-3 text-xs leading-relaxed text-ink-1" data-testid="mcp-copy-text" tabindex="0" [attr.aria-label]="'Orden para copiar' | t"><code>{{ client().copy }}</code></pre>
+          <p class="text-sm text-ink-2">{{ client().how | t }}</p>
+          <pre class="mt-2 overflow-x-auto rounded-panel border border-line-subtle bg-surface-2 p-3 text-xs leading-relaxed text-ink-1" data-testid="mcp-copy-text"><code>{{ client().copy }}</code></pre>
           <div class="mt-3 flex flex-wrap items-center gap-2">
             @if (client().link; as link) {
-              <a class="ui-btn-primary" [href]="safe(link.href)" data-testid="mcp-install-link">{{ link.label }}</a>
+              <a class="ui-btn-primary" [href]="safe(link.href)" data-testid="mcp-install-link">{{ link.label | t }}</a>
             }
-            <button type="button" class="ui-btn-secondary" (click)="copy(client())">{{ copied() === client().id ? ('Copiado' | t) : client().copyLabel }}</button>
+            <button type="button" class="ui-btn-secondary" (click)="copy(client())">{{ copied() === client().id ? ('Copiado' | t) : (client().copyLabel | t) }}</button>
           </div>
         </div>
       </section>
@@ -56,7 +57,7 @@ const REPLAY_STEP_MS = 900;
       <!-- Herramientas -->
       <section class="ui-card min-w-0" aria-labelledby="mcp-tools-title">
         <h3 id="mcp-tools-title" class="text-base font-semibold text-ink-1">
-          Herramientas
+          {{ 'Herramientas' | t }}
           @if (recorded()) { <span class="ml-1 ui-badge ui-badge-warn" data-testid="mcp-recorded">{{ 'Grabación' | t }}</span> }
         </h3>
         <p class="mt-1 text-sm text-ink-2">{{ 'Las que el servidor anuncia en' | t }} <code class="text-xs">tools/list</code>{{ '. Ninguna guarda ni aplica nada.' | t }}</p>
@@ -69,7 +70,7 @@ const REPLAY_STEP_MS = 900;
                   <span class="ui-badge" [class.ui-badge-accent]="tool.kind === 'generate'">{{ tool.kind === 'generate' ? ('Genera' | t) : ('Lectura' | t) }}</span>
                   @if (tool.version) { <span class="text-xs text-ink-3">v{{ tool.version }}</span> }
                 </p>
-                <p class="mt-0.5 text-xs leading-snug text-ink-2">{{ tool.title }}</p>
+                <p class="mt-0.5 text-xs leading-snug text-ink-2">{{ tool.title | t }}</p>
               </li>
             }
           </ul>
@@ -96,7 +97,7 @@ const REPLAY_STEP_MS = 900;
           </div>
           <div>
             <dt class="text-xs text-ink-3">{{ 'Latencia p95' | t }}</dt>
-            <dd class="mt-0.5 text-ink-1">{{ p95() }}</dd>
+            <dd class="mt-0.5 text-ink-1">{{ p95() | t }}</dd>
           </div>
           <div>
             <dt class="text-xs text-ink-3">{{ 'Límite por cliente' | t }}</dt>
@@ -121,7 +122,7 @@ const REPLAY_STEP_MS = 900;
             @for (call of activity(); track $index) {
               <li class="flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-control bg-surface-2 px-2 py-1">
                 <code class="text-ink-1">{{ call.tool }}</code>
-                <span [class]="call.outcome === 'ok' ? 'text-status-ok' : 'text-status-warn'">{{ call.outcome === 'ok' ? 'correcta' : outcomeLabel(call.outcome) }}</span>
+                <span [class]="call.outcome === 'ok' ? 'text-status-ok' : 'text-status-warn'">{{ (call.outcome === 'ok' ? 'correcta' : outcomeLabel(call.outcome)) | t }}</span>
                 <span class="text-ink-2">{{ call.latencyMs }} ms</span>
                 @if (call.time) { <span class="ml-auto text-ink-3">{{ call.time }}</span> }
               </li>
@@ -147,7 +148,7 @@ const REPLAY_STEP_MS = 900;
           }
         </div>
         @if (recording(); as session) {
-          <p class="mt-3 text-xs text-ink-3" aria-live="polite" data-testid="mcp-replay-progress">{{ shown() }} de {{ session.steps.length }} mensajes · protocolo {{ session.protocolVersion }}</p>
+          <p class="mt-3 text-xs text-ink-3" aria-live="polite" data-testid="mcp-replay-progress">{{ shown() }} {{ 'de' | t }} {{ session.steps.length }} {{ 'mensajes · protocolo' | t }} {{ session.protocolVersion }}</p>
           <ol class="mt-2 space-y-2" data-testid="mcp-replay">
             @for (step of visibleSteps(); track $index) {
               <li class="min-w-0 rounded-panel border border-line-subtle bg-surface-2">
@@ -155,7 +156,7 @@ const REPLAY_STEP_MS = 900;
                   <summary class="flex cursor-pointer flex-wrap items-center gap-2 px-3 py-2 text-xs">
                     <span class="ui-badge" [class.ui-badge-accent]="step.direction === 'request'">{{ step.direction === 'request' ? ('cliente →' | t) : ('← servidor' | t) }}</span>
                     <code class="text-ink-1">{{ methodOf(step) }}</code>
-                    <span class="text-ink-2">{{ step.label }}</span>
+                    <span class="text-ink-2">{{ step.label | t }}</span>
                     @if (step.ms !== undefined) { <span class="ml-auto text-ink-3">{{ step.ms }} ms</span> }
                   </summary>
                   <pre class="max-h-72 overflow-auto border-t border-line-subtle p-3 text-xs leading-relaxed text-ink-1"><code>{{ pretty(step) }}</code></pre>
@@ -173,19 +174,19 @@ const REPLAY_STEP_MS = 900;
         <h3 id="mcp-eval-title" class="text-base font-semibold text-ink-1">{{ 'Evaluaciones' | t }}</h3>
         @if (evaluation(); as report) {
           <p class="mt-1 text-sm text-ink-2" data-testid="mcp-eval">
-            <strong class="font-semibold text-ink-1">{{ report.passed }} de {{ report.total }}</strong> tareas resueltas
+            <strong class="font-semibold text-ink-1">{{ report.passed }} {{ 'de' | t }} {{ report.total }}</strong> {{ 'tareas resueltas' | t }}
             · {{ report.simulated ? ('modelo simulado y determinista' | t) : report.model }}
-            · {{ report.toolCalls }} llamadas a herramientas
+            · {{ report.toolCalls }} {{ 'llamadas a herramientas' | t }}
             · <time [attr.datetime]="report.generatedAt">{{ dateOf(report.generatedAt) }}</time>
           </p>
           <p class="mt-2 text-xs leading-snug text-ink-3">
-            Tareas sintéticas, sin datos de nadie, resueltas con un cliente MCP real contra el servidor. En cada cambio las resuelve un modelo simulado,
-            que comprueba el servidor; la evaluación con un modelo real es nocturna y @if (report.simulated) { todavía no se ha ejecutado } @else { es esta }.
-            El detalle está en <code>docs/mcp/README.md</code>{{ ', en el repositorio.' | t }}
+            {{ 'Tareas sintéticas, sin datos de nadie, resueltas con un cliente MCP real contra el servidor. En cada cambio las resuelve un modelo simulado, que comprueba el servidor; la evaluación con un modelo real es nocturna y' | t }}
+            {{ (report.simulated ? 'todavía no se ha ejecutado.' : 'es esta.') | t }}
+            {{ 'El detalle está en' | t }} <code>docs/mcp/README.md</code>{{ ', en el repositorio.' | t }}
           </p>
           <ul class="mt-3 flex flex-wrap gap-1.5" [attr.aria-label]="'Tareas por área' | t">
             @for (area of areas(); track area.name) {
-              <li class="ui-badge" [class.ui-badge-ok]="area.passed === area.total" [class.ui-badge-warn]="area.passed !== area.total">{{ area.name }} {{ area.passed }}/{{ area.total }}</li>
+              <li class="ui-badge" [class.ui-badge-ok]="area.passed === area.total" [class.ui-badge-warn]="area.passed !== area.total">{{ area.name | t }} {{ area.passed }}/{{ area.total }}</li>
             }
           </ul>
         } @else {
@@ -197,6 +198,7 @@ const REPLAY_STEP_MS = 900;
 })
 export class McpSectionComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly language = inject(LanguageService);
   private readonly api = inject(MCPService);
   private readonly events = inject(SystemEventsService);
   private readonly sanitizer = inject(DomSanitizer);
@@ -231,15 +233,17 @@ export class McpSectionComponent implements OnInit {
     if (!live) {
       return '—';
     }
-    return live.latency.p95Ms === undefined ? 'sin llamadas todavía' : `${Math.round(live.latency.p95Ms)} ms · ${live.latency.calls} llamadas`;
+    // Sin llamadas, el servidor da p95 = 0: eso no es una latencia, es que no hay datos.
+    return live.latency.p95Ms === undefined || !live.latency.calls ? 'sin llamadas todavía' : `${Math.round(live.latency.p95Ms)} ms · ${live.latency.calls} ${this.calls()}`;
   });
   readonly limit = computed(() => {
     const limits = this.status()?.limits;
-    return limits ? `${limits.perClient} llamadas cada ${limits.windowSeconds === 60 ? 'minuto' : limits.windowSeconds + ' s'}` : '—';
+    const en = this.language.lang() === 'en';
+    return limits ? `${limits.perClient} ${this.calls()} ${en ? 'per' : 'cada'} ${limits.windowSeconds === 60 ? (en ? 'minute' : 'minuto') : limits.windowSeconds + ' s'}` : '—';
   });
   readonly daily = computed(() => {
     const limits = this.status()?.limits;
-    return limits ? `${limits.dailyTotal.toLocaleString('es-ES')} llamadas` : '—';
+    return limits ? `${limits.dailyTotal.toLocaleString(this.language.lang() === 'en' ? 'en-US' : 'es-ES')} ${this.calls()}` : '—';
   });
 
   /** Llamadas que han llegado por el canal de telemetría mientras la página está abierta. */
@@ -321,6 +325,10 @@ export class McpSectionComponent implements OnInit {
     }
   }
 
+  private calls(): string {
+    return this.language.lang() === 'en' ? 'calls' : 'llamadas';
+  }
+
   outcomeLabel(outcome: string): string {
     return outcome === 'rate_limited' ? 'límite alcanzado' : outcome === 'invalid_input' ? 'entrada no válida' : 'error';
   }
@@ -340,7 +348,7 @@ export class McpSectionComponent implements OnInit {
 
   dateOf(iso: string): string {
     const date = new Date(iso);
-    return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString(this.language.lang() === 'en' ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
   }
 
   next(): void {

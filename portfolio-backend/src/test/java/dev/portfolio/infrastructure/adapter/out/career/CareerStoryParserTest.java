@@ -1,6 +1,7 @@
 package dev.portfolio.infrastructure.adapter.out.career;
 
 import dev.portfolio.domain.model.CareerMilestoneDomain;
+import dev.portfolio.domain.model.CvLanguage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -109,6 +110,24 @@ class CareerStoryParserTest {
         assertThat(milestones.get(2).technologies()).contains("IBM AS400", "IBM MQ Series", "Spring Batch");
         // Nada a medio rellenar ni datos de contacto en un documento que es público.
         assertThat(Files.readString(story)).doesNotContain("[COMPLETAR").doesNotContain("@");
+    }
+
+    @Test
+    void theEnglishTranslationPublishesTheSameMilestonesInEnglish() {
+        MarkdownCareerStoryAdapter adapter = new MarkdownCareerStoryAdapter(new CareerProperties("../docs/career/CAREER_STORY.md"));
+
+        List<CareerMilestoneDomain> spanish = adapter.loadMilestones(CvLanguage.ES);
+        List<CareerMilestoneDomain> english = adapter.loadMilestones(CvLanguage.EN);
+        // Mismos hitos, en el mismo orden: la traducción se mantiene a mano y este test lo vigila.
+        assertThat(english).hasSameSizeAs(spanish);
+        assertThat(english).extracting(CareerMilestoneDomain::period)
+                .containsExactly("2024 - present", "2023", "2022", "2020", "2019");
+        assertThat(english.get(0).role()).isEqualTo("Backend Developer");
+        assertThat(english.get(0).organization()).isEqualTo("PBS Consulting (project for BCR)");
+        for (int i = 0; i < english.size(); i++) {
+            assertThat(english.get(i).technologies()).as("tecnologías del hito %d", i).isEqualTo(spanish.get(i).technologies());
+            assertThat(english.get(i).summary()).as("resumen del hito %d", i).isNotBlank().isNotEqualTo(spanish.get(i).summary());
+        }
     }
 
     @Test

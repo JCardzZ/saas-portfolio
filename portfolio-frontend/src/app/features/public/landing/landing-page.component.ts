@@ -10,18 +10,13 @@ import { CareerTimelineComponent } from '../career/career-timeline.component';
 import { RagChatComponent } from '../chat/rag-chat.component';
 import { CloudInfraComponent } from '../cloud/cloud-infra.component';
 import { DataBlueprintsComponent } from '../cloud/data-blueprints.component';
+import { PlatformTabsComponent } from '../widgets/platform-tabs.component';
 import { DeliveryTabsComponent } from '../delivery/delivery-tabs.component';
 import { CatalogStore } from '../data/catalog.store';
 import { TraceInspectorService } from '../data/trace-inspector.service';
 import { PublicNavbarComponent } from '../navbar/public-navbar.component';
-import { ArchitectureCanvasComponent } from '../widgets/architecture-canvas.component';
-import { IngestionSandboxComponent } from '../widgets/ingestion-sandbox.component';
-import { MultiTenantShieldComponent } from '../widgets/multi-tenant-shield.component';
-import { ResiliencePipelineComponent } from '../widgets/resilience-pipeline.component';
 import { TraceInspectorComponent } from '../widgets/trace-inspector.component';
 import { CvDownloadComponent, CvPickerComponent } from '../../../shared/ui/cv-download.component';
-import { TelemetryMonitorComponent } from '../widgets/telemetry-monitor.component';
-import { VectorMatrixComponent } from '../widgets/vector-matrix.component';
 import { FlagService } from '../../../core/flags/flag.service';
 import { McpSectionComponent } from '../mcp/mcp-section.component';
 import { HERO_ROLE_PLACEHOLDER } from './hero-content';
@@ -48,15 +43,10 @@ import { ScrollBuddyComponent } from './scroll-buddy.component';
         CloudInfraComponent,
         DataBlueprintsComponent,
         DeliveryTabsComponent,
+        PlatformTabsComponent,
         TechIconComponent,
         IconPopLayerComponent,
-        ArchitectureCanvasComponent,
-        IngestionSandboxComponent,
-        MultiTenantShieldComponent,
-        ResiliencePipelineComponent,
         TraceInspectorComponent,
-        TelemetryMonitorComponent,
-        VectorMatrixComponent,
         McpSectionComponent,
     ],
     providers: [CatalogStore],

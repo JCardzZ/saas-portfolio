@@ -49,11 +49,11 @@
             <li>
               <button type="button" class="project-item" data-testid="system-template" (click)="loadSystemTemplate(entry.template)">
                 <span class="block font-medium text-ink-1">
-                  {{ entry.template.name }}
+                  {{ entry.template.name | t }}
                   <span class="ml-1 ui-badge ui-badge-warn">{{ fictionalLabel }}</span>
                 </span>
-                <span class="block text-xs text-ink-2">{{ entry.template.sector }} · {{ entry.template.summary }}</span>
-                <span class="mt-1 block text-xs text-ink-3">{{ entry.cloud }} · {{ entry.requirements }} · ≈ {{ entry.cost }}/mes (orientativo)</span>
+                <span class="block text-xs text-ink-2">{{ entry.template.sector }} · {{ entry.template.summary | t }}</span>
+                <span class="mt-1 block text-xs text-ink-3">{{ entry.cloud }} · {{ entry.requirements }} · ≈ {{ entry.cost }}{{ '/mes (orientativo)' | t }}</span>
                 <span class="mt-1 block text-xs leading-snug text-ink-2">
                   @for (decision of entry.template.decisions; track decision) {
                     <span class="block">· {{ decision }}</span>
@@ -68,12 +68,12 @@
           <li>
             <button type="button" class="project-item" (click)="loadPreset(preset)">
               <span class="block font-medium text-ink-1">
-                {{ preset.name }}
+                {{ preset.name | t }}
                 @if (preset.kind === 'saved') {
                   <span class="ml-1 rounded-full bg-surface-3 px-1.5 py-0.5 text-xs font-normal text-ink-2">{{ 'guardado' | t }}</span>
                 }
               </span>
-              <span class="block text-xs text-ink-2">{{ preset.summary }}</span>
+              <span class="block text-xs text-ink-2">{{ preset.summary | t }}</span>
             </button>
           </li>
         }
@@ -99,7 +99,7 @@
           <input id="cloud-title" type="text" maxlength="120" class="focus-ring mt-1 w-full rounded-control border border-line-strong bg-surface-2 px-2.5 py-1.5 text-sm text-ink-1" [value]="cloudTitle()" (input)="cloudTitle.set($any($event.target).value)" (keydown.enter)="saveToCloud(!cloudProject())" />
           <div class="mt-2 flex flex-wrap gap-2">
             @if (cloudProject(); as current) {
-              <button type="button" class="project-button" [disabled]="saving() || !cloudTitle().trim()" (click)="saveToCloud(false)">Actualizar «{{ current.title }}»</button>
+              <button type="button" class="project-button" [disabled]="saving() || !cloudTitle().trim()" (click)="saveToCloud(false)">Actualizar «{{ current.title | t }}»</button>
             }
             <button type="button" class="project-button" [disabled]="saving() || !cloudTitle().trim()" (click)="saveToCloud(true)">
               {{ saving() ? ('Guardando…' | t) : cloudProject() ? ('Guardar como nuevo' | t) : ('Guardar' | t) }}
@@ -226,7 +226,7 @@
       @if (menu() === 'zones') {
         <ul id="menu-zones" class="project-menu w-64">
           @for (kind of zoneKinds; track kind.kind) {
-            <li><button type="button" class="project-item font-medium text-ink-1" (click)="addZone(kind.kind)">{{ kind.name }}</button></li>
+            <li><button type="button" class="project-item font-medium text-ink-1" (click)="addZone(kind.kind)">{{ kind.name | t }}</button></li>
           }
         </ul>
       }
@@ -256,7 +256,7 @@
   </div>
 } @else {
   <p class="mt-3 text-sm text-ink-2">
-    {{ 'Cómo se desplegaría esta plataforma en' | t }} <span class="font-medium text-ink-1">{{ selected().name }}</span>{{ '. La forma es la misma en las tres nubes; cambia el servicio que cubre cada pieza.' | t }}
+    {{ 'Cómo se desplegaría esta plataforma en' | t }} <span class="font-medium text-ink-1">{{ selected().name | t }}</span>{{ '. La forma es la misma en las tres nubes; cambia el servicio que cubre cada pieza.' | t }}
   </p>
 }
 
@@ -273,8 +273,8 @@
           [title]="canRun(scenario) ? scenario.basis : ('Falta en el lienzo algún nodo que este escenario necesita' | t)"
           (click)="runChaos(scenario)"
         >
-          <span class="block text-[13px] font-medium text-ink-1">{{ scenario.name }}</span>
-          <span class="block text-xs text-ink-2">{{ scenario.summary }}</span>
+          <span class="block text-[13px] font-medium text-ink-1">{{ scenario.name | t }}</span>
+          <span class="block text-xs text-ink-2">{{ scenario.summary | t }}</span>
         </button>
       }
     </div>
@@ -345,9 +345,9 @@
           [attr.rx]="zone.kind === 'cloud' || zone.kind === 'region' ? 18 : zone.kind === 'vpc' ? 14 : 10"
         />
         @if (zone.kind === 'public' || zone.kind === 'private') {
-          <text class="zone-sub" [attr.x]="zone.x + zone.w / 2" [attr.y]="zone.y + 16" text-anchor="middle">{{ zoneLabelOf(zone) }}</text>
+          <text class="zone-sub" [attr.x]="zone.x + zone.w / 2" [attr.y]="zone.y + 16" text-anchor="middle">{{ zoneLabelOf(zone) | t }}</text>
         } @else {
-          <text class="zone-label" [attr.x]="zone.x + 16" [attr.y]="zone.y + 20">{{ zoneLabelOf(zone) }}</text>
+          <text class="zone-label" [attr.x]="zone.x + 16" [attr.y]="zone.y + 20">{{ zoneLabelOf(zone) | t }}</text>
         }
         @if (editing()) {
           <!-- Asas de edición: el rótulo mueve la zona (con lo que contiene) y la esquina la redimensiona. -->
@@ -412,7 +412,7 @@
           }
         }
         @if (wire.label ?? kindLabel(wire.kind); as label) {
-          <text class="wire-label" [attr.x]="wire.labelAt[0]" [attr.y]="wire.labelAt[1]" text-anchor="middle">{{ label }}</text>
+          <text class="wire-label" [attr.x]="wire.labelAt[0]" [attr.y]="wire.labelAt[1]" text-anchor="middle">{{ label | t }}</text>
         }
       }
 
@@ -459,9 +459,9 @@
           }
           @for (name of [serviceOf(node)]; track name) {
             <!-- Los nombres oficiales de OCI son largos («OCI Database with PostgreSQL»): se ajustan al ancho del nodo. -->
-            <text class="node-service" [attr.x]="node.x" [attr.y]="node.y + (iconOf(node) ? 7 : -1)" text-anchor="middle" [attr.textLength]="selectedId() === 'oci' && name.length > 19 ? width - 10 : null" [attr.lengthAdjust]="selectedId() === 'oci' && name.length > 19 ? 'spacingAndGlyphs' : null">{{ name }}</text>
+            <text class="node-service" [attr.x]="node.x" [attr.y]="node.y + (iconOf(node) ? 7 : -1)" text-anchor="middle" [attr.textLength]="selectedId() === 'oci' && name.length > 19 ? width - 10 : null" [attr.lengthAdjust]="selectedId() === 'oci' && name.length > 19 ? 'spacingAndGlyphs' : null">{{ name | t }}</text>
           }
-          <text class="node-role" [attr.x]="node.x" [attr.y]="node.y + (iconOf(node) ? 22 : 15)" text-anchor="middle">{{ node.role }}</text>
+          <text class="node-role" [attr.x]="node.x" [attr.y]="node.y + (iconOf(node) ? 22 : 15)" text-anchor="middle">{{ node.role | t }}</text>
         </g>
 
         @if (nodeCosts().get(node.id); as price) {
@@ -486,7 +486,7 @@
           <!-- Estado del nodo durante la simulación (circuit breaker, fail-open, failover...). -->
           <g class="chaos-badge" [attr.data-level]="state.level" aria-hidden="true">
             <rect [attr.x]="node.x - (state.label.length * 5.6 + 14) / 2" [attr.y]="node.y - height / 2 - 15" [attr.width]="state.label.length * 5.6 + 14" height="16" rx="8" />
-            <text [attr.x]="node.x" [attr.y]="node.y - height / 2 - 3.5" text-anchor="middle">{{ state.label }}</text>
+            <text [attr.x]="node.x" [attr.y]="node.y - height / 2 - 3.5" text-anchor="middle">{{ state.label | t }}</text>
           </g>
         }
 
@@ -574,7 +574,7 @@
       [style.left.px]="tip.x"
       [style.top.px]="tip.y"
     >
-      <p class="text-body-sm font-medium text-ink-1">{{ tip.name }}</p>
+      <p class="text-body-sm font-medium text-ink-1">{{ tip.name | t }}</p>
       <p class="text-caption font-normal text-ink-2">{{ tip.what }}</p>
     </div>
   }
@@ -656,7 +656,7 @@
   @if (active(); as node) {
     <p class="text-sm font-medium text-ink-1">{{ serviceOf(node) }}</p>
     @for (why of [node.why]; track why + selectedId()) {
-      <p class="animate-slide-up text-sm text-ink-2">{{ why }}</p>
+      <p class="animate-slide-up text-sm text-ink-2">{{ why | t }}</p>
     }
     <button type="button" class="ui-btn-ghost" data-info-open aria-haspopup="dialog" [attr.aria-expanded]="infoId() === node.id" (click)="infoId() === node.id ? closeInfo(false) : openInfo(node)">{{ 'Ver ficha' | t }}</button>
   }
@@ -673,7 +673,7 @@
         [attr.aria-checked]="profile.id === trafficMode()"
         (click)="setTraffic(profile.id)"
       >
-        {{ profile.name }} <span class="font-normal text-ink-3">({{ profile.hint }})</span>
+        {{ profile.name | t }} <span class="font-normal text-ink-3">({{ profile.hint | t }})</span>
       </button>
     }
   </div>
@@ -701,7 +701,7 @@
 @if (codeOpen()) {
   <section id="main-tf-panel" class="mt-3 animate-slide-up overflow-hidden rounded-panel border border-line-subtle bg-surface-2" [attr.aria-label]="'Código Terraform generado' | t">
     <header class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line-subtle px-3 py-2">
-      <p class="font-mono text-xs text-ink-1">main.tf <span class="text-ink-3">· {{ selected().name }} · se regenera con cada cambio</span></p>
+      <p class="font-mono text-xs text-ink-1">main.tf <span class="text-ink-3">· {{ selected().name | t }} · se regenera con cada cambio</span></p>
       <ul class="flex flex-1 flex-wrap gap-1.5" [attr.aria-label]="'Validación de seguridad' | t">
         @for (finding of findings(); track finding.check) {
           <li

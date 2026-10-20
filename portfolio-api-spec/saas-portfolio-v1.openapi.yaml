@@ -771,7 +771,15 @@ paths:
     get:
       tags: [Public Catalog & Showcases]
       summary: Fetch career timeline milestones
-      description: Milestones in the order they appear in the career story document, most recent first.
+      description: >
+        Milestones in the order they appear in the career story document, most recent first.
+        `en` reads the English translation of the same document; if it has no milestones, the
+        Spanish ones are returned so the timeline is never empty because of a missing translation.
+      parameters:
+        - name: lang
+          in: query
+          description: Language of the milestones.
+          schema: { type: string, enum: [es, en], default: es }
       responses:
         '200':
           description: Career milestones fetched successfully.

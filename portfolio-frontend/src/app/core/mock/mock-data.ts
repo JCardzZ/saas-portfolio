@@ -87,6 +87,49 @@ export const MOCK_CAREER: CareerMilestone[] = [
   },
 ];
 
+/** Los mismos hitos en inglés, de `docs/career/CAREER_STORY.en.md` (`?lang=en`). */
+export const MOCK_CAREER_EN: CareerMilestone[] = [
+  {
+    period: '2024 - present',
+    title: 'Modernisation of BCR services',
+    role: 'Backend Developer',
+    organization: 'PBS Consulting (project for BCR)',
+    technologies: ['Java', 'Spring Boot', 'PostgreSQL', 'AWS', 'Azure AKS', 'OAuth2', 'JWT'],
+    summary: 'Microservices and the backend of strategic BCR projects: modernising services, deploying them on Azure AKS and securing the APIs with OAuth2 and JWT.',
+  },
+  {
+    period: '2023',
+    title: 'Systems and Computer Engineering degree',
+    organization: 'Universidad Dr. Andrés Bello, Chalatenango',
+    technologies: [],
+    summary: 'Degree in Systems and Computer Engineering, already working on banking projects during my studies.',
+  },
+  {
+    period: '2022',
+    title: 'Integrating the AS400 core banking system with REST and SOAP services',
+    role: 'Java Broker Developer',
+    organization: 'Banco Agrícola',
+    technologies: ['Java', 'Spring Boot', 'IBM AS400', 'COBOL', 'IBM MQ Series', 'Spring Batch', 'Azure Functions', 'AWS Lambda', 'AWS SQS', 'Prometheus', 'ELK'],
+    summary: 'REST and SOAP services integrated with the broker and the core on IBM AS400, messaging with MQ queues and serverless components in the cloud.',
+  },
+  {
+    period: '2020',
+    title: 'Decoupling the decision engine from Colombia to El Salvador',
+    role: 'Backend Developer',
+    organization: 'Banco Davivienda',
+    technologies: ['Java', 'Spring Boot', 'Oracle', 'Apache Kafka', 'RabbitMQ', 'Docker', 'Kubernetes'],
+    summary: 'Backend development on the project, with Spring Boot services on Oracle, messaging with Kafka and RabbitMQ, and container-based deployment.',
+  },
+  {
+    period: '2019',
+    title: 'Integration of the voting system',
+    role: 'Technical Facilitator',
+    organization: 'Tribunal Supremo Electoral (Supreme Electoral Tribunal of El Salvador)',
+    technologies: ['Java', 'AWS', 'Azure', 'Angular', 'React'],
+    summary: 'Integration of the voting system and technical training for its users, with attention to cybersecurity and anti-DDoS protection.',
+  },
+];
+
 /**
  * Artículos de ejemplo del modo demo. Describen cosas que este proyecto hace de verdad,
  * para que el hub se vea con contenido creíble; los reales se publican desde el panel admin.
