@@ -402,6 +402,14 @@ test.describe('paleta de comandos en escritorio', () => {
 });
 
 test.describe('pestañas de entrega', () => {
+  test('un enlace a una pestaña lleva a Entrega y la abre, aunque la sección aún no se haya cargado', async ({ page }) => {
+    await page.route(/^https:\/\/api\.example\.com\//, (route) => route.abort());
+    await page.route(/^https:\/\/raw\.githubusercontent\.com\//, (route) => route.abort());
+    await page.goto('/#entrega-pipeline');
+    await expect(page.locator('[data-delivery-tab="pipeline"]')).toHaveAttribute('aria-selected', 'true', { timeout: 15_000 });
+    await expect(page.locator('#panel-pipeline')).toBeInViewport();
+  });
+
   test('el foco por hover adelanta la tarjeta de la pestaña abierta por encima del velo', async ({ page }) => {
     await openDelivery(page, 'pipeline');
     const card = page.locator('app-pipeline-view');
