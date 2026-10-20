@@ -1004,6 +1004,7 @@ export const EN: Readonly<Record<string, string>> = {
   'Estructura del workflow · sin datos publicados de su última ejecución': 'Workflow structure · no published data from its last run',
   'Cargando la última ejecución…': 'Loading the last run…',
   'Modo demo: sin API no hay cifras reales que enseñar.': 'Demo mode: with no API there are no real figures to show.',
+  'Datos en vivo': 'Live data',
   'Vistas de la arquitectura': 'Architecture views',
   'Diagrama C4': 'C4 diagram',
   'Ingesta RAG': 'RAG ingestion',

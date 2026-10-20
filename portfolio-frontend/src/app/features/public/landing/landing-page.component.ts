@@ -73,6 +73,13 @@ export class LandingPageComponent implements OnInit {
     const destroyRef = inject(DestroyRef);
     // Se carga aparte: no pesa en el arranque.
     afterNextRender(() => void import('./smooth-scroll').then(({ startSmoothScroll }) => destroyRef.onDestroy(startSmoothScroll())));
+    // Un enlace a una pestaña de Entrega (#entrega-pipeline…) no tiene ancla al cargar: la sección se
+    // monta al verse. Se lleva la página a Entrega; al montarse, las pestañas leen el ancla y la abren.
+    afterNextRender(() => {
+      if (/^#entrega-[a-z]+$/.test(location.hash)) {
+        document.getElementById('entrega')?.scrollIntoView({ block: 'start' });
+      }
+    });
     return true;
   })();
   private readonly chat = viewChild(RagChatComponent);
