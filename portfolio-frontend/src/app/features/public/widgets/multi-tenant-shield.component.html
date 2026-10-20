@@ -6,7 +6,7 @@
 
 <!-- Sin sitio para el esquema en horizontal (620 px): los dos clientes arriba, su filtro debajo y la tabla al final, a todo el ancho. -->
 <div class="theater-stage mt-3" appContainerWidth>
-  <svg [attr.viewBox]="'0 0 ' + geo().width + ' ' + geo().height" class="block w-full" [attr.data-layout]="geo().vertical ? 'vertical' : 'horizontal'" role="img" [attr.aria-label]="('Dos tenants consultan la misma tabla de vectores. ' | t) + (filterOff() ? ('Sin filtro, ' | t) + leaks() + (' resultados pertenecen a otro tenant.' | t) : ('Con el filtro por tenant_id, cada uno solo alcanza sus propios vectores.' | t))">
+  <svg [attr.viewBox]="'0 0 ' + geo().width + ' ' + geo().height" class="block w-full" [attr.data-layout]="geo().vertical ? 'vertical' : 'horizontal'" role="group" [attr.aria-label]="('Dos tenants consultan la misma tabla de vectores. ' | t) + (filterOff() ? ('Sin filtro, ' | t) + leaks() + (' resultados pertenecen a otro tenant.' | t) : ('Con el filtro por tenant_id, cada uno solo alcanza sus propios vectores.' | t))">
     <rect [attr.x]="geo().table.x" [attr.y]="geo().table.y" [attr.width]="geo().table.w" [attr.height]="geo().table.h" rx="22" fill="rgb(var(--c-ink-1) / 0.03)" stroke="rgb(var(--c-ink-1) / 0.14)" />
     <g class="database" tabindex="0" role="button" [attr.aria-label]="'Inspeccionar la traza de PostgreSQL' | t" [style.--brand]="postgresql.color" (mouseenter)="inspectDatabase($event)" (mouseleave)="leaveDatabase($event)" (focus)="inspectDatabase()" (click)="inspectDatabase($event)">
       <!-- Zona que responde al toque: el rótulo solo mide 13 de alto. -->

@@ -54,8 +54,9 @@ import type { GalaxyPalette, GalaxyScene } from './galaxy-scene';
     </svg>
   `,
   styles: `
-    .doodles { opacity: 0.15; }
-    :host-context([data-theme='light']) .doodles { opacity: 0.07; }
+    /* Textura, no dibujo: a 0,15 los iconos competían con el contenido de cada tarjeta. */
+    .doodles { opacity: 0.06; }
+    :host-context([data-theme='light']) .doodles { opacity: 0.035; }
   `,
 })
 export class GalaxyBackdropComponent {

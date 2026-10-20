@@ -97,7 +97,7 @@ const SUGGESTIONS = ['¿Cómo hago esta arquitectura más resiliente?', 'Optimiz
                       [disabled]="recommendation.applied !== null"
                       (click)="apply(exchange.id, recommendation)"
                     >
-                      {{ recommendation.applied === null ? ('✨ Aplicar cambios al lienzo' | t) : ('Aplicado · ' | t) + recommendation.applied + (recommendation.applied === 1 ? (' pieza' | t) : (' piezas' | t)) }}
+                      {{ recommendation.applied === null ? ('Aplicar cambios al lienzo' | t) : ('Aplicado · ' | t) + recommendation.applied + (recommendation.applied === 1 ? (' pieza' | t) : (' piezas' | t)) }}
                     </button>
                   }
                 </div>

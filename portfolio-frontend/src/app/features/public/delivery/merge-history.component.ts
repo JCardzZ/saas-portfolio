@@ -83,7 +83,8 @@ interface Row {
         <span>{{ 'Rama y mensaje' | t }}</span><span class="text-center">CI</span>
         <span class="col-meta">{{ 'Autor' | t }}</span><span class="col-meta">{{ 'Fecha' | t }}</span><span class="col-meta">Commit</span>
       </div>
-      <ol class="commit-log" [class.has-path]="!!path()" [attr.aria-label]="'Historial de main, del commit más reciente al más antiguo' | t" data-testid="commit-graph">
+      <!-- Sin semántica de lista: las opciones son hijas directas del listbox (ARIA). -->
+      <ol class="commit-log" role="none" [class.has-path]="!!path()" data-testid="commit-graph">
         @for (row of g.rows; track row.commit.sha; let first = $first; let r = $index) {
           <li class="commit-row" [id]="'c-' + row.commit.sha" (mouseenter)="hoverSha.set(row.commit.sha)" (mouseleave)="hoverSha.set(null)" role="option" [attr.aria-selected]="row.commit.sha === activeSha()"
             [class.active]="row.commit.sha === activeSha()" [class.is-merge]="row.merge" [class.dimmed]="filtering() && !matches(row.commit)" [style.height.px]="rowHeight()">
@@ -97,8 +98,8 @@ interface Row {
               <circle [attr.cx]="laneX(row.lane)" [attr.cy]="rowHeight() / 2" [attr.r]="row.merge ? 3 : 3.5" class="dot" [class.hl]="litDot(r, row.lane)"
                 [attr.fill]="row.merge ? 'var(--bg-surface-1)' : laneColor(row.lane)" [attr.stroke]="laneColor(row.lane)" />
             </svg>
-            <button type="button" class="log-cells" tabindex="-1" [attr.data-commit]="row.commit.sha" [attr.data-merge]="prOf(row.commit)?.number ?? null"
-              [attr.aria-pressed]="row.commit.sha === activeSha()" (click)="pickCommit(row.commit.sha)">
+            <!-- La fila es la opción; el teclado lo lleva el listbox. Un botón aquí sería un control dentro de otro. -->
+            <div class="log-cells" [attr.data-commit]="row.commit.sha" [attr.data-merge]="prOf(row.commit)?.number ?? null" (click)="pickCommit(row.commit.sha)">
               <span class="subject">
                 @if (first) {
                   <span class="ref ref-head"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2.5h7l3 3-3 3H3z" fill="currentColor" /></svg>main</span>
@@ -119,7 +120,7 @@ interface Row {
               <span class="col-meta author">{{ row.commit.author }}</span>
               <span class="col-meta date">{{ when(row.commit.date) }}</span>
               <code class="col-meta hash">{{ row.commit.sha.slice(0, 7) }}</code>
-            </button>
+            </div>
           </li>
         }
       </ol>
@@ -319,7 +320,7 @@ interface Row {
     .commit-row.active { background: color-mix(in srgb, var(--accent-text) 24%, var(--bg-surface-2)); }
     .commit-row.active .title, .commit-row.active .title.muted { color: var(--text-1); }
     .log-panel:focus-visible .commit-row.active { box-shadow: inset 2px 0 0 var(--accent-text); }
-    .commit-row .log-cells { min-height: 0; height: 100%; padding-top: 0; padding-bottom: 0; }
+    .commit-row .log-cells { min-height: 0; height: 100%; padding-top: 0; padding-bottom: 0; cursor: pointer; }
     /* Una sola línea por commit, como en el IDE: la etiqueta y el mensaje se recortan, nunca saltan. */
     .commit-row .subject { flex-wrap: nowrap; overflow: hidden; }
     .commit-row .ref { flex: 0 1 auto; min-width: 2.5rem; max-width: 11rem; }

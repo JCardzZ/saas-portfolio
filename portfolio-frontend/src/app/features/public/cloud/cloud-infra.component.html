@@ -683,8 +683,8 @@
       @if (activeFault()) {
         <button type="button" class="project-button" (click)="clearFault(node.id, true)">Restaurar {{ serviceOf(node) }}</button>
       } @else {
-        <button type="button" class="project-button" (click)="injectFault(node, 'down')">{{ '💥 Tumbar servicio' | t }}</button>
-        <button type="button" class="project-button" (click)="injectFault(node, 'cpu')">{{ '⚡ Cargar 100 % CPU' | t }}</button>
+        <button type="button" class="project-button" (click)="injectFault(node, 'down')">{{ 'Tumbar servicio' | t }}</button>
+        <button type="button" class="project-button" (click)="injectFault(node, 'cpu')">{{ 'Cargar 100 % CPU' | t }}</button>
       }
     </div>
   }

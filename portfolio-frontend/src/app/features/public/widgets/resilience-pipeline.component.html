@@ -9,7 +9,7 @@
 
 <!-- Sin sitio para el recorrido en horizontal (620 px), las mismas etapas bajan en vertical, a todo el ancho. -->
 <div class="theater-stage mt-3" appContainerWidth>
-  <svg [attr.viewBox]="'0 0 ' + geo().width + ' ' + geo().height" class="block w-full" [attr.data-layout]="geo().vertical ? 'vertical' : 'horizontal'" role="img" [attr.aria-label]="('Recorrido de una petición. Redis ' | t) + (redisDown() ? ('caído: se sirve desde PostgreSQL' | t) : 'operativo') + ('. Circuito de Gemini ' | t) + (geminiDown() ? ('abierto: responde 503' | t) : 'cerrado') + '.'">
+  <svg [attr.viewBox]="'0 0 ' + geo().width + ' ' + geo().height" class="block w-full" [attr.data-layout]="geo().vertical ? 'vertical' : 'horizontal'" role="group" [attr.aria-label]="('Recorrido de una petición. Redis ' | t) + (redisDown() ? ('caído: se sirve desde PostgreSQL' | t) : ('operativo' | t)) + ('. Circuito de Gemini ' | t) + (geminiDown() ? ('abierto: responde 503' | t) : ('cerrado' | t)) + '.'">
     <!-- Desvío fail-open: solo se enciende cuando Redis no responde. -->
     <path class="pipe pipe-bypass" [class.pipe-bypass-on]="redisDown()" [attr.d]="geo().bypass" />
     <path class="pulse pulse-bypass" [class.pulse-hidden]="!redisDown()" [attr.d]="geo().bypass" pathLength="100" />
