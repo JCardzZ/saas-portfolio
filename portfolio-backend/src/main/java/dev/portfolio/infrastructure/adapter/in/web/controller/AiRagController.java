@@ -19,8 +19,6 @@ import dev.portfolio.model.AIQueryRequest;
 import dev.portfolio.model.AIQueryResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -34,7 +32,6 @@ public class AiRagController implements AppliedAiRagApi {
     private final RagWebMapper mapper;
     private final TenantResolver tenantResolver;
     private final HttpServletRequest request;
-    private final TaskExecutor taskExecutor;
     private final ObjectProvider<FeatureFlagUseCase> flags;
 
     public AiRagController(RAGUseCase ragUseCase,
@@ -43,7 +40,6 @@ public class AiRagController implements AppliedAiRagApi {
                            RagWebMapper mapper,
                            TenantResolver tenantResolver,
                            HttpServletRequest request,
-                           @Qualifier("applicationTaskExecutor") TaskExecutor taskExecutor,
                            ObjectProvider<FeatureFlagUseCase> flags) {
         this.flags = flags;
         this.ragUseCase = ragUseCase;
@@ -52,7 +48,6 @@ public class AiRagController implements AppliedAiRagApi {
         this.mapper = mapper;
         this.tenantResolver = tenantResolver;
         this.request = request;
-        this.taskExecutor = taskExecutor;
     }
 
     @Override
@@ -79,20 +74,13 @@ public class AiRagController implements AppliedAiRagApi {
                         .toList()));
     }
 
-    // El contrato responde 202: la reindexación tarda y sigue en segundo plano.
+    // Termina dentro de la petición: en Cloud Run (CPU solo durante la petición) un trabajo que siguiera
+    // tras responder se quedaría sin CPU y no acabaría nunca. Si falla, el error llega al administrador.
     @Override
     public ResponseEntity<Void> adminAiRagReindexPost() {
         String tenantId = tenantResolver.currentTenantId();
-        taskExecutor.execute(() -> reindex(tenantId));
+        int fragments = ragIndexingUseCase.reindex(tenantId);
+        log.info("RAG reindex finished for tenant '{}': {} fragments", tenantId, fragments);
         return ResponseEntity.accepted().build();
-    }
-
-    private void reindex(String tenantId) {
-        try {
-            int fragments = ragIndexingUseCase.reindex(tenantId);
-            log.info("RAG reindex finished for tenant '{}': {} fragments", tenantId, fragments);
-        } catch (RuntimeException e) {
-            log.error("RAG reindex failed for tenant '{}': {}", tenantId, e.getMessage(), e);
-        }
     }
 }

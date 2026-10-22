@@ -27,12 +27,8 @@ import dev.portfolio.application.port.out.TelemetryPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.task.SyncTaskExecutor;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
@@ -60,22 +56,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         ProblemDetailSecurityHandler.class,
         ProblemDetailFactory.class,
         RagWebMapperImpl.class,
-        TenantResolver.class,
-        AiRagApiTest.SyncExecutorConfig.class
+        TenantResolver.class
 })
 @TestPropertySource(properties = "security.jwt.secret=" + AiRagApiTest.SECRET)
 class AiRagApiTest {
 
     static final String SECRET = "dGVzdC1vbmx5LWhtYWMta2V5LTAxMjM0NTY3ODlhYmNkZWY=";
-
-    // Ejecuta la reindexación en el mismo hilo para poder verificarla sin esperas.
-    @TestConfiguration
-    static class SyncExecutorConfig {
-        @Bean("applicationTaskExecutor")
-        TaskExecutor applicationTaskExecutor() {
-            return new SyncTaskExecutor();
-        }
-    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -204,11 +190,12 @@ class AiRagApiTest {
     }
 
     @Test
-    void reindexFailureInBackgroundDoesNotBreakTheResponse() throws Exception {
+    void reindexFailureReachesTheAdministrator() throws Exception {
         given(ragIndexingUseCase.reindex(any())).willThrow(new AiServiceUnavailableException("caído"));
 
         mockMvc.perform(post("/admin/ai/rag/reindex").header(HttpHeaders.AUTHORIZATION, bearer("ROLE_ADMIN")))
-                .andExpect(status().isAccepted());
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("SERVICE_UNAVAILABLE"));
     }
 
     private ResultActions ask(String body) throws Exception {
