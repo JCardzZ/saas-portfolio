@@ -178,7 +178,10 @@ test.describe('página pública en móviles y tabletas', () => {
         // Un fondo decorativo fijo con z-index negativo (la galaxia) queda detrás de todo y no recibe
         // clics: no tapa nada.
         const behind = Number(getComputedStyle(element).zIndex) < 0;
-        return (position === 'fixed' || position === 'sticky') && visible(element) && !behind;
+        // El bocadillo del robot sigue al hero y se oculta al salir de él (asíncrono: este recorrido
+        // desplaza la página de golpe y no le da tiempo). Lo comprueba hero-bubble.e2e.ts.
+        const followsHero = element.closest('[data-hero-overlay]') !== null;
+        return (position === 'fixed' || position === 'sticky') && visible(element) && !behind && !followsHero;
       });
       const label = (element: Element): string =>
         `<${element.tagName.toLowerCase()}> "${(element.getAttribute('aria-label') ?? element.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40)}"`;
@@ -191,7 +194,8 @@ test.describe('página pública en móviles y tabletas', () => {
 
       const problems: string[] = [];
       for (const control of document.querySelectorAll(selector)) {
-        if (!visible(control) || pinned.some((element) => element.contains(control))) {
+        // La zona pulsable del robot ocupa todo el hero: no es un control que una barra pueda «tapar».
+        if (!visible(control) || pinned.some((element) => element.contains(control)) || control.closest('[data-hero-overlay]')) {
           continue;
         }
         // Al centro de la pantalla si se puede; los del principio y el final de la página se quedan

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, Injector, afterNextRender, computed, effect, inject, signal, viewChild,
 } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { capturePointer } from '../../../shared/ui/pointer-capture';
 
 import { runtimeConfig } from '../../../core/config/runtime-config';
@@ -74,7 +75,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
  */
 @Component({
     selector: 'app-trace-inspector',
-    imports: [TechIconComponent, DemoNoticeComponent],
+    imports: [TranslatePipe, TechIconComponent, DemoNoticeComponent],
     template: `
     @if (icon(); as icon) {
       @if (layout() === 'pill') {
@@ -82,11 +83,11 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
           <button
             type="button"
             class="ui-focus flex min-w-0 items-center gap-2 rounded-control py-1.5 pl-3 pr-2 font-mono text-mono-sm text-ink-1 transition-colors duration-fast hover:bg-surface-3"
-            [attr.aria-label]="'Desplegar el inspector de traza de ' + title() + ', ' + countLabel()"
+            [attr.aria-label]="('Desplegar el inspector de traza de ' | t) + title() + ', ' + countLabel()"
             (click)="restoreWindow()"
           >
             <app-tech-icon [icon]="icon" [size]="14" />
-            Inspector de traza · {{ title() }}
+            {{ 'Inspector de traza' | t }} · {{ title() }}
             <span class="tabular-nums text-ink-2">({{ countLabel() }})</span>
           </button>
           @if (demo) {
@@ -111,7 +112,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
           [style.left.px]="layout() === 'floating' ? position().x : null"
           [style.top.px]="layout() === 'floating' ? position().y : null"
           role="region"
-          [attr.aria-label]="'Inspector de traza en vivo de ' + title()"
+          [attr.aria-label]="('Inspector de traza en vivo de ' | t) + title()"
         >
           @if (layout() === 'bottom') {
             <!-- Franja para redimensionar, como el borde de un panel de un IDE. -->
@@ -149,15 +150,15 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
               <button
                 type="button"
                 class="focus-ring"
-                [attr.aria-label]="maximized() ? 'Restaurar la altura del inspector' : 'Maximizar el inspector'"
+                [attr.aria-label]="(maximized() ? 'Restaurar la altura del inspector' : 'Maximizar el inspector') | t"
                 [attr.aria-pressed]="maximized()"
-                [title]="maximized() ? 'Restaurar' : 'Maximizar'"
+                [title]="(maximized() ? 'Restaurar' : 'Maximizar') | t"
                 (click)="toggleMaximized()"
               ><span class="traffic-maximize"></span></button>
             </div>
             <app-tech-icon class="ml-1" [icon]="icon" [size]="14" />
             <h3 class="min-w-0 flex-1 truncate font-mono text-mono-sm font-normal text-ink-1">
-              {{ layout() === 'right' ? 'Traza' : 'Inspector de traza' }} · {{ title() }}
+              {{ (layout() === 'right' ? 'Traza' : 'Inspector de traza') | t }} · {{ title() }}
               <span class="text-ink-2">— {{ inspector.graphView() ? 'lienzo' : live() ? 'en vivo' : 'simulación' }}</span>
             </h3>
             @if (demo) {
@@ -170,7 +171,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
               [attr.aria-pressed]="inspector.graphView()"
               title="Filtro Grafo: diff del JSON del lienzo"
               (click)="inspector.selectGraph()"
-            >Grafo</button>
+            >{{ 'Grafo' | t }}</button>
 
             @if (layout() === 'floating') {
               <button
@@ -199,16 +200,16 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
             </div>
           </header>
 
-          <div #log class="min-h-0 flex-1 overflow-y-auto px-3 py-2.5 font-mono text-mono" role="log" aria-live="off" tabindex="0" [attr.aria-label]="'Eventos de ' + title()">
+          <div #log class="min-h-0 flex-1 overflow-y-auto px-3 py-2.5 font-mono text-mono" role="log" aria-live="off" tabindex="0" [attr.aria-label]="('Eventos de ' | t) + title()">
             @if (inspector.graphView()) {
               <div class="mb-2 flex flex-wrap items-center gap-2">
-                <span class="text-ink-2">Diff del JSON del grafo del lienzo, tras cada cambio.</span>
+                <span class="text-ink-2">{{ 'Diff del JSON del grafo del lienzo, tras cada cambio.' | t }}</span>
                 <button
                   type="button"
                   class="ui-btn-secondary font-mono"
                   [attr.aria-expanded]="fullJson()"
                   (click)="fullJson.set(!fullJson())"
-                >{{ fullJson() ? 'Ver el diff' : 'Ver JSON completo' }}</button>
+                >{{ (fullJson() ? 'Ver el diff' : 'Ver JSON completo') | t }}</button>
               </div>
               @if (fullJson()) {
                 <pre class="whitespace-pre-wrap break-words" data-testid="graph-json">@for (token of jsonTokens(); track $index) {<span [class]="tokenClasses[token.type]">{{ token.text }}</span>}</pre>
@@ -224,7 +225,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
                     }
                   </div>
                 } @empty {
-                  <p class="text-ink-3">Aún no hay cambios en el grafo. Edita el lienzo del Estudio de arquitectura y aparecerán aquí.</p>
+                  <p class="text-ink-3">{{ 'Aún no hay cambios en el grafo. Edita el lienzo del Estudio de arquitectura y aparecerán aquí.' | t }}</p>
                 }
               }
             } @else {
@@ -253,7 +254,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
       >
         <!-- 36 px; con el texto ampliado crece en vez de cortar el aviso. -->
         <div class="flex min-h-9 flex-wrap items-center justify-between gap-x-3 py-1">
-          <span class="min-w-0 truncate font-mono text-mono-sm text-ink-3">Inspector de traza</span>
+          <span class="min-w-0 truncate font-mono text-mono-sm text-ink-3">{{ 'Inspector de traza' | t }}</span>
           <app-demo-notice class="max-w-full" />
         </div>
       </div>

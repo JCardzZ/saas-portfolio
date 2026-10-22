@@ -22,8 +22,9 @@ test.describe('globo de tecnologías del hero', () => {
   test('se abre, se filtra y se recoge, con ratón, dedo o teclado', async ({ page }) => {
     const toggle = page.getByTestId('hero-stack-toggle');
     test.skip((await toggle.count()) === 0, 'sin WebGL no hay robot');
-    // La escena carga Three.js aparte: la píldora de ayuda aparece cuando está lista.
-    await expect(toggle.locator('span').first()).toBeVisible({ timeout: 20_000 });
+    // La escena carga Three.js aparte; está lista cuando aparece el bocadillo del robot (la antigua
+    // píldora de ayuda dentro del botón ya no existe: la invitación va en el bocadillo).
+    await expect.poll(() => page.locator('.speech').evaluate((el) => el.classList.contains('opacity-0')), { timeout: 45_000 }).toBe(false);
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
 
     await toggle.click();
