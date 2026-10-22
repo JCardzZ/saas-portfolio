@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, NgZone, aft
 import { ThemeService } from '../../../../core/theme/theme.service';
 import { MeshTrafficService } from '../../data/mesh-traffic.service';
 import { SystemEventsService } from '../../data/system-events.service';
+import { TelemetryStreamService } from '../../data/telemetry-stream.service';
 import { hasFastWebGL } from '../../../../shared/ui/webgl-support';
 import type { BackdropPalette, BackdropScene } from './network-scene';
 
@@ -81,6 +82,7 @@ export class GalaxyBackdropComponent {
   private readonly theme = inject(ThemeService);
   private readonly events = inject(SystemEventsService);
   private readonly traffic = inject(MeshTrafficService);
+  private readonly telemetry = inject(TelemetryStreamService);
   private scene: BackdropScene | null = null;
   /** Último evento del sistema que ya se convirtió en tráfico. */
   private lastEventId = 0;
@@ -165,6 +167,8 @@ export class GalaxyBackdropComponent {
     onScroll();
     this.ready.set(true);
     this.traffic.rendering.set(true);
+    // La malla dibuja los eventos reales desde la portada: no espera a que la consola se monte al bajar.
+    this.telemetry.acquire();
     kick();
     destroyRef.onDestroy(() => {
       cancelAnimationFrame(raf);
@@ -175,6 +179,7 @@ export class GalaxyBackdropComponent {
       document.removeEventListener('visibilitychange', kick);
       scene.dispose();
       this.traffic.rendering.set(false);
+      this.telemetry.release();
       this.scene = null;
     });
   }

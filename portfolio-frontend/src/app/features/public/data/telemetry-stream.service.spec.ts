@@ -173,4 +173,17 @@ describe('TelemetryStreamService', () => {
     service.connect();
     expect(created.length).toBe(2);
   });
+
+  it('shares one connection between the console and the mesh and closes it when the last one leaves', () => {
+    const { service } = setup();
+    service.acquire();
+    service.acquire();
+    expect(created.length).toBe(1);
+
+    service.release();
+    expect(created[0].closed).toBeFalsy();
+
+    service.release();
+    expect(created[0].closed).toBeTrue();
+  });
 });
