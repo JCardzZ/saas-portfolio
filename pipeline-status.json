@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-22T04:23:32.401Z",
+  "updatedAt": "2026-10-22T04:40:29.378Z",
   "workflows": {
     "ci": {
-      "runId": 39718733394,
-      "runNumber": 196,
-      "sha": "43c054cfedb4d3ce6b462f61584a28ba035772d1",
+      "runId": 39720586514,
+      "runNumber": 200,
+      "sha": "1a4845076971839cbb50421140e836877da7239f",
       "event": "push",
-      "startedAt": "2026-10-22T03:47:00Z",
-      "finishedAt": "2026-10-22T04:22:38.360Z",
-      "durationSeconds": 2138,
+      "startedAt": "2026-10-22T04:07:21Z",
+      "finishedAt": "2026-10-22T04:40:29.378Z",
+      "durationSeconds": 1988,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 7,
+          "durationSeconds": 5,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 11,
+          "durationSeconds": 13,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 144,
+          "durationSeconds": 136,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 29,
+          "durationSeconds": 34,
           "runs": 1
         },
         {
@@ -71,29 +71,29 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 58,
+          "durationSeconds": 66,
           "runs": 3,
           "metrics": {
-            "tests": 754
+            "tests": 756
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 33,
+          "durationSeconds": 26,
           "runs": 1,
           "metrics": {
-            "bundleKb": 341,
+            "bundleKb": 341.1,
             "bundleGzipKb": 82.7
           }
         },
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 60,
+          "durationSeconds": 79,
           "runs": 1,
           "metrics": {
-            "performance": 82,
+            "performance": 53,
             "accessibility": 100,
             "bestPractices": 96,
             "seo": 100
@@ -102,7 +102,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 1122,
+          "durationSeconds": 904,
           "runs": 2,
           "metrics": {
             "tests": 525,
@@ -137,7 +137,7 @@
         {
           "id": "gate",
           "status": "success",
-          "durationSeconds": 3,
+          "durationSeconds": 2,
           "runs": 1
         }
       ]
@@ -404,6 +404,24 @@
     "backend": []
   },
   "merges": [
+    {
+      "number": 84,
+      "title": "perf(frontend): let the hero robot scroll with the page natively on phones",
+      "branch": "perf/smooth-mobile-scroll",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-22T04:33:08Z",
+      "sha": "af902b2954606e227ae71bfc3923729eaaf92356",
+      "additions": 29,
+      "deletions": 6,
+      "changedFiles": 2,
+      "ci": {
+        "runId": 39723011851,
+        "runNumber": 202,
+        "conclusion": "pending",
+        "durationSeconds": 1,
+        "jobs": []
+      }
+    },
     {
       "number": 82,
       "title": "fix(frontend): fit the robot and the inspector to their content and feed the mesh from the hero",
@@ -688,21 +706,28 @@
       "deletions": 292,
       "changedFiles": 35,
       "ci": null
-    },
-    {
-      "number": 67,
-      "title": "feat: serve the career timeline in English and translate the remaining widgets",
-      "branch": "feat/career-i18n",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-20T04:04:04Z",
-      "sha": "2ddb4088d44a325667ad8349335f3d5eaf202c99",
-      "additions": 647,
-      "deletions": 108,
-      "changedFiles": 30,
-      "ci": null
     }
   ],
   "commits": [
+    {
+      "sha": "af902b2954606e227ae71bfc3923729eaaf92356",
+      "parents": [
+        "1a4845076971839cbb50421140e836877da7239f",
+        "a573bb77ebb756f2e83816518606202071b25c6d"
+      ],
+      "subject": "Merge pull request #84 from JCardzZ/perf/smooth-mobile-scroll",
+      "author": "JCardzZ",
+      "date": "2026-10-22T04:33:07Z"
+    },
+    {
+      "sha": "a573bb77ebb756f2e83816518606202071b25c6d",
+      "parents": [
+        "1a4845076971839cbb50421140e836877da7239f"
+      ],
+      "subject": "perf(frontend): let the hero robot scroll with the page natively on phones",
+      "author": "JCardzZ",
+      "date": "2026-10-22T04:20:30Z"
+    },
     {
       "sha": "1a4845076971839cbb50421140e836877da7239f",
       "parents": [
@@ -1253,26 +1278,6 @@
       "subject": "feat: draw main's real commit graph like an IDE git log",
       "author": "JCardzZ",
       "date": "2026-10-18T22:47:39Z"
-    },
-    {
-      "sha": "190eb1b6d8978fad610c331c1ea065e1feb1156d",
-      "parents": [
-        "3148f03f85901fe3ccae56cf786989139b0d886a",
-        "1a7a53d442c39c6761b83a2aaf1a6170b229cbfa"
-      ],
-      "subject": "Merge pull request #61 from JCardzZ/feat/git-log-style",
-      "author": "JCardzZ",
-      "date": "2026-10-18T22:40:01Z"
-    },
-    {
-      "sha": "12f4f296a9b9e90d0905a4ed52aabb8535a6ab52",
-      "parents": [
-        "a91a44a378584e15b9bb7da2176033f6e35c8fe2",
-        "3148f03f85901fe3ccae56cf786989139b0d886a"
-      ],
-      "subject": "Merge remote-tracking branch 'origin/main' into fix/check-now-fold",
-      "author": "JCardzZ",
-      "date": "2026-10-18T22:39:29Z"
     }
   ]
 }
