@@ -18,6 +18,8 @@ import type { GalaxyPalette, GalaxyScene } from './galaxy-scene';
   host: { class: 'pointer-events-none fixed inset-0 -z-10 block bg-canvas', 'aria-hidden': 'true' },
   template: `
     <canvas #canvas class="absolute inset-0 block h-full w-full" [class.opacity-0]="!ready()" style="transition: opacity 1.2s ease"></canvas>
+    <!-- Aurora: luz del acento detrás del robot y viñeta en los bordes, para que el fondo tenga profundidad. -->
+    <div class="aurora absolute inset-0" data-testid="aurora"></div>
     <!--
       Marca de agua: iconografía de desarrollo en trazo fino, repetida en mosaico como el fondo de un
       chat. Muy tenue y quieta: animarla obligaría a recomponer una capa del tamaño de la pantalla.
@@ -57,6 +59,18 @@ import type { GalaxyPalette, GalaxyScene } from './galaxy-scene';
     /* Textura, no dibujo: a 0,15 los iconos competían con el contenido de cada tarjeta. */
     .doodles { opacity: 0.06; }
     :host-context([data-theme='light']) .doodles { opacity: 0.035; }
+    /* Solo gradientes estáticos: no se anima ni se repinta al desplazar. Sin WebGL también se ve. */
+    .aurora {
+      --glow: 1;
+      background:
+        radial-gradient(55% 45% at 50% 62%, rgb(var(--c-accent-solid) / calc(0.16 * var(--glow))), transparent 70%),
+        radial-gradient(40% 35% at 15% 20%, rgb(var(--c-accent-solid) / calc(0.08 * var(--glow))), transparent 70%),
+        radial-gradient(45% 40% at 88% 30%, rgb(var(--c-accent-solid) / calc(0.07 * var(--glow))), transparent 70%),
+        radial-gradient(120% 90% at 50% 50%, transparent 55%, rgb(var(--c-canvas) / 0.75) 100%);
+    }
+    /* En claro el lima sobre gris se ensucia: la mitad de luz. */
+    :host-context([data-theme='light']) .aurora { --glow: 0.5; }
+    @media (prefers-color-scheme: light) { :host-context(html:not([data-theme='dark'])) .aurora { --glow: 0.5; } }
   `,
 })
 export class GalaxyBackdropComponent {
