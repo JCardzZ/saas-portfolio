@@ -90,6 +90,9 @@ export class TraceInspectorService {
     if (selected === null) {
       return [];
     }
+    if (selected === 'traffic') {
+      return this.systemEvents.events().slice(-MAX_SHOWN);
+    }
     const component = this._component();
     // De un nodo: sus propios eventos más los de la tecnología que aloja. De una tecnología: los suyos.
     const matches = component
@@ -124,6 +127,12 @@ export class TraceInspectorService {
   selectGraph(): void {
     this._component.set(null);
     this._selected.set('graph');
+  }
+
+  /** Abre el filtro «Tráfico»: todos los eventos, los mismos que mueven la malla del fondo. */
+  selectTraffic(): void {
+    this._component.set(null);
+    this._selected.set('traffic');
   }
 
   /** Tecnología inspeccionable que corresponde a un logo, o `null` si no tiene traza propia. */

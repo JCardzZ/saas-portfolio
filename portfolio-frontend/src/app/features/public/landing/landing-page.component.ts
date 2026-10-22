@@ -24,6 +24,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { LANDING_COPY } from './landing-copy';
 import { HeroSceneComponent } from './hero3d/hero-scene.component';
 import { GalaxyBackdropComponent } from './galaxy/galaxy-backdrop.component';
+import { MeshTrafficLegendComponent } from './galaxy/mesh-traffic-legend.component';
 import { ScrollBuddyComponent } from './scroll-buddy.component';
 
 @Component({
@@ -32,7 +33,7 @@ import { ScrollBuddyComponent } from './scroll-buddy.component';
         RouterLink,
         SectionHeaderComponent,
         HeroSceneComponent,
-        GalaxyBackdropComponent,
+        GalaxyBackdropComponent, MeshTrafficLegendComponent,
         ScrollBuddyComponent,
         PublicNavbarComponent,
         CvDownloadComponent,

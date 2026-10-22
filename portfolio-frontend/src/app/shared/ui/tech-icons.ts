@@ -67,7 +67,7 @@ export type TechIconKey =
   | 'azAppService' | 'azStreamAnalytics' | 'azOpenAi' | 'azLogicApps'
   | 'gcpApigee' | 'gcpAlloyDb' | 'gcpSpanner' | 'gcpVertexAi' | 'gcpDataflow' | 'gcpArmor' | 'gcpCloudRun' | 'gcpArtifactRegistry' | 'gcpCloudSql'
   | 'gcpGke' | 'gcpComputeEngine' | 'gcpAppEngine' | 'gcpWorkflows'
-  | 'dataService' | 'graph';
+  | 'dataService' | 'graph' | 'traffic';
 
 const WHITE = '#FFFFFF';
 
@@ -105,6 +105,8 @@ export const TECH_ICONS: Record<TechIconKey, TechIcon> = {
   dataService: neutral('Servicio de datos'),
   // Filtro «Grafo» del inspector de traza: no es una tecnología, es el JSON del lienzo.
   graph: neutral('Grafo'),
+  // Filtro «Tráfico» del inspector: todos los eventos que mueven la malla del fondo.
+  traffic: neutral('Tráfico de la red'),
   caddy: icon(siCaddy),
   neon: icon(siNeon),
   upstash: icon(siUpstash),
