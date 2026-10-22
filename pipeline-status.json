@@ -2,7 +2,7 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-22T15:09:57.063Z",
+  "updatedAt": "2026-10-22T15:11:17.215Z",
   "workflows": {
     "ci": {
       "runId": 39797989701,
@@ -137,32 +137,29 @@
       ]
     },
     "cd": {
-      "runId": 39800018943,
-      "runNumber": 75,
-      "sha": "4a43c4b28a394be63537c6e0c5d21aff6eae2ff2",
-      "event": "workflow_dispatch",
-      "startedAt": "2026-10-22T14:55:39Z",
-      "finishedAt": "2026-10-22T14:56:35.819Z",
-      "durationSeconds": 57,
+      "runId": 39802270774,
+      "runNumber": 76,
+      "sha": "5f1ed491ea37cc95179a41d5818e3a08127ab7f9",
+      "event": "workflow_run",
+      "startedAt": "2026-10-22T15:10:14Z",
+      "finishedAt": "2026-10-22T15:11:17.215Z",
+      "durationSeconds": 63,
       "conclusion": "success",
       "jobs": [
         {
-          "id": "source",
-          "status": "success",
-          "durationSeconds": 12,
-          "runs": 1,
-          "metrics": {
-            "signatureVerified": true
-          }
-        },
-        {
-          "id": "release",
+          "id": "deploy",
           "status": "skipped",
           "durationSeconds": null,
           "runs": 1
         },
         {
-          "id": "rollback",
+          "id": "smoke",
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
+        },
+        {
+          "id": "release",
           "status": "skipped",
           "durationSeconds": null,
           "runs": 1
