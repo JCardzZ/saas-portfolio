@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, NgZone, afterNextRender, effect, inject, signal, viewChild } from '@angular/core';
 
 import { ThemeService } from '../../../../core/theme/theme.service';
+import { SystemEventsService } from '../../data/system-events.service';
 import { hasFastWebGL } from '../../../../shared/ui/webgl-support';
 import type { BackdropPalette, BackdropScene } from './network-scene';
 
@@ -77,7 +78,10 @@ export class GalaxyBackdropComponent {
   readonly ready = signal(false);
   private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly theme = inject(ThemeService);
+  private readonly events = inject(SystemEventsService);
   private scene: BackdropScene | null = null;
+  /** Último evento del sistema que ya se convirtió en tráfico. */
+  private lastEventId = 0;
 
   constructor() {
     const zone = inject(NgZone);
@@ -85,6 +89,18 @@ export class GalaxyBackdropComponent {
     effect(() => {
       this.theme.effective();
       queueMicrotask(() => this.scene?.setPalette(readPalette()));
+    });
+    // Cada evento del sistema (real por SSE o simulado en modo demo) es tráfico en la malla: una
+    // pregunta a la IA lanza una onda y el resto, una ráfaga de paquetes desde un hub.
+    effect(() => {
+      const fresh = this.events.events().filter((event) => event.id > this.lastEventId);
+      if (!fresh.length) return;
+      this.lastEventId = fresh[fresh.length - 1].id;
+      const scene = this.scene;
+      if (!scene) return;
+      if (fresh.some((event) => /rag\/query|RAG_QUERY/i.test(event.tag))) scene.wave();
+      // Una secuencia de pasos llega junta: con una ráfaga por cada dos pasos basta.
+      for (let n = 0; n < Math.ceil(fresh.length / 2); n++) scene.burst();
     });
     afterNextRender(() => {
       const start = () => zone.runOutsideAngular(() => void this.start(destroyRef));
@@ -128,8 +144,16 @@ export class GalaxyBackdropComponent {
       scene.scroll(scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight));
       if (still) kick();
     };
+    // Sonda: solo con ratón; con el dedo no hay cursor que seguir.
+    const fine = matchMedia('(pointer: fine)').matches;
+    const onPointer = (event: PointerEvent) => scene.pointer(event.clientX, event.clientY);
+    const onLeave = () => scene.pointer(null);
     addEventListener('resize', resize, { passive: true });
     addEventListener('scroll', onScroll, { passive: true });
+    if (fine) {
+      addEventListener('pointermove', onPointer, { passive: true });
+      document.documentElement.addEventListener('pointerleave', onLeave);
+    }
     document.addEventListener('visibilitychange', kick);
     resize();
     onScroll();
@@ -139,6 +163,8 @@ export class GalaxyBackdropComponent {
       cancelAnimationFrame(raf);
       removeEventListener('resize', resize);
       removeEventListener('scroll', onScroll);
+      removeEventListener('pointermove', onPointer);
+      document.documentElement.removeEventListener('pointerleave', onLeave);
       document.removeEventListener('visibilitychange', kick);
       scene.dispose();
       this.scene = null;
@@ -163,6 +189,7 @@ function readPalette(): BackdropPalette {
   return {
     accent: get('--accent-solid'),
     ink: get('--text-3'),
+    canvas: get('--bg-canvas'),
     light: root.getAttribute('data-theme') === 'light' || (!root.hasAttribute('data-theme') && matchMedia('(prefers-color-scheme: light)').matches),
   };
 }
