@@ -2,76 +2,92 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-22T03:40:15.794Z",
+  "updatedAt": "2026-10-22T04:01:12.652Z",
   "workflows": {
     "ci": {
-      "runId": 39712575530,
-      "runNumber": 190,
-      "sha": "1578ec6c96719373ae24f7fb27a03c7b3c66da5a",
+      "runId": 39717402555,
+      "runNumber": 194,
+      "sha": "58b2937719285627b2ee673e4fa1ad11add7e7c7",
       "event": "push",
-      "startedAt": "2026-10-22T02:39:23Z",
-      "finishedAt": "2026-10-22T03:39:23.296Z",
-      "durationSeconds": 3600,
+      "startedAt": "2026-10-22T03:32:31Z",
+      "finishedAt": "2026-10-22T04:01:12.652Z",
+      "durationSeconds": 1722,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 6,
+          "durationSeconds": 7,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 10,
+          "durationSeconds": 9,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 137,
+          "durationSeconds": 102,
           "runs": 2
         },
         {
           "id": "spec-lint",
-          "status": "skipped",
-          "durationSeconds": null,
+          "status": "success",
+          "durationSeconds": 13,
           "runs": 1
         },
         {
           "id": "spec-breaking",
-          "status": "skipped",
-          "durationSeconds": null,
+          "status": "success",
+          "durationSeconds": 8,
           "runs": 1
         },
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 148,
+          "durationSeconds": 32,
           "runs": 1
         },
         {
           "id": "backend-unit",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 106,
+          "runs": 1,
+          "metrics": {
+            "tests": 370,
+            "failed": 0,
+            "skipped": 2,
+            "coverage": 89.2
+          }
         },
         {
           "id": "backend-integration",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 128,
+          "runs": 1,
+          "metrics": {
+            "tests": 8,
+            "failed": 0,
+            "skipped": 0
+          }
         },
         {
           "id": "backend-arch",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 43,
+          "runs": 1,
+          "metrics": {
+            "tests": 15,
+            "failed": 0,
+            "skipped": 0
+          }
         },
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 462,
+          "durationSeconds": 57,
           "runs": 3,
           "metrics": {
             "tests": 751
@@ -80,7 +96,7 @@
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 323,
+          "durationSeconds": 35,
           "runs": 1,
           "metrics": {
             "bundleKb": 341,
@@ -90,10 +106,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 65,
+          "durationSeconds": 63,
           "runs": 1,
           "metrics": {
-            "performance": 81,
+            "performance": 72,
             "accessibility": 100,
             "bestPractices": 96,
             "seo": 100
@@ -102,7 +118,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 1112,
+          "durationSeconds": 1069,
           "runs": 2,
           "metrics": {
             "tests": 525,
@@ -118,26 +134,33 @@
         },
         {
           "id": "docker",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 186,
+          "runs": 1,
+          "metrics": {
+            "vulnerabilities": 0
+          }
         },
         {
           "id": "publish-image",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 78,
+          "runs": 1,
+          "metrics": {
+            "digest": "sha256:dd0c63e1ea84ef1953417b5bea3935fd593ef486271edbf87b8780b847cd83c2",
+            "sbomPackages": 217
+          }
         },
         {
           "id": "coverage-badge",
-          "status": "skipped",
-          "durationSeconds": null,
+          "status": "success",
+          "durationSeconds": 5,
           "runs": 1
         },
         {
           "id": "gate",
           "status": "success",
-          "durationSeconds": 3,
+          "durationSeconds": 4,
           "runs": 1
         }
       ]
@@ -404,6 +427,24 @@
     "backend": []
   },
   "merges": [
+    {
+      "number": 81,
+      "title": "feat(frontend): tell visitors whether the network mesh shows real or simulated traffic",
+      "branch": "feat/mesh-traffic-legend",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-22T03:46:58Z",
+      "sha": "43c054cfedb4d3ce6b462f61584a28ba035772d1",
+      "additions": 212,
+      "deletions": 13,
+      "changedFiles": 10,
+      "ci": {
+        "runId": 39718733394,
+        "runNumber": 196,
+        "conclusion": "pending",
+        "durationSeconds": 1,
+        "jobs": []
+      }
+    },
     {
       "number": 80,
       "title": "fix(backend): finish the RAG reindex inside the request so Cloud Run keeps its CPU",
@@ -775,120 +816,28 @@
         "durationSeconds": 1,
         "jobs": []
       }
-    },
-    {
-      "number": 70,
-      "title": "feat(frontend): order the sections the way a recruiter reads a portfolio",
-      "branch": "feat/recruiter-order",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-19T04:55:09Z",
-      "sha": "03945c9532da8c350f89d5c5f20916e7b385298b",
-      "additions": 138,
-      "deletions": 99,
-      "changedFiles": 16,
-      "ci": {
-        "runId": 39201882154,
-        "runNumber": 172,
-        "conclusion": "failure",
-        "durationSeconds": 1088,
-        "jobs": [
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 2/2)",
-            "status": "failure"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 1/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "failure"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "43c054cfedb4d3ce6b462f61584a28ba035772d1",
+      "parents": [
+        "58b2937719285627b2ee673e4fa1ad11add7e7c7",
+        "8d01184c7bb51d022074df0d2494eae85560e00d"
+      ],
+      "subject": "Merge pull request #81 from JCardzZ/feat/mesh-traffic-legend",
+      "author": "JCardzZ",
+      "date": "2026-10-22T03:46:57Z"
+    },
+    {
+      "sha": "8d01184c7bb51d022074df0d2494eae85560e00d",
+      "parents": [
+        "58b2937719285627b2ee673e4fa1ad11add7e7c7"
+      ],
+      "subject": "feat(frontend): tell visitors whether the network mesh shows real or simulated traffic",
+      "author": "JCardzZ",
+      "date": "2026-10-22T03:43:26Z"
+    },
     {
       "sha": "58b2937719285627b2ee673e4fa1ad11add7e7c7",
       "parents": [
@@ -1438,25 +1387,6 @@
       "subject": "feat(frontend): each check-now log line lights its piece on the canvas",
       "author": "JCardzZ",
       "date": "2026-10-18T20:46:01Z"
-    },
-    {
-      "sha": "738c2b008b6e9236ebd8c0da7e29b7eafa3d0bc6",
-      "parents": [
-        "af8e302d1ed3066438ce6452fc8739e8884f3930"
-      ],
-      "subject": "fix(frontend): make room for the inspector so the whole card stays in view",
-      "author": "JCardzZ",
-      "date": "2026-10-18T20:37:34Z"
-    },
-    {
-      "sha": "3148f03f85901fe3ccae56cf786989139b0d886a",
-      "parents": [
-        "54264382220bcad59e3cc68b30887b4ec035c50e",
-        "af8e302d1ed3066438ce6452fc8739e8884f3930"
-      ],
-      "subject": "Merge pull request #60 from JCardzZ/fix/check-now-fit",
-      "author": "JCardzZ",
-      "date": "2026-10-18T20:22:30Z"
     }
   ]
 }
