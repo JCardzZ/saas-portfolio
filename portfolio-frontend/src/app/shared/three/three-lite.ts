@@ -4,7 +4,7 @@
 export {
   ACESFilmicToneMapping, AdditiveBlending, BackSide, BoxGeometry, BufferAttribute, BufferGeometry,
   CanvasTexture, CapsuleGeometry, CatmullRomCurve3, CircleGeometry, Color, CylinderGeometry, DirectionalLight,
-  DoubleSide, ExtrudeGeometry, Group, HemisphereLight, Mesh, MeshBasicMaterial, MeshPhysicalMaterial,
+  DoubleSide, ExtrudeGeometry, Group, HemisphereLight, LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial, MeshPhysicalMaterial,
   MeshStandardMaterial, NormalBlending, PerspectiveCamera, PlaneGeometry, PMREMGenerator, PointLight, Points,
   PointsMaterial, Quaternion, Raycaster, Scene, Shape, SphereGeometry, SRGBColorSpace, TorusGeometry,
   TubeGeometry, Vector2, Vector3, WebGLRenderer,

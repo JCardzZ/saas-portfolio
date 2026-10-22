@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, NgZone, aft
 
 import { ThemeService } from '../../../../core/theme/theme.service';
 import { hasFastWebGL } from '../../../../shared/ui/webgl-support';
-import type { GalaxyPalette, GalaxyScene } from './galaxy-scene';
+import type { BackdropPalette, BackdropScene } from './network-scene';
 
 /**
- * Fondo fijo de toda la página pública: una galaxia 3D detrás del contenido (`-z-10`, sin eventos
+ * Fondo fijo de toda la página pública: una malla de red 3D (servidores, enlaces y paquetes) detrás del contenido (`-z-10`, sin eventos
  * de puntero), que no cambia la maqueta de nada. Three.js se pide con `import()` cuando el
  * navegador está libre. Dibuja a ~30 fps, se para con la pestaña oculta y, con
  * `prefers-reduced-motion`, se queda quieta. Sin WebGL, en un móvil o con ahorro de datos, solo
@@ -77,7 +77,7 @@ export class GalaxyBackdropComponent {
   readonly ready = signal(false);
   private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly theme = inject(ThemeService);
-  private scene: GalaxyScene | null = null;
+  private scene: BackdropScene | null = null;
 
   constructor() {
     const zone = inject(NgZone);
@@ -96,10 +96,10 @@ export class GalaxyBackdropComponent {
   private async start(destroyRef: DestroyRef): Promise<void> {
     const canvas = this.canvas()?.nativeElement;
     if (!canvas || !worthRendering() || !hasFastWebGL()) return;
-    let scene: GalaxyScene;
+    let scene: BackdropScene;
     try {
-      const [three, { createGalaxyScene }] = await Promise.all([import('../../../../shared/three/three-lite'), import('./galaxy-scene')]);
-      scene = createGalaxyScene(three, canvas, readPalette());
+      const [three, { createNetworkScene }] = await Promise.all([import('../../../../shared/three/three-lite'), import('./network-scene')]);
+      scene = createNetworkScene(three, canvas, readPalette());
       this.scene = scene;
     } catch {
       return;
@@ -147,7 +147,7 @@ export class GalaxyBackdropComponent {
 }
 
 /**
- * La galaxia es decoración: en un móvil (pantalla estrecha y táctil) o con «ahorro de datos» no se
+ * La malla es decoración: en un móvil (pantalla estrecha y táctil) o con «ahorro de datos» no se
  * dibuja, para no gastar batería ni GPU. Queda el color de fondo y la marca de agua.
  */
 function worthRendering(): boolean {
@@ -156,7 +156,7 @@ function worthRendering(): boolean {
   return !saveData && !phone;
 }
 
-function readPalette(): GalaxyPalette {
+function readPalette(): BackdropPalette {
   const css = getComputedStyle(document.documentElement);
   const get = (name: string) => css.getPropertyValue(name).trim() || 'gray';
   const root = document.documentElement;
