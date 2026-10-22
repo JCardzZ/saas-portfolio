@@ -129,7 +129,10 @@ const METAL = 0x9aa0a8;
 
 export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, palette: ScenePalette, animate: boolean, techs: readonly SceneTech[] = []): HeroScene {
   const renderer = new three.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  // Con el dedo (móvil, tableta) la pantalla tiene 3× de densidad y la GPU es más modesta: a 1,5× el
+  // robot sigue nítido y cada fotograma cuesta menos de la mitad que a 2×.
+  const touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, touch ? 1.5 : 2));
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = three.SRGBColorSpace;
   renderer.toneMapping = three.ACESFilmicToneMapping;
