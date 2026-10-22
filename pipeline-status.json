@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-22T14:56:35.819Z",
+  "updatedAt": "2026-10-22T15:09:57.063Z",
   "workflows": {
     "ci": {
-      "runId": 39723011851,
-      "runNumber": 202,
-      "sha": "af902b2954606e227ae71bfc3923729eaaf92356",
+      "runId": 39797989701,
+      "runNumber": 205,
+      "sha": "4a43c4b28a394be63537c6e0c5d21aff6eae2ff2",
       "event": "push",
-      "startedAt": "2026-10-22T04:33:10Z",
-      "finishedAt": "2026-10-22T04:58:30.025Z",
-      "durationSeconds": 1520,
+      "startedAt": "2026-10-22T14:42:14Z",
+      "finishedAt": "2026-10-22T15:09:57.063Z",
+      "durationSeconds": 1663,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 6,
+          "durationSeconds": 5,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 7,
+          "durationSeconds": 9,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 146,
+          "durationSeconds": 130,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 28,
+          "durationSeconds": 20,
           "runs": 1
         },
         {
@@ -71,7 +71,7 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 63,
+          "durationSeconds": 73,
           "runs": 3,
           "metrics": {
             "tests": 756
@@ -80,7 +80,7 @@
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 30,
+          "durationSeconds": 42,
           "runs": 1,
           "metrics": {
             "bundleKb": 341.2,
@@ -90,10 +90,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 79,
+          "durationSeconds": 70,
           "runs": 1,
           "metrics": {
-            "performance": 75,
+            "performance": 82,
             "accessibility": 100,
             "bestPractices": 96,
             "seo": 100
@@ -102,7 +102,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 918,
+          "durationSeconds": 1490,
           "runs": 2,
           "metrics": {
             "tests": 525,
@@ -132,12 +132,6 @@
           "id": "coverage-badge",
           "status": "skipped",
           "durationSeconds": null,
-          "runs": 1
-        },
-        {
-          "id": "gate",
-          "status": "success",
-          "durationSeconds": 3,
           "runs": 1
         }
       ]
@@ -382,6 +376,135 @@
     "backend": []
   },
   "merges": [
+    {
+      "number": 86,
+      "title": "perf(frontend): compile the hero scene's shaders asynchronously instead of on the first frame",
+      "branch": "perf/hero-scene-startup",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-22T15:08:22Z",
+      "sha": "5f1ed491ea37cc95179a41d5818e3a08127ab7f9",
+      "additions": 22,
+      "deletions": 0,
+      "changedFiles": 2,
+      "ci": {
+        "runId": 39801983566,
+        "runNumber": 207,
+        "conclusion": "queued",
+        "durationSeconds": 0,
+        "jobs": []
+      }
+    },
+    {
+      "number": 85,
+      "title": "fix(frontend): keep the robot's bubble off the robot and make its code window sober",
+      "branch": "feat/professional-hologram",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-22T14:42:12Z",
+      "sha": "4a43c4b28a394be63537c6e0c5d21aff6eae2ff2",
+      "additions": 30,
+      "deletions": 30,
+      "changedFiles": 2,
+      "ci": {
+        "runId": 39797989701,
+        "runNumber": 205,
+        "conclusion": "success",
+        "durationSeconds": 1663,
+        "jobs": [
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "success"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Móvil (chromium · 1/2)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Móvil (chromium · 2/2)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "success"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "skipped"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "skipped"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "queued"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "queued"
+          }
+        ]
+      }
+    },
     {
       "number": 84,
       "title": "perf(frontend): let the hero robot scroll with the page natively on phones",
@@ -654,39 +777,56 @@
           }
         ]
       }
-    },
-    {
-      "number": 72,
-      "title": "feat(frontend): minimal monochrome production diagram with a live-data switch",
-      "branch": "feat/minimal-production-canvas",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-20T04:07:38Z",
-      "sha": "d3674c809ad4346088b2803e95d3c99f56bfd7e4",
-      "additions": 103,
-      "deletions": 42,
-      "changedFiles": 6,
-      "ci": {
-        "runId": 39367903590,
-        "runNumber": 182,
-        "conclusion": "pending",
-        "durationSeconds": 1,
-        "jobs": []
-      }
-    },
-    {
-      "number": 71,
-      "title": "feat(frontend): compact career timeline, proof right after it and no empty CMS sections",
-      "branch": "feat/career-compact",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-20T04:04:04Z",
-      "sha": "40a709e7afc30661af8ff8b601904c3da0115a2a",
-      "additions": 952,
-      "deletions": 292,
-      "changedFiles": 35,
-      "ci": null
     }
   ],
   "commits": [
+    {
+      "sha": "5f1ed491ea37cc95179a41d5818e3a08127ab7f9",
+      "parents": [
+        "4a43c4b28a394be63537c6e0c5d21aff6eae2ff2",
+        "76800b16c95156d53a27dc2f98492864c577823b"
+      ],
+      "subject": "Merge pull request #86 from JCardzZ/perf/hero-scene-startup",
+      "author": "JCardzZ",
+      "date": "2026-10-22T15:08:22Z"
+    },
+    {
+      "sha": "76800b16c95156d53a27dc2f98492864c577823b",
+      "parents": [
+        "4a43c4b28a394be63537c6e0c5d21aff6eae2ff2"
+      ],
+      "subject": "perf(frontend): compile the hero scene's shaders asynchronously instead of on the first frame",
+      "author": "JCardzZ",
+      "date": "2026-10-22T15:03:20Z"
+    },
+    {
+      "sha": "4a43c4b28a394be63537c6e0c5d21aff6eae2ff2",
+      "parents": [
+        "af902b2954606e227ae71bfc3923729eaaf92356",
+        "d44aa7db903cdd198e347806948027a9b0c9a6a3"
+      ],
+      "subject": "Merge pull request #85 from JCardzZ/feat/professional-hologram",
+      "author": "JCardzZ",
+      "date": "2026-10-22T14:42:11Z"
+    },
+    {
+      "sha": "d44aa7db903cdd198e347806948027a9b0c9a6a3",
+      "parents": [
+        "cc356c11123590d69c16913682a0d9b7360cd1c9"
+      ],
+      "subject": "fix(frontend): anchor the compact bubble just above the head and clear the shoulder on desktop",
+      "author": "JCardzZ",
+      "date": "2026-10-22T14:21:08Z"
+    },
+    {
+      "sha": "cc356c11123590d69c16913682a0d9b7360cd1c9",
+      "parents": [
+        "af902b2954606e227ae71bfc3923729eaaf92356"
+      ],
+      "subject": "fix(frontend): keep the robot's bubble off the robot and make its code window sober",
+      "author": "JCardzZ",
+      "date": "2026-10-22T04:36:58Z"
+    },
     {
       "sha": "af902b2954606e227ae71bfc3923729eaaf92356",
       "parents": [
@@ -1209,53 +1349,6 @@
       "subject": "Merge pull request #63 from JCardzZ/feat/commit-graph",
       "author": "JCardzZ",
       "date": "2026-10-18T23:24:08Z"
-    },
-    {
-      "sha": "d3f7c79cedb4f29af2bbe9d2e067a8057b377ba3",
-      "parents": [
-        "12f4f296a9b9e90d0905a4ed52aabb8535a6ab52",
-        "190eb1b6d8978fad610c331c1ea065e1feb1156d"
-      ],
-      "subject": "Merge remote-tracking branch 'origin/main' into fix/check-now-fold",
-      "author": "JCardzZ",
-      "date": "2026-10-18T23:19:44Z"
-    },
-    {
-      "sha": "f19bb5740fa62ab2dd34df955e60db7415bd6891",
-      "parents": [
-        "78d9b58d752b20d01eadbe7d4256973e67ed40a1"
-      ],
-      "subject": "feat(frontend): light up the branch of the hovered or selected commit like an IDE",
-      "author": "JCardzZ",
-      "date": "2026-10-18T23:14:52Z"
-    },
-    {
-      "sha": "78d9b58d752b20d01eadbe7d4256973e67ed40a1",
-      "parents": [
-        "59907e2b7114015a6fc3b05345f5ad5f535d2cba"
-      ],
-      "subject": "feat(frontend): navigate the commit log like an IDE's Git panel",
-      "author": "JCardzZ",
-      "date": "2026-10-18T23:06:09Z"
-    },
-    {
-      "sha": "59907e2b7114015a6fc3b05345f5ad5f535d2cba",
-      "parents": [
-        "fa0ad66c7d1e709045fe0385a7ce38c776fc7379",
-        "190eb1b6d8978fad610c331c1ea065e1feb1156d"
-      ],
-      "subject": "Merge remote-tracking branch 'origin/main' into feat/commit-graph",
-      "author": "JCardzZ",
-      "date": "2026-10-18T22:47:39Z"
-    },
-    {
-      "sha": "fa0ad66c7d1e709045fe0385a7ce38c776fc7379",
-      "parents": [
-        "1a7a53d442c39c6761b83a2aaf1a6170b229cbfa"
-      ],
-      "subject": "feat: draw main's real commit graph like an IDE git log",
-      "author": "JCardzZ",
-      "date": "2026-10-18T22:47:39Z"
     }
   ]
 }
