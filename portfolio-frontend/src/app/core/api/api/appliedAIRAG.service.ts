@@ -45,6 +45,7 @@ export class AppliedAIRAGService extends BaseService {
 
     /**
      * Trigger Vector Re-indexing Pipeline
+     * Re-indexes the tenant\&#39;s content and replaces its index atomically. The work finishes inside the request before it answers: on a serverless platform (Cloud Run with request-based CPU) work left running after the response would be starved of CPU and never complete. 
      * @endpoint post /admin/ai/rag/reindex
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.

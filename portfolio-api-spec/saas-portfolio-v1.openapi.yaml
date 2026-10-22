@@ -733,11 +733,17 @@ paths:
       tags: [Applied AI (RAG)]
       summary: Trigger Vector Re-indexing Pipeline
       security: [{ BearerAuth: [] }]
+      description: >
+        Re-indexes the tenant's content and replaces its index atomically. The work finishes inside
+        the request before it answers: on a serverless platform (Cloud Run with request-based CPU)
+        work left running after the response would be starved of CPU and never complete.
       responses:
         '202':
-          description: Embeddings re-indexing started.
+          description: Embeddings re-indexing finished.
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
 
   /public/technologies:
     get:

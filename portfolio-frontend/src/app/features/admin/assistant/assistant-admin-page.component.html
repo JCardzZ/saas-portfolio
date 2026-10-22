@@ -15,13 +15,12 @@
     </div>
 
     <button type="button" class="btn-primary" [disabled]="starting()" (click)="reindex()">
-      {{ starting() ? 'Iniciando…' : 'Reindexar contenido' }}
+      {{ starting() ? 'Reindexando… puede tardar un minuto' : 'Reindexar contenido' }}
     </button>
 
     @if (started()) {
       <p class="text-sm text-slate-600" role="status">
-        Reindexación iniciada. Continúa en segundo plano y puede tardar unos segundos; el resultado queda en el log del
-        servidor.
+        Reindexación terminada: el asistente ya responde con el contenido actual.
       </p>
     }
   </div>
@@ -40,7 +39,7 @@
     </div>
 
     <button type="button" class="btn-primary" [disabled]="starting()" (click)="reindex()">
-      {{ starting() ? 'Iniciando…' : 'Reindexar trayectoria y contenido' }}
+      {{ starting() ? 'Reindexando… puede tardar un minuto' : 'Reindexar trayectoria y contenido' }}
     </button>
 
     <div>
