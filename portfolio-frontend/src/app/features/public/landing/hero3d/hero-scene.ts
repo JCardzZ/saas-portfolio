@@ -104,6 +104,12 @@ export interface HeroScene {
   /** Señala la ficha bajo el cursor (coordenadas normalizadas del lienzo, -1…1); devuelve su nombre. */
   pick(x: number, y: number): string | null;
   frame(t: number): void;
+  /**
+   * Compila los shaders sin bloquear la página (`compileAsync`, en paralelo cuando el navegador
+   * tiene KHR_parallel_shader_compile). Sin esto, el primer fotograma compilaba todo de golpe: en un
+   * móvil medio, más de un segundo con la página congelada.
+   */
+  prepare(): Promise<void>;
   resize(width: number, height: number): void;
   pointer(x: number, y: number): void;
   /** Desplazamiento de la página en píxeles: el escritorio sube con ella (el lienzo es fijo). */
@@ -1571,6 +1577,13 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
 
   return {
     frame,
+    async prepare() {
+      try {
+        await renderer.compileAsync(scene, camera);
+      } catch {
+        // Sin compilación asíncrona, el primer fotograma compila como antes.
+      }
+    },
     activate(x, y) {
       const tile = stackOpen && x !== null && y !== null ? hit(x, y) : null;
       reactAt = clock;

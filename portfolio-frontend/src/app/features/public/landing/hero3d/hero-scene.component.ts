@@ -976,7 +976,16 @@ export class HeroSceneComponent {
       const techs: SceneTech[] = STACK.map((key) => TECH_ICONS[key]).map(({ title, path, color, image }) => ({
         title, path, color, image: image ? `/${image}` : undefined,
       }));
+      // Construir la escena y compilar sus shaders son dos trabajos largos: entre uno y otro se cede
+      // el hilo (el navegador atiende toques y pinta) y la compilación va en paralelo.
       scene = createHeroScene(three, canvas, readPalette(), !still, techs);
+      await new Promise((resolve) => setTimeout(resolve));
+      await scene.prepare();
+      // Si la página se fue mientras se compilaba (navegación), no se arranca nada.
+      if (!canvas.isConnected) {
+        scene.dispose();
+        return;
+      }
       scene.onBounce(() => this.sound.bounce());
       this.scene = scene;
     } catch {
