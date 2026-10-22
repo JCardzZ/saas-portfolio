@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-22T02:18:55.120Z",
+  "updatedAt": "2026-10-22T03:04:38.957Z",
   "workflows": {
     "ci": {
-      "runId": 39708129788,
-      "runNumber": 186,
-      "sha": "615e563370c9d52404d923da0d96e187030f290c",
+      "runId": 39710012806,
+      "runNumber": 188,
+      "sha": "6a57fc987c289eef3aee0a320024cd9a555eba80",
       "event": "push",
-      "startedAt": "2026-10-22T01:51:56Z",
-      "finishedAt": "2026-10-22T02:17:59.416Z",
-      "durationSeconds": 1563,
+      "startedAt": "2026-10-22T02:11:37Z",
+      "finishedAt": "2026-10-22T03:04:38.957Z",
+      "durationSeconds": 3182,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 6,
+          "durationSeconds": 5,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 10,
+          "durationSeconds": 15,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 121,
+          "durationSeconds": 132,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 23,
+          "durationSeconds": 336,
           "runs": 1
         },
         {
@@ -71,7 +71,7 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 63,
+          "durationSeconds": 409,
           "runs": 3,
           "metrics": {
             "tests": 751
@@ -80,7 +80,7 @@
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 37,
+          "durationSeconds": 455,
           "runs": 1,
           "metrics": {
             "bundleKb": 341,
@@ -90,10 +90,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 77,
+          "durationSeconds": 478,
           "runs": 1,
           "metrics": {
-            "performance": 72,
+            "performance": 75,
             "accessibility": 100,
             "bestPractices": 96,
             "seo": 100
@@ -102,7 +102,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 1100,
+          "durationSeconds": 1560,
           "runs": 2,
           "metrics": {
             "tests": 525,
@@ -137,7 +137,7 @@
         {
           "id": "gate",
           "status": "success",
-          "durationSeconds": 3,
+          "durationSeconds": 2,
           "runs": 1
         }
       ]
@@ -404,6 +404,24 @@
     "backend": []
   },
   "merges": [
+    {
+      "number": 78,
+      "title": "feat(frontend): replace the galaxy backdrop with a live network mesh",
+      "branch": "feat/network-mesh-backdrop",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-22T02:39:21Z",
+      "sha": "1578ec6c96719373ae24f7fb27a03c7b3c66da5a",
+      "additions": 222,
+      "deletions": 108,
+      "changedFiles": 4,
+      "ci": {
+        "runId": 39712575530,
+        "runNumber": 190,
+        "conclusion": "pending",
+        "durationSeconds": 1,
+        "jobs": []
+      }
+    },
     {
       "number": 77,
       "title": "feat(frontend): give the page background depth with an accent aurora and a vignette",
@@ -957,120 +975,28 @@
         "durationSeconds": 1,
         "jobs": []
       }
-    },
-    {
-      "number": 62,
-      "title": "fix(frontend): check-now logs at the bottom with the card folded, synced highlights",
-      "branch": "fix/check-now-fold",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-19T02:34:46Z",
-      "sha": "36ecd44d8465e92a726abf62905fed40217362ad",
-      "additions": 159,
-      "deletions": 27,
-      "changedFiles": 8,
-      "ci": {
-        "runId": 39190632104,
-        "runNumber": 161,
-        "conclusion": "success",
-        "durationSeconds": 1179,
-        "jobs": [
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 2/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 1/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "1578ec6c96719373ae24f7fb27a03c7b3c66da5a",
+      "parents": [
+        "6a57fc987c289eef3aee0a320024cd9a555eba80",
+        "84d173b407d135a2039977f4d51ecd9524705f55"
+      ],
+      "subject": "Merge pull request #78 from JCardzZ/feat/network-mesh-backdrop",
+      "author": "JCardzZ",
+      "date": "2026-10-22T02:39:20Z"
+    },
+    {
+      "sha": "84d173b407d135a2039977f4d51ecd9524705f55",
+      "parents": [
+        "6a57fc987c289eef3aee0a320024cd9a555eba80"
+      ],
+      "subject": "feat(frontend): replace the galaxy backdrop with a live network mesh",
+      "author": "JCardzZ",
+      "date": "2026-10-22T02:16:23Z"
+    },
     {
       "sha": "6a57fc987c289eef3aee0a320024cd9a555eba80",
       "parents": [
@@ -1620,26 +1546,6 @@
       "subject": "Merge remote-tracking branch 'origin/main' into feat/merge-history",
       "author": "JCardzZ",
       "date": "2026-10-18T19:26:36Z"
-    },
-    {
-      "sha": "c42efba3d0adf6ef5f45d93fdd94788688c7079d",
-      "parents": [
-        "9bfa6228ccaeed745320b8189f4e8fb916624e41",
-        "100042a2a9dd0a0171e3da3c780d6006530107d4"
-      ],
-      "subject": "Merge pull request #59 from JCardzZ/fix/theater-expanded",
-      "author": "JCardzZ",
-      "date": "2026-10-18T19:14:41Z"
-    },
-    {
-      "sha": "9bfa6228ccaeed745320b8189f4e8fb916624e41",
-      "parents": [
-        "17a75439643c5b9e1ff7c8e4143107746c0ad9da",
-        "f6faae67f93f5ceed600114b5d328b5c078bd82b"
-      ],
-      "subject": "Merge pull request #58 from JCardzZ/fix/trivy-libexpat",
-      "author": "JCardzZ",
-      "date": "2026-10-18T19:14:10Z"
     }
   ]
 }
