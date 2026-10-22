@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-22T15:11:41.934Z",
+  "updatedAt": "2026-10-22T15:31:37.736Z",
   "workflows": {
     "ci": {
-      "runId": 39797989701,
-      "runNumber": 205,
-      "sha": "4a43c4b28a394be63537c6e0c5d21aff6eae2ff2",
+      "runId": 39801983566,
+      "runNumber": 207,
+      "sha": "5f1ed491ea37cc95179a41d5818e3a08127ab7f9",
       "event": "push",
-      "startedAt": "2026-10-22T14:42:14Z",
-      "finishedAt": "2026-10-22T15:09:57.063Z",
-      "durationSeconds": 1663,
+      "startedAt": "2026-10-22T15:08:25Z",
+      "finishedAt": "2026-10-22T15:31:37.736Z",
+      "durationSeconds": 1393,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 5,
+          "durationSeconds": 7,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 9,
+          "durationSeconds": 14,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 130,
+          "durationSeconds": 127,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 20,
+          "durationSeconds": 25,
           "runs": 1
         },
         {
@@ -71,7 +71,7 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 73,
+          "durationSeconds": 64,
           "runs": 3,
           "metrics": {
             "tests": 756
@@ -80,7 +80,7 @@
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 42,
+          "durationSeconds": 40,
           "runs": 1,
           "metrics": {
             "bundleKb": 341.2,
@@ -90,10 +90,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 70,
+          "durationSeconds": 62,
           "runs": 1,
           "metrics": {
-            "performance": 82,
+            "performance": 81,
             "accessibility": 100,
             "bestPractices": 96,
             "seo": 100
@@ -102,7 +102,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 1490,
+          "durationSeconds": 1123,
           "runs": 2,
           "metrics": {
             "tests": 525,
@@ -132,6 +132,12 @@
           "id": "coverage-badge",
           "status": "skipped",
           "durationSeconds": null,
+          "runs": 1
+        },
+        {
+          "id": "gate",
+          "status": "success",
+          "durationSeconds": 2,
           "runs": 1
         }
       ]
@@ -379,6 +385,18 @@
     "backend": []
   },
   "merges": [
+    {
+      "number": 87,
+      "title": "fix(ci): find the CI artefacts reliably when the CD is run by hand",
+      "branch": "fix/cd-manual-artifact-lookup",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-22T15:29:04Z",
+      "sha": "3efe853ee04b4720b379da85c363a654ad912872",
+      "additions": 10,
+      "deletions": 2,
+      "changedFiles": 1,
+      "ci": null
+    },
     {
       "number": 86,
       "title": "perf(frontend): compile the hero scene's shaders asynchronously instead of on the first frame",
@@ -669,120 +687,28 @@
         "durationSeconds": 1,
         "jobs": []
       }
-    },
-    {
-      "number": 75,
-      "title": "fix(frontend): make the hero and the robot fit every phone, tablet and orientation",
-      "branch": "fix/mobile-audit",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-22T01:36:34Z",
-      "sha": "a841e1e4e7a2652d05d22c71cb046f79385976fa",
-      "additions": 146,
-      "deletions": 30,
-      "changedFiles": 10,
-      "ci": {
-        "runId": 39706672771,
-        "runNumber": 184,
-        "conclusion": "success",
-        "durationSeconds": 1219,
-        "jobs": [
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 2/2)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 1/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "3efe853ee04b4720b379da85c363a654ad912872",
+      "parents": [
+        "5f1ed491ea37cc95179a41d5818e3a08127ab7f9",
+        "afda94ed4205a6b0e1f24adf0b01b3ff7181dc3d"
+      ],
+      "subject": "Merge pull request #87 from JCardzZ/fix/cd-manual-artifact-lookup",
+      "author": "JCardzZ",
+      "date": "2026-10-22T15:29:04Z"
+    },
+    {
+      "sha": "afda94ed4205a6b0e1f24adf0b01b3ff7181dc3d",
+      "parents": [
+        "5f1ed491ea37cc95179a41d5818e3a08127ab7f9"
+      ],
+      "subject": "fix(ci): find the CI artefacts reliably when the CD is run by hand",
+      "author": "JCardzZ",
+      "date": "2026-10-22T15:15:08Z"
+    },
     {
       "sha": "5f1ed491ea37cc95179a41d5818e3a08127ab7f9",
       "parents": [
@@ -1332,26 +1258,6 @@
       "subject": "feat(frontend): show the delivery section as one card with four tabs",
       "author": "JCardzZ",
       "date": "2026-10-19T02:16:56Z"
-    },
-    {
-      "sha": "344d98a55bb2c8166a28769be88d78ba5afbdb5e",
-      "parents": [
-        "d3f7c79cedb4f29af2bbe9d2e067a8057b377ba3",
-        "2675bfb782e493a1e712db9d8a555cbc8004d204"
-      ],
-      "subject": "Merge remote-tracking branch 'origin/main' into fix/check-now-fold",
-      "author": "JCardzZ",
-      "date": "2026-10-19T02:16:42Z"
-    },
-    {
-      "sha": "2675bfb782e493a1e712db9d8a555cbc8004d204",
-      "parents": [
-        "190eb1b6d8978fad610c331c1ea065e1feb1156d",
-        "f19bb5740fa62ab2dd34df955e60db7415bd6891"
-      ],
-      "subject": "Merge pull request #63 from JCardzZ/feat/commit-graph",
-      "author": "JCardzZ",
-      "date": "2026-10-18T23:24:08Z"
     }
   ]
 }
