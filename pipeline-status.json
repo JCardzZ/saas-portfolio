@@ -2,16 +2,16 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-22T04:02:19.250Z",
+  "updatedAt": "2026-10-22T04:22:38.360Z",
   "workflows": {
     "ci": {
-      "runId": 39717402555,
-      "runNumber": 194,
-      "sha": "58b2937719285627b2ee673e4fa1ad11add7e7c7",
+      "runId": 39718733394,
+      "runNumber": 196,
+      "sha": "43c054cfedb4d3ce6b462f61584a28ba035772d1",
       "event": "push",
-      "startedAt": "2026-10-22T03:32:31Z",
-      "finishedAt": "2026-10-22T04:01:12.652Z",
-      "durationSeconds": 1722,
+      "startedAt": "2026-10-22T03:47:00Z",
+      "finishedAt": "2026-10-22T04:22:38.360Z",
+      "durationSeconds": 2138,
       "conclusion": "success",
       "jobs": [
         {
@@ -23,80 +23,64 @@
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 9,
+          "durationSeconds": 11,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 102,
+          "durationSeconds": 144,
           "runs": 2
         },
         {
           "id": "spec-lint",
-          "status": "success",
-          "durationSeconds": 13,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
           "id": "spec-breaking",
-          "status": "success",
-          "durationSeconds": 8,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 32,
+          "durationSeconds": 29,
           "runs": 1
         },
         {
           "id": "backend-unit",
-          "status": "success",
-          "durationSeconds": 106,
-          "runs": 1,
-          "metrics": {
-            "tests": 370,
-            "failed": 0,
-            "skipped": 2,
-            "coverage": 89.2
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "backend-integration",
-          "status": "success",
-          "durationSeconds": 128,
-          "runs": 1,
-          "metrics": {
-            "tests": 8,
-            "failed": 0,
-            "skipped": 0
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "backend-arch",
-          "status": "success",
-          "durationSeconds": 43,
-          "runs": 1,
-          "metrics": {
-            "tests": 15,
-            "failed": 0,
-            "skipped": 0
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 57,
+          "durationSeconds": 58,
           "runs": 3,
           "metrics": {
-            "tests": 751
+            "tests": 754
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 35,
+          "durationSeconds": 33,
           "runs": 1,
           "metrics": {
             "bundleKb": 341,
@@ -106,10 +90,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 63,
+          "durationSeconds": 60,
           "runs": 1,
           "metrics": {
-            "performance": 72,
+            "performance": 82,
             "accessibility": 100,
             "bestPractices": 96,
             "seo": 100
@@ -118,7 +102,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 1069,
+          "durationSeconds": 1122,
           "runs": 2,
           "metrics": {
             "tests": 525,
@@ -134,33 +118,26 @@
         },
         {
           "id": "docker",
-          "status": "success",
-          "durationSeconds": 186,
-          "runs": 1,
-          "metrics": {
-            "vulnerabilities": 0
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "publish-image",
-          "status": "success",
-          "durationSeconds": 78,
-          "runs": 1,
-          "metrics": {
-            "digest": "sha256:dd0c63e1ea84ef1953417b5bea3935fd593ef486271edbf87b8780b847cd83c2",
-            "sbomPackages": 217
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "coverage-badge",
-          "status": "success",
-          "durationSeconds": 5,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
           "id": "gate",
           "status": "success",
-          "durationSeconds": 4,
+          "durationSeconds": 3,
           "runs": 1
         }
       ]
@@ -430,6 +407,42 @@
   },
   "merges": [
     {
+      "number": 82,
+      "title": "fix(frontend): fit the robot and the inspector to their content and feed the mesh from the hero",
+      "branch": "fix/inspector-i18n-and-mobile-robot",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-22T04:07:19Z",
+      "sha": "1a4845076971839cbb50421140e836877da7239f",
+      "additions": 190,
+      "deletions": 26,
+      "changedFiles": 10,
+      "ci": {
+        "runId": 39720586514,
+        "runNumber": 200,
+        "conclusion": "pending",
+        "durationSeconds": 1,
+        "jobs": []
+      }
+    },
+    {
+      "number": 83,
+      "title": "feat(frontend): add the diagrams of the first two articles and let articles show images",
+      "branch": "feat/article-diagrams",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-22T04:06:53Z",
+      "sha": "fb7f23d4969d9a8fe3036536e35763b161800343",
+      "additions": 130,
+      "deletions": 0,
+      "changedFiles": 3,
+      "ci": {
+        "runId": 39720546547,
+        "runNumber": 199,
+        "conclusion": "cancelled",
+        "durationSeconds": 26,
+        "jobs": []
+      }
+    },
+    {
       "number": 81,
       "title": "feat(frontend): tell visitors whether the network mesh shows real or simulated traffic",
       "branch": "feat/mesh-traffic-legend",
@@ -689,138 +702,47 @@
       "deletions": 108,
       "changedFiles": 30,
       "ci": null
-    },
-    {
-      "number": 73,
-      "title": "feat(frontend): one tabbed card for the platform views instead of six stacked boxes",
-      "branch": "feat/platform-tabs",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-20T04:04:02Z",
-      "sha": "fbc04ef80cb4568d973e5d6a12427c224ba5795f",
-      "additions": 1191,
-      "deletions": 342,
-      "changedFiles": 43,
-      "ci": {
-        "runId": 39367584592,
-        "runNumber": 180,
-        "conclusion": "success",
-        "durationSeconds": 1293,
-        "jobs": [
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "success"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "success"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 1/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 2/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "success"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
-    },
-    {
-      "number": 69,
-      "title": "fix(frontend): bring the phased pipeline and the last telemetry fixes into main",
-      "branch": "fix/recover-pipeline-telemetry",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-19T04:55:24Z",
-      "sha": "39f35fd29cc2d65b98a45eab1c1b70418bf289f4",
-      "additions": 793,
-      "deletions": 79,
-      "changedFiles": 10,
-      "ci": {
-        "runId": 39201902545,
-        "runNumber": 173,
-        "conclusion": "pending",
-        "durationSeconds": 1,
-        "jobs": []
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "1a4845076971839cbb50421140e836877da7239f",
+      "parents": [
+        "fb7f23d4969d9a8fe3036536e35763b161800343",
+        "90846d648747aa88c3795105252da76b8219aa1d"
+      ],
+      "subject": "Merge pull request #82 from JCardzZ/fix/inspector-i18n-and-mobile-robot",
+      "author": "JCardzZ",
+      "date": "2026-10-22T04:07:18Z"
+    },
+    {
+      "sha": "fb7f23d4969d9a8fe3036536e35763b161800343",
+      "parents": [
+        "43c054cfedb4d3ce6b462f61584a28ba035772d1",
+        "dcdf1470b96b8b13ddf5c74e64d9124e607ff793"
+      ],
+      "subject": "Merge pull request #83 from JCardzZ/feat/article-diagrams",
+      "author": "JCardzZ",
+      "date": "2026-10-22T04:06:53Z"
+    },
+    {
+      "sha": "dcdf1470b96b8b13ddf5c74e64d9124e607ff793",
+      "parents": [
+        "43c054cfedb4d3ce6b462f61584a28ba035772d1"
+      ],
+      "subject": "feat(frontend): add the diagrams of the first two articles and let articles show images",
+      "author": "JCardzZ",
+      "date": "2026-10-22T04:05:08Z"
+    },
+    {
+      "sha": "90846d648747aa88c3795105252da76b8219aa1d",
+      "parents": [
+        "43c054cfedb4d3ce6b462f61584a28ba035772d1"
+      ],
+      "subject": "fix(frontend): fit the robot and the inspector to their content and feed the mesh from the hero",
+      "author": "JCardzZ",
+      "date": "2026-10-22T04:01:51Z"
+    },
     {
       "sha": "43c054cfedb4d3ce6b462f61584a28ba035772d1",
       "parents": [
@@ -1353,42 +1275,6 @@
       "subject": "Merge remote-tracking branch 'origin/main' into fix/check-now-fold",
       "author": "JCardzZ",
       "date": "2026-10-18T22:39:29Z"
-    },
-    {
-      "sha": "1a7a53d442c39c6761b83a2aaf1a6170b229cbfa",
-      "parents": [
-        "ed0fee5b35ebd4ada53df1a3f09a48b5e8f9861f"
-      ],
-      "subject": "fix(frontend): 44 px touch targets for the git log rows",
-      "author": "JCardzZ",
-      "date": "2026-10-18T22:37:24Z"
-    },
-    {
-      "sha": "ed0fee5b35ebd4ada53df1a3f09a48b5e8f9861f",
-      "parents": [
-        "3148f03f85901fe3ccae56cf786989139b0d886a"
-      ],
-      "subject": "feat(frontend): show merged branches like an IDE git log",
-      "author": "JCardzZ",
-      "date": "2026-10-18T21:01:03Z"
-    },
-    {
-      "sha": "a91a44a378584e15b9bb7da2176033f6e35c8fe2",
-      "parents": [
-        "841dfe90904f101b9c3733da5a1f2c34900ff222"
-      ],
-      "subject": "fix(frontend): keep the check-now logs at the bottom and fold the card's detail",
-      "author": "JCardzZ",
-      "date": "2026-10-18T20:56:10Z"
-    },
-    {
-      "sha": "841dfe90904f101b9c3733da5a1f2c34900ff222",
-      "parents": [
-        "738c2b008b6e9236ebd8c0da7e29b7eafa3d0bc6"
-      ],
-      "subject": "feat(frontend): each check-now log line lights its piece on the canvas",
-      "author": "JCardzZ",
-      "date": "2026-10-18T20:46:01Z"
     }
   ]
 }
