@@ -92,7 +92,7 @@
 
   /* Tarjeta de la página pública: opaca (docs/DESIGN.md §9.2). Al pasar el cursor solo cambia el borde. */
   .bento-card {
-    @apply rounded-card border border-line-subtle bg-surface-1 p-6 transition-colors duration-fast ease-standard
+    @apply rounded-card border border-line-subtle bg-surface-1 p-6 max-[399px]:p-4 transition-colors duration-fast ease-standard
       hover:border-line-strong;
   }
 
@@ -404,7 +404,8 @@ app-section-header::before {
 .hero-name {
   /* Mayúsculas en Space Grotesk 700: más institucional; algo más pequeño porque las mayúsculas ocupan más. */
   font-family: 'Space Grotesk', var(--font-sans);
-  font-size: clamp(2.4rem, 7.4vw, 6.75rem);
+  /* Escala con el ancho para caber en una línea también a 320 px (antes el mínimo de 2,4 rem lo partía en dos y montaba el nombre sobre el robot). */
+  font-size: clamp(1.6rem, 8.4vw, 6.75rem);
   letter-spacing: -0.02em;
   text-wrap: balance;
 }

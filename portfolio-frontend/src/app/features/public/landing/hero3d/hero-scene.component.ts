@@ -84,6 +84,7 @@ const DRAG_THRESHOLD = 6;
   border-bottom: 1px solid var(--border-subtle);
   transform: rotate(45deg);
 }
+.speech[data-squeezed] { visibility: hidden; opacity: 0; }
 .speech-narrow .speech-body::after { left: calc(50% - 6px); top: -7px; transform: rotate(135deg); }
 .caret {
   display: inline-block;
@@ -257,8 +258,9 @@ main :is(.bento-card, .theater-card, article) {
       <div
         #bubble
         class="speech pointer-events-none fixed left-0 top-0 z-[45] transition-opacity duration-slow"
-        [class.opacity-0]="!ready() || open() || (guiding() && !guideLine())"
-        [class.invisible]="!ready() || open() || (guiding() && !guideLine())"
+        [class.opacity-0]="!ready() || open() || (guiding() && !guideLine()) || (!guiding() && !heroInView())"
+        [class.invisible]="!ready() || open() || (guiding() && !guideLine()) || (!guiding() && !heroInView())"
+        data-hero-overlay
         [class.speech-narrow]="narrow"
         [class.speech-top]="guiding()"
       >
@@ -273,7 +275,7 @@ main :is(.bento-card, .theater-card, article) {
           <span class="flex items-start justify-between gap-2">
             <span class="min-w-0">
               <span class="block text-body-sm font-medium text-ink-2">{{ hello() }}</span>
-              <span class="block font-mono text-mono-sm text-ink-3">{{ pitch().lead }}</span>
+              <span class="block font-mono text-mono-sm text-ink-3" [class.hidden]="narrow">{{ pitch().lead }}</span>
             </span>
             <!-- Sonido y voz: apagados por defecto. -->
             <button
@@ -291,9 +293,9 @@ main :is(.bento-card, .theater-card, article) {
               }
             </button>
           </span>
-          <span class="mt-1 block min-h-[2lh] text-title-3 font-semibold text-ink-1"><span #typed aria-hidden="true"></span><span class="caret" aria-hidden="true"></span></span>
+          <span class="mt-1 block font-semibold text-ink-1" [class]="narrow ? 'min-h-[1lh] text-body' : 'min-h-[2lh] text-title-3'"><span #typed aria-hidden="true"></span><span class="caret" aria-hidden="true"></span></span>
           <!-- La invitación a abrir el mazo va aquí (antes, una píldora que tapaba el portátil). -->
-          <span class="mt-2 flex items-center gap-2 font-mono text-mono-sm text-ink-3" data-testid="hero-hint">
+          <span class="mt-2 flex items-center gap-2 font-mono text-mono-sm text-ink-3" [class.hidden]="narrow" data-testid="hero-hint">
             <span class="h-1.5 w-1.5 rounded-full bg-accent-solid" aria-hidden="true"></span>{{ hint() }}
           </span>
           <!-- Preguntar al asistente desde el bocadillo: abre el chat con la pregunta ya enviada. -->
@@ -378,6 +380,7 @@ main :is(.bento-card, .theater-card, article) {
         [class.cursor-pointer]="!open()"
         style="touch-action: pan-y"
         data-testid="hero-stack-toggle"
+        data-hero-overlay
         [attr.aria-pressed]="open()"
         [attr.aria-label]="label()"
         (pointerdown)="pressStart($event)"
@@ -454,6 +457,11 @@ export class HeroSceneComponent {
   readonly enabled = input(true);
 
   readonly ready = signal(false);
+  /**
+   * ¿Se ve el hero? Fuera de él la escena deja de dibujarse y el bocadillo (fijo) se quedaría
+   * flotando donde estaba, encima del resto de la página: se oculta (salvo en modo guía, que lo usa).
+   */
+  readonly heroInView = signal(true);
   /** Foco de teclado en la escena: la píldora reaparece para que se vea dónde está el foco. */
   readonly keyFocus = signal(false);
   /** Modo guía disponible: pantalla ancha (el robot camina por el margen) y 3D activo. */
@@ -1032,10 +1040,21 @@ export class HeroSceneComponent {
     };
     const bubbleAt = { x: -1000, y: -1000 };
     let bubbleGuide = false;
+    // Tamaño del bocadillo, sin leerlo en cada fotograma: lo da un ResizeObserver.
+    const bubbleSize = { w: 0, h: 0 };
+    let sizeObserver: ResizeObserver | null = null;
+    destroyRef.onDestroy(() => sizeObserver?.disconnect());
     const placeBubble = () => {
       placeLaser();
       const el = bubbleEl();
       if (!el) return;
+      if (!sizeObserver && typeof ResizeObserver === 'function') {
+        sizeObserver = new ResizeObserver(([entry]) => {
+          bubbleSize.w = entry.borderBoxSize?.[0]?.inlineSize ?? entry.contentRect.width;
+          bubbleSize.h = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
+        });
+        sizeObserver.observe(el);
+      }
       const guide = this.guiding();
       const raw = scene.anchor(this.narrow && !guide, guide ? 'top' : undefined);
       // Margen muerto: la respiración del robot no debe hacer temblar el bocadillo (ni sus botones).
@@ -1050,7 +1069,27 @@ export class HeroSceneComponent {
       const lift = scene.stretchLevel();
       document.documentElement.style.setProperty('--robot-lift', lift.toFixed(3));
       const pushed = `translate3d(${Math.round(lift * 46)}px, ${Math.round(-lift * 18)}px, 0) rotate(${(lift * 2.5).toFixed(2)}deg)`;
-      el.style.transform = (guide
+      // Dentro de la pantalla y nunca encima de los botones del hero: el bocadillo es fixed y va por
+      // encima de ellos, así que se aparta él (antes los tapaba en todos los móviles y se salía en tableta).
+      let dx = 0;
+      let dy = 0;
+      let squeezed = false;
+      if (bubbleSize.w && bubbleSize.h) {
+        const { w, h } = bubbleSize;
+        const left = guide ? at.x - 0.82 * w : this.narrow ? at.x - w / 2 : at.x;
+        const top = guide ? at.y - h - 14 : at.y - h / 2;
+        const margin = 12;
+        if (left < margin) dx = margin - left;
+        else if (left + w > innerWidth - margin) dx = innerWidth - margin - (left + w);
+        const foot = guide ? null : document.querySelector('.hero-foot')?.getBoundingClientRect();
+        // Solo mientras los botones se ven: al bajar por la página el bocadillo ya no compite con ellos.
+        if (foot && foot.height && foot.bottom > 0 && foot.top < innerHeight && top + h > foot.top - 10) dy = foot.top - 10 - (top + h);
+        // Si para no tapar los botones tuviera que subir encima del rol, no hay sitio: se oculta.
+        const role = guide ? null : document.querySelector('.hero-role')?.getBoundingClientRect();
+        squeezed = !!role && top + dy < role.bottom + 8;
+      }
+      el.toggleAttribute('data-squeezed', squeezed);
+      el.style.transform = `translate3d(${Math.round(dx)}px, ${Math.round(dy)}px, 0) ` + (guide
         ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-82%, calc(-100% - 14px))`
         : this.narrow
         ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-50%, -50%)`
@@ -1301,8 +1340,10 @@ export class HeroSceneComponent {
     document.addEventListener('visibilitychange', onVisibility);
     const seen = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
+      // Con menos de un tercio del hero a la vista, el bocadillo ya no tiene a quién acompañar.
+      this.heroInView.set(entry.intersectionRatio > 0.33);
       kick();
-    });
+    }, { threshold: [0, 0.33, 0.66, 1] });
     seen.observe(frame);
 
     this.ready.set(true);

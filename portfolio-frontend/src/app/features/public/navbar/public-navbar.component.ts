@@ -82,6 +82,17 @@ export { PAGE_SECTIONS } from './page-sections';
                   {{ en() ? 'Language' : 'Idioma' }}
                   <app-language-switch />
                 </li>
+                <!-- Por debajo de 400 px el tema también vive aquí: en la barra no cabe en una fila. -->
+                <li class="hidden items-center justify-between px-3 pb-1 pt-1 text-body-sm text-ink-2 max-[399px]:flex">
+                  {{ en() ? 'Theme' : 'Tema' }}
+                  <button type="button" class="ui-btn-ghost ui-btn-icon" data-testid="theme-toggle-menu" [attr.aria-label]="themeWord() + themeLabel()" (click)="theme.next()">
+                    @if (theme.effective() === 'light') {
+                      <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v1.5M12 18.5V20M4 12h1.5M18.5 12H20M6.3 6.3l1 1M16.7 16.7l1 1M6.3 17.7l1-1M16.7 7.3l1-1M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" /></svg>
+                    } @else {
+                      <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z" /></svg>
+                    }
+                  </button>
+                </li>
               </ul>
             }
           </div>
@@ -89,7 +100,7 @@ export { PAGE_SECTIONS } from './page-sections';
           <!-- Tema: claro ↔ oscuro. El icono dice el que se ve. -->
           <button
             type="button"
-            class="ui-btn-ghost ui-btn-icon"
+            class="ui-btn-ghost ui-btn-icon max-[399px]:hidden"
             data-testid="theme-toggle"
             [attr.aria-label]="themeWord() + themeLabel()"
             [attr.title]="themeWord() + themeLabel()"
