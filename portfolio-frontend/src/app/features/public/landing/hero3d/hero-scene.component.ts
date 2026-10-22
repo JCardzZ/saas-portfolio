@@ -858,6 +858,7 @@ export class HeroSceneComponent {
     this.kickFrame?.();
   }
 
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly bubble = viewChild<ElementRef<HTMLElement>>('bubble');
   private readonly laser = viewChild<ElementRef<SVGSVGElement>>('laser');
@@ -916,7 +917,25 @@ export class HeroSceneComponent {
         this.failed.set(true);
         return;
       }
-      zone.runOutsideAngular(() => void this.start(destroyRef));
+      // Después del primer pintado (el nombre es lo que mide el LCP) y solo si la escena se ve: en
+      // un móvil en horizontal está oculta y Three.js no se descarga hasta que se gira.
+      const host = this.host.nativeElement;
+      let destroyed = false;
+      destroyRef.onDestroy(() => (destroyed = true));
+      const go = () => !destroyed && zone.runOutsideAngular(() => void this.start(destroyRef));
+      const whenIdle = () => ('requestIdleCallback' in window ? requestIdleCallback(go, { timeout: 1500 }) : setTimeout(go, 300));
+      if (host.getClientRects().length) {
+        whenIdle();
+        return;
+      }
+      const shown = new ResizeObserver(() => {
+        if (host.getClientRects().length) {
+          shown.disconnect();
+          whenIdle();
+        }
+      });
+      shown.observe(host);
+      destroyRef.onDestroy(() => shown.disconnect());
     });
   }
 
@@ -928,7 +947,7 @@ export class HeroSceneComponent {
     }
     let scene: HeroScene;
     try {
-      const [three, { createHeroScene }, cardTexts] = await Promise.all([import('three'), import('./hero-scene'), import('./stack-cards')]);
+      const [three, { createHeroScene }, cardTexts] = await Promise.all([import('../../../../shared/three/three-lite'), import('./hero-scene'), import('./stack-cards')]);
       cards = cardTexts;
       this.cardsReady.set(true);
       const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;

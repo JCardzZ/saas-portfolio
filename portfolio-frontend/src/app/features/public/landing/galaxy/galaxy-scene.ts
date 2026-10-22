@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import type * as THREE from '../../../../shared/three/three-lite';
 
 /**
  * Galaxia espiral de fondo (Three.js): puntos en cuatro brazos, más densos y con el acento en el
