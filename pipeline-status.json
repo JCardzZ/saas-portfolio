@@ -2,7 +2,7 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-22T04:59:24.945Z",
+  "updatedAt": "2026-10-22T14:56:35.819Z",
   "workflows": {
     "ci": {
       "runId": 39723011851,
@@ -143,45 +143,23 @@
       ]
     },
     "cd": {
-      "runId": 39725369618,
-      "runNumber": 74,
-      "sha": "af902b2954606e227ae71bfc3923729eaaf92356",
-      "event": "workflow_run",
-      "startedAt": "2026-10-22T04:58:37Z",
-      "finishedAt": "2026-10-22T04:59:24.945Z",
-      "durationSeconds": 48,
+      "runId": 39800018943,
+      "runNumber": 75,
+      "sha": "4a43c4b28a394be63537c6e0c5d21aff6eae2ff2",
+      "event": "workflow_dispatch",
+      "startedAt": "2026-10-22T14:55:39Z",
+      "finishedAt": "2026-10-22T14:56:35.819Z",
+      "durationSeconds": 57,
       "conclusion": "success",
       "jobs": [
         {
           "id": "source",
           "status": "success",
-          "durationSeconds": 7,
-          "runs": 1,
-          "metrics": {}
-        },
-        {
-          "id": "frontend-deploy",
-          "status": "success",
-          "durationSeconds": 24,
+          "durationSeconds": 12,
           "runs": 1,
           "metrics": {
-            "deployedSha": "af902b2954606e227ae71bfc3923729eaaf92356",
-            "healthy": true,
-            "deploymentUrl": "https://53a57151.saas-portfolio-a6s.pages.dev",
-            "deploymentId": "53a57151-d012-41d0-98df-4180f848bc9d"
+            "signatureVerified": true
           }
-        },
-        {
-          "id": "deploy",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
-        },
-        {
-          "id": "smoke",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
         },
         {
           "id": "release",
