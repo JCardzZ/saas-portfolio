@@ -464,7 +464,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   const codeTexture = keep(new three.CanvasTexture(codeArt));
   codeTexture.colorSpace = three.SRGBColorSpace;
   codeTexture.anisotropy = 4;
-  const codeMat = keep(new three.MeshBasicMaterial({ map: codeTexture, transparent: true, depthWrite: false, side: three.DoubleSide, blending: three.AdditiveBlending }));
+  // Ventana sobria (vidrio oscuro, sin brillo aditivo): antes era un holograma verde con barrido y parpadeo.
+  const codeMat = keep(new three.MeshBasicMaterial({ map: codeTexture, transparent: true, depthWrite: false, side: three.DoubleSide }));
   const CODE_HOME = new three.Vector3(-4.9, 0.4, 2.25);
   const SCREEN_W = 4.9;
   const SCREEN_H = 3.06;
@@ -557,25 +558,18 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     const H = codeArt.height;
     ctx.clearRect(0, 0, W, H);
     // Marco del holograma: fondo verdoso, rejilla y líneas de barrido.
-    ctx.fillStyle = colors.light ? 'rgba(20,60,20,0.2)' : 'rgba(40,120,40,0.15)';
+    ctx.fillStyle = colors.light ? 'rgba(255,255,255,0.92)' : 'rgba(14,17,15,0.9)';
     ctx.beginPath();
-    ctx.roundRect(2, 2, W - 4, H - 4, 26);
+    ctx.roundRect(2, 2, W - 4, H - 4, 22);
     ctx.fill();
-    ctx.globalAlpha = 0.06;
-    ctx.fillStyle = colors.accent;
-    for (let y = 8; y < H; y += 7) ctx.fillRect(6, y, W - 12, 2);
-    for (let x = 32; x < W; x += 32) ctx.fillRect(x, 60, 1, H - 70);
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = colors.accent;
-    ctx.lineWidth = 4;
+    ctx.strokeStyle = colors.line;
+    ctx.lineWidth = 2;
     ctx.stroke();
     // Cabecera: lo que se está diseñando, con cursor.
     const cycle = archT % 9;
     ctx.textBaseline = 'middle';
     ctx.fillStyle = colors.light ? colors.accentText : colors.ink;
-    ctx.shadowColor = colors.accent;
-    ctx.shadowBlur = 14;
-    ctx.font = '800 32px "JetBrains Mono", ui-monospace, monospace';
+    ctx.font = '600 30px "JetBrains Mono", ui-monospace, monospace';
     const heading = '> design --saas --cloud aws|azure|gcp';
     const typed = heading.slice(0, Math.floor(Math.min(1, cycle / 0.5) * heading.length));
     ctx.fillText(typed + (Math.floor(archT * 2) % 2 ? '▌' : ''), 34, 36);
@@ -1502,7 +1496,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     genieOut += ((stackOpen ? 0 : 1) - genieOut) * (1 - Math.exp(-dt * (stackOpen ? 6 : 3)));
     const tailGrow = Math.min(settling ? ph(0.6, 0.85) : 1, Math.min(1, genieOut * 1.6));
     tailGeometry.setDrawRange(0, Math.floor(TAIL_INDEX * Math.max(0.001, tailGrow)));
-    tailMat.opacity = tailGrow * (0.13 + (animate ? Math.sin(t * 2.2) * 0.04 : 0));
+    // Sin estela de humo ni chispas: la ventana se abre desde el portátil, sin efectos.
+    tailMat.opacity = 0;
     const open = Math.min(ph(0.78, 1), Math.max(0, genieOut * 1.6 - 0.6));
     codeScreen.visible = open > 0.01;
     codeScreen.scale.set(Math.max(0.001, open * screenScale), Math.max(0.001, open * open * screenScale), 1);
@@ -1511,13 +1506,12 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     codeScreen.position.x -= stretchNow * 0.7;
     codeScreen.position.y += stretchNow * 0.35;
     codeScreen.rotation.set(-0.04, 0.22 + (1 - open) * 1.4 + stretchNow * 0.25, (1 - open) * -0.6 + stretchNow * 0.06);
-    const glitch = animate && Math.sin(t * 0.7) > 0.985 ? 0.6 : 1;
-    codeMat.opacity = open * glitch * (0.94 + (animate ? Math.sin(t * 13) * 0.03 : 0));
+    codeMat.opacity = open;
     sweepBar.position.y = animate ? SCREEN_H / 2 - ((t * 0.45) % 1) * SCREEN_H : 0;
-    sweepMat.opacity = open * 0.3;
-    haloMat.opacity = open * (0.07 + (animate ? Math.sin(t * 2) * 0.025 : 0));
+    sweepMat.opacity = 0;
+    haloMat.opacity = 0;
     // Chispas en espiral a lo largo de la estela.
-    motes.visible = tailGrow > 0.05;
+    motes.visible = false;
     for (let i = 0; i < MOTES; i++) {
       const u = animate ? (moteSeed[i] + t * (0.12 + moteSeed[i] * 0.1)) % 1 : moteSeed[i];
       geniePath.getPointAt(u, motePoint);
@@ -1623,11 +1617,12 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     anchor(narrow, side) {
       // Ancho: a la derecha de la cabeza, centrado a la altura de los ojos (a la izquierda en modo
       // guía, porque el robot está en el margen derecho).
-      // Estrecho: sobre el faldón del escritorio, bajo el robot (encima no cabe: está el rol).
+      // Estrecho: encima de la cabeza (el bocadillo es una línea y cabe entre el rol y la antena; si
+      // no cabe, el componente lo oculta). Debajo, sobre el escritorio, tapaba el cuerpo del robot.
       const point = narrow
-        ? new three.Vector3(0, -3.55, 3.1)
-        : side === 'top' ? new three.Vector3(0, 1.9, 0) : new three.Vector3(side === 'left' ? -1.55 : 1.55, 0.1, 0);
-      (narrow ? character : head).localToWorld(point);
+        ? new three.Vector3(0, 1.25, 0)
+        : side === 'top' ? new three.Vector3(0, 1.9, 0) : new three.Vector3(side === 'left' ? -1.55 : 2.05, 0.1, 0);
+      head.localToWorld(point);
       if (!guideActive) point.y -= standLift;
       point.project(camera);
       return { x: ((point.x + 1) / 2) * viewWidth, y: ((1 - point.y) / 2) * viewHeight };

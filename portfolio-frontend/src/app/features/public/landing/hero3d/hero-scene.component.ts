@@ -87,13 +87,13 @@ const DRAG_THRESHOLD = 6;
 .speech[data-squeezed] { visibility: hidden; opacity: 0; }
 /* En el móvil el bocadillo es una sola línea (lo que escribe y el sonido): con el saludo encima
    ocupaba tanto que tapaba el cuerpo del robot. */
-.speech-body.compact { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 0.5rem; align-items: center; padding-block: 0.375rem; }
-.speech-body.compact > .head { display: contents; }
-.speech-body.compact > .head > .min-w-0 { display: none; }
+.speech-body.compact { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; padding-block: 0.375rem; }
+.speech-body.compact > .typed-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.speech-body.compact > .head { display: none; }
 .speech-body.compact > .head > button { grid-column: 2; grid-row: 1; margin: 0; }
 .speech-body.compact > .typed-line { grid-column: 1; grid-row: 1; margin-top: 0; }
 .speech-body.compact > :not(.head):not(.typed-line) { grid-column: 1 / -1; }
-.speech-narrow .speech-body::after { left: calc(50% - 6px); top: -7px; transform: rotate(135deg); }
+.speech-narrow .speech-body::after { left: calc(50% - 6px); top: auto; bottom: -7px; transform: rotate(-45deg); }
 .caret {
   display: inline-block;
   width: 2px;
@@ -889,7 +889,12 @@ export class HeroSceneComponent {
   private touched: HTMLElement | null = null;
   private readonly typed = viewChild<ElementRef<HTMLElement>>('typed');
   /** Pantalla estrecha: el bocadillo va encima de la cabeza y no a su lado. */
-  readonly narrow = typeof matchMedia === 'function' && matchMedia('(max-width: 767px)').matches;
+  /**
+   * Pantalla sin sitio a la derecha de la cabeza (por debajo de 1024 px): el bocadillo es una sola
+   * línea encima de la cabeza. Antes, en tabletas, no cabía al lado y, para no salirse de la pantalla,
+   * se desplazaba encima del robot.
+   */
+  readonly narrow = typeof matchMedia === 'function' && matchMedia('(max-width: 1023px)').matches;
   /** Lo que ofrezco, en frases cortas que el robot escribe una tras otra. */
   readonly pitch = computed(() =>
     this.i18n.lang() === 'en'
@@ -1117,7 +1122,7 @@ export class HeroSceneComponent {
       if (bubbleSize.w && bubbleSize.h) {
         const { w, h } = bubbleSize;
         const left = guide ? at.x - 0.82 * w : this.narrow ? at.x - w / 2 : at.x;
-        const top = (guide ? at.y - h - 14 : at.y - h / 2) + pageOffset;
+        const top = (guide ? at.y - h - 14 : this.narrow ? at.y - h - 10 : at.y - h / 2) + pageOffset;
         const margin = 12;
         if (left < margin) dx = margin - left;
         else if (left + w > innerWidth - margin) dx = innerWidth - margin - (left + w);
@@ -1139,7 +1144,7 @@ export class HeroSceneComponent {
       el.style.transform = `translate3d(${Math.round(dx)}px, ${Math.round(dy)}px, 0) ` + (guide
         ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-82%, calc(-100% - 14px))`
         : this.narrow
-        ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-50%, -50%)`
+        ? `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translate(-50%, calc(-100% - 10px))`
         : `translate3d(${Math.round(at.x)}px, ${Math.round(at.y)}px, 0) translateY(-50%)`) + (guide ? '' : ' ' + pushed);
     };
     // Máquina de escribir: escribe, espera, borra y pasa a la siguiente frase.
