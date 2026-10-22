@@ -462,6 +462,13 @@ app-section-header::before {
   font-size: 0.85em;
   line-height: 1.55;
 }
+.markdown img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+}
 .markdown blockquote {
   border-left: 2px solid rgb(var(--c-ink-1) / 0.25);
   padding-left: 0.8em;

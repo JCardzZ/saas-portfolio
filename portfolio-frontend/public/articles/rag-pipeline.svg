@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" role="img" aria-labelledby="t d">
+  <title id="t">Pipeline RAG del portafolio</title>
+  <desc id="d">Ingesta: contenido del CMS, código y trayectoria se trocean en fragmentos de hasta 1800 caracteres, Gemini los convierte en vectores de 768 dimensiones y se guardan en PostgreSQL con pgvector. Consulta: la pregunta pasa el límite de peticiones, se convierte en vector, se buscan los fragmentos más cercanos del mismo tenant y Gemini responde citándolos.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7FEE64"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#88938A"/></marker>
+  </defs>
+  <rect width="1200" height="600" fill="#0C0E0D"/>
+  <g font-family="Inter, system-ui, sans-serif">
+    <text x="40" y="56" fill="#EEF6EC" font-size="26" font-weight="600">RAG con pgvector y Gemini</text>
+    <text x="40" y="84" fill="#88938A" font-size="16">Arriba, la ingesta (al reindexar). Abajo, cada pregunta.</text>
+
+    <!-- Ingesta -->
+    <text x="40" y="140" fill="#7FEE64" font-size="14" font-weight="600" letter-spacing="1.5">INGESTA</text>
+    <g fill="#151816" stroke="#3A423C">
+      <rect x="40" y="158" width="200" height="96" rx="8"/>
+      <rect x="300" y="158" width="200" height="96" rx="8"/>
+      <rect x="560" y="158" width="200" height="96" rx="8"/>
+      <rect x="820" y="158" width="320" height="96" rx="8" stroke="#7FEE64"/>
+    </g>
+    <g fill="#EEF6EC" font-size="17" font-weight="600">
+      <text x="60" y="194">Fuentes</text>
+      <text x="320" y="194">Troceado</text>
+      <text x="580" y="194">Embedding</text>
+      <text x="840" y="194">PostgreSQL + pgvector</text>
+    </g>
+    <g fill="#A9B4AA" font-size="14">
+      <text x="60" y="220">CMS, código permitido,</text>
+      <text x="60" y="240">trayectoria</text>
+      <text x="320" y="220">≤ 1800 caracteres</text>
+      <text x="320" y="240">o 60 líneas por trozo</text>
+      <text x="580" y="220">gemini-embedding-2</text>
+      <text x="580" y="240">768 dimensiones</text>
+      <text x="840" y="220">vector(768) · índice HNSW</text>
+      <text x="840" y="240">una fila por trozo, con tenant_id</text>
+    </g>
+    <g stroke="#88938A" stroke-width="2" marker-end="url(#g)">
+      <line x1="240" y1="206" x2="296" y2="206"/>
+      <line x1="500" y1="206" x2="556" y2="206"/>
+      <line x1="760" y1="206" x2="816" y2="206"/>
+    </g>
+
+    <!-- Consulta -->
+    <text x="40" y="340" fill="#7FEE64" font-size="14" font-weight="600" letter-spacing="1.5">CONSULTA</text>
+    <g fill="#151816" stroke="#3A423C">
+      <rect x="40" y="358" width="200" height="96" rx="8"/>
+      <rect x="300" y="358" width="200" height="96" rx="8"/>
+      <rect x="560" y="358" width="200" height="96" rx="8"/>
+      <rect x="820" y="358" width="320" height="96" rx="8"/>
+    </g>
+    <g fill="#EEF6EC" font-size="17" font-weight="600">
+      <text x="60" y="394">Pregunta</text>
+      <text x="320" y="394">Vector</text>
+      <text x="580" y="394">Búsqueda</text>
+      <text x="840" y="394">Respuesta con citas</text>
+    </g>
+    <g fill="#A9B4AA" font-size="14">
+      <text x="60" y="420">límite por IP</text>
+      <text x="60" y="440">y global diario</text>
+      <text x="320" y="420">mismo modelo,</text>
+      <text x="320" y="440">prefijo de consulta</text>
+      <text x="580" y="420">WHERE tenant_id = ?</text>
+      <text x="580" y="440">ORDER BY &lt;=&gt; LIMIT k</text>
+      <text x="840" y="420">Gemini, solo con el contexto;</text>
+      <text x="840" y="440">circuit breaker si falla</text>
+    </g>
+    <g stroke="#7FEE64" stroke-width="2" marker-end="url(#a)">
+      <line x1="240" y1="406" x2="296" y2="406"/>
+      <line x1="500" y1="406" x2="556" y2="406"/>
+      <line x1="760" y1="406" x2="816" y2="406"/>
+    </g>
+    <!-- La búsqueda lee del índice -->
+    <path d="M980 254 V300 H660 V352" fill="none" stroke="#7FEE64" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#a)"/>
+    <text x="680" y="292" fill="#A9B4AA" font-size="14">lee los k trozos más cercanos</text>
+
+    <text x="40" y="540" fill="#88938A" font-size="14">Los trozos son datos, no instrucciones: el prompt de sistema le dice al modelo que ignore órdenes dentro del contexto.</text>
+    <text x="40" y="564" fill="#88938A" font-size="14">Diagrama propio, a partir del código de la plataforma (github.com/JCardzZ/saas-portfolio).</text>
+  </g>
+</svg>

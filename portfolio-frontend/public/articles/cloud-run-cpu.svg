@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" role="img" aria-labelledby="t d">
+  <title id="t">CPU de Cloud Run con facturación por petición</title>
+  <desc id="d">Antes: la API responde 202 y deja el reindexado en un hilo aparte; al enviar la respuesta Cloud Run deja de asignar CPU y el trabajo se queda a medias. Después: el reindexado termina dentro de la petición y la respuesta llega al final, así que la CPU está asignada todo el tiempo.</desc>
+  <defs>
+    <pattern id="h" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="#5a2a2a" stroke-width="4"/></pattern>
+  </defs>
+  <rect width="1200" height="600" fill="#0C0E0D"/>
+  <g font-family="Inter, system-ui, sans-serif">
+    <text x="40" y="56" fill="#EEF6EC" font-size="26" font-weight="600">Cloud Run: la CPU solo existe durante la petición</text>
+    <text x="40" y="84" fill="#88938A" font-size="16">Facturación por petición (la predeterminada): «CPU is only allocated during request processing».</text>
+
+    <!-- Eje de tiempo -->
+    <g fill="#88938A" font-size="13">
+      <text x="240" y="132">llega la petición</text>
+      <text x="560" y="132">se envía la respuesta</text>
+      <text x="1040" y="132">tiempo →</text>
+    </g>
+    <g stroke="#3A423C" stroke-dasharray="4 6">
+      <line x1="240" y1="142" x2="240" y2="520"/>
+      <line x1="560" y1="142" x2="560" y2="320"/>
+    </g>
+
+    <!-- Antes -->
+    <text x="40" y="190" fill="#FF7B7B" font-size="15" font-weight="600">ANTES</text>
+    <text x="40" y="212" fill="#A9B4AA" font-size="14">202 + hilo aparte</text>
+    <rect x="240" y="176" width="320" height="40" rx="6" fill="#1E2320" stroke="#7FEE64"/>
+    <text x="256" y="202" fill="#EEF6EC" font-size="15">CPU asignada · arranca el reindexado</text>
+    <rect x="560" y="176" width="440" height="40" rx="6" fill="url(#h)" stroke="#FF7B7B"/>
+    <text x="576" y="202" fill="#EEF6EC" font-size="15">CPU recortada · el hilo apenas avanza</text>
+    <text x="240" y="252" fill="#A9B4AA" font-size="14">En el log: «Loaded 5 source files» y nada más. El índice se quedó vacío.</text>
+
+    <!-- Después -->
+    <text x="40" y="390" fill="#7FEE64" font-size="15" font-weight="600">DESPUÉS</text>
+    <text x="40" y="412" fill="#A9B4AA" font-size="14">termina y responde</text>
+    <rect x="240" y="376" width="620" height="40" rx="6" fill="#1E2320" stroke="#7FEE64"/>
+    <text x="256" y="402" fill="#EEF6EC" font-size="15">CPU asignada · trocear, vectorizar y sustituir el índice</text>
+    <line x1="860" y1="352" x2="860" y2="440" stroke="#3A423C" stroke-dasharray="4 6"/>
+    <text x="872" y="402" fill="#7FEE64" font-size="15">202 al terminar</text>
+    <text x="240" y="452" fill="#A9B4AA" font-size="14">Si falla, el administrador recibe un 503 en vez de un error escondido en el log.</text>
+
+    <text x="40" y="540" fill="#88938A" font-size="14">Alternativas: facturación por instancia (CPU todo el ciclo de vida, se paga el tiempo encendido), Cloud Tasks o un Cloud Run job.</text>
+    <text x="40" y="564" fill="#88938A" font-size="14">Diagrama propio. Fuente de la cita: docs.cloud.google.com/run/docs/configuring/billing-settings</text>
+  </g>
+</svg>
