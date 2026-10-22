@@ -9,25 +9,25 @@ describe('EventConsoleComponent', () => {
   const status = signal<TelemetryStatus>('simulated');
   const telemetry = {
     status: status.asReadonly(),
-    connect: jasmine.createSpy('connect'),
-    disconnect: jasmine.createSpy('disconnect'),
+    acquire: jasmine.createSpy('acquire'),
+    release: jasmine.createSpy('release'),
   };
 
   beforeEach(() => {
     status.set('simulated');
-    telemetry.connect.calls.reset();
-    telemetry.disconnect.calls.reset();
+    telemetry.acquire.calls.reset();
+    telemetry.release.calls.reset();
     TestBed.configureTestingModule({ providers: [{ provide: TelemetryStreamService, useValue: telemetry }] });
   });
 
   it('opens the telemetry stream on start and closes it, with its timer, when destroyed', fakeAsync(() => {
     const fixture = TestBed.createComponent(EventConsoleComponent);
     fixture.detectChanges();
-    expect(telemetry.connect).toHaveBeenCalledTimes(1);
-    expect(telemetry.disconnect).not.toHaveBeenCalled();
+    expect(telemetry.acquire).toHaveBeenCalledTimes(1);
+    expect(telemetry.release).not.toHaveBeenCalled();
 
     fixture.destroy();
-    expect(telemetry.disconnect).toHaveBeenCalledTimes(1);
+    expect(telemetry.release).toHaveBeenCalledTimes(1);
 
     // Sin temporizadores vivos: fakeAsync fallaría si el intervalo siguiera activo.
     const count = TestBed.inject(SystemEventsService).events().length;

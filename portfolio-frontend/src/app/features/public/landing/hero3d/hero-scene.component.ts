@@ -85,6 +85,14 @@ const DRAG_THRESHOLD = 6;
   transform: rotate(45deg);
 }
 .speech[data-squeezed] { visibility: hidden; opacity: 0; }
+/* En el móvil el bocadillo es una sola línea (lo que escribe y el sonido): con el saludo encima
+   ocupaba tanto que tapaba el cuerpo del robot. */
+.speech-body.compact { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 0.5rem; align-items: center; padding-block: 0.375rem; }
+.speech-body.compact > .head { display: contents; }
+.speech-body.compact > .head > .min-w-0 { display: none; }
+.speech-body.compact > .head > button { grid-column: 2; grid-row: 1; margin: 0; }
+.speech-body.compact > .typed-line { grid-column: 1; grid-row: 1; margin-top: 0; }
+.speech-body.compact > :not(.head):not(.typed-line) { grid-column: 1 / -1; }
 .speech-narrow .speech-body::after { left: calc(50% - 6px); top: -7px; transform: rotate(135deg); }
 .caret {
   display: inline-block;
@@ -271,8 +279,8 @@ main :is(.bento-card, .theater-card, article) {
             <span class="mt-1 block text-body font-medium text-ink-1">{{ g.text }}</span>
           </div>
         }
-        <div class="speech-body rounded-card border border-line-subtle bg-surface-1/85 px-4 py-3 shadow-floating backdrop-blur-xl" [class.hidden]="guiding()">
-          <span class="flex items-start justify-between gap-2">
+        <div class="speech-body rounded-card border border-line-subtle bg-surface-1/85 px-4 py-3 shadow-floating backdrop-blur-xl" [class.hidden]="guiding()" [class.compact]="narrow">
+          <span class="head flex items-start justify-between gap-2">
             <span class="min-w-0">
               <span class="block text-body-sm font-medium text-ink-2">{{ hello() }}</span>
               <span class="block font-mono text-mono-sm text-ink-3" [class.hidden]="narrow">{{ pitch().lead }}</span>
@@ -293,7 +301,7 @@ main :is(.bento-card, .theater-card, article) {
               }
             </button>
           </span>
-          <span class="mt-1 block font-semibold text-ink-1" [class]="narrow ? 'min-h-[1lh] text-body' : 'min-h-[2lh] text-title-3'"><span #typed aria-hidden="true"></span><span class="caret" aria-hidden="true"></span></span>
+          <span class="typed-line mt-1 block font-semibold text-ink-1" [class]="narrow ? 'min-h-[1lh] text-body' : 'min-h-[2lh] text-title-3'"><span #typed aria-hidden="true"></span><span class="caret" aria-hidden="true"></span></span>
           <!-- La invitación a abrir el mazo va aquí (antes, una píldora que tapaba el portátil). -->
           <span class="mt-2 flex items-center gap-2 font-mono text-mono-sm text-ink-3" [class.hidden]="narrow" data-testid="hero-hint">
             <span class="h-1.5 w-1.5 rounded-full bg-accent-solid" aria-hidden="true"></span>{{ hint() }}

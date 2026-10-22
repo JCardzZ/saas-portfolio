@@ -57,7 +57,7 @@ const AMBIENT: (() => SystemEventStep)[] = [
         <!-- Dos columnas: la hora, y el evento, que al partirse sigue bajo su propia columna. -->
         <p class="log-row animate-fade-in" [class.user-event]="event.fromUser" [style.animation-delay.ms]="event.stagger">
           <span class="tabular-nums text-ink-3">@if (event.origin === 'live') {<span class="text-status-ok" [attr.title]="'Evento real del backend' | t">● </span>}{{ event.time }}</span>
-          <span class="min-w-0 break-words"><span [class]="kindClasses[event.kind]">[{{ event.tag }}]</span><span class="text-ink-2"> {{ event.detail }}</span></span>
+          <span class="min-w-0 break-words"><span [class]="kindClasses[event.kind]">[{{ event.tag }}]</span><span class="text-ink-2"> {{ event.detail | t }}</span></span>
         </p>
       } @empty {
         <p class="text-ink-3">{{ 'Esperando eventos…' | t }}</p>
@@ -115,7 +115,7 @@ export class EventConsoleComponent implements OnInit {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
       this.paused.set(true);
     }
-    this.telemetry.connect();
+    this.telemetry.acquire();
     // El generador simulado es el respaldo: calla en cuanto llegan eventos reales.
     const ticker = setInterval(() => {
       if (!this.paused() && !document.hidden && this.telemetry.status() !== 'live') {
@@ -127,7 +127,7 @@ export class EventConsoleComponent implements OnInit {
     }
     this.destroyRef.onDestroy(() => {
       clearInterval(ticker);
-      this.telemetry.disconnect();
+      this.telemetry.release();
     });
   }
 

@@ -482,6 +482,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   // de la pantalla. Más fina abajo (la «lámpara») y más ancha arriba.
   const LAMP = new three.Vector3(-0.45, -2.2, 2.35);
   const screenFoot = CODE_HOME.clone().add(new three.Vector3(0.6, -SCREEN_H / 2 + 0.05, 0.25));
+  /** Dónde queda la pantalla abierta: en vertical, más cerca de su pie porque es más pequeña. */
+  const screenHome = CODE_HOME.clone();
   const geniePath = new three.CatmullRomCurve3([
     LAMP,
     new three.Vector3(-0.2, -1.45, 2.9),
@@ -975,6 +977,13 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   let halfWidth = 4.3;
   let halfHeight = 2.7;
   let fit = 1;
+  /**
+   * Pantalla vertical (móvil): la composición entera (pantalla de código a la izquierda, robot y
+   * proyector a la derecha) tiene que caber a lo ancho. La pantalla de código se encoge desde su pie,
+   * donde termina la estela, y todo se desplaza para quedar centrado.
+   */
+  let screenScale = 1;
+  let offsetX = 0;
   let hovered: (typeof tiles)[number] | null = null;
   let focused: (typeof tiles)[number] | null = null;
   const raycaster = new three.Raycaster();
@@ -1272,8 +1281,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     scrollVel += ((nextScroll - scrollWorld) / Math.max(dt, 0.001) - scrollVel) * 0.2;
     scrollWorld = nextScroll;
     character.position.y = (animate ? Math.sin(t * 1.2) * 0.08 : 0) + scrollWorld + hop * 0.35 * fit;
-    character.position.x = 0;
-    furniture.position.set(0, scrollWorld, 0);
+    character.position.x = offsetX;
+    furniture.position.set(offsetX, scrollWorld, 0);
     // Cuando el hero ya quedó atrás, el escritorio no se dibuja (asomaría sobre las secciones).
     // Guiando (lienzo por delante del contenido) no se dibuja: asomaría sobre la barra y las secciones.
     // Mientras el hero sigue a la vista se ve el puesto (y la silla vacía); más abajo, guiando con el
@@ -1493,8 +1502,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     tailMat.opacity = tailGrow * (0.13 + (animate ? Math.sin(t * 2.2) * 0.04 : 0));
     const open = Math.min(ph(0.78, 1), Math.max(0, genieOut * 1.6 - 0.6));
     codeScreen.visible = open > 0.01;
-    codeScreen.scale.set(Math.max(0.001, open), Math.max(0.001, open * open), 1);
-    codeScreen.position.copy(screenFoot).lerp(CODE_HOME, open);
+    codeScreen.scale.set(Math.max(0.001, open * screenScale), Math.max(0.001, open * open * screenScale), 1);
+    codeScreen.position.copy(screenFoot).lerp(screenHome, open);
     // Al estirarse, el robot empuja el holograma con la mano: se desplaza y se inclina un poco.
     codeScreen.position.x -= stretchNow * 0.7;
     codeScreen.position.y += stretchNow * 0.35;
@@ -1686,7 +1695,14 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       halfWidth = halfHeight * camera.aspect;
       // El lienzo ocupa toda la pantalla: el robot, a escala de ella, queda en la mitad de abajo, bajo el nombre.
       // Robot entero con su escritorio (~6,2 de alto y de ancho) en la mitad baja, bajo el nombre.
-      fit = Math.min(halfHeight * 0.18, halfWidth * 0.31);
+      const portrait = camera.aspect < 0.8;
+      screenScale = portrait ? 0.6 : 1;
+      screenHome.copy(screenFoot).lerp(CODE_HOME, screenScale);
+      // De la izquierda de la pantalla de código al proyector, en unidades del robot.
+      const left = screenHome.x - (SCREEN_W / 2) * screenScale;
+      const right = DOCK.x + 0.8;
+      fit = portrait ? Math.min(halfHeight * 0.18, (2 * halfWidth * 0.94) / (right - left)) : Math.min(halfHeight * 0.18, halfWidth * 0.31);
+      offsetX = portrait ? -((left + right) / 2) * fit : 0;
       camera.position.y = -1.3 * fit + halfHeight * (camera.aspect < 0.8 ? 0.2 : 0.42);
       camera.updateProjectionMatrix();
     },

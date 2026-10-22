@@ -90,18 +90,34 @@ describe('TraceInspectorComponent', () => {
       return { fixture, element, inspector, press, panel: () => element.querySelector<HTMLElement>('section') };
     }
 
+    it('grows with its events up to the default height, so a single line does not leave an empty panel', () => {
+      const { panel, fixture } = open();
+      const events = TestBed.inject(SystemEventsService);
+      events.emit('ok', 'CacheHit Redis', 'GET /public/projects');
+      events.emit('ok', 'CacheHit Redis', 'GET /public/projects');
+      fixture.detectChanges();
+      const few = parseInt(panel()!.style.height, 10);
+      expect(few).toBeGreaterThanOrEqual(120);
+      expect(few).toBeLessThan(280);
+
+      for (let n = 0; n < 20; n++) events.emit('ok', 'CacheHit Redis', 'GET /public/projects');
+      fixture.detectChanges();
+      expect(panel()!.style.height).toBe('280px');
+    });
+
     it('opens docked at the bottom and makes the page leave it room, so it never covers the diagram', () => {
       const { panel, press, fixture, inspector } = open();
 
+      // Sin eventos todavía, el panel ocupa lo justo (el mínimo), no sus 280 px de vacío.
       expect(panel()!.dataset['layout']).toBe('bottom');
-      expect(panel()!.style.height).toBe('280px');
-      expect(root.getPropertyValue('--dock-bottom')).toBe('280px');
+      expect(panel()!.style.height).toBe('120px');
+      expect(root.getPropertyValue('--dock-bottom')).toBe('120px');
       expect(root.getPropertyValue('--dock-right')).toBe('0px');
 
       press('Maximizar el inspector');
       expect(root.getPropertyValue('--dock-bottom')).toBe('50dvh');
       press('Restaurar la altura');
-      expect(root.getPropertyValue('--dock-bottom')).toBe('280px');
+      expect(root.getPropertyValue('--dock-bottom')).toBe('120px');
 
       // Al cerrarlo la página recupera todo el espacio.
       inspector.close();

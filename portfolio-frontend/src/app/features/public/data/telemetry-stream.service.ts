@@ -62,6 +62,21 @@ export class TelemetryStreamService {
 
   private source: EventSource | null = null;
   private failures = 0;
+  /** Quién necesita el stream (la consola, la malla del fondo): se cierra cuando ya no queda nadie. */
+  private users = 0;
+
+  /** Pide el stream para un componente; ciérralo con `release()` al destruirlo. */
+  acquire(): void {
+    this.users++;
+    this.connect();
+  }
+
+  release(): void {
+    this.users = Math.max(0, this.users - 1);
+    if (this.users === 0) {
+      this.disconnect();
+    }
+  }
 
   connect(): void {
     if (!this.config.enabled || this.source) {

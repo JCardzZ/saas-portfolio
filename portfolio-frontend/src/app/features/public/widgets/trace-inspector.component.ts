@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, Injector, afterNextRender, computed, effect, inject, signal, viewChild,
 } from '@angular/core';
+import { LanguageService } from '../../../core/i18n/language.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { capturePointer } from '../../../shared/ui/pointer-capture';
 
@@ -36,6 +37,10 @@ export const BOTTOM_HEIGHT_PX = 280;
 export const BOTTOM_MIN_PX = 120;
 export const BOTTOM_MAX_RATIO = 0.8;
 const HEIGHT_STORAGE_KEY = 'trace-inspector-height';
+/** Medidas para ajustar el panel a su contenido: cabecera, relleno del registro y alto de una línea. */
+const HEADER_PX = 41;
+const LOG_PADDING_PX = 20;
+const LINE_PX = 20;
 const RESIZE_KEY_STEP = 24;
 const BOTTOM_HEIGHT_TALL = '50dvh';
 const RIGHT_WIDTH = '22rem';
@@ -159,7 +164,7 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
             <app-tech-icon class="ml-1" [icon]="icon" [size]="14" />
             <h3 class="min-w-0 flex-1 truncate font-mono text-mono-sm font-normal text-ink-1">
               {{ (layout() === 'right' ? 'Traza' : 'Inspector de traza') | t }} · {{ title() }}
-              <span class="text-ink-2">— {{ inspector.graphView() ? 'lienzo' : live() ? 'en vivo' : 'simulación' }}</span>
+              <span class="text-ink-2">— {{ (inspector.graphView() ? 'lienzo' : live() ? 'en vivo' : 'simulación') | t }}</span>
             </h3>
             @if (demo) {
               <app-demo-notice short />
@@ -233,10 +238,10 @@ const MODE_BUTTONS: { mode: InspectorMode; label: string; path: string }[] = [
                 <!-- Dos columnas: la hora, y el evento, que al partirse sigue bajo su propia columna. -->
                 <p class="log-row animate-fade-in">
                   <span class="tabular-nums text-ink-3">@if (event.origin === 'live') {<span class="text-status-ok" title="Evento real del backend">● </span>}{{ event.time }}</span>
-                  <span class="min-w-0 break-words">@if (event.level) {<span [class]="kindClasses[event.kind]">[{{ event.level }}] </span>}<span [class]="kindClasses[event.kind]">[{{ event.tag }}]</span><span class="text-ink-2"> {{ event.detail }}</span></span>
+                  <span class="min-w-0 break-words">@if (event.level) {<span [class]="kindClasses[event.kind]">[{{ event.level }}] </span>}<span [class]="kindClasses[event.kind]">[{{ event.tag }}]</span><span class="text-ink-2"> {{ event.detail | t }}</span></span>
                 </p>
               } @empty {
-                <p class="text-ink-3">Aún no hay eventos de {{ title() }}. Aparecerán aquí en cuanto intervenga en una petición.</p>
+                <p class="text-ink-3">{{ 'Aún no hay eventos de' | t }} {{ title() }}. {{ 'Aparecerán aquí en cuanto intervenga en una petición.' | t }}</p>
               }
             }
           </div>
@@ -322,7 +327,12 @@ export class TraceInspectorComponent {
     return tech ? TECH_ICONS[tech] : null;
   });
   /** Lo que se inspecciona: el nodo concreto si la selección vino de un diagrama, o la tecnología. */
-  readonly title = computed(() => this.inspector.label() ?? this.icon()?.title ?? '');
+  private readonly language = inject(LanguageService);
+  readonly title = computed(() => {
+    const es = this.inspector.label() ?? this.icon()?.title ?? '';
+    const dictionary = this.language.dictionary();
+    return this.language.lang() === 'en' && dictionary ? (dictionary[es] ?? es) : es;
+  });
   /**
    * «En vivo» si llega el stream real, o si todo lo que muestra ahora es real (p. ej. la respuesta
    * de «Comprobar ahora»): una comprobación de verdad no se rotula como simulación.
@@ -344,6 +354,8 @@ export class TraceInspectorComponent {
   readonly tall = signal(false);
   /** Altura elegida para el panel acoplado abajo; se recuerda entre visitas. */
   readonly bottomHeight = signal(storedHeight());
+  /** El visitante eligió un alto (arrastrando, con el teclado o en una visita anterior): manda el suyo. */
+  private readonly userSized = signal(hasStoredHeight());
   readonly resizing = signal(false);
   readonly minHeight = BOTTOM_MIN_PX;
   readonly maxHeight = signal(maxBottomHeight());
@@ -352,9 +364,19 @@ export class TraceInspectorComponent {
   /** Esquina superior izquierda del panel flotante, en píxeles de ventana. */
   readonly position = signal(initialPosition());
 
+  /**
+   * Alto que pide lo que hay dentro: con pocas líneas el panel no ocupa sus 280 px de vacío (y no
+   * encoge la página de más). Crece con cada evento hasta la altura elegida. Una línea de margen por
+   * si alguna se parte en dos.
+   */
+  private readonly contentHeight = computed(() => {
+    const lines = this.inspector.graphView() ? this.inspector.graphEntries().length * 3 : this.inspector.events().length;
+    return Math.max(BOTTOM_MIN_PX, HEADER_PX + LOG_PADDING_PX + (Math.max(1, lines) + 1) * LINE_PX);
+  });
+
   readonly height = computed(() => {
     switch (this.layout()) {
-      case 'bottom': return this.tall() ? BOTTOM_HEIGHT_TALL : `${this.inspector.compactHeight() ?? this.bottomHeight()}px`;
+      case 'bottom': return this.tall() ? BOTTOM_HEIGHT_TALL : `${this.inspector.compactHeight() ?? (this.userSized() ? this.bottomHeight() : Math.min(this.bottomHeight(), this.contentHeight()))}px`;
       case 'sheet': return this.tall() ? SHEET_HEIGHT_TALL : SHEET_HEIGHT;
       case 'floating': return `${FLOATING_HEIGHT}px`;
       default: return null;
@@ -550,6 +572,7 @@ export class TraceInspectorComponent {
     // Si el visitante lo redimensiona, manda su alto, no el compacto de una acción.
     this.inspector.compactHeight.set(null);
     this.tall.set(false);
+    this.userSized.set(true);
     this.bottomHeight.set(clampHeight(height));
   }
 
@@ -607,6 +630,14 @@ function maxBottomHeight(): number {
 
 function clampHeight(height: number): number {
   return Math.round(Math.max(BOTTOM_MIN_PX, Math.min(maxBottomHeight(), height)));
+}
+
+function hasStoredHeight(): boolean {
+  try {
+    return Number(localStorage.getItem(HEIGHT_STORAGE_KEY)) > 0;
+  } catch {
+    return false;
+  }
 }
 
 function storedHeight(): number {
