@@ -1029,4 +1029,11 @@ export const EN: Readonly<Record<string, string>> = {
   'Ver JSON completo': 'See full JSON',
   'Aún no hay cambios en el grafo. Edita el lienzo del Estudio de arquitectura y aparecerán aquí.': 'No graph changes yet. Edit the architecture studio canvas and they will show up here.',
   'Tema': 'Theme',
+  'Tráfico real': 'Live traffic',
+  'evento': 'event',
+  'eventos': 'events',
+  'Tráfico de la red': 'Network traffic',
+  'Cada ráfaga lima es un evento real del backend en este momento (caché, búsqueda vectorial, IA, autenticación). Las grises son tráfico de fondo.': 'Each lime burst is a real backend event happening right now (cache, vector search, AI, authentication). Grey ones are background traffic.',
+  'El servidor no está conectado: las ráfagas grises son eventos simulados en tu navegador. Con el backend en marcha, cada evento real se ve en lima.': 'The server is not connected: grey bursts are events simulated in your browser. With the backend running, every real event shows in lime.',
+  'Pulsa para ver los eventos.': 'Click to see the events.',
 };

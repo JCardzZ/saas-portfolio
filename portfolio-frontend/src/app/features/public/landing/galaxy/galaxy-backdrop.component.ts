@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, NgZone, afterNextRender, effect, inject, signal, viewChild } from '@angular/core';
 
 import { ThemeService } from '../../../../core/theme/theme.service';
+import { MeshTrafficService } from '../../data/mesh-traffic.service';
 import { SystemEventsService } from '../../data/system-events.service';
 import { hasFastWebGL } from '../../../../shared/ui/webgl-support';
 import type { BackdropPalette, BackdropScene } from './network-scene';
@@ -79,6 +80,7 @@ export class GalaxyBackdropComponent {
   private readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly theme = inject(ThemeService);
   private readonly events = inject(SystemEventsService);
+  private readonly traffic = inject(MeshTrafficService);
   private scene: BackdropScene | null = null;
   /** Último evento del sistema que ya se convirtió en tráfico. */
   private lastEventId = 0;
@@ -99,8 +101,12 @@ export class GalaxyBackdropComponent {
       const scene = this.scene;
       if (!scene) return;
       if (fresh.some((event) => /rag\/query|RAG_QUERY/i.test(event.tag))) scene.wave();
-      // Una secuencia de pasos llega junta: con una ráfaga por cada dos pasos basta.
-      for (let n = 0; n < Math.ceil(fresh.length / 2); n++) scene.burst();
+      // Una ráfaga por evento: en el acento si es real (SSE), en gris si es simulado.
+      for (const event of fresh) {
+        const real = event.origin === 'live';
+        scene.burst(real);
+        this.traffic.count(real);
+      }
     });
     afterNextRender(() => {
       const start = () => zone.runOutsideAngular(() => void this.start(destroyRef));
@@ -158,6 +164,7 @@ export class GalaxyBackdropComponent {
     resize();
     onScroll();
     this.ready.set(true);
+    this.traffic.rendering.set(true);
     kick();
     destroyRef.onDestroy(() => {
       cancelAnimationFrame(raf);
@@ -167,6 +174,7 @@ export class GalaxyBackdropComponent {
       document.documentElement.removeEventListener('pointerleave', onLeave);
       document.removeEventListener('visibilitychange', kick);
       scene.dispose();
+      this.traffic.rendering.set(false);
       this.scene = null;
     });
   }

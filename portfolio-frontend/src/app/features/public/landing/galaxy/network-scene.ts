@@ -5,8 +5,9 @@ import type * as THREE from '../../../../shared/three/three-lite';
  * sus vecinos más cercanos, y paquetes del acento (con estela) que viajan por los enlaces y, al
  * llegar a un nodo, siguen por otro, como tráfico entre servicios. Unos pocos nodos son «hubs».
  *
- * - `burst()`: ráfaga de paquetes desde un hub; la llama el componente con cada evento del sistema
- *   (los reales del SSE o, en modo demo, los simulados).
+ * - `burst(real)`: ráfaga de paquetes desde un hub, una por evento del sistema. Las de eventos
+ *   reales del backend (SSE) van en el acento; las simuladas y el tráfico de fondo, en gris: el lima
+ *   en movimiento significa siempre «esto acaba de pasar en el servidor».
  * - `wave()`: onda que recorre la malla del centro hacia fuera (al preguntar a la IA).
  * - `pointer()`: los nodos cercanos al cursor se iluminan, como una sonda.
  * - Niebla: lo lejano se desvanece. Al bajar por la página la cámara avanza a través de la malla.
@@ -23,8 +24,8 @@ export interface BackdropScene {
   resize(width: number, height: number): void;
   scroll(progress: number): void;
   setPalette(palette: BackdropPalette): void;
-  /** Ráfaga de tráfico desde un hub al azar. */
-  burst(): void;
+  /** Ráfaga de tráfico desde un hub al azar: en el acento si viene de un evento real. */
+  burst(real: boolean): void;
   /** Onda desde el centro de la malla. */
   wave(): void;
   /** Cursor en píxeles de la ventana, o `null` si salió. */
@@ -58,6 +59,10 @@ interface Packet {
   speed: number;
   /** Saltos que le quedan: `Infinity` para el tráfico de fondo, 0 = apagado. */
   hops: number;
+  /** De un evento real del backend: se pinta en el acento. */
+  real?: boolean;
+  /** De una ráfaga (real o simulada): un gris más claro que el tráfico de fondo. */
+  burst?: boolean;
 }
 
 export function createNetworkScene(three: typeof THREE, canvas: HTMLCanvasElement, palette: BackdropPalette): BackdropScene {
@@ -161,12 +166,16 @@ export function createNetworkScene(three: typeof THREE, canvas: HTMLCanvasElemen
     ...Array.from({ length: pairs.length ? BURST_SLOTS : 0 }, () => ({ link: 0, forward: true, t: 0, speed: 0, hops: 0 })),
   ];
   let nextSlot = packets.length - BURST_SLOTS;
+  // Color de cada paquete (lo comparten la cabeza y su estela).
+  const packetColors = new Float32Array(packets.length * 3);
+  const packetColorAttribute = new three.BufferAttribute(packetColors, 3);
   // La cabeza y cada copia de la estela son una nube de puntos con su tamaño y su opacidad.
   const layers = Array.from({ length: TRAIL + 1 }, (_, layer) => {
     const positions = new Float32Array(packets.length * 3);
     const geometry = new three.BufferGeometry();
     geometry.setAttribute('position', new three.BufferAttribute(positions, 3));
-    const material = pointsMaterial(0.3 * (1 - layer * 0.22));
+    geometry.setAttribute('color', packetColorAttribute);
+    const material = pointsMaterial(0.3 * (1 - layer * 0.22), true);
     mesh.add(new three.Points(geometry, material));
     return { positions, geometry, material, fade: 1 - layer * 0.28 };
   });
@@ -193,15 +202,25 @@ export function createNetworkScene(three: typeof THREE, canvas: HTMLCanvasElemen
     hubMaterial.opacity = next.light ? 0.6 : 0.8;
     lineMaterial.opacity = next.light ? 0.14 : 0.15;
     for (const layer of layers) {
-      layer.material.color.copy(accent);
       layer.material.opacity = (next.light ? 0.75 : 0.95) * layer.fade;
     }
+    packets.forEach(paint);
     for (const material of [nodeMaterial, hubMaterial, lineMaterial, ...layers.map((layer) => layer.material)]) {
       material.blending = blending;
       material.needsUpdate = true;
     }
   }
   setPalette(palette);
+
+  /** Gris tenue el tráfico de fondo, gris claro una ráfaga simulada, el acento una real. */
+  function paint(packet: Packet, k: number): void {
+    const color = packet.real ? accent : ink;
+    const gain = packet.real ? 1 : packet.burst ? 1.5 : 0.75;
+    packetColors[k * 3] = color.r * gain;
+    packetColors[k * 3 + 1] = color.g * gain;
+    packetColors[k * 3 + 2] = color.b * gain;
+    packetColorAttribute.needsUpdate = true;
+  }
 
   function launch(packet: Packet, from: number, hops: number, speed: number): void {
     const options = linksOf[from];
@@ -321,12 +340,16 @@ export function createNetworkScene(three: typeof THREE, canvas: HTMLCanvasElemen
       progress = Math.min(1, Math.max(0, next));
     },
     setPalette,
-    burst() {
+    burst(real) {
       if (!hubs.length) return;
       const hub = hubs[Math.floor(Math.random() * hubs.length)];
-      lit[hub] = 1;
+      if (real) lit[hub] = 1;
       for (let n = 0; n < BURST_SIZE; n++) {
-        launch(packets[nextSlot], hub, BURST_HOPS, 0.9 + Math.random() * 0.6);
+        const packet = packets[nextSlot];
+        launch(packet, hub, BURST_HOPS, 0.9 + Math.random() * 0.6);
+        packet.real = real;
+        packet.burst = true;
+        paint(packet, nextSlot);
         nextSlot = nextSlot + 1 < packets.length ? nextSlot + 1 : packets.length - BURST_SLOTS;
       }
     },
