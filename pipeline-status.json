@@ -2,16 +2,16 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-22T01:57:50.309Z",
+  "updatedAt": "2026-10-22T02:17:59.416Z",
   "workflows": {
     "ci": {
-      "runId": 39706672771,
-      "runNumber": 184,
-      "sha": "a841e1e4e7a2652d05d22c71cb046f79385976fa",
+      "runId": 39708129788,
+      "runNumber": 186,
+      "sha": "615e563370c9d52404d923da0d96e187030f290c",
       "event": "push",
-      "startedAt": "2026-10-22T01:36:36Z",
-      "finishedAt": "2026-10-22T01:56:55.312Z",
-      "durationSeconds": 1219,
+      "startedAt": "2026-10-22T01:51:56Z",
+      "finishedAt": "2026-10-22T02:17:59.416Z",
+      "durationSeconds": 1563,
       "conclusion": "success",
       "jobs": [
         {
@@ -23,13 +23,13 @@
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 15,
+          "durationSeconds": 10,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 136,
+          "durationSeconds": 121,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 24,
+          "durationSeconds": 23,
           "runs": 1
         },
         {
@@ -71,7 +71,7 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 75,
+          "durationSeconds": 63,
           "runs": 3,
           "metrics": {
             "tests": 751
@@ -80,7 +80,7 @@
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 31,
+          "durationSeconds": 37,
           "runs": 1,
           "metrics": {
             "bundleKb": 341,
@@ -90,10 +90,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 62,
+          "durationSeconds": 77,
           "runs": 1,
           "metrics": {
-            "performance": 75,
+            "performance": 72,
             "accessibility": 100,
             "bestPractices": 96,
             "seo": 100
@@ -102,7 +102,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 1051,
+          "durationSeconds": 1100,
           "runs": 2,
           "metrics": {
             "tests": 525,
@@ -137,7 +137,7 @@
         {
           "id": "gate",
           "status": "success",
-          "durationSeconds": 4,
+          "durationSeconds": 3,
           "runs": 1
         }
       ]
@@ -404,6 +404,24 @@
     "backend": []
   },
   "merges": [
+    {
+      "number": 77,
+      "title": "feat(frontend): give the page background depth with an accent aurora and a vignette",
+      "branch": "feat/hero-aurora",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-22T02:11:35Z",
+      "sha": "6a57fc987c289eef3aee0a320024cd9a555eba80",
+      "additions": 14,
+      "deletions": 0,
+      "changedFiles": 1,
+      "ci": {
+        "runId": 39710012806,
+        "runNumber": 188,
+        "conclusion": "pending",
+        "durationSeconds": 1,
+        "jobs": []
+      }
+    },
     {
       "number": 76,
       "title": "perf(frontend): load a trimmed Three.js after the first paint and only when the robot is visible",
@@ -1050,120 +1068,28 @@
           }
         ]
       }
-    },
-    {
-      "number": 63,
-      "title": "feat: real commit graph of main, like an IDE git log",
-      "branch": "feat/commit-graph",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-18T23:24:08Z",
-      "sha": "2675bfb782e493a1e712db9d8a555cbc8004d204",
-      "additions": 1520,
-      "deletions": 418,
-      "changedFiles": 10,
-      "ci": {
-        "runId": 39176364507,
-        "runNumber": 158,
-        "conclusion": "success",
-        "durationSeconds": 1332,
-        "jobs": [
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 2/2)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 1/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "6a57fc987c289eef3aee0a320024cd9a555eba80",
+      "parents": [
+        "615e563370c9d52404d923da0d96e187030f290c",
+        "cae96e61818e0fbd1b76ebc56a740f7b5d3b3bd6"
+      ],
+      "subject": "Merge pull request #77 from JCardzZ/feat/hero-aurora",
+      "author": "JCardzZ",
+      "date": "2026-10-22T02:11:34Z"
+    },
+    {
+      "sha": "cae96e61818e0fbd1b76ebc56a740f7b5d3b3bd6",
+      "parents": [
+        "a841e1e4e7a2652d05d22c71cb046f79385976fa"
+      ],
+      "subject": "feat(frontend): give the page background depth with an accent aurora and a vignette",
+      "author": "JCardzZ",
+      "date": "2026-10-22T02:04:17Z"
+    },
     {
       "sha": "615e563370c9d52404d923da0d96e187030f290c",
       "parents": [
@@ -1714,25 +1640,6 @@
       "subject": "Merge pull request #58 from JCardzZ/fix/trivy-libexpat",
       "author": "JCardzZ",
       "date": "2026-10-18T19:14:10Z"
-    },
-    {
-      "sha": "100042a2a9dd0a0171e3da3c780d6006530107d4",
-      "parents": [
-        "91d8341cd4edc8792aa0f69d15a7c09eec59ada9"
-      ],
-      "subject": "fix(frontend): expanded diagram cards vanished below the page",
-      "author": "JCardzZ",
-      "date": "2026-10-18T19:14:09Z"
-    },
-    {
-      "sha": "17a75439643c5b9e1ff7c8e4143107746c0ad9da",
-      "parents": [
-        "91d8341cd4edc8792aa0f69d15a7c09eec59ada9",
-        "4b5803530c62f88b14bee7fceb880b6eced5b7d9"
-      ],
-      "subject": "Merge pull request #56 from JCardzZ/feat/production-canvas",
-      "author": "JCardzZ",
-      "date": "2026-10-18T19:13:33Z"
     }
   ]
 }
