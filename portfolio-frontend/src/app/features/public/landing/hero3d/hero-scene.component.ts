@@ -257,7 +257,14 @@ main :is(.bento-card, .theater-card, article) {
         El lienzo es fijo y queda detrás del contenido: así el robot puede dejar el hero y acompañar
         al visitante por la página (modo guía, en pantallas anchas).
       -->
-      <canvas #canvas class="pointer-events-none fixed inset-0 block h-dvh w-screen" [style.z-index]="inFront() ? 44 : -5" [class.hero-canvas]="!guiding()" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
+      <!--
+        Fuera del modo guía el lienzo va en la página (absolute) y sube con el scroll nativo: el
+        navegador lo mueve en el compositor, sin esperar a JavaScript, y en el móvil no tiembla. Solo en
+        modo guía se fija a la ventana. Alto en lvh: con dvh, al recogerse la barra del navegador el
+        lienzo cambiaba de tamaño a mitad del gesto (y la escena se recalculaba). Es decorativo: no
+        hay contenido que la barra pueda tapar.
+      -->
+      <canvas #canvas class="pointer-events-none inset-x-0 top-0 block h-lvh w-full" [class.fixed]="guiding()" [class.absolute]="!guiding()" [style.z-index]="inFront() ? 44 : -5" [class.hero-canvas]="!guiding()" [class.opacity-0]="!ready()" style="transition: opacity 600ms ease" aria-hidden="true"></canvas>
       <!--
         Bocadillo del robot: en cinco segundos, qué hago, escrito a máquina y rotando. Sigue a la
         cabeza (se posiciona escribiendo el estilo, sin detección de cambios). Se retira con el
@@ -265,7 +272,9 @@ main :is(.bento-card, .theater-card, article) {
       -->
       <div
         #bubble
-        class="speech pointer-events-none fixed left-0 top-0 z-[45] transition-opacity duration-slow"
+        class="speech pointer-events-none left-0 top-0 z-[45] transition-opacity duration-slow"
+        [class.fixed]="guiding()"
+        [class.absolute]="!guiding()"
         [class.opacity-0]="!ready() || open() || (guiding() && !guideLine()) || (!guiding() && !heroInView())"
         [class.invisible]="!ready() || open() || (guiding() && !guideLine()) || (!guiding() && !heroInView())"
         data-hero-overlay
@@ -979,6 +988,7 @@ export class HeroSceneComponent {
       if ((!visible && !this.guiding()) || document.hidden) {
         return;
       }
+      scene.scroll(this.guiding() ? scrollY : 0);
       scene.frame((performance.now() - started) / 1000);
       placeBubble();
       if (!reduced) {
@@ -1066,6 +1076,7 @@ export class HeroSceneComponent {
       }
     };
     const bubbleAt = { x: -1000, y: -1000 };
+    let lastLift = '';
     let bubbleGuide = false;
     // Tamaño del bocadillo, sin leerlo en cada fotograma: lo da un ResizeObserver.
     const bubbleSize = { w: 0, h: 0 };
@@ -1094,17 +1105,19 @@ export class HeroSceneComponent {
       // Al estirarse el robot, el bocadillo se aparta empujado por su mano, y el nombre y el rol
       // (en la página) se mueven con la misma variable.
       const lift = scene.stretchLevel();
-      document.documentElement.style.setProperty('--robot-lift', lift.toFixed(3));
       const pushed = `translate3d(${Math.round(lift * 46)}px, ${Math.round(-lift * 18)}px, 0) rotate(${(lift * 2.5).toFixed(2)}deg)`;
       // Dentro de la pantalla y nunca encima de los botones del hero: el bocadillo es fixed y va por
       // encima de ellos, así que se aparta él (antes los tapaba en todos los móviles y se salía en tableta).
       let dx = 0;
       let dy = 0;
       let squeezed = false;
+      // Fuera del modo guía el lienzo y el bocadillo van en la página: en la ventana están desplazados
+      // lo que se haya bajado. Los límites se calculan en la ventana; el transform, en la página.
+      const pageOffset = guide ? 0 : -scrollY;
       if (bubbleSize.w && bubbleSize.h) {
         const { w, h } = bubbleSize;
         const left = guide ? at.x - 0.82 * w : this.narrow ? at.x - w / 2 : at.x;
-        const top = guide ? at.y - h - 14 : at.y - h / 2;
+        const top = (guide ? at.y - h - 14 : at.y - h / 2) + pageOffset;
         const margin = 12;
         if (left < margin) dx = margin - left;
         else if (left + w > innerWidth - margin) dx = innerWidth - margin - (left + w);
@@ -1114,6 +1127,13 @@ export class HeroSceneComponent {
         // Si para no tapar los botones tuviera que subir encima del rol, no hay sitio: se oculta.
         const role = guide ? null : document.querySelector('.hero-role')?.getBoundingClientRect();
         squeezed = !!role && top + dy < role.bottom + 8;
+      }
+      // Escribir en <html> invalida el estilo de toda la página: solo cuando cambia, y después de
+      // medir (antes se escribía en cada fotograma, antes de las lecturas, y forzaba recalcular todo).
+      const liftText = lift.toFixed(3);
+      if (liftText !== lastLift) {
+        lastLift = liftText;
+        document.documentElement.style.setProperty('--robot-lift', liftText);
       }
       el.toggleAttribute('data-squeezed', squeezed);
       el.style.transform = `translate3d(${Math.round(dx)}px, ${Math.round(dy)}px, 0) ` + (guide
@@ -1255,7 +1275,7 @@ export class HeroSceneComponent {
       if (reduced) kick();
     };
     const onScroll = () => {
-      scene.scroll(scrollY);
+      scene.scroll(this.guiding() ? scrollY : 0);
       // Al dejar atrás el hero, el mazo abierto se recoge solo.
       if (this.open() && scrollY > innerHeight * 0.5) {
         scene.close();
