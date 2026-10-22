@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-22T03:10:34.914Z",
+  "updatedAt": "2026-10-22T03:39:23.296Z",
   "workflows": {
     "ci": {
-      "runId": 39710012806,
-      "runNumber": 188,
-      "sha": "6a57fc987c289eef3aee0a320024cd9a555eba80",
+      "runId": 39712575530,
+      "runNumber": 190,
+      "sha": "1578ec6c96719373ae24f7fb27a03c7b3c66da5a",
       "event": "push",
-      "startedAt": "2026-10-22T02:11:37Z",
-      "finishedAt": "2026-10-22T03:04:38.957Z",
-      "durationSeconds": 3182,
+      "startedAt": "2026-10-22T02:39:23Z",
+      "finishedAt": "2026-10-22T03:39:23.296Z",
+      "durationSeconds": 3600,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 5,
+          "durationSeconds": 6,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 15,
+          "durationSeconds": 10,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 132,
+          "durationSeconds": 137,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 336,
+          "durationSeconds": 148,
           "runs": 1
         },
         {
@@ -71,7 +71,7 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 409,
+          "durationSeconds": 462,
           "runs": 3,
           "metrics": {
             "tests": 751
@@ -80,7 +80,7 @@
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 455,
+          "durationSeconds": 323,
           "runs": 1,
           "metrics": {
             "bundleKb": 341,
@@ -90,10 +90,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 478,
+          "durationSeconds": 65,
           "runs": 1,
           "metrics": {
-            "performance": 75,
+            "performance": 81,
             "accessibility": 100,
             "bestPractices": 96,
             "seo": 100
@@ -102,7 +102,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 1560,
+          "durationSeconds": 1112,
           "runs": 2,
           "metrics": {
             "tests": 525,
@@ -137,7 +137,7 @@
         {
           "id": "gate",
           "status": "success",
-          "durationSeconds": 2,
+          "durationSeconds": 3,
           "runs": 1
         }
       ]
@@ -404,6 +404,42 @@
     "backend": []
   },
   "merges": [
+    {
+      "number": 80,
+      "title": "fix(backend): finish the RAG reindex inside the request so Cloud Run keeps its CPU",
+      "branch": "fix/rag-reindex-in-request",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-22T03:32:29Z",
+      "sha": "58b2937719285627b2ee673e4fa1ad11add7e7c7",
+      "additions": 19,
+      "deletions": 38,
+      "changedFiles": 5,
+      "ci": {
+        "runId": 39717402555,
+        "runNumber": 194,
+        "conclusion": "pending",
+        "durationSeconds": 1,
+        "jobs": []
+      }
+    },
+    {
+      "number": 79,
+      "title": "feat(frontend): drive the network mesh with system events, a cursor probe, fog and packet trails",
+      "branch": "feat/network-mesh-live",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-22T03:07:54Z",
+      "sha": "f45c65215b34797ac1e3f000641fe9ffa50ac02e",
+      "additions": 204,
+      "deletions": 44,
+      "changedFiles": 3,
+      "ci": {
+        "runId": 39715160311,
+        "runNumber": 192,
+        "conclusion": "cancelled",
+        "durationSeconds": 1477,
+        "jobs": []
+      }
+    },
     {
       "number": 78,
       "title": "feat(frontend): replace the galaxy backdrop with a live network mesh",
@@ -850,134 +886,47 @@
           }
         ]
       }
-    },
-    {
-      "number": 68,
-      "title": "feat(frontend): replace the simulated telemetry card with real API data",
-      "branch": "feat/real-telemetry",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-19T04:02:22Z",
-      "sha": "bf1c7ba32732f9c10fb210b6da6bf4bc23f07a51",
-      "additions": 295,
-      "deletions": 115,
-      "changedFiles": 3,
-      "ci": {
-        "runId": 39197501368,
-        "runNumber": 167,
-        "conclusion": "failure",
-        "durationSeconds": 167,
-        "jobs": [
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "failure"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }}/2)",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "failure"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
-    },
-    {
-      "number": 64,
-      "title": "feat(frontend): show the delivery section as one card with four tabs",
-      "branch": "feat/delivery-tabs",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-19T02:35:20Z",
-      "sha": "c85b4bec75db40fef3044954dccece31e66c9da3",
-      "additions": 607,
-      "deletions": 34,
-      "changedFiles": 17,
-      "ci": {
-        "runId": 39190680307,
-        "runNumber": 162,
-        "conclusion": "pending",
-        "durationSeconds": 1,
-        "jobs": []
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "58b2937719285627b2ee673e4fa1ad11add7e7c7",
+      "parents": [
+        "f45c65215b34797ac1e3f000641fe9ffa50ac02e",
+        "7da1e7fa8841402183b9c7f92ca5ded8170f83c7"
+      ],
+      "subject": "Merge pull request #80 from JCardzZ/fix/rag-reindex-in-request",
+      "author": "JCardzZ",
+      "date": "2026-10-22T03:32:29Z"
+    },
+    {
+      "sha": "7da1e7fa8841402183b9c7f92ca5ded8170f83c7",
+      "parents": [
+        "f45c65215b34797ac1e3f000641fe9ffa50ac02e"
+      ],
+      "subject": "fix(backend): finish the RAG reindex inside the request so Cloud Run keeps its CPU",
+      "author": "JCardzZ",
+      "date": "2026-10-22T03:29:10Z"
+    },
+    {
+      "sha": "f45c65215b34797ac1e3f000641fe9ffa50ac02e",
+      "parents": [
+        "1578ec6c96719373ae24f7fb27a03c7b3c66da5a",
+        "7f562ed32e45ba86ab30bcd674d5e9e5ea886071"
+      ],
+      "subject": "Merge pull request #79 from JCardzZ/feat/network-mesh-live",
+      "author": "JCardzZ",
+      "date": "2026-10-22T03:07:54Z"
+    },
+    {
+      "sha": "7f562ed32e45ba86ab30bcd674d5e9e5ea886071",
+      "parents": [
+        "1578ec6c96719373ae24f7fb27a03c7b3c66da5a"
+      ],
+      "subject": "feat(frontend): drive the network mesh with system events, a cursor probe, fog and packet trails",
+      "author": "JCardzZ",
+      "date": "2026-10-22T02:56:10Z"
+    },
     {
       "sha": "1578ec6c96719373ae24f7fb27a03c7b3c66da5a",
       "parents": [
@@ -1508,44 +1457,6 @@
       "subject": "Merge pull request #60 from JCardzZ/fix/check-now-fit",
       "author": "JCardzZ",
       "date": "2026-10-18T20:22:30Z"
-    },
-    {
-      "sha": "af8e302d1ed3066438ce6452fc8739e8884f3930",
-      "parents": [
-        "1db48a648bc26c128ed46693e79e1fae6166098d"
-      ],
-      "subject": "fix(frontend): keep the architecture card in view when «Check now» docks the inspector",
-      "author": "JCardzZ",
-      "date": "2026-10-18T19:40:17Z"
-    },
-    {
-      "sha": "1db48a648bc26c128ed46693e79e1fae6166098d",
-      "parents": [
-        "54264382220bcad59e3cc68b30887b4ec035c50e"
-      ],
-      "subject": "feat(frontend): «Check now» writes its real answer to the trace inspector",
-      "author": "JCardzZ",
-      "date": "2026-10-18T19:37:54Z"
-    },
-    {
-      "sha": "54264382220bcad59e3cc68b30887b4ec035c50e",
-      "parents": [
-        "c42efba3d0adf6ef5f45d93fdd94788688c7079d",
-        "f139aaa2f3093a87d6dd70597c2e057759315320"
-      ],
-      "subject": "Merge pull request #57 from JCardzZ/feat/merge-history",
-      "author": "JCardzZ",
-      "date": "2026-10-18T19:35:28Z"
-    },
-    {
-      "sha": "f139aaa2f3093a87d6dd70597c2e057759315320",
-      "parents": [
-        "4d8ee1924dfd1e6a0852c33a72e72c5f25a9cdf4",
-        "c42efba3d0adf6ef5f45d93fdd94788688c7079d"
-      ],
-      "subject": "Merge remote-tracking branch 'origin/main' into feat/merge-history",
-      "author": "JCardzZ",
-      "date": "2026-10-18T19:26:36Z"
     }
   ]
 }
