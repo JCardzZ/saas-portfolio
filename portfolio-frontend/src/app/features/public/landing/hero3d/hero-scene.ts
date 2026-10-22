@@ -1620,8 +1620,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       // Estrecho: encima de la cabeza (el bocadillo es una línea y cabe entre el rol y la antena; si
       // no cabe, el componente lo oculta). Debajo, sobre el escritorio, tapaba el cuerpo del robot.
       const point = narrow
-        ? new three.Vector3(0, 2.3, 0)
-        : side === 'top' ? new three.Vector3(0, 1.9, 0) : new three.Vector3(side === 'left' ? -1.55 : 1.55, 0.1, 0);
+        ? new three.Vector3(0, 1.25, 0)
+        : side === 'top' ? new three.Vector3(0, 1.9, 0) : new three.Vector3(side === 'left' ? -1.55 : 2.05, 0.1, 0);
       head.localToWorld(point);
       if (!guideActive) point.y -= standLift;
       point.project(camera);
