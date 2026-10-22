@@ -2,7 +2,7 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-22T15:11:17.215Z",
+  "updatedAt": "2026-10-22T15:11:41.934Z",
   "workflows": {
     "ci": {
       "runId": 39797989701,
@@ -137,15 +137,21 @@
       ]
     },
     "cd": {
-      "runId": 39802270774,
-      "runNumber": 76,
+      "runId": 39802374791,
+      "runNumber": 77,
       "sha": "5f1ed491ea37cc95179a41d5818e3a08127ab7f9",
-      "event": "workflow_run",
-      "startedAt": "2026-10-22T15:10:14Z",
-      "finishedAt": "2026-10-22T15:11:17.215Z",
-      "durationSeconds": 63,
+      "event": "workflow_dispatch",
+      "startedAt": "2026-10-22T15:10:53Z",
+      "finishedAt": "2026-10-22T15:11:41.934Z",
+      "durationSeconds": 49,
       "conclusion": "success",
       "jobs": [
+        {
+          "id": "frontend-deploy",
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
+        },
         {
           "id": "deploy",
           "status": "skipped",
@@ -159,7 +165,7 @@
           "runs": 1
         },
         {
-          "id": "release",
+          "id": "rollback",
           "status": "skipped",
           "durationSeconds": null,
           "runs": 1
