@@ -84,7 +84,7 @@ export class GalaxyBackdropComponent {
     if (!canvas || !worthRendering() || !hasFastWebGL()) return;
     let scene: GalaxyScene;
     try {
-      const [three, { createGalaxyScene }] = await Promise.all([import('three'), import('./galaxy-scene')]);
+      const [three, { createGalaxyScene }] = await Promise.all([import('../../../../shared/three/three-lite'), import('./galaxy-scene')]);
       scene = createGalaxyScene(three, canvas, readPalette());
       this.scene = scene;
     } catch {

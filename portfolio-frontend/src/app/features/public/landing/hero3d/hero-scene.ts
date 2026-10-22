@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import type * as THREE from '../../../../shared/three/three-lite';
 
 /**
  * Escena 3D del hero (Three.js, cargado bajo demanda): un robot genérico de carcasa brillante —
