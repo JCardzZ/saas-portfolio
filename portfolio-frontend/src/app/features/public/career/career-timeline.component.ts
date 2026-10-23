@@ -106,10 +106,19 @@ import { TechIcon, techIconFor } from '../../../shared/ui/tech-icons';
           <li class="py-6 text-sm text-ink-2">{{ 'La trayectoria se publicará aquí próximamente.' | t }}</li>
         }
       </ol>
+      @if (milestones().length) {
+        <!-- Lo mismo que dice el CV: se describe el trabajo, no la infraestructura de nadie. -->
+        <p class="confidential" data-testid="career-confidential">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" /></svg>
+          {{ 'Los detalles de infraestructura de clientes y empleadores se omiten por confidencialidad.' | t }}
+        </p>
+      }
     }
   `,
     styles: `
     .career { position: relative; }
+    .confidential { display: flex; align-items: center; gap: 0.5rem; margin-top: 1.25rem; font-size: 0.8125rem; color: var(--text-3); }
+    .confidential svg { width: 0.875rem; height: 0.875rem; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; }
     /* El raíl: una línea vertical continua a la izquierda, entre el periodo y el contenido. */
     .career::before { content: ''; position: absolute; top: 1.5rem; bottom: 1.5rem; left: calc(9rem + 0.6875rem); width: 1px; background: var(--border-subtle); }
     .row { position: relative; }

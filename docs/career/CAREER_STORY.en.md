@@ -6,10 +6,12 @@ skipped to avoid duplicate context. Keep both files in sync by hand. -->
 
 # Profile
 
-I am Manuel Cardoza, a Systems and Computer Engineer (Universidad Dr. Andrés Bello) and a backend
-engineer with more than seven years building mission-critical systems for banking, fintech and
-regulated environments. My foundation is Java (8 to 17) with Spring Boot and Spring Cloud, and
-API-driven architectures that are secure, scalable and well governed.
+Backend engineer with more than seven years on mission-critical systems for banking, fintech
+and regulated environments.
+
+I am Manuel Cardoza, a Systems and Computer Engineer (Universidad Dr. Andrés Bello). My foundation
+is Java (8 to 17) with Spring Boot and Spring Cloud, and API-driven architectures that are secure,
+scalable and well governed.
 
 I design and govern enterprise APIs with Apigee: routing, security policies, traffic management,
 versioning and backend integrations. I work as a cloud developer on AWS, Azure and Google Cloud,
@@ -19,16 +21,18 @@ with OAuth2, JWT and RBAC.
 
 # Professional experience
 
+Client infrastructure omitted for confidentiality.
+
 <!-- timeline:start -->
 
 ## Jan 2024 - present — Microservices and APIs for central banking
 
 - **Role:** Senior Software Engineer
-- **Organisation:** PBS Consulting (project for BCR, the Central Reserve Bank)
+- **Organisation:** PBS Consulting (project for BCR)
 - **Technologies:** Java, Spring Boot, Spring Security, OAuth2, JWT, Docker, Kubernetes, CI/CD
 
-I design and build backend microservices with Spring Boot for critical banking operations, with
-REST APIs secured with OAuth2 and JWT. I take part in modernising services towards containers and
+Secure microservices and APIs for critical banking operations. I design and build the backend
+services with Spring Boot, with REST APIs secured with OAuth2 and JWT. I take part in modernising services towards containers and
 managed Kubernetes in the cloud, with secure secret management and CI/CD pipelines. I also tune
 queries on SQL and NoSQL databases for high transaction volumes and support production.
 
@@ -38,20 +42,20 @@ queries on SQL and NoSQL databases for high transaction volumes and support prod
 - **Organisation:** Monetae
 - **Technologies:** Java, Spring Boot, WebFlux, OpenAPI, AsyncAPI, Kafka, Docker, Kubernetes
 
-End-to-end technical leadership of a hybrid (fiat and crypto) financial platform built on
-hexagonal architecture and Clean Architecture. High-concurrency distributed systems with Spring
+Technical leadership of a fiat and crypto financial platform. I led its development end to end
+with hexagonal architecture and Clean Architecture. High-concurrency distributed systems with Spring
 Boot and WebFlux, a contract-first approach with OpenAPI and AsyncAPI, event-driven architecture and
 resilience patterns (idempotency, retries with backoff, dead-letter queues). Cloud-native
 deployment with containers and Kubernetes, integration with an institutional custody provider,
 code reviews and mentoring of the team.
 
-## May 2022 - Jan 2024 — Integrating the core banking system with REST and SOAP services
+## May 2022 - Jan 2024 — Core banking integration with REST and SOAP services
 
 - **Role:** Java Broker Developer
 - **Organisation:** Banco Agrícola
 - **Technologies:** Java, Spring Boot, Spring Batch, REST, SOAP, JMS
 
-Integration of the core banking system through REST and SOAP services in Java. Spring Boot
+Core banking integration in Java through REST and SOAP. Spring Boot
 microservices between internal and external applications, batch processes that transform and
 validate the core system's files, queue-based messaging and services for third parties. I took part
 in migrating monolithic applications to microservices without service disruption.
@@ -70,8 +74,8 @@ core banking system.
 - **Organisation:** Supreme Electoral Tribunal of El Salvador
 - **Technologies:** Java, Spring Boot, Angular, React
 
-Coordinating technical teams to roll out the electoral systems for the national elections and
-training the electoral staff. Integration testing and follow-up before and during the elections, in
+Technical coordination of the national elections' systems. I coordinated technical teams to roll
+them out and trained the staff. Integration testing and follow-up before and during the elections, in
 coordination with the cybersecurity teams.
 
 ## Jun 2019 - Dec 2019 — Secure, event-driven banking applications
@@ -85,6 +89,20 @@ JWT and event-driven services with Kafka and RabbitMQ for real-time transaction 
 containers with continuous integration and delivery.
 
 <!-- timeline:end -->
+
+# Featured project
+
+## 2026 - present — SaaS portfolio platform with an AI assistant
+
+- **Role:** Design, development and operations
+- **Organisation:** Personal project · open source
+- **Technologies:** Java, Spring Boot, Angular, PostgreSQL, pgvector, Redis, Gemini, Docker, Google Cloud Run, GitHub Actions
+
+Full-stack platform with a contract-first API, hexagonal architecture and an AI assistant that
+cites the source code. Spring Boot API with OpenAPI, cache-aside caching with Redis and a RAG
+assistant on pgvector and Gemini (github.com/JCardzZ/saas-portfolio). Deployed on Google Cloud Run and Cloudflare Pages with CI/CD on GitHub Actions: tests,
+security scanning (Trivy, CodeQL, gitleaks), a cosign-signed image with an SBOM, and keyless
+deployment with Workload Identity Federation.
 
 # Skills
 

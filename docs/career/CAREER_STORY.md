@@ -10,10 +10,12 @@ párrafos. Solo hechos defendibles en una entrevista y nada confidencial: este t
 
 # Perfil
 
-Soy Manuel Cardoza, ingeniero en Sistemas y Computación (Universidad Dr. Andrés Bello) e
-ingeniero backend con más de siete años construyendo sistemas críticos para banca, fintech y
-entornos regulados. Mi base es Java (8 a 17) con Spring Boot y Spring Cloud, y las arquitecturas
-orientadas a APIs: seguras, escalables y bien gobernadas.
+Ingeniero backend con más de siete años en sistemas críticos para banca, fintech y entornos
+regulados.
+
+Soy Manuel Cardoza, ingeniero en Sistemas y Computación (Universidad Dr. Andrés Bello). Mi base es
+Java (8 a 17) con Spring Boot y Spring Cloud, y las arquitecturas orientadas a APIs: seguras,
+escalables y bien gobernadas.
 
 Diseño y gobierno APIs empresariales con Apigee: enrutamiento, políticas de seguridad, gestión de
 tráfico, versionado e integración con los sistemas de backend. Trabajo como desarrollador cloud en
@@ -23,6 +25,8 @@ servicios REST, SOAP y GraphQL protegidos con OAuth2, JWT y RBAC.
 
 # Experiencia profesional
 
+Infraestructura de clientes omitida por confidencialidad.
+
 <!-- timeline:start -->
 
 ## ene 2024 - actualidad — Microservicios y APIs para la banca central
@@ -31,8 +35,8 @@ servicios REST, SOAP y GraphQL protegidos con OAuth2, JWT y RBAC.
 - **Organización:** PBS Consulting (proyecto para el BCR)
 - **Tecnologías:** Java, Spring Boot, Spring Security, OAuth2, JWT, Docker, Kubernetes, CI/CD
 
-Diseño y desarrollo microservicios de backend con Spring Boot para operaciones bancarias críticas,
-con APIs REST protegidas con OAuth2 y JWT. Participo en la modernización de servicios hacia
+Microservicios y APIs seguras con Spring Boot para operaciones bancarias críticas. Diseño y
+desarrollo los servicios de backend, con APIs REST protegidas con OAuth2 y JWT. Participo en la modernización de servicios hacia
 contenedores y Kubernetes gestionado en la nube, con gestión segura de secretos y pipelines de
 CI/CD. También optimizo consultas en bases de datos SQL y NoSQL para volúmenes altos de
 transacciones y doy soporte a producción.
@@ -43,8 +47,8 @@ transacciones y doy soporte a producción.
 - **Organización:** Monetae
 - **Tecnologías:** Java, Spring Boot, WebFlux, OpenAPI, AsyncAPI, Kafka, Docker, Kubernetes
 
-Liderazgo técnico de punta a punta de una plataforma financiera híbrida (fiat y cripto) con
-arquitectura hexagonal y Clean Architecture. Sistemas distribuidos de alta concurrencia con Spring
+Liderazgo técnico de una plataforma financiera fiat y cripto. Lideré de punta a punta su
+desarrollo con arquitectura hexagonal y Clean Architecture. Sistemas distribuidos de alta concurrencia con Spring
 Boot y WebFlux, enfoque contract-first con OpenAPI y AsyncAPI, arquitectura orientada a eventos y
 patrones de resiliencia (idempotencia, reintentos con backoff, colas de mensajes fallidos).
 Despliegue cloud-native con contenedores y Kubernetes, integración con un proveedor de custodia
@@ -75,8 +79,8 @@ bancario.
 - **Organización:** Tribunal Supremo Electoral
 - **Tecnologías:** Java, Spring Boot, Angular, React
 
-Coordinación de equipos técnicos para implantar los sistemas electorales de las elecciones
-nacionales y capacitación técnica al personal. Pruebas de integración y seguimiento antes y durante
+Coordinación técnica de los sistemas de las elecciones nacionales. Coordiné equipos técnicos para
+implantarlos y capacité al personal. Pruebas de integración y seguimiento antes y durante
 las elecciones, en coordinación con los equipos de ciberseguridad.
 
 ## jun 2019 - dic 2019 — Aplicaciones bancarias seguras y orientadas a eventos
@@ -90,6 +94,20 @@ JWT y servicios orientados a eventos con Kafka y RabbitMQ para flujos de transac
 real, desplegados en contenedores con integración y entrega continuas.
 
 <!-- timeline:end -->
+
+# Proyecto destacado
+
+## 2026 - actualidad — Plataforma SaaS de portafolio con asistente de IA
+
+- **Rol:** Diseño, desarrollo y operación
+- **Organización:** Proyecto propio · código abierto
+- **Tecnologías:** Java, Spring Boot, Angular, PostgreSQL, pgvector, Redis, Gemini, Docker, Google Cloud Run, GitHub Actions
+
+Plataforma full-stack con API contract-first y arquitectura hexagonal, y un asistente de IA que
+cita el código fuente. API en Spring Boot con OpenAPI, caché cache-aside con Redis y un asistente
+RAG sobre pgvector y Gemini (github.com/JCardzZ/saas-portfolio). Desplegada en Google Cloud Run y Cloudflare Pages con CI/CD en GitHub Actions:
+tests, análisis de seguridad (Trivy, CodeQL, gitleaks), imagen firmada con cosign y SBOM, y
+despliegue sin claves con Workload Identity Federation.
 
 # Competencias
 

@@ -53,7 +53,7 @@ export const MOCK_CAREER: CareerMilestone[] = [
     role: 'Senior Software Engineer',
     organization: 'PBS Consulting (proyecto para el BCR)',
     technologies: ['Java', 'Spring Boot', 'Spring Security', 'OAuth2', 'JWT', 'Docker', 'Kubernetes', 'CI/CD'],
-    summary: 'Diseño y desarrollo microservicios de backend con Spring Boot para operaciones bancarias críticas, con APIs REST protegidas con OAuth2 y JWT. Participo en la modernización de servicios hacia contenedores y Kubernetes gestionado en la nube, con gestión segura de secretos y pipelines de CI/CD. También optimizo consultas en bases de datos SQL y NoSQL para volúmenes altos de transacciones y doy soporte a producción.',
+    summary: 'Microservicios y APIs seguras con Spring Boot para operaciones bancarias críticas. Diseño y desarrollo los servicios de backend, con APIs REST protegidas con OAuth2 y JWT. Participo en la modernización de servicios hacia contenedores y Kubernetes gestionado en la nube, con gestión segura de secretos y pipelines de CI/CD. También optimizo consultas en bases de datos SQL y NoSQL para volúmenes altos de transacciones y doy soporte a producción.',
   },
   {
     period: 'ago 2025 - oct 2026',
@@ -61,7 +61,7 @@ export const MOCK_CAREER: CareerMilestone[] = [
     role: 'Tech Lead',
     organization: 'Monetae',
     technologies: ['Java', 'Spring Boot', 'WebFlux', 'OpenAPI', 'AsyncAPI', 'Kafka', 'Docker', 'Kubernetes'],
-    summary: 'Liderazgo técnico de punta a punta de una plataforma financiera híbrida (fiat y cripto) con arquitectura hexagonal y Clean Architecture. Sistemas distribuidos de alta concurrencia con Spring Boot y WebFlux, enfoque contract-first con OpenAPI y AsyncAPI, arquitectura orientada a eventos y patrones de resiliencia (idempotencia, reintentos con backoff, colas de mensajes fallidos). Despliegue cloud-native con contenedores y Kubernetes, integración con un proveedor de custodia institucional, revisiones de código y mentoría del equipo.',
+    summary: 'Liderazgo técnico de una plataforma financiera fiat y cripto. Lideré de punta a punta su desarrollo con arquitectura hexagonal y Clean Architecture. Sistemas distribuidos de alta concurrencia con Spring Boot y WebFlux, enfoque contract-first con OpenAPI y AsyncAPI, arquitectura orientada a eventos y patrones de resiliencia (idempotencia, reintentos con backoff, colas de mensajes fallidos). Despliegue cloud-native con contenedores y Kubernetes, integración con un proveedor de custodia institucional, revisiones de código y mentoría del equipo.',
   },
   {
     period: 'may 2022 - ene 2024',
@@ -83,7 +83,7 @@ export const MOCK_CAREER: CareerMilestone[] = [
     role: 'Facilitador de aprendizaje',
     organization: 'Tribunal Supremo Electoral',
     technologies: ['Java', 'Spring Boot', 'Angular', 'React'],
-    summary: 'Coordinación de equipos técnicos para implantar los sistemas electorales de las elecciones nacionales y capacitación técnica al personal. Pruebas de integración y seguimiento antes y durante las elecciones, en coordinación con los equipos de ciberseguridad.',
+    summary: 'Coordinación técnica de los sistemas de las elecciones nacionales. Coordiné equipos técnicos para implantarlos y capacité al personal. Pruebas de integración y seguimiento antes y durante las elecciones, en coordinación con los equipos de ciberseguridad.',
   },
   {
     period: 'jun 2019 - dic 2019',
@@ -101,9 +101,9 @@ export const MOCK_CAREER_EN: CareerMilestone[] = [
     period: 'Jan 2024 - present',
     title: 'Microservices and APIs for central banking',
     role: 'Senior Software Engineer',
-    organization: 'PBS Consulting (project for BCR, the Central Reserve Bank)',
+    organization: 'PBS Consulting (project for BCR)',
     technologies: ['Java', 'Spring Boot', 'Spring Security', 'OAuth2', 'JWT', 'Docker', 'Kubernetes', 'CI/CD'],
-    summary: 'I design and build backend microservices with Spring Boot for critical banking operations, with REST APIs secured with OAuth2 and JWT. I take part in modernising services towards containers and managed Kubernetes in the cloud, with secure secret management and CI/CD pipelines. I also tune queries on SQL and NoSQL databases for high transaction volumes and support production.',
+    summary: 'Secure microservices and APIs for critical banking operations. I design and build the backend services with Spring Boot, with REST APIs secured with OAuth2 and JWT. I take part in modernising services towards containers and managed Kubernetes in the cloud, with secure secret management and CI/CD pipelines. I also tune queries on SQL and NoSQL databases for high transaction volumes and support production.',
   },
   {
     period: 'Aug 2025 - Oct 2026',
@@ -111,15 +111,15 @@ export const MOCK_CAREER_EN: CareerMilestone[] = [
     role: 'Tech Lead',
     organization: 'Monetae',
     technologies: ['Java', 'Spring Boot', 'WebFlux', 'OpenAPI', 'AsyncAPI', 'Kafka', 'Docker', 'Kubernetes'],
-    summary: 'End-to-end technical leadership of a hybrid (fiat and crypto) financial platform built on hexagonal architecture and Clean Architecture. High-concurrency distributed systems with Spring Boot and WebFlux, a contract-first approach with OpenAPI and AsyncAPI, event-driven architecture and resilience patterns (idempotency, retries with backoff, dead-letter queues). Cloud-native deployment with containers and Kubernetes, integration with an institutional custody provider, code reviews and mentoring of the team.',
+    summary: 'Technical leadership of a fiat and crypto financial platform. I led its development end to end with hexagonal architecture and Clean Architecture. High-concurrency distributed systems with Spring Boot and WebFlux, a contract-first approach with OpenAPI and AsyncAPI, event-driven architecture and resilience patterns (idempotency, retries with backoff, dead-letter queues). Cloud-native deployment with containers and Kubernetes, integration with an institutional custody provider, code reviews and mentoring of the team.',
   },
   {
     period: 'May 2022 - Jan 2024',
-    title: 'Integrating the core banking system with REST and SOAP services',
+    title: 'Core banking integration with REST and SOAP services',
     role: 'Java Broker Developer',
     organization: 'Banco Agrícola',
     technologies: ['Java', 'Spring Boot', 'Spring Batch', 'REST', 'SOAP', 'JMS'],
-    summary: 'Integration of the core banking system through REST and SOAP services in Java. Spring Boot microservices between internal and external applications, batch processes that transform and validate the core system\'s files, queue-based messaging and services for third parties. I took part in migrating monolithic applications to microservices without service disruption.',
+    summary: 'Core banking integration in Java through REST and SOAP. Spring Boot microservices between internal and external applications, batch processes that transform and validate the core system\'s files, queue-based messaging and services for third parties. I took part in migrating monolithic applications to microservices without service disruption.',
   },
   {
     period: '2018 - 2022',
@@ -133,7 +133,7 @@ export const MOCK_CAREER_EN: CareerMilestone[] = [
     role: 'Learning Facilitator',
     organization: 'Supreme Electoral Tribunal of El Salvador',
     technologies: ['Java', 'Spring Boot', 'Angular', 'React'],
-    summary: 'Coordinating technical teams to roll out the electoral systems for the national elections and training the electoral staff. Integration testing and follow-up before and during the elections, in coordination with the cybersecurity teams.',
+    summary: 'Technical coordination of the national elections\' systems. I coordinated technical teams to roll them out and trained the staff. Integration testing and follow-up before and during the elections, in coordination with the cybersecurity teams.',
   },
   {
     period: 'Jun 2019 - Dec 2019',
