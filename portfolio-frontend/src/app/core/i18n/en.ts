@@ -1096,4 +1096,5 @@ export const EN: Readonly<Record<string, string>> = {
   'lienzo': 'canvas',
   'Aún no hay eventos de': 'No events yet from',
   'Aparecerán aquí en cuanto intervenga en una petición.': 'They will show up here as soon as it takes part in a request.',
+  'Actual': 'Current',
 };

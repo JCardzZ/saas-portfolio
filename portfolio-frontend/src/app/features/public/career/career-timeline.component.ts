@@ -30,7 +30,13 @@ import { TechIcon, techIconFor } from '../../../shared/ui/tech-icons';
            el puesto actual viene abierto. El detalle está siempre en la página (oculto, no ausente). -->
       <ol class="career" data-testid="career-list">
         @for (milestone of milestones(); track $index; let i = $index) {
-          <li class="row animate-slide-up" [class.open]="isOpen(i)" [style.animation-delay.ms]="i * 60">
+          <li class="row animate-slide-up" [class.open]="isOpen(i)" [class.current]="isCurrent(milestone)" [class.education]="isEducation(milestone)" [style.animation-delay.ms]="i * 60">
+            <!-- Raíl de la línea de tiempo: un punto por hito; el puesto actual, en el acento y con pulso. -->
+            <span class="node" aria-hidden="true">
+              @if (isEducation(milestone)) {
+                <svg viewBox="0 0 16 16"><path d="M1.5 6 8 3l6.5 3L8 9 1.5 6zM4 7.4v3.1c0 .9 1.8 2 4 2s4-1.1 4-2V7.4M14.5 6v4" /></svg>
+              }
+            </span>
             <h3 class="m-0">
               <button
                 type="button"
@@ -40,11 +46,20 @@ import { TechIcon, techIconFor } from '../../../shared/ui/tech-icons';
                 [attr.aria-controls]="'career-detail-' + i"
                 (click)="toggle(i)"
               >
-                <span class="period">{{ milestone.period }}</span>
+                <span class="when">
+                  <span class="period">{{ milestone.period }}</span>
+                  @if (isCurrent(milestone)) {
+                    <span class="now">{{ 'Actual' | t }}</span>
+                  }
+                </span>
                 <span class="main">
                   <span class="title">{{ milestone.title }}</span>
                   @if (milestone.role || milestone.organization) {
                     <span class="meta">{{ milestone.role }}@if (milestone.role && milestone.organization) {<span> · </span>}{{ milestone.organization }}</span>
+                  }
+                  <!-- Cerrada, una línea del resumen: se entiende el puesto sin abrirlo. -->
+                  @if (!isOpen(i) && milestone.summary) {
+                    <span class="preview">{{ milestone.summary }}</span>
                   }
                 </span>
                 <span class="stack" aria-hidden="true">
@@ -78,22 +93,38 @@ import { TechIcon, techIconFor } from '../../../shared/ui/tech-icons';
     }
   `,
     styles: `
-    .career { border-top: 1px solid var(--border-subtle); }
-    .row { border-bottom: 1px solid var(--border-subtle); }
+    .career { position: relative; }
+    /* El raíl: una línea vertical continua a la izquierda, entre el periodo y el contenido. */
+    .career::before { content: ''; position: absolute; top: 1.5rem; bottom: 1.5rem; left: calc(9rem + 0.6875rem); width: 1px; background: var(--border-subtle); }
+    .row { position: relative; }
+    .node {
+      position: absolute; top: 1.5rem; left: calc(9rem + 0.3125rem); z-index: 1; display: grid; place-items: center;
+      width: 0.875rem; height: 0.875rem; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--bg-canvas);
+    }
+    .node svg { width: 0.75rem; height: 0.75rem; fill: none; stroke: var(--text-2); stroke-width: 1.3; stroke-linejoin: round; stroke-linecap: round; }
+    .education .node { width: 1.25rem; height: 1.25rem; top: 1.3125rem; left: calc(9rem + 0.125rem); }
+    .current .node { border-color: var(--accent-solid); background: var(--accent-solid); box-shadow: 0 0 0 4px rgb(var(--c-accent-solid) / 0.18); }
+    .current .node::after { content: ''; position: absolute; inset: -4px; border-radius: 999px; border: 1px solid var(--accent-solid); animation: pulse 2.4s var(--ease-standard) infinite; }
+    @keyframes pulse { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(2.2); } }
     .row-head {
-      display: grid; width: 100%; align-items: center; gap: 0.25rem 1.5rem; padding: 1.125rem 0.25rem;
-      grid-template-columns: 9rem minmax(0, 1fr) auto 1rem; text-align: left;
+      display: grid; width: 100%; align-items: start; gap: 0.25rem 1.5rem; padding: 1.125rem 0.25rem 1.125rem 0.25rem;
+      grid-template-columns: 9rem 1.5rem minmax(0, 1fr) auto 1rem; text-align: left; border-radius: var(--radius-control);
       transition: background-color var(--duration-fast) var(--ease-standard);
     }
     .row-head:hover { background: rgb(var(--c-ink-1) / 0.025); }
-    .period { font: 0.8125rem/1.4 var(--font-mono); color: var(--accent-text); font-variant-numeric: tabular-nums; }
-    .main { display: flex; min-width: 0; flex-direction: column; gap: 0.125rem; }
+    .when { display: flex; flex-direction: column; align-items: flex-start; gap: 0.375rem; padding-top: 0.125rem; }
+    .period { font: 0.8125rem/1.4 var(--font-mono); color: var(--text-3); font-variant-numeric: tabular-nums; }
+    .current .period { color: var(--accent-text); }
+    .now { padding: 0 0.5rem; border: 1px solid rgb(var(--c-accent-solid) / 0.4); border-radius: 999px; font-size: 0.75rem; line-height: 1.25rem; color: var(--accent-text); }
+    .main { grid-column: 3; display: flex; min-width: 0; flex-direction: column; gap: 0.125rem; }
+    .preview { margin-top: 0.375rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.875rem; color: var(--text-3); }
     .title { font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.01em; color: var(--text-1); }
     .meta { font-size: 0.875rem; color: var(--text-2); }
     .stack { display: flex; align-items: center; gap: 0.625rem; opacity: 0.85; }
     .chevron { width: 1rem; height: 1rem; fill: none; stroke: var(--text-3); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--duration-base) var(--ease-emphasized); }
     .open .chevron { transform: rotate(180deg); }
-    .detail { padding: 0 0.25rem 1.5rem calc(9rem + 1.75rem); }
+    .stack, .chevron { margin-top: 0.25rem; }
+    .detail { padding: 0 0.25rem 1.75rem calc(9rem + 1.5rem + 3.25rem); }
     .detail:not([hidden]) { animation: reveal var(--duration-slow) var(--ease-emphasized) both; }
     @keyframes reveal { from { opacity: 0; transform: translateY(-0.25rem); } }
     .summary { max-width: 46rem; font-size: 0.9375rem; line-height: 1.65; color: var(--text-2); }
@@ -104,13 +135,17 @@ import { TechIcon, techIconFor } from '../../../shared/ui/tech-icons';
     }
     /* Estrecho: el periodo encima del título; sin logos en la fila (están en el detalle). */
     @media (max-width: 640px) {
-      .row-head { grid-template-columns: minmax(0, 1fr) 1rem; }
-      .period { grid-column: 1 / -1; }
+      .career::before { left: 0.6875rem; }
+      .node { left: 0.3125rem; top: 1.25rem; }
+      .education .node { left: 0.125rem; top: 1.0625rem; }
+      .row-head { grid-template-columns: minmax(0, 1fr) 1rem; padding-left: 2.25rem; }
+      .when { grid-column: 1 / -1; flex-direction: row; align-items: center; }
+      .main { grid-column: 1; }
       .stack { display: none; }
-      .detail { padding-left: 0.25rem; }
+      .detail { padding-left: 2.25rem; }
     }
     @media (pointer: coarse) { .row-head { min-height: 2.75rem; } }
-    @media (prefers-reduced-motion: reduce) { .detail:not([hidden]) { animation: none; } .chevron { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .detail:not([hidden]) { animation: none; } .chevron { transition: none; } .current .node::after { animation: none; opacity: 0; } }
   `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -135,6 +170,16 @@ export class CareerTimelineComponent {
       if (next.has(index)) next.delete(index); else next.add(index);
       return next;
     });
+  }
+
+  /** Puesto actual: el periodo termina en «actualidad» / «present». */
+  isCurrent(milestone: CareerMilestone): boolean {
+    return /actualidad|present|current/i.test(milestone.period ?? '');
+  }
+
+  /** Formación: un hito sin rol (título, universidad). */
+  isEducation(milestone: CareerMilestone): boolean {
+    return !milestone.role;
   }
 
   /** Hasta cuatro logos del stack del puesto, para reconocerlo de un vistazo (los que tienen logo). */
