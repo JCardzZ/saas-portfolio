@@ -511,6 +511,8 @@ export class HeroSceneComponent {
   readonly stackOpen = output<boolean>();
   /** Pregunta escrita en el bocadillo: la página abre el asistente con ella. */
   readonly ask = output<string>();
+  /** Estado del robot para el hero: cargando (se reserva su hueco), listo o sin robot (el hueco se cierra). */
+  readonly robot = output<'loading' | 'ready' | 'none'>();
   private readonly sound = new HeroSound();
   readonly soundOn = signal(this.sound.enabled);
   private readonly visits = countVisit();
@@ -939,6 +941,8 @@ export class HeroSceneComponent {
       // El tema cambia variables CSS: se leen tras aplicarse.
       queueMicrotask(() => this.scene?.setPalette(readPalette()));
     });
+
+    effect(() => this.robot.emit(this.failed() ? 'none' : this.ready() ? 'ready' : 'loading'));
 
     afterNextRender(() => {
       if (!this.enabled() || !hasFastWebGL()) {

@@ -21,7 +21,7 @@ import { FlagService } from '../../../core/flags/flag.service';
 import { McpSectionComponent } from '../mcp/mcp-section.component';
 import { HERO_ROLE_PLACEHOLDER } from './hero-content';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { LANDING_COPY } from './landing-copy';
+import { HERO_CREDENTIALS, LANDING_COPY } from './landing-copy';
 import { HeroSceneComponent } from './hero3d/hero-scene.component';
 import { GalaxyBackdropComponent } from './galaxy/galaxy-backdrop.component';
 import { MeshTrafficLegendComponent } from './galaxy/mesh-traffic-legend.component';
@@ -73,6 +73,9 @@ export class LandingPageComponent implements OnInit {
   readonly i18n = inject(LanguageService);
   /** El mazo de tecnologías del hero está abierto: el texto del hero se atenúa. */
   readonly immersive = signal(false);
+  readonly credentials = HERO_CREDENTIALS;
+  /** Estado del robot del hero (lo publica la escena 3D al cargarse o al descartarse). */
+  readonly robot = signal<'loading' | 'ready' | 'none'>('loading');
   /** Desplazamiento con inercia (solo ratón/trackpad y sin «reducir movimiento»). */
   private readonly smoothScroll = (() => {
     const destroyRef = inject(DestroyRef);
@@ -148,7 +151,7 @@ export function askCardColumns(projects: number): 2 | 4 | 6 {
 }
 
 /** Agrupa las letras en palabras; el espacio duro queda al final de su palabra y conserva su índice. */
-function wordsOf(letters: string[]): { letter: string; index: number }[][] {
+export function wordsOf(letters: string[]): { letter: string; index: number }[][] {
   const words: { letter: string; index: number }[][] = [[]];
   letters.forEach((letter, index) => {
     words[words.length - 1].push({ letter, index });

@@ -1108,5 +1108,9 @@ export const EN: Readonly<Record<string, string>> = {
   'LinkedIn de Manuel Cardoza': 'Manuel Cardoza on LinkedIn',
   'Lo que hice': 'What I did',
   'Los detalles de infraestructura de clientes y empleadores se omiten por confidencialidad.': 'Infrastructure details of clients and employers are left out for confidentiality.',
+  'Artículo técnico': 'Technical article',
+  'En este artículo': 'In this article',
+  'Escrito por': 'Written by',
+  'Más artículos': 'More articles',
   'Volver arriba': 'Back to top',
 };
