@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-23T03:41:21.734Z",
+  "updatedAt": "2026-10-23T04:02:44.694Z",
   "workflows": {
     "ci": {
-      "runId": 39894320906,
-      "runNumber": 238,
-      "sha": "490d6bd74be821bfc7925cc6518b2c2285763633",
+      "runId": 39895571663,
+      "runNumber": 245,
+      "sha": "cb519ca911a57be3522db6a361ab5bc25ae44cf0",
       "event": "push",
-      "startedAt": "2026-10-23T03:18:41Z",
-      "finishedAt": "2026-10-23T03:40:19.051Z",
-      "durationSeconds": 1298,
-      "conclusion": "success",
+      "startedAt": "2026-10-23T03:32:36Z",
+      "finishedAt": "2026-10-23T04:02:44.694Z",
+      "durationSeconds": 1809,
+      "conclusion": "failure",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 5,
+          "durationSeconds": 6,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 10,
+          "durationSeconds": 14,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 154,
+          "durationSeconds": 138,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 27,
+          "durationSeconds": 38,
           "runs": 1
         },
         {
@@ -71,29 +71,29 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 67,
+          "durationSeconds": 61,
           "runs": 3,
           "metrics": {
-            "tests": 761
+            "tests": 763
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 30,
+          "durationSeconds": 46,
           "runs": 1,
           "metrics": {
-            "bundleKb": 343.1,
-            "bundleGzipKb": 83.3
+            "bundleKb": 344,
+            "bundleGzipKb": 83.5
           }
         },
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 83,
+          "durationSeconds": 111,
           "runs": 1,
           "metrics": {
-            "performance": 74,
+            "performance": 75,
             "accessibility": 100,
             "bestPractices": 96,
             "seo": 100
@@ -101,12 +101,12 @@
         },
         {
           "id": "responsive",
-          "status": "success",
-          "durationSeconds": 1137,
+          "status": "failure",
+          "durationSeconds": 1153,
           "runs": 2,
           "metrics": {
             "tests": 525,
-            "failed": 0,
+            "failed": 12,
             "profiles": 33
           }
         },
@@ -136,8 +136,8 @@
         },
         {
           "id": "gate",
-          "status": "success",
-          "durationSeconds": 4,
+          "status": "failure",
+          "durationSeconds": 2,
           "runs": 1
         }
       ]
@@ -415,6 +415,24 @@
     ]
   },
   "merges": [
+    {
+      "number": 99,
+      "title": "feat(career): add a featured project and a confidentiality note to the CV and the site",
+      "branch": "feat/cv-featured-project",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-23T03:46:36Z",
+      "sha": "d3bd375b25579083e324620ac2272d677cbbbd01",
+      "additions": 172,
+      "deletions": 65,
+      "changedFiles": 26,
+      "ci": {
+        "runId": 39896809238,
+        "runNumber": 248,
+        "conclusion": "pending",
+        "durationSeconds": 1,
+        "jobs": []
+      }
+    },
     {
       "number": 100,
       "title": "feat(frontend): lay out the article page as a technical publication",
@@ -798,27 +816,29 @@
         "durationSeconds": 1,
         "jobs": []
       }
-    },
-    {
-      "number": 92,
-      "title": "feat: show a screenshot on each project card",
-      "branch": "feat/project-cover-images",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-23T00:43:44Z",
-      "sha": "4cd908b01b26b4ee0bb27bb70ebc8d3a2b160830",
-      "additions": 73,
-      "deletions": 4,
-      "changedFiles": 15,
-      "ci": {
-        "runId": 39879836951,
-        "runNumber": 218,
-        "conclusion": "cancelled",
-        "durationSeconds": 161,
-        "jobs": []
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "d3bd375b25579083e324620ac2272d677cbbbd01",
+      "parents": [
+        "cb519ca911a57be3522db6a361ab5bc25ae44cf0",
+        "8fbe2caffa063d1b1edd824b706e125285e0e31b"
+      ],
+      "subject": "Merge pull request #99 from JCardzZ/feat/cv-featured-project",
+      "author": "JCardzZ",
+      "date": "2026-10-23T03:46:36Z"
+    },
+    {
+      "sha": "8fbe2caffa063d1b1edd824b706e125285e0e31b",
+      "parents": [
+        "10dea57b7ffa50c22a059fc26d6d81f9b73ea760",
+        "cb519ca911a57be3522db6a361ab5bc25ae44cf0"
+      ],
+      "subject": "Merge remote-tracking branch 'origin/main' into feat/cv-featured-project",
+      "author": "JCardzZ",
+      "date": "2026-10-23T03:35:31Z"
+    },
     {
       "sha": "cb519ca911a57be3522db6a361ab5bc25ae44cf0",
       "parents": [
@@ -848,6 +868,16 @@
       "subject": "Merge remote-tracking branch 'origin/main' into feat/article-page-publication",
       "author": "JCardzZ",
       "date": "2026-10-23T03:29:35Z"
+    },
+    {
+      "sha": "10dea57b7ffa50c22a059fc26d6d81f9b73ea760",
+      "parents": [
+        "1dc009962585e7cf1d9c976a5d6223212543e9b9",
+        "780ef9b1f6b4fdee7b6570399d17ccc2877d89ad"
+      ],
+      "subject": "Merge remote-tracking branch 'origin/main' into feat/cv-featured-project",
+      "author": "JCardzZ",
+      "date": "2026-10-23T03:28:48Z"
     },
     {
       "sha": "382eaf09f9cd3e64a07cfec2ae1c18371bd56f1d",
@@ -898,6 +928,15 @@
       "date": "2026-10-23T03:18:38Z"
     },
     {
+      "sha": "1dc009962585e7cf1d9c976a5d6223212543e9b9",
+      "parents": [
+        "26f1bc419d0cf506b099d85f137373f178a94f0f"
+      ],
+      "subject": "feat(career): describe each role in full without exposing client infrastructure",
+      "author": "JCardzZ",
+      "date": "2026-10-23T03:14:19Z"
+    },
+    {
       "sha": "604b4963ca48e249123ca152d8961946fe2ef1c4",
       "parents": [
         "673bb7f883f4a4446876d0880c90d17bf39129ec"
@@ -923,6 +962,15 @@
       "subject": "feat(frontend): lay out the article page as a technical publication",
       "author": "JCardzZ",
       "date": "2026-10-23T02:50:15Z"
+    },
+    {
+      "sha": "26f1bc419d0cf506b099d85f137373f178a94f0f",
+      "parents": [
+        "99d089ec48a5c3b2a5407dcf804e9713751c3951"
+      ],
+      "subject": "feat(career): add a featured project and a confidentiality note to the CV and the site",
+      "author": "JCardzZ",
+      "date": "2026-10-23T02:48:54Z"
     },
     {
       "sha": "99d089ec48a5c3b2a5407dcf804e9713751c3951",
@@ -1340,54 +1388,6 @@
       "subject": "feat(frontend): replace the galaxy backdrop with a live network mesh",
       "author": "JCardzZ",
       "date": "2026-10-22T02:16:23Z"
-    },
-    {
-      "sha": "6a57fc987c289eef3aee0a320024cd9a555eba80",
-      "parents": [
-        "615e563370c9d52404d923da0d96e187030f290c",
-        "cae96e61818e0fbd1b76ebc56a740f7b5d3b3bd6"
-      ],
-      "subject": "Merge pull request #77 from JCardzZ/feat/hero-aurora",
-      "author": "JCardzZ",
-      "date": "2026-10-22T02:11:34Z"
-    },
-    {
-      "sha": "cae96e61818e0fbd1b76ebc56a740f7b5d3b3bd6",
-      "parents": [
-        "a841e1e4e7a2652d05d22c71cb046f79385976fa"
-      ],
-      "subject": "feat(frontend): give the page background depth with an accent aurora and a vignette",
-      "author": "JCardzZ",
-      "date": "2026-10-22T02:04:17Z"
-    },
-    {
-      "sha": "615e563370c9d52404d923da0d96e187030f290c",
-      "parents": [
-        "a841e1e4e7a2652d05d22c71cb046f79385976fa",
-        "79b024a775ae3e5139a82955a391e342e9065ef5"
-      ],
-      "subject": "Merge pull request #76 from JCardzZ/perf/bundle-and-three",
-      "author": "JCardzZ",
-      "date": "2026-10-22T01:51:54Z"
-    },
-    {
-      "sha": "79b024a775ae3e5139a82955a391e342e9065ef5",
-      "parents": [
-        "a841e1e4e7a2652d05d22c71cb046f79385976fa"
-      ],
-      "subject": "perf(frontend): load a trimmed Three.js after the first paint and only when the robot is visible",
-      "author": "JCardzZ",
-      "date": "2026-10-22T01:47:27Z"
-    },
-    {
-      "sha": "a841e1e4e7a2652d05d22c71cb046f79385976fa",
-      "parents": [
-        "d3674c809ad4346088b2803e95d3c99f56bfd7e4",
-        "abe56cde09f385c14d9269bf9adae3a400ce0b91"
-      ],
-      "subject": "Merge pull request #75 from JCardzZ/fix/mobile-audit",
-      "author": "JCardzZ",
-      "date": "2026-10-22T01:36:33Z"
     }
   ]
 }
