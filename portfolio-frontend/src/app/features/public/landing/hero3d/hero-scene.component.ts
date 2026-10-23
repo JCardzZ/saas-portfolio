@@ -607,8 +607,8 @@ export class HeroSceneComponent {
     if (this.hovered()) return this.hovered();
     if (this.open()) {
       if (this.touch) return en ? 'Swipe to spin · tap a card' : 'Desliza para girar · toca una ficha';
-      if (this.docked()) return en ? `${this.docked()} loaded into </> · drag another one onto it` : `${this.docked()} cargada en </> · arrastra otra encima`;
-      return en ? 'Drag to spin · drop a card on </> to load it · Esc to put them away' : 'Arrastra para girar · suelta una ficha en </> para cargarla · Esc para recogerlas';
+      if (this.docked()) return en ? `${this.docked()} loaded into </> · drop another card to swap it` : `${this.docked()} cargada en </> · suelta otra ficha para cambiarla`;
+      return en ? 'Drag to spin · drag a card and drop it to load it into </> · Esc to put them away' : 'Arrastra para girar · arrastra una ficha y suéltala para cargarla en </> · Esc para recogerlas';
     }
     return en ? `Click the robot to see my stack (${STACK.length})` : `Pulsa el robot para ver mi stack (${STACK.length})`;
   });
@@ -716,7 +716,7 @@ export class HeroSceneComponent {
     if (this.press?.grabbed) {
       const docked = this.scene?.release();
       const en = this.i18n.lang() === 'en';
-      this.speakText(docked ? (en ? `Loading ${docked}` : `Cargando ${docked}`) : en ? 'Whee!' : '¡Allá va!');
+      if (docked) this.speakText(en ? `Loading ${docked}` : `Cargando ${docked}`);
     }
     this.suppressClick = !!this.press?.dragged;
     this.press = null;

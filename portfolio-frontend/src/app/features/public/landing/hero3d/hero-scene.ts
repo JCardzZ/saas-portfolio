@@ -90,12 +90,10 @@ export interface HeroScene {
   /** Lleva la ficha agarrada al punto (x, y) del lienzo. */
   fling(x: number, y: number): void;
   /**
-   * Suelta la ficha. Sobre el proyector «</>» se mete en él y su logo queda flotando como holograma
-   * (devuelve su nombre); en otro sitio sale con la velocidad del gesto, cae, rebota y vuelve (`null`).
+   * Suelta la ficha: allí donde caiga, vuela hasta el proyector «</>», se mete en él y su logo queda
+   * flotando como holograma. Devuelve su nombre (`null` si no había ninguna agarrada).
    */
   release(): string | null;
-  /** La ficha agarrada está ahora sobre el proyector (soltarla la cargaría). */
-  overProjector(): boolean;
   /** Cuánto se está estirando ahora (0–1): la página mueve con ello el nombre, el rol y el bocadillo. */
   stretchLevel(): number;
   /** Mientras `true`, teclea en el portátil (lo marca el texto que escribe el bocadillo). */
@@ -1617,8 +1615,9 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     // Gira sobre su eje vertical, flotando un poco.
     holoCube.rotation.set(0, animate ? t * 0.9 : 0.4, 0);
     holoCube.position.y = 0.66 + (animate ? Math.sin(t * 1.8) * 0.04 : 0);
-    // Con una ficha encima del proyector, el cubo crece y se enciende: soltarla la carga.
-    dropGlow += ((grabbed && overDock(grabbed.mesh.position) ? 1 : 0) - dropGlow) * (1 - Math.exp(-dt * 10));
+    // Con una ficha agarrada, el cubo la espera (crece y se enciende) y más aún si está encima.
+    const waiting = grabbed ? (overDock(grabbed.mesh.position) ? 1 : 0.5) : 0;
+    dropGlow += (waiting - dropGlow) * (1 - Math.exp(-dt * 10));
     dockFlash = Math.max(0, dockFlash - dt * 1.4);
     holoCube.scale.setScalar(1 + dropGlow * 0.35 + dockFlash * 0.45);
     cubeMat.emissiveIntensity = 1.2 + dropGlow * 1.6 + dockFlash * 3;
@@ -1755,15 +1754,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       if (!grabbed) return null;
       const tile = grabbed;
       grabbed = null;
-      if (overDock(tile.mesh.position)) {
-        tile.docking = { from: tile.mesh.position.clone(), start: clock };
-        return tile.tech.title;
-      }
-      tile.flight = { velocity: grabVelocity.clone().setZ(0), spin: grabVelocity.x * -0.6, until: clock + 3 };
-      return null;
-    },
-    overProjector() {
-      return dropGlow > 0.5;
+      tile.docking = { from: tile.mesh.position.clone(), start: clock };
+      return tile.tech.title;
     },
     onDock(callback: (title: string) => void) {
       onDock = callback;
