@@ -8,6 +8,8 @@ export const LANDING_COPY = {
     en: 'Engineering you can interrogate: projects, technologies and the very code of this platform, with an assistant that answers citing its sources.',
     es: 'Ingeniería que se puede interrogar: proyectos, tecnologías y el propio código de esta plataforma, con un asistente que responde citando sus fuentes.',
   },
+  scrollCue: { en: 'Scroll', es: 'Desliza' },
+  scrollCueLabel: { en: 'Go to experience', es: 'Ir a la trayectoria' },
   askAi: { en: 'Ask the AI', es: 'Preguntar a la IA' },
   seeProjects: { en: 'See projects', es: 'Ver proyectos' },
   seeCareer: { en: 'See experience', es: 'Ver experiencia' },
