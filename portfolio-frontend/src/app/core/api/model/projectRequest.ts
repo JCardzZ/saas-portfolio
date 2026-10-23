@@ -14,6 +14,10 @@ export interface ProjectRequest {
     summary: string;
     githubRepoUrl: string;
     demoVideoUrl?: string;
+    /**
+     * Captura o imagen del proyecto. URL https o ruta del propio sitio (`/projects/…`).
+     */
+    coverImageUrl?: string;
     technologiesUsed?: Array<string>;
     metricsImpact?: string;
 }

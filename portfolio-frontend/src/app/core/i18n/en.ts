@@ -1104,4 +1104,6 @@ export const EN: Readonly<Record<string, string>> = {
   'Compartir en LinkedIn': 'Share on LinkedIn',
   'Este artículo no existe o ya no está publicado.': 'This article does not exist or is no longer published.',
   'Ver todos los artículos': 'See all articles',
+  'GitHub de Manuel Cardoza': 'Manuel Cardoza on GitHub',
+  'LinkedIn de Manuel Cardoza': 'Manuel Cardoza on LinkedIn',
 };

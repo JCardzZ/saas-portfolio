@@ -185,6 +185,29 @@ class AdminApiSecurityTest {
     }
 
     @Test
+    void projectCoverImageIsKeptAndOnlyHttpsOrSitePathsAreAccepted() throws Exception {
+        given(projectUseCase.create(any()))
+                .willAnswer(invocation -> invocation.<ProjectDomain>getArgument(0).withId("prj-1"));
+
+        mockMvc.perform(post("/admin/projects")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("ROLE_ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"SaaS","summary":"Demo","githubRepoUrl":"https://github.com/u/r","coverImageUrl":"/projects/saas.jpg"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.coverImageUrl").value("/projects/saas.jpg"));
+
+        for (String unsafe : new String[] {"javascript:alert(1)", "http://example.com/a.jpg", "data:image/png;base64,AAAA"}) {
+            mockMvc.perform(post("/admin/projects")
+                            .header(HttpHeaders.AUTHORIZATION, bearer("ROLE_ADMIN"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"title\":\"SaaS\",\"summary\":\"Demo\",\"githubRepoUrl\":\"https://github.com/u/r\",\"coverImageUrl\":\"" + unsafe + "\"}"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test
     void missingResourceReturns404ProblemDetail() throws Exception {
         willThrow(new ResourceNotFoundException("Technology", "nope")).given(technologyUseCase).delete("nope");
 
@@ -203,7 +226,7 @@ class AdminApiSecurityTest {
         given(technologyUseCase.findAll()).willReturn(List.of(
                 new TechnologyDomain("tech-1", "Java 21", "Backend", "Expert", "https://cdn/java.svg", true)));
         given(projectUseCase.findAll()).willReturn(List.of(new ProjectDomain(
-                "prj-1", "SaaS Portfolio", "Plataforma", "https://github.com/u/r", null, null, List.of("tech-1"))));
+                "prj-1", "SaaS Portfolio", "Plataforma", "https://github.com/u/r", null, null, null, List.of("tech-1"))));
 
         mockMvc.perform(get("/public/technologies"))
                 .andExpect(status().isOk())
