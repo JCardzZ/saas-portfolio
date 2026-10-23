@@ -2,16 +2,16 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-23T01:08:03.016Z",
+  "updatedAt": "2026-10-23T02:00:39.339Z",
   "workflows": {
     "ci": {
-      "runId": 39880107307,
-      "runNumber": 221,
-      "sha": "8563f4cf765320cfea8a62b49ad4bb22c7c76585",
+      "runId": 39884594945,
+      "runNumber": 225,
+      "sha": "c23cbfb35450d850da657462c0e7b3e0a329aa93",
       "event": "push",
-      "startedAt": "2026-10-23T00:46:27Z",
-      "finishedAt": "2026-10-23T01:07:05.757Z",
-      "durationSeconds": 1239,
+      "startedAt": "2026-10-23T01:32:42Z",
+      "finishedAt": "2026-10-23T02:00:39.339Z",
+      "durationSeconds": 1677,
       "conclusion": "success",
       "jobs": [
         {
@@ -23,13 +23,13 @@
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 8,
+          "durationSeconds": 17,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 161,
+          "durationSeconds": 133,
           "runs": 2
         },
         {
@@ -47,31 +47,47 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 20,
+          "durationSeconds": 28,
           "runs": 1
         },
         {
           "id": "backend-unit",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 120,
+          "runs": 1,
+          "metrics": {
+            "tests": 374,
+            "failed": 0,
+            "skipped": 2,
+            "coverage": 89.1
+          }
         },
         {
           "id": "backend-integration",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 135,
+          "runs": 1,
+          "metrics": {
+            "tests": 8,
+            "failed": 0,
+            "skipped": 0
+          }
         },
         {
           "id": "backend-arch",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 59,
+          "runs": 1,
+          "metrics": {
+            "tests": 15,
+            "failed": 0,
+            "skipped": 0
+          }
         },
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 72,
+          "durationSeconds": 71,
           "runs": 3,
           "metrics": {
             "tests": 760
@@ -80,7 +96,7 @@
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 46,
+          "durationSeconds": 39,
           "runs": 1,
           "metrics": {
             "bundleKb": 343,
@@ -90,10 +106,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 63,
+          "durationSeconds": 66,
           "runs": 1,
           "metrics": {
-            "performance": 82,
+            "performance": 76,
             "accessibility": 100,
             "bestPractices": 96,
             "seo": 100
@@ -102,7 +118,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 970,
+          "durationSeconds": 1435,
           "runs": 2,
           "metrics": {
             "tests": 525,
@@ -118,26 +134,33 @@
         },
         {
           "id": "docker",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 192,
+          "runs": 1,
+          "metrics": {
+            "vulnerabilities": 0
+          }
         },
         {
           "id": "publish-image",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 71,
+          "runs": 1,
+          "metrics": {
+            "digest": "sha256:c4b1699b12b7758599c945cfa6d40ff63defaa118a8a2ccf9b3bf439105398f4",
+            "sbomPackages": 217
+          }
         },
         {
           "id": "coverage-badge",
-          "status": "skipped",
-          "durationSeconds": null,
+          "status": "success",
+          "durationSeconds": 4,
           "runs": 1
         },
         {
           "id": "gate",
           "status": "success",
-          "durationSeconds": 3,
+          "durationSeconds": 2,
           "runs": 1
         }
       ]
@@ -415,6 +438,153 @@
     ]
   },
   "merges": [
+    {
+      "number": 93,
+      "title": "fix(ci): publish the backend image from a manual CI run on main too",
+      "branch": "fix/ci-publish-image-on-dispatch",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-23T01:56:28Z",
+      "sha": "930d084d81e240f82689afa02e95492295ed0eb9",
+      "additions": 9,
+      "deletions": 6,
+      "changedFiles": 2,
+      "ci": {
+        "runId": 39886814486,
+        "runNumber": 227,
+        "conclusion": "pending",
+        "durationSeconds": 1,
+        "jobs": []
+      }
+    },
+    {
+      "number": 94,
+      "title": "feat(frontend): load a stack card into the </> projector by dropping it there",
+      "branch": "feat/stack-card-into-projector",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-23T01:56:15Z",
+      "sha": "a656937a3009ada447a3d5a89028af5a101d37f0",
+      "additions": 91,
+      "deletions": 8,
+      "changedFiles": 2,
+      "ci": {
+        "runId": 39886795482,
+        "runNumber": 226,
+        "conclusion": "cancelled",
+        "durationSeconds": 14,
+        "jobs": []
+      }
+    },
+    {
+      "number": 95,
+      "title": "feat: update the career, the headline and the CV from the LinkedIn profile",
+      "branch": "feat/career-from-linkedin",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-23T01:32:40Z",
+      "sha": "c23cbfb35450d850da657462c0e7b3e0a329aa93",
+      "additions": 230,
+      "deletions": 169,
+      "changedFiles": 26,
+      "ci": {
+        "runId": 39884594945,
+        "runNumber": 225,
+        "conclusion": "success",
+        "durationSeconds": 1677,
+        "jobs": [
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "skipped"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "success"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "success"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Móvil (chromium · 2/2)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Móvil (chromium · 1/2)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "success"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "success"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
     {
       "number": 91,
       "title": "feat(frontend): give every article its own page that can be linked and shared",
@@ -855,63 +1025,66 @@
         "durationSeconds": 1,
         "jobs": []
       }
-    },
-    {
-      "number": 82,
-      "title": "fix(frontend): fit the robot and the inspector to their content and feed the mesh from the hero",
-      "branch": "fix/inspector-i18n-and-mobile-robot",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-22T04:07:19Z",
-      "sha": "1a4845076971839cbb50421140e836877da7239f",
-      "additions": 190,
-      "deletions": 26,
-      "changedFiles": 10,
-      "ci": {
-        "runId": 39720586514,
-        "runNumber": 200,
-        "conclusion": "pending",
-        "durationSeconds": 1,
-        "jobs": []
-      }
-    },
-    {
-      "number": 83,
-      "title": "feat(frontend): add the diagrams of the first two articles and let articles show images",
-      "branch": "feat/article-diagrams",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-22T04:06:53Z",
-      "sha": "fb7f23d4969d9a8fe3036536e35763b161800343",
-      "additions": 130,
-      "deletions": 0,
-      "changedFiles": 3,
-      "ci": {
-        "runId": 39720546547,
-        "runNumber": 199,
-        "conclusion": "cancelled",
-        "durationSeconds": 26,
-        "jobs": []
-      }
-    },
-    {
-      "number": 81,
-      "title": "feat(frontend): tell visitors whether the network mesh shows real or simulated traffic",
-      "branch": "feat/mesh-traffic-legend",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-22T03:46:58Z",
-      "sha": "43c054cfedb4d3ce6b462f61584a28ba035772d1",
-      "additions": 212,
-      "deletions": 13,
-      "changedFiles": 10,
-      "ci": {
-        "runId": 39718733394,
-        "runNumber": 196,
-        "conclusion": "pending",
-        "durationSeconds": 1,
-        "jobs": []
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "930d084d81e240f82689afa02e95492295ed0eb9",
+      "parents": [
+        "a656937a3009ada447a3d5a89028af5a101d37f0",
+        "032d7089af07d7be10c319e13907070a0fbca05f"
+      ],
+      "subject": "Merge pull request #93 from JCardzZ/fix/ci-publish-image-on-dispatch",
+      "author": "JCardzZ",
+      "date": "2026-10-23T01:56:27Z"
+    },
+    {
+      "sha": "a656937a3009ada447a3d5a89028af5a101d37f0",
+      "parents": [
+        "c23cbfb35450d850da657462c0e7b3e0a329aa93",
+        "cfebacd7294a0182f2ab148f8af922246dc94252"
+      ],
+      "subject": "Merge pull request #94 from JCardzZ/feat/stack-card-into-projector",
+      "author": "JCardzZ",
+      "date": "2026-10-23T01:56:15Z"
+    },
+    {
+      "sha": "c23cbfb35450d850da657462c0e7b3e0a329aa93",
+      "parents": [
+        "8563f4cf765320cfea8a62b49ad4bb22c7c76585",
+        "c01dc997b5075845e4c5662a53e4e2f9caf030a4"
+      ],
+      "subject": "Merge pull request #95 from JCardzZ/feat/career-from-linkedin",
+      "author": "JCardzZ",
+      "date": "2026-10-23T01:32:39Z"
+    },
+    {
+      "sha": "c01dc997b5075845e4c5662a53e4e2f9caf030a4",
+      "parents": [
+        "8563f4cf765320cfea8a62b49ad4bb22c7c76585"
+      ],
+      "subject": "feat: update the career, the headline and the CV from the LinkedIn profile",
+      "author": "JCardzZ",
+      "date": "2026-10-23T01:30:45Z"
+    },
+    {
+      "sha": "cfebacd7294a0182f2ab148f8af922246dc94252",
+      "parents": [
+        "c1bb466716ff2dbc140f50bd2700b1728391c684"
+      ],
+      "subject": "feat(frontend): load the card into the projector wherever it is dropped",
+      "author": "JCardzZ",
+      "date": "2026-10-23T01:12:25Z"
+    },
+    {
+      "sha": "c1bb466716ff2dbc140f50bd2700b1728391c684",
+      "parents": [
+        "8563f4cf765320cfea8a62b49ad4bb22c7c76585"
+      ],
+      "subject": "feat(frontend): load a stack card into the </> projector by dropping it there",
+      "author": "JCardzZ",
+      "date": "2026-10-23T01:03:50Z"
+    },
     {
       "sha": "8563f4cf765320cfea8a62b49ad4bb22c7c76585",
       "parents": [
@@ -931,6 +1104,15 @@
       "subject": "Merge remote-tracking branch 'origin/main' into feat/article-pages",
       "author": "JCardzZ",
       "date": "2026-10-23T00:45:41Z"
+    },
+    {
+      "sha": "032d7089af07d7be10c319e13907070a0fbca05f",
+      "parents": [
+        "4cd908b01b26b4ee0bb27bb70ebc8d3a2b160830"
+      ],
+      "subject": "fix(ci): publish the backend image from a manual CI run on main too",
+      "author": "JCardzZ",
+      "date": "2026-10-23T00:44:11Z"
     },
     {
       "sha": "4cd908b01b26b4ee0bb27bb70ebc8d3a2b160830",
@@ -1415,73 +1597,6 @@
       "subject": "fix(frontend): keep the telemetry card's layout in demo mode instead of an empty box",
       "author": "JCardzZ",
       "date": "2026-10-19T04:25:22Z"
-    },
-    {
-      "sha": "a4d7cc7770050ef3249ed8bd336f11c2d14f2c78",
-      "parents": [
-        "388a0989ee2cc3303cd2dfdbb193dd5cfe2b5ec2"
-      ],
-      "subject": "fix(frontend): let an expanded card fill the window from inside the delivery tabs",
-      "author": "JCardzZ",
-      "date": "2026-10-19T04:25:11Z"
-    },
-    {
-      "sha": "adaf62e78f165f2f87654323caf79a10984a8f44",
-      "parents": [
-        "bf1c7ba32732f9c10fb210b6da6bf4bc23f07a51",
-        "aff070b5aa1baab45a88b8df99109593a26c0d9a"
-      ],
-      "subject": "Merge remote-tracking branch 'origin/feat/pipeline-phases' into fix/recover-pipeline-telemetry",
-      "author": "JCardzZ",
-      "date": "2026-10-19T04:25:11Z"
-    },
-    {
-      "sha": "388a0989ee2cc3303cd2dfdbb193dd5cfe2b5ec2",
-      "parents": [
-        "bb2b495597416312750844b1ec7fce0420a15705"
-      ],
-      "subject": "feat(frontend): order the sections the way a recruiter reads a portfolio",
-      "author": "JCardzZ",
-      "date": "2026-10-19T04:20:22Z"
-    },
-    {
-      "sha": "2cca32b8e20556dbfadef36c028ee5e637284ea0",
-      "parents": [
-        "0bee578754a38bd7a548d96cadd6d7f589386f14"
-      ],
-      "subject": "fix(frontend): say there are no MCP calls yet instead of a 0 ms p95",
-      "author": "JCardzZ",
-      "date": "2026-10-19T04:14:26Z"
-    },
-    {
-      "sha": "bf1c7ba32732f9c10fb210b6da6bf4bc23f07a51",
-      "parents": [
-        "c85b4bec75db40fef3044954dccece31e66c9da3",
-        "f54149b9d32eb1c7decf03c481ff6c8263e89340"
-      ],
-      "subject": "Merge pull request #68 from JCardzZ/feat/real-telemetry",
-      "author": "JCardzZ",
-      "date": "2026-10-19T04:02:21Z"
-    },
-    {
-      "sha": "f54149b9d32eb1c7decf03c481ff6c8263e89340",
-      "parents": [
-        "086d8e9039fefa220ce3925f28c4a6ff68c84459",
-        "c85b4bec75db40fef3044954dccece31e66c9da3"
-      ],
-      "subject": "Merge remote-tracking branch 'origin/main' into feat/real-telemetry",
-      "author": "JCardzZ",
-      "date": "2026-10-19T03:53:43Z"
-    },
-    {
-      "sha": "0bee578754a38bd7a548d96cadd6d7f589386f14",
-      "parents": [
-        "a9bcadbe864d61587b70d352b8d059af0768ae2c",
-        "c85b4bec75db40fef3044954dccece31e66c9da3"
-      ],
-      "subject": "Merge remote-tracking branch 'origin/main' into feat/career-i18n",
-      "author": "JCardzZ",
-      "date": "2026-10-19T03:53:41Z"
     }
   ]
 }
