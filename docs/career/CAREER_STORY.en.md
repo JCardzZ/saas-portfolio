@@ -25,38 +25,36 @@ with OAuth2, JWT and RBAC.
 
 - **Role:** Senior Software Engineer
 - **Organisation:** PBS Consulting (project for BCR, the Central Reserve Bank)
-- **Technologies:** Java, Spring Boot, OAuth2, JWT, SQL Server, MongoDB, Azure AKS, Azure DevOps
+- **Technologies:** Java, Spring Boot, Spring Security, OAuth2, JWT, Docker, Kubernetes, CI/CD
 
 I design and build backend microservices with Spring Boot for critical banking operations, with
-REST APIs secured with OAuth2 and JWT. I led the migration of services to managed Kubernetes on
-Azure (AKS), with Docker containers, Azure Key Vault, Blob Storage and Redis, and CI/CD pipelines
-in Azure DevOps. I also tune queries on SQL Server and MongoDB for high transaction volumes and
-resolve production incidents.
+REST APIs secured with OAuth2 and JWT. I take part in modernising services towards containers and
+managed Kubernetes in the cloud, with secure secret management and CI/CD pipelines. I also tune
+queries on SQL and NoSQL databases for high transaction volumes and support production.
 
 ## Aug 2025 - Oct 2026 — Hybrid fiat and crypto financial platform
 
 - **Role:** Tech Lead
 - **Organisation:** Monetae
-- **Technologies:** Java, Spring Boot, WebFlux, OpenAPI, Kafka, Redis, AWS, Kubernetes
+- **Technologies:** Java, Spring Boot, WebFlux, OpenAPI, AsyncAPI, Kafka, Docker, Kubernetes
 
 End-to-end technical leadership of a hybrid (fiat and crypto) financial platform built on
 hexagonal architecture and Clean Architecture. High-concurrency distributed systems with Spring
-Boot and WebFlux, a contract-first approach with OpenAPI and AsyncAPI, event-driven architecture
-with Kafka, Redis and WebSockets, and resilience patterns (idempotency, retries with backoff,
-dead-letter queues). On AWS: ECS, EKS, Lambda, API Gateway, Secrets Manager and CloudWatch.
-Integration with custody services such as Fireblocks, code reviews and mentoring of the team.
+Boot and WebFlux, a contract-first approach with OpenAPI and AsyncAPI, event-driven architecture and
+resilience patterns (idempotency, retries with backoff, dead-letter queues). Cloud-native
+deployment with containers and Kubernetes, integration with an institutional custody provider,
+code reviews and mentoring of the team.
 
-## May 2022 - Jan 2024 — Integrating the AS400 core banking system with REST and SOAP services
+## May 2022 - Jan 2024 — Integrating the core banking system with REST and SOAP services
 
 - **Role:** Java Broker Developer
 - **Organisation:** Banco Agrícola
-- **Technologies:** Java, Spring Boot, Spring Batch, IBM AS400, IBM MQ Series, AWS Lambda, Prometheus, ELK
+- **Technologies:** Java, Spring Boot, Spring Batch, REST, SOAP, JMS
 
-Integration of the AS400 core banking system through REST and SOAP services in Java. Spring Boot
-microservices between internal and external applications, batch processes that transform and validate flat files from AS400 and
-COBOL, connectors to IBM MQ Series, and REST and SOAP services for third parties. I took part in
-migrating monolithic applications to microservices without service disruption, with asynchronous
-tasks on AWS and observability with Prometheus, Grafana and ELK.
+Integration of the core banking system through REST and SOAP services in Java. Spring Boot
+microservices between internal and external applications, batch processes that transform and
+validate the core system's files, queue-based messaging and services for third parties. I took part
+in migrating monolithic applications to microservices without service disruption.
 
 ## 2018 - 2022 — Systems and Computer Engineering degree
 
@@ -64,29 +62,27 @@ tasks on AWS and observability with Prometheus, Grafana and ELK.
 
 Degree in Systems and Computer Engineering. During my studies I already worked on banking
 projects, with Java, relational and non-relational databases and backend integrations with the
-core banking system on IBM AS400.
+core banking system.
 
 ## Nov 2020 - Feb 2021 — Real-time electoral systems
 
 - **Role:** Learning Facilitator
 - **Organisation:** Supreme Electoral Tribunal of El Salvador
-- **Technologies:** Java, Spring Boot, Angular, React, AWS, Azure
+- **Technologies:** Java, Spring Boot, Angular, React
 
-Coordinating technical teams to roll out the real-time electoral systems for the national
-elections and training the electoral staff. Integration testing and monitoring before and during
-the elections, and work with the cybersecurity teams (encryption, SSL/TLS and anti-DDoS
-protection).
+Coordinating technical teams to roll out the electoral systems for the national elections and
+training the electoral staff. Integration testing and follow-up before and during the elections, in
+coordination with the cybersecurity teams.
 
 ## Jun 2019 - Dec 2019 — Secure, event-driven banking applications
 
 - **Role:** Full Stack Developer
 - **Organisation:** Banco Davivienda
-- **Technologies:** Java, Spring Boot, OAuth2, Apache Kafka, RabbitMQ, Docker, Kubernetes, AWS
+- **Technologies:** Java, Spring Boot, OAuth2, Apache Kafka, RabbitMQ, Docker
 
-Secure banking applications with Java and the Spring ecosystem. REST microservices with OAuth2
-and JWT behind an API Gateway, and distributed services with Kafka, RabbitMQ and MQ Series for real-time
-transaction flows. Container deployments with Docker and Kubernetes, and CI/CD pipelines with
-Jenkins and Azure DevOps.
+Secure banking applications with Java and the Spring ecosystem. REST microservices with OAuth2 and
+JWT and event-driven services with Kafka and RabbitMQ for real-time transaction flows, deployed in
+containers with continuous integration and delivery.
 
 <!-- timeline:end -->
 
