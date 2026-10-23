@@ -2,58 +2,58 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-23T02:01:40.327Z",
+  "updatedAt": "2026-10-23T02:23:09.827Z",
   "workflows": {
     "ci": {
-      "runId": 39884594945,
-      "runNumber": 225,
-      "sha": "c23cbfb35450d850da657462c0e7b3e0a329aa93",
+      "runId": 39886814486,
+      "runNumber": 227,
+      "sha": "930d084d81e240f82689afa02e95492295ed0eb9",
       "event": "push",
-      "startedAt": "2026-10-23T01:32:42Z",
-      "finishedAt": "2026-10-23T02:00:39.339Z",
-      "durationSeconds": 1677,
+      "startedAt": "2026-10-23T01:56:30Z",
+      "finishedAt": "2026-10-23T02:23:09.827Z",
+      "durationSeconds": 1600,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 6,
+          "durationSeconds": 10,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 17,
+          "durationSeconds": 15,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 133,
+          "durationSeconds": 109,
           "runs": 2
         },
         {
           "id": "spec-lint",
-          "status": "skipped",
-          "durationSeconds": null,
+          "status": "success",
+          "durationSeconds": 16,
           "runs": 1
         },
         {
           "id": "spec-breaking",
-          "status": "skipped",
-          "durationSeconds": null,
+          "status": "success",
+          "durationSeconds": 7,
           "runs": 1
         },
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 28,
+          "durationSeconds": 29,
           "runs": 1
         },
         {
           "id": "backend-unit",
           "status": "success",
-          "durationSeconds": 120,
+          "durationSeconds": 96,
           "runs": 1,
           "metrics": {
             "tests": 374,
@@ -65,7 +65,7 @@
         {
           "id": "backend-integration",
           "status": "success",
-          "durationSeconds": 135,
+          "durationSeconds": 138,
           "runs": 1,
           "metrics": {
             "tests": 8,
@@ -76,7 +76,7 @@
         {
           "id": "backend-arch",
           "status": "success",
-          "durationSeconds": 59,
+          "durationSeconds": 43,
           "runs": 1,
           "metrics": {
             "tests": 15,
@@ -87,7 +87,7 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 71,
+          "durationSeconds": 93,
           "runs": 3,
           "metrics": {
             "tests": 760
@@ -96,7 +96,7 @@
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 39,
+          "durationSeconds": 31,
           "runs": 1,
           "metrics": {
             "bundleKb": 343,
@@ -106,10 +106,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 66,
+          "durationSeconds": 78,
           "runs": 1,
           "metrics": {
-            "performance": 76,
+            "performance": 75,
             "accessibility": 100,
             "bestPractices": 96,
             "seo": 100
@@ -118,7 +118,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 1435,
+          "durationSeconds": 1096,
           "runs": 2,
           "metrics": {
             "tests": 525,
@@ -135,7 +135,7 @@
         {
           "id": "docker",
           "status": "success",
-          "durationSeconds": 192,
+          "durationSeconds": 68,
           "runs": 1,
           "metrics": {
             "vulnerabilities": 0
@@ -144,23 +144,23 @@
         {
           "id": "publish-image",
           "status": "success",
-          "durationSeconds": 71,
+          "durationSeconds": 67,
           "runs": 1,
           "metrics": {
-            "digest": "sha256:c4b1699b12b7758599c945cfa6d40ff63defaa118a8a2ccf9b3bf439105398f4",
+            "digest": "sha256:622e77abb1bb4f474b7dcf88947a0310064ef8276596020d6c0d4b78b0d107ab",
             "sbomPackages": 217
           }
         },
         {
           "id": "coverage-badge",
           "status": "success",
-          "durationSeconds": 4,
+          "durationSeconds": 6,
           "runs": 1
         },
         {
           "id": "gate",
           "status": "success",
-          "durationSeconds": 2,
+          "durationSeconds": 4,
           "runs": 1
         }
       ]
@@ -440,6 +440,42 @@
     ]
   },
   "merges": [
+    {
+      "number": 97,
+      "title": "feat: add the profile photo to the CV and keep it on Cloud Run",
+      "branch": "feat/profile-photo",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-23T02:18:39Z",
+      "sha": "673bb7f883f4a4446876d0880c90d17bf39129ec",
+      "additions": 31,
+      "deletions": 5,
+      "changedFiles": 20,
+      "ci": {
+        "runId": 39888870267,
+        "runNumber": 231,
+        "conclusion": "pending",
+        "durationSeconds": 1,
+        "jobs": []
+      }
+    },
+    {
+      "number": 96,
+      "title": "feat(frontend): show each career entry in sections: duration, what I did and stack",
+      "branch": "feat/career-detail-sections",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-23T02:09:23Z",
+      "sha": "04663cbb7d05a7d7acad7d082c49908855da58ba",
+      "additions": 98,
+      "deletions": 19,
+      "changedFiles": 4,
+      "ci": {
+        "runId": 39888023280,
+        "runNumber": 229,
+        "conclusion": "cancelled",
+        "durationSeconds": 557,
+        "jobs": []
+      }
+    },
     {
       "number": 93,
       "title": "fix(ci): publish the backend image from a manual CI run on main too",
@@ -898,138 +934,47 @@
         "durationSeconds": 0,
         "jobs": []
       }
-    },
-    {
-      "number": 85,
-      "title": "fix(frontend): keep the robot's bubble off the robot and make its code window sober",
-      "branch": "feat/professional-hologram",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-22T14:42:12Z",
-      "sha": "4a43c4b28a394be63537c6e0c5d21aff6eae2ff2",
-      "additions": 30,
-      "deletions": 30,
-      "changedFiles": 2,
-      "ci": {
-        "runId": 39797989701,
-        "runNumber": 205,
-        "conclusion": "success",
-        "durationSeconds": 1663,
-        "jobs": [
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 1/2)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 2/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "success"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "queued"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "queued"
-          }
-        ]
-      }
-    },
-    {
-      "number": 84,
-      "title": "perf(frontend): let the hero robot scroll with the page natively on phones",
-      "branch": "perf/smooth-mobile-scroll",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-22T04:33:08Z",
-      "sha": "af902b2954606e227ae71bfc3923729eaaf92356",
-      "additions": 29,
-      "deletions": 6,
-      "changedFiles": 2,
-      "ci": {
-        "runId": 39723011851,
-        "runNumber": 202,
-        "conclusion": "pending",
-        "durationSeconds": 1,
-        "jobs": []
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "673bb7f883f4a4446876d0880c90d17bf39129ec",
+      "parents": [
+        "04663cbb7d05a7d7acad7d082c49908855da58ba",
+        "296622cd9ed82def3ac502969005d35932b800cf"
+      ],
+      "subject": "Merge pull request #97 from JCardzZ/feat/profile-photo",
+      "author": "JCardzZ",
+      "date": "2026-10-23T02:18:38Z"
+    },
+    {
+      "sha": "296622cd9ed82def3ac502969005d35932b800cf",
+      "parents": [
+        "04663cbb7d05a7d7acad7d082c49908855da58ba"
+      ],
+      "subject": "feat: add the profile photo to the CV and keep it on Cloud Run",
+      "author": "JCardzZ",
+      "date": "2026-10-23T02:13:28Z"
+    },
+    {
+      "sha": "04663cbb7d05a7d7acad7d082c49908855da58ba",
+      "parents": [
+        "930d084d81e240f82689afa02e95492295ed0eb9",
+        "6f858ec0e07a8d285c4d0e07955e394bac61cace"
+      ],
+      "subject": "Merge pull request #96 from JCardzZ/feat/career-detail-sections",
+      "author": "JCardzZ",
+      "date": "2026-10-23T02:09:23Z"
+    },
+    {
+      "sha": "6f858ec0e07a8d285c4d0e07955e394bac61cace",
+      "parents": [
+        "c23cbfb35450d850da657462c0e7b3e0a329aa93"
+      ],
+      "subject": "feat(frontend): show each career entry in sections: duration, what I did and stack",
+      "author": "JCardzZ",
+      "date": "2026-10-23T01:56:34Z"
+    },
     {
       "sha": "930d084d81e240f82689afa02e95492295ed0eb9",
       "parents": [
@@ -1562,43 +1507,6 @@
       "subject": "Merge remote-tracking branch 'origin/main' into feat/career-i18n",
       "author": "JCardzZ",
       "date": "2026-10-19T04:35:50Z"
-    },
-    {
-      "sha": "90c61a13a7af133558f72dc94beb0cae6a7c57ee",
-      "parents": [
-        "a4d7cc7770050ef3249ed8bd336f11c2d14f2c78",
-        "bf1c7ba32732f9c10fb210b6da6bf4bc23f07a51"
-      ],
-      "subject": "Merge remote-tracking branch 'origin/main' into feat/recruiter-order",
-      "author": "JCardzZ",
-      "date": "2026-10-19T04:35:50Z"
-    },
-    {
-      "sha": "fade0168ad36656e5fecdb3212ec4280dfaf7c04",
-      "parents": [
-        "f196029bebc0a4397394674163e693cd344402e7"
-      ],
-      "subject": "fix(frontend): let an expanded card fill the window from inside the delivery tabs",
-      "author": "JCardzZ",
-      "date": "2026-10-19T04:25:56Z"
-    },
-    {
-      "sha": "f196029bebc0a4397394674163e693cd344402e7",
-      "parents": [
-        "be64627bb45f996055f992c9fb854d1fe5190776"
-      ],
-      "subject": "fix(frontend): let the latency chart fill the telemetry card instead of leaving a gap",
-      "author": "JCardzZ",
-      "date": "2026-10-19T04:25:22Z"
-    },
-    {
-      "sha": "be64627bb45f996055f992c9fb854d1fe5190776",
-      "parents": [
-        "adaf62e78f165f2f87654323caf79a10984a8f44"
-      ],
-      "subject": "fix(frontend): keep the telemetry card's layout in demo mode instead of an empty box",
-      "author": "JCardzZ",
-      "date": "2026-10-19T04:25:22Z"
     }
   ]
 }
