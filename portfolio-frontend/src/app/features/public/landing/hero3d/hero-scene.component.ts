@@ -463,6 +463,8 @@ main :is(.bento-card, .theater-card, article) {
           </div>
         </div>
       }
+      <!-- Ficha cargada en el proyector, también para lectores de pantalla. -->
+      <span class="sr-only" aria-live="polite">{{ docked() ? (i18n.lang() === 'en' ? docked() + ' loaded into the projector' : docked() + ' cargada en el proyector') : '' }}</span>
       <!-- Lo que dice la ficha, también para lectores de pantalla. -->
       <span class="sr-only" aria-live="polite">{{ card() ? card()!.title + '. ' + card()!.about + ' ' + card()!.help : '' }}</span>
       </div>
@@ -597,13 +599,16 @@ export class HeroSceneComponent {
       ? `${this.open() ? 'Put away' : 'Show'} the platform stack: ${this.titles.join(', ')}`
       : `${this.open() ? 'Recoger' : 'Mostrar'} las tecnologías de la plataforma: ${this.titles.join(', ')}`,
   );
+  /** Tecnología cargada en el proyector «</>» (se suelta una ficha encima). */
+  readonly docked = signal<string | null>(null);
   readonly hint = computed(() => {
     const en = this.i18n.lang() === 'en';
     if (this.focused()) return en ? `${this.focused()} · click to send it back` : `${this.focused()} · pulsa para devolverla`;
     if (this.hovered()) return this.hovered();
     if (this.open()) {
       if (this.touch) return en ? 'Swipe to spin · tap a card' : 'Desliza para girar · toca una ficha';
-      return en ? 'Drag to spin · click a card · Esc to put them away' : 'Arrastra para girar · pulsa una ficha · Esc para recogerlas';
+      if (this.docked()) return en ? `${this.docked()} loaded into </> · drag another one onto it` : `${this.docked()} cargada en </> · arrastra otra encima`;
+      return en ? 'Drag to spin · drop a card on </> to load it · Esc to put them away' : 'Arrastra para girar · suelta una ficha en </> para cargarla · Esc para recogerlas';
     }
     return en ? `Click the robot to see my stack (${STACK.length})` : `Pulsa el robot para ver mi stack (${STACK.length})`;
   });
@@ -709,8 +714,9 @@ export class HeroSceneComponent {
 
   pressEnd(_event: PointerEvent): void {
     if (this.press?.grabbed) {
-      this.scene?.release();
-      this.speakText(this.i18n.lang() === 'en' ? 'Whee!' : '¡Allá va!');
+      const docked = this.scene?.release();
+      const en = this.i18n.lang() === 'en';
+      this.speakText(docked ? (en ? `Loading ${docked}` : `Cargando ${docked}`) : en ? 'Whee!' : '¡Allá va!');
     }
     this.suppressClick = !!this.press?.dragged;
     this.press = null;
@@ -987,6 +993,11 @@ export class HeroSceneComponent {
         return;
       }
       scene.onBounce(() => this.sound.bounce());
+      // La ficha terminó de entrar en el proyector: se anuncia y se nombra en la pista.
+      scene.onDock((title) => {
+        this.sound.tick();
+        this.zone.run(() => this.docked.set(title));
+      });
       this.scene = scene;
     } catch {
       this.failed.set(true);
