@@ -35,11 +35,16 @@ Infraestructura de clientes omitida por confidencialidad.
 - **Organización:** PBS Consulting (proyecto para el BCR)
 - **Tecnologías:** Java, Spring Boot, Spring Security, OAuth2, JWT, Docker, Kubernetes, CI/CD
 
-Microservicios y APIs seguras con Spring Boot para operaciones bancarias críticas. Diseño y
-desarrollo los servicios de backend, con APIs REST protegidas con OAuth2 y JWT. Participo en la modernización de servicios hacia
-contenedores y Kubernetes gestionado en la nube, con gestión segura de secretos y pipelines de
-CI/CD. También optimizo consultas en bases de datos SQL y NoSQL para volúmenes altos de
-transacciones y doy soporte a producción.
+Microservicios y APIs seguras con Spring Boot para operaciones bancarias críticas. Diseño, desarrollo
+y pongo en marcha servicios de backend escalables y de alto rendimiento, con APIs REST protegidas con
+OAuth2 y JWT para resguardar datos financieros sensibles. Optimizo estructuras de datos y consultas en
+bases de datos SQL y NoSQL que manejan volúmenes altos de transacciones. Participo en la modernización
+de servicios hacia contenedores y Kubernetes gestionado en la nube, con gestión segura de secretos y
+pipelines de CI/CD que aceleran las entregas sin perder calidad. Diagnostico y resuelvo incidencias en
+producción para mantener la disponibilidad de sistemas de misión crítica. Genero reportes dinámicos en
+Java con exportación a varios formatos y documento las soluciones con estándares de calidad (Javadoc y
+diagramas de arquitectura). Trabajo en equipos multidisciplinarios con Scrum: planificación,
+seguimiento diario y revisión de cada sprint.
 
 ## ago 2025 - oct 2026 — Plataforma financiera híbrida fiat y cripto
 
@@ -47,12 +52,19 @@ transacciones y doy soporte a producción.
 - **Organización:** Monetae
 - **Tecnologías:** Java, Spring Boot, WebFlux, OpenAPI, AsyncAPI, Kafka, Docker, Kubernetes
 
-Liderazgo técnico de una plataforma financiera fiat y cripto. Lideré de punta a punta su
-desarrollo con arquitectura hexagonal y Clean Architecture. Sistemas distribuidos de alta concurrencia con Spring
-Boot y WebFlux, enfoque contract-first con OpenAPI y AsyncAPI, arquitectura orientada a eventos y
-patrones de resiliencia (idempotencia, reintentos con backoff, colas de mensajes fallidos).
-Despliegue cloud-native con contenedores y Kubernetes, integración con un proveedor de custodia
-institucional, revisiones de código y mentoría del equipo.
+Liderazgo técnico de una plataforma financiera fiat y cripto. Lideré de punta a punta su desarrollo
+con Scrum, arquitectura hexagonal y Clean Architecture. Diseñé sistemas distribuidos de alta
+concurrencia con Spring Boot y WebFlux, con seguridad empresarial basada en OAuth2 y OpenID Connect.
+Definí y adopté el enfoque contract-first con OpenAPI y AsyncAPI para estandarizar las APIs y la
+comunicación entre microservicios. Diseñé flujos financieros y transaccionales que garantizan
+consistencia, trazabilidad y cumplimiento en operaciones críticas. Arquitectura orientada a eventos con
+mensajería asíncrona, estado distribuido y comunicación en tiempo real, y patrones de resiliencia:
+idempotencia, reintentos con backoff, colas de mensajes fallidos y consistencia eventual. Despliegue
+cloud-native con contenedores y Kubernetes, gestión segura de secretos y configuración, observabilidad
+con logs centralizados, métricas y trazas, y estándares de seguridad OWASP. Integré servicios externos
+de custodia institucional, identidad y procesamiento de activos digitales. Participé en las decisiones
+estratégicas junto a negocio y producto, programé a diario, hice revisiones de código y mentoría al
+equipo, y documenté la arquitectura y las decisiones técnicas.
 
 ## may 2022 - ene 2024 — Integración del core bancario con servicios REST y SOAP
 
@@ -60,10 +72,17 @@ institucional, revisiones de código y mentoría del equipo.
 - **Organización:** Banco Agrícola
 - **Tecnologías:** Java, Spring Boot, Spring Batch, REST, SOAP, JMS
 
-Integración del core bancario con servicios REST y SOAP en Java. Microservicios en Spring Boot entre
-aplicaciones internas y externas, procesos batch que transforman y validan los archivos del sistema
-core, mensajería con colas y servicios para terceros. Participé en la migración de aplicaciones
-monolíticas a microservicios sin interrumpir el servicio.
+Integración del core bancario con servicios REST y SOAP en Java. Diseñé, desarrollé y mantuve
+soluciones de integración que aseguran una comunicación estable y segura entre sistemas críticos.
+Implementé microservicios en Spring Boot entre aplicaciones internas y externas, con mejor
+escalabilidad y resiliencia. Desarrollé procesos batch que transforman y validan los archivos del
+sistema core para garantizar la integridad de los datos financieros, e integré aplicaciones legadas
+mediante conectores propios y mensajería con colas. Expuse funcionalidades bancarias a terceros con
+servicios REST y SOAP bajo estándares estrictos de seguridad y fiabilidad. Optimicé procesos de
+integración de alto volumen, con mejores tiempos de respuesta y menor consumo de recursos. Participé en
+la migración de aplicaciones monolíticas a microservicios sin interrumpir el servicio. Aseguré la
+calidad con pruebas unitarias, integración continua y revisiones de código en equipos Scrum y Kanban,
+en coordinación con los equipos de infraestructura, redes y QA.
 
 ## 2018 - 2022 — Ingeniería en Sistemas y Computación
 
@@ -80,8 +99,14 @@ bancario.
 - **Tecnologías:** Java, Spring Boot, Angular, React
 
 Coordinación técnica de los sistemas de las elecciones nacionales. Coordiné equipos técnicos para
-implantarlos y capacité al personal. Pruebas de integración y seguimiento antes y durante
-las elecciones, en coordinación con los equipos de ciberseguridad.
+implantar y desplegar sistemas electorales en tiempo real. Preparé material formativo y di
+capacitación técnica y operativa al personal electoral con sesiones prácticas. Ejecuté pruebas de
+integración, validación funcional y seguimiento continuo antes y durante las elecciones para asegurar
+su calidad, estabilidad y disponibilidad. Contribuí al diseño de interfaces accesibles y fáciles de
+usar para perfiles ciudadanos diversos. Trabajé junto a los equipos de ciberseguridad para reducir
+riesgos. Desarrollé componentes de backend y frontend para módulos internos de soporte con Java,
+Spring Boot, Angular y React. Participé en el análisis posterior a la elección con métricas técnicas
+y operativas para proponer mejoras a futuros procesos.
 
 ## jun 2019 - dic 2019 — Aplicaciones bancarias seguras y orientadas a eventos
 
@@ -89,9 +114,15 @@ las elecciones, en coordinación con los equipos de ciberseguridad.
 - **Organización:** Banco Davivienda
 - **Tecnologías:** Java, Spring Boot, OAuth2, Apache Kafka, RabbitMQ, Docker
 
-Aplicaciones bancarias seguras con Java y el ecosistema Spring. Microservicios REST con OAuth2 y
-JWT y servicios orientados a eventos con Kafka y RabbitMQ para flujos de transacciones en tiempo
-real, desplegados en contenedores con integración y entrega continuas.
+Aplicaciones bancarias seguras con Java y el ecosistema Spring. Diseñé y desarrollé aplicaciones
+modulares con Spring Boot, Spring Data y Spring Security, con foco en escalabilidad, mantenibilidad y
+protección de datos. Microservicios REST con autenticación OAuth2 y JWT para operaciones distribuidas
+de alto volumen. Servicios orientados a eventos con Kafka y RabbitMQ para flujos de transacciones en
+tiempo real. Optimicé bases de datos relacionales y NoSQL para acelerar las consultas y soportar
+operaciones concurrentes. Despliegue en contenedores con pipelines de integración y entrega continuas
+que incluyen validaciones y pruebas. Integraciones con terceros mediante REST y SOAP, alineadas con la
+regulación del sector financiero. Participé en reuniones de diseño de arquitectura, hice revisiones de
+código y acompañé a desarrolladores junior, en equipos Scrum y Kanban.
 
 <!-- timeline:end -->
 
