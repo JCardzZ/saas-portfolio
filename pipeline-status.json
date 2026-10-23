@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-22T16:53:44.566Z",
+  "updatedAt": "2026-10-23T00:47:55.713Z",
   "workflows": {
     "ci": {
-      "runId": 39805260786,
-      "runNumber": 209,
-      "sha": "3efe853ee04b4720b379da85c363a654ad912872",
+      "runId": 39878158458,
+      "runNumber": 212,
+      "sha": "1eb58c49a50674d514b0497f50c7ee1ce40bd3bf",
       "event": "push",
-      "startedAt": "2026-10-22T15:29:07Z",
-      "finishedAt": "2026-10-22T15:53:39.825Z",
-      "durationSeconds": 1473,
+      "startedAt": "2026-10-23T00:26:51Z",
+      "finishedAt": "2026-10-23T00:47:55.713Z",
+      "durationSeconds": 1265,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 6,
+          "durationSeconds": 4,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 12,
+          "durationSeconds": 17,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 141,
+          "durationSeconds": 137,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 28,
+          "durationSeconds": 27,
           "runs": 1
         },
         {
@@ -71,16 +71,16 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 72,
+          "durationSeconds": 65,
           "runs": 3,
           "metrics": {
-            "tests": 756
+            "tests": 757
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 40,
+          "durationSeconds": 44,
           "runs": 1,
           "metrics": {
             "bundleKb": 341.2,
@@ -90,10 +90,10 @@
         {
           "id": "lighthouse",
           "status": "success",
-          "durationSeconds": 80,
+          "durationSeconds": 65,
           "runs": 1,
           "metrics": {
-            "performance": 76,
+            "performance": 80,
             "accessibility": 100,
             "bestPractices": 96,
             "seo": 100
@@ -102,7 +102,7 @@
         {
           "id": "responsive",
           "status": "success",
-          "durationSeconds": 1135,
+          "durationSeconds": 1093,
           "runs": 2,
           "metrics": {
             "tests": 525,
@@ -423,6 +423,189 @@
   },
   "merges": [
     {
+      "number": 91,
+      "title": "feat(frontend): give every article its own page that can be linked and shared",
+      "branch": "feat/article-pages",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-23T00:46:25Z",
+      "sha": "8563f4cf765320cfea8a62b49ad4bb22c7c76585",
+      "additions": 235,
+      "deletions": 67,
+      "changedFiles": 7,
+      "ci": {
+        "runId": 39880107307,
+        "runNumber": 221,
+        "conclusion": "pending",
+        "durationSeconds": 1,
+        "jobs": []
+      }
+    },
+    {
+      "number": 92,
+      "title": "feat: show a screenshot on each project card",
+      "branch": "feat/project-cover-images",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-23T00:43:44Z",
+      "sha": "4cd908b01b26b4ee0bb27bb70ebc8d3a2b160830",
+      "additions": 73,
+      "deletions": 4,
+      "changedFiles": 15,
+      "ci": {
+        "runId": 39879836951,
+        "runNumber": 218,
+        "conclusion": "cancelled",
+        "durationSeconds": 161,
+        "jobs": []
+      }
+    },
+    {
+      "number": 90,
+      "title": "feat(frontend): link the GitHub and LinkedIn profiles from the hero and the footer",
+      "branch": "feat/social-links",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-23T00:43:08Z",
+      "sha": "14acaf002ba20c2208b7af5237e86c3fa1a5fa45",
+      "additions": 84,
+      "deletions": 0,
+      "changedFiles": 6,
+      "ci": {
+        "runId": 39879775827,
+        "runNumber": 217,
+        "conclusion": "cancelled",
+        "durationSeconds": 38,
+        "jobs": []
+      }
+    },
+    {
+      "number": 88,
+      "title": "fix(backend): index in small batches and wait out Gemini's per-minute quota",
+      "branch": "fix/gemini-embedding-rate-limit",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-23T00:27:10Z",
+      "sha": "614ef50a587ae618dbcb462ddfb8f4703022f24f",
+      "additions": 84,
+      "deletions": 6,
+      "changedFiles": 2,
+      "ci": {
+        "runId": 39878194061,
+        "runNumber": 213,
+        "conclusion": "cancelled",
+        "durationSeconds": 959,
+        "jobs": []
+      }
+    },
+    {
+      "number": 89,
+      "title": "feat(frontend): draw the career as a timeline with the current role highlighted",
+      "branch": "feat/career-timeline-polish",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-23T00:26:48Z",
+      "sha": "1eb58c49a50674d514b0497f50c7ee1ce40bd3bf",
+      "additions": 77,
+      "deletions": 13,
+      "changedFiles": 3,
+      "ci": {
+        "runId": 39878158458,
+        "runNumber": 212,
+        "conclusion": "success",
+        "durationSeconds": 1265,
+        "jobs": [
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "skipped"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "success"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Móvil (chromium · 2/2)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Móvil (chromium · 1/2)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "success"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
+    {
       "number": 87,
       "title": "fix(ci): find the CI artefacts reliably when the CD is run by hand",
       "branch": "fix/cd-manual-artifact-lookup",
@@ -733,99 +916,114 @@
         "durationSeconds": 1,
         "jobs": []
       }
-    },
-    {
-      "number": 80,
-      "title": "fix(backend): finish the RAG reindex inside the request so Cloud Run keeps its CPU",
-      "branch": "fix/rag-reindex-in-request",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-22T03:32:29Z",
-      "sha": "58b2937719285627b2ee673e4fa1ad11add7e7c7",
-      "additions": 19,
-      "deletions": 38,
-      "changedFiles": 5,
-      "ci": {
-        "runId": 39717402555,
-        "runNumber": 194,
-        "conclusion": "pending",
-        "durationSeconds": 1,
-        "jobs": []
-      }
-    },
-    {
-      "number": 79,
-      "title": "feat(frontend): drive the network mesh with system events, a cursor probe, fog and packet trails",
-      "branch": "feat/network-mesh-live",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-22T03:07:54Z",
-      "sha": "f45c65215b34797ac1e3f000641fe9ffa50ac02e",
-      "additions": 204,
-      "deletions": 44,
-      "changedFiles": 3,
-      "ci": {
-        "runId": 39715160311,
-        "runNumber": 192,
-        "conclusion": "cancelled",
-        "durationSeconds": 1477,
-        "jobs": []
-      }
-    },
-    {
-      "number": 78,
-      "title": "feat(frontend): replace the galaxy backdrop with a live network mesh",
-      "branch": "feat/network-mesh-backdrop",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-22T02:39:21Z",
-      "sha": "1578ec6c96719373ae24f7fb27a03c7b3c66da5a",
-      "additions": 222,
-      "deletions": 108,
-      "changedFiles": 4,
-      "ci": {
-        "runId": 39712575530,
-        "runNumber": 190,
-        "conclusion": "pending",
-        "durationSeconds": 1,
-        "jobs": []
-      }
-    },
-    {
-      "number": 77,
-      "title": "feat(frontend): give the page background depth with an accent aurora and a vignette",
-      "branch": "feat/hero-aurora",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-22T02:11:35Z",
-      "sha": "6a57fc987c289eef3aee0a320024cd9a555eba80",
-      "additions": 14,
-      "deletions": 0,
-      "changedFiles": 1,
-      "ci": {
-        "runId": 39710012806,
-        "runNumber": 188,
-        "conclusion": "pending",
-        "durationSeconds": 1,
-        "jobs": []
-      }
-    },
-    {
-      "number": 76,
-      "title": "perf(frontend): load a trimmed Three.js after the first paint and only when the robot is visible",
-      "branch": "perf/bundle-and-three",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-22T01:51:54Z",
-      "sha": "615e563370c9d52404d923da0d96e187030f290c",
-      "additions": 36,
-      "deletions": 5,
-      "changedFiles": 5,
-      "ci": {
-        "runId": 39708129788,
-        "runNumber": 186,
-        "conclusion": "pending",
-        "durationSeconds": 1,
-        "jobs": []
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "8563f4cf765320cfea8a62b49ad4bb22c7c76585",
+      "parents": [
+        "4cd908b01b26b4ee0bb27bb70ebc8d3a2b160830",
+        "c6a0b2de7993bf53baa8ea338ccbf2054d045893"
+      ],
+      "subject": "Merge pull request #91 from JCardzZ/feat/article-pages",
+      "author": "JCardzZ",
+      "date": "2026-10-23T00:46:24Z"
+    },
+    {
+      "sha": "c6a0b2de7993bf53baa8ea338ccbf2054d045893",
+      "parents": [
+        "e7e7e60d9450ddce8c3420639d3ff30e12ca7001",
+        "4cd908b01b26b4ee0bb27bb70ebc8d3a2b160830"
+      ],
+      "subject": "Merge remote-tracking branch 'origin/main' into feat/article-pages",
+      "author": "JCardzZ",
+      "date": "2026-10-23T00:45:41Z"
+    },
+    {
+      "sha": "4cd908b01b26b4ee0bb27bb70ebc8d3a2b160830",
+      "parents": [
+        "14acaf002ba20c2208b7af5237e86c3fa1a5fa45",
+        "b2d38883813e9989ea9ae7333162aa2e89c714f9"
+      ],
+      "subject": "Merge pull request #92 from JCardzZ/feat/project-cover-images",
+      "author": "JCardzZ",
+      "date": "2026-10-23T00:43:44Z"
+    },
+    {
+      "sha": "14acaf002ba20c2208b7af5237e86c3fa1a5fa45",
+      "parents": [
+        "614ef50a587ae618dbcb462ddfb8f4703022f24f",
+        "6e8969eeb5a97551878e86eb36c421282b15acc4"
+      ],
+      "subject": "Merge pull request #90 from JCardzZ/feat/social-links",
+      "author": "JCardzZ",
+      "date": "2026-10-23T00:43:07Z"
+    },
+    {
+      "sha": "b2d38883813e9989ea9ae7333162aa2e89c714f9",
+      "parents": [
+        "614ef50a587ae618dbcb462ddfb8f4703022f24f"
+      ],
+      "subject": "feat: show a screenshot on each project card",
+      "author": "JCardzZ",
+      "date": "2026-10-23T00:42:00Z"
+    },
+    {
+      "sha": "e7e7e60d9450ddce8c3420639d3ff30e12ca7001",
+      "parents": [
+        "614ef50a587ae618dbcb462ddfb8f4703022f24f"
+      ],
+      "subject": "feat(frontend): give every article its own page that can be linked and shared",
+      "author": "JCardzZ",
+      "date": "2026-10-23T00:37:48Z"
+    },
+    {
+      "sha": "6e8969eeb5a97551878e86eb36c421282b15acc4",
+      "parents": [
+        "614ef50a587ae618dbcb462ddfb8f4703022f24f"
+      ],
+      "subject": "feat(frontend): link the GitHub and LinkedIn profiles from the hero and the footer",
+      "author": "JCardzZ",
+      "date": "2026-10-23T00:34:15Z"
+    },
+    {
+      "sha": "614ef50a587ae618dbcb462ddfb8f4703022f24f",
+      "parents": [
+        "1eb58c49a50674d514b0497f50c7ee1ce40bd3bf",
+        "0b94686e670cbdc7281d7a45e1581ff39ca0a832"
+      ],
+      "subject": "Merge pull request #88 from JCardzZ/fix/gemini-embedding-rate-limit",
+      "author": "JCardzZ",
+      "date": "2026-10-23T00:27:09Z"
+    },
+    {
+      "sha": "1eb58c49a50674d514b0497f50c7ee1ce40bd3bf",
+      "parents": [
+        "3efe853ee04b4720b379da85c363a654ad912872",
+        "c5a715aaf9df961efcf25f38f0ba10fb9489cc47"
+      ],
+      "subject": "Merge pull request #89 from JCardzZ/feat/career-timeline-polish",
+      "author": "JCardzZ",
+      "date": "2026-10-23T00:26:48Z"
+    },
+    {
+      "sha": "c5a715aaf9df961efcf25f38f0ba10fb9489cc47",
+      "parents": [
+        "3efe853ee04b4720b379da85c363a654ad912872"
+      ],
+      "subject": "feat(frontend): draw the career as a timeline with the current role highlighted",
+      "author": "JCardzZ",
+      "date": "2026-10-23T00:24:33Z"
+    },
+    {
+      "sha": "0b94686e670cbdc7281d7a45e1581ff39ca0a832",
+      "parents": [
+        "3efe853ee04b4720b379da85c363a654ad912872"
+      ],
+      "subject": "fix(backend): index in small batches and wait out Gemini's per-minute quota",
+      "author": "JCardzZ",
+      "date": "2026-10-23T00:21:42Z"
+    },
     {
       "sha": "3efe853ee04b4720b379da85c363a654ad912872",
       "parents": [
@@ -1291,109 +1489,6 @@
       "subject": "Merge remote-tracking branch 'origin/main' into feat/career-i18n",
       "author": "JCardzZ",
       "date": "2026-10-19T03:53:41Z"
-    },
-    {
-      "sha": "bb2b495597416312750844b1ec7fce0420a15705",
-      "parents": [
-        "71053239635840c36ed2ad24e3532c0f96ee0be4",
-        "c85b4bec75db40fef3044954dccece31e66c9da3"
-      ],
-      "subject": "Merge remote-tracking branch 'origin/main' into fix/site-audit",
-      "author": "JCardzZ",
-      "date": "2026-10-19T03:53:39Z"
-    },
-    {
-      "sha": "086d8e9039fefa220ce3925f28c4a6ff68c84459",
-      "parents": [
-        "2675bfb782e493a1e712db9d8a555cbc8004d204"
-      ],
-      "subject": "feat(frontend): replace the simulated telemetry card with real API data",
-      "author": "JCardzZ",
-      "date": "2026-10-19T03:53:06Z"
-    },
-    {
-      "sha": "a9bcadbe864d61587b70d352b8d059af0768ae2c",
-      "parents": [
-        "2675bfb782e493a1e712db9d8a555cbc8004d204"
-      ],
-      "subject": "feat: serve the career timeline in English and translate the remaining widgets",
-      "author": "JCardzZ",
-      "date": "2026-10-19T03:46:37Z"
-    },
-    {
-      "sha": "71053239635840c36ed2ad24e3532c0f96ee0be4",
-      "parents": [
-        "2675bfb782e493a1e712db9d8a555cbc8004d204"
-      ],
-      "subject": "fix(frontend): faster mobile start, full accessibility pass and fewer AI-template tells",
-      "author": "JCardzZ",
-      "date": "2026-10-19T03:24:39Z"
-    },
-    {
-      "sha": "aff070b5aa1baab45a88b8df99109593a26c0d9a",
-      "parents": [
-        "87e40548c0cb5c3d74ff288949a3db23e77878a8"
-      ],
-      "subject": "test(frontend): wait for the pipeline graph view before measuring it on mobile",
-      "author": "JCardzZ",
-      "date": "2026-10-19T02:50:43Z"
-    },
-    {
-      "sha": "87e40548c0cb5c3d74ff288949a3db23e77878a8",
-      "parents": [
-        "2bf274f601d90cdfd6fb75f400e5ea97a910aae2",
-        "64702cc7a2cf1da6ddf33e471ed869e5b095d9de"
-      ],
-      "subject": "Merge branch 'feat/delivery-tabs' into feat/pipeline-phases",
-      "author": "JCardzZ",
-      "date": "2026-10-19T02:48:28Z"
-    },
-    {
-      "sha": "64702cc7a2cf1da6ddf33e471ed869e5b095d9de",
-      "parents": [
-        "d1f992cfc89dcf14b3d9c5d995c456116122133b"
-      ],
-      "subject": "fix(frontend): keep the hover focus of a tab's card above the veil",
-      "author": "JCardzZ",
-      "date": "2026-10-19T02:48:27Z"
-    },
-    {
-      "sha": "2bf274f601d90cdfd6fb75f400e5ea97a910aae2",
-      "parents": [
-        "d1f992cfc89dcf14b3d9c5d995c456116122133b"
-      ],
-      "subject": "feat(frontend): show the pipeline by phases with a scoreboard of the run's real figures",
-      "author": "JCardzZ",
-      "date": "2026-10-19T02:47:23Z"
-    },
-    {
-      "sha": "c85b4bec75db40fef3044954dccece31e66c9da3",
-      "parents": [
-        "36ecd44d8465e92a726abf62905fed40217362ad",
-        "d1f992cfc89dcf14b3d9c5d995c456116122133b"
-      ],
-      "subject": "Merge pull request #64 from JCardzZ/feat/delivery-tabs",
-      "author": "JCardzZ",
-      "date": "2026-10-19T02:35:20Z"
-    },
-    {
-      "sha": "36ecd44d8465e92a726abf62905fed40217362ad",
-      "parents": [
-        "2675bfb782e493a1e712db9d8a555cbc8004d204",
-        "344d98a55bb2c8166a28769be88d78ba5afbdb5e"
-      ],
-      "subject": "Merge pull request #62 from JCardzZ/fix/check-now-fold",
-      "author": "JCardzZ",
-      "date": "2026-10-19T02:34:46Z"
-    },
-    {
-      "sha": "d1f992cfc89dcf14b3d9c5d995c456116122133b",
-      "parents": [
-        "2675bfb782e493a1e712db9d8a555cbc8004d204"
-      ],
-      "subject": "feat(frontend): show the delivery section as one card with four tabs",
-      "author": "JCardzZ",
-      "date": "2026-10-19T02:16:56Z"
     }
   ]
 }
