@@ -202,3 +202,5 @@ career:
   # Foto de perfil del CV (JPEG o PNG). Se sube desde administración o se deja el archivo ahí.
   # En un contenedor debe apuntar a un volumen para que lo subido no se pierda.
   photo-path: ${PROFILE_PHOTO_PATH:../docs/career/profile-photo}
+  # Foto del repositorio, usada si no se ha subido otra (en Cloud Run lo subido no persiste).
+  photo-fallback-path: ${PROFILE_PHOTO_FALLBACK_PATH:../docs/career/profile-photo}

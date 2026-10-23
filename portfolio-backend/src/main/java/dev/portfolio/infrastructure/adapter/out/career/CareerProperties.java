@@ -7,19 +7,25 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding;
  * @param storyPath ruta del archivo CAREER_STORY.md; si no existe, la línea de tiempo queda vacía
  * @param cvContact línea de contacto que se imprime en el CV (correo, ciudad, enlace); opcional
  * @param photoPath ruta del archivo de la foto de perfil (JPEG o PNG); se crea al subirla desde administración
+ * @param photoFallbackPath foto que se usa si no hay una subida (la del repositorio, que viaja en la
+ *                          imagen): en una plataforma sin disco persistente, lo subido se pierde
  */
 @ConfigurationProperties(prefix = "career")
-public record CareerProperties(String storyPath, String cvContact, String photoPath) {
+public record CareerProperties(String storyPath, String cvContact, String photoPath, String photoFallbackPath) {
 
     @ConstructorBinding
     public CareerProperties {
     }
 
     public CareerProperties(String storyPath) {
-        this(storyPath, "", "");
+        this(storyPath, "", "", "");
     }
 
     public CareerProperties(String storyPath, String cvContact) {
-        this(storyPath, cvContact, "");
+        this(storyPath, cvContact, "", "");
+    }
+
+    public CareerProperties(String storyPath, String cvContact, String photoPath) {
+        this(storyPath, cvContact, photoPath, "");
     }
 }

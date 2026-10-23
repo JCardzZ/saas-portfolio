@@ -46,6 +46,7 @@ VOLUME /app/data
 
 ENV CAREER_STORY_PATH=/app/docs/career/CAREER_STORY.md \
     PROFILE_PHOTO_PATH=/app/data/profile-photo \
+    PROFILE_PHOTO_FALLBACK_PATH=/app/docs/career/profile-photo \
     RAG_CODE_ROOT=/app/docs \
     JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -Djava.awt.headless=true"
 
