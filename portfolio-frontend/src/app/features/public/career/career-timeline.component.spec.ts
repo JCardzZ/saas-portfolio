@@ -5,7 +5,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { environment } from '../../../../environments/environment';
 import { provideApi } from '../../../core/api';
 import { LanguageService } from '../../../core/i18n/language.service';
-import { CareerTimelineComponent } from './career-timeline.component';
+import { CareerTimelineComponent, periodLength } from './career-timeline.component';
 
 describe('CareerTimelineComponent', () => {
   const url = `${environment.apiBaseUrl}/public/career-timeline`;
@@ -120,5 +120,23 @@ describe('CareerTimelineComponent', () => {
     TestBed.inject(LanguageService).lang.set('es');
     fixture.detectChanges();
     timeline('es').flush([]);
+  });
+
+  it('splits the summary into points and shows how long each role lasted', () => {
+    timeline().flush([
+      { period: 'may 2022 - ene 2024', title: 'Integración', role: 'Desarrollador', organization: 'Banco', summary: 'Primera frase con p. ej. una abreviatura. Segunda frase. Tercera frase.' },
+      { period: '2018 - 2022', title: 'Título', organization: 'Universidad', summary: 'Una sola frase.' },
+    ]);
+    fixture.detectChanges();
+    const rows = Array.from(element.querySelectorAll<HTMLElement>('li.row'));
+
+    expect(Array.from(rows[0].querySelectorAll('.highlights li')).map((li) => li.textContent?.trim()))
+      .toEqual(['Primera frase con p. ej. una abreviatura.', 'Segunda frase.', 'Tercera frase.']);
+    expect(rows[0].querySelector('.duration')?.textContent?.trim()).toBe('1 año 9 meses');
+    // Una sola frase va como párrafo; solo años: sin duración inventada.
+    expect(rows[1].querySelector('.highlights')).toBeNull();
+    expect(periodLength('2018 - 2022', false)).toBeNull();
+    expect(periodLength('ene 2024 - actualidad', false, new Date(2026, 9, 23))).toBe('2 años 10 meses');
+    expect(periodLength('Jun 2019 - Dec 2019', true)).toBe('7 mos');
   });
 });

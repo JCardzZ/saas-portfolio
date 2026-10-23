@@ -1106,4 +1106,5 @@ export const EN: Readonly<Record<string, string>> = {
   'Ver todos los artículos': 'See all articles',
   'GitHub de Manuel Cardoza': 'Manuel Cardoza on GitHub',
   'LinkedIn de Manuel Cardoza': 'Manuel Cardoza on LinkedIn',
+  'Lo que hice': 'What I did',
 };

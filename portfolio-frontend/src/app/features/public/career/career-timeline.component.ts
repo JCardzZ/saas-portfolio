@@ -71,8 +71,24 @@ import { TechIcon, techIconFor } from '../../../shared/ui/tech-icons';
               </button>
             </h3>
             <div class="detail" role="region" [id]="'career-detail-' + i" [attr.aria-labelledby]="'career-head-' + i" [hidden]="!isOpen(i)">
-              <p class="summary">{{ milestone.summary }}</p>
+              @if (duration(milestone); as length) {
+                <p class="duration">{{ length }}</p>
+              }
+              <!-- Cada frase del resumen, un punto: se recorre de un vistazo (el texto es el mismo). -->
+              @if (highlights(milestone); as points) {
+                @if (points.length > 1) {
+                  <h4 class="label">{{ 'Lo que hice' | t }}</h4>
+                  <ul class="highlights">
+                    @for (point of points; track $index) {
+                      <li>{{ point }}</li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="summary">{{ milestone.summary }}</p>
+                }
+              }
               @if (milestone.technologies?.length) {
+                <h4 class="label">Stack</h4>
                 <ul class="chips" [attr.aria-label]="'Tecnologías' | t">
                   @for (technology of milestone.technologies; track technology) {
                     <li class="chip">
@@ -128,7 +144,13 @@ import { TechIcon, techIconFor } from '../../../shared/ui/tech-icons';
     .detail:not([hidden]) { animation: reveal var(--duration-slow) var(--ease-emphasized) both; }
     @keyframes reveal { from { opacity: 0; transform: translateY(-0.25rem); } }
     .summary { max-width: 46rem; font-size: 0.9375rem; line-height: 1.65; color: var(--text-2); }
-    .chips { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-top: 0.875rem; }
+    .duration { margin-bottom: 1rem; font: 0.8125rem/1.4 var(--font-mono); color: var(--text-3); }
+    .label { margin: 1.25rem 0 0.625rem; font: 500 0.75rem/1rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
+    .label:first-of-type { margin-top: 0; }
+    .highlights { display: grid; gap: 0.625rem; max-width: 46rem; }
+    .highlights li { position: relative; padding-left: 1.25rem; font-size: 0.9375rem; line-height: 1.6; color: var(--text-2); }
+    .highlights li::before { content: ''; position: absolute; left: 0.125rem; top: 0.6em; width: 0.375rem; height: 0.375rem; border-radius: 999px; background: var(--accent-solid); }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.375rem; }
     .chip {
       display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.125rem 0.625rem; border: 1px solid var(--border-subtle);
       border-radius: 999px; font-size: 0.75rem; color: var(--text-2);
@@ -172,6 +194,17 @@ export class CareerTimelineComponent {
     });
   }
 
+  /** Frases del resumen, una por punto. No parte por «. » dentro de una abreviatura como «p. ej.». */
+  highlights(milestone: CareerMilestone): string[] {
+    return (milestone.summary ?? '').split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ¿¡])/).map((sentence) => sentence.trim()).filter(Boolean);
+  }
+
+  /** Duración del puesto a partir del periodo («ene 2024 - actualidad» → «2 años 10 meses»). */
+  duration(milestone: CareerMilestone): string | null {
+    const en = this.language.lang() === 'en';
+    return periodLength(milestone.period ?? '', en);
+  }
+
   /** Puesto actual: el periodo termina en «actualidad» / «present». */
   isCurrent(milestone: CareerMilestone): boolean {
     return /actualidad|present|current/i.test(milestone.period ?? '');
@@ -208,4 +241,31 @@ export class CareerTimelineComponent {
         error: (error: unknown) => this.error.set(describeHttpError(error)),
       });
   }
+}
+
+const MONTHS: Record<string, number> = {
+  ene: 0, jan: 0, feb: 1, mar: 2, abr: 3, apr: 3, may: 4, jun: 5, jul: 6, ago: 7, aug: 7, sep: 8, set: 8, oct: 9, nov: 10, dic: 11, dec: 11,
+};
+
+/**
+ * Meses entre el inicio y el fin de un periodo con mes y año («may 2022 - ene 2024», ambos meses
+ * incluidos, como LinkedIn). `null` si el periodo solo tiene años: no se inventa una duración.
+ */
+export function periodLength(period: string, en: boolean, today = new Date()): string | null {
+  const [from, to] = period.toLowerCase().split(/\s+-\s+/);
+  const parse = (text: string | undefined): [number, number] | null => {
+    const match = /^([a-z]{3})[a-z]*\.?\s+(\d{4})$/.exec(text?.trim() ?? '');
+    return match && match[1] in MONTHS ? [MONTHS[match[1]], Number(match[2])] : null;
+  };
+  const start = parse(from);
+  const end = /actualidad|present|current/.test(to ?? '') ? [today.getMonth(), today.getFullYear()] as [number, number] : parse(to);
+  if (!start || !end) return null;
+  const months = (end[1] - start[1]) * 12 + (end[0] - start[0]) + 1;
+  if (months <= 0) return null;
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  const part = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+  const y = years ? part(years, en ? 'yr' : 'año', en ? 'yrs' : 'años') : '';
+  const m = rest ? part(rest, en ? 'mo' : 'mes', en ? 'mos' : 'meses') : '';
+  return [y, m].filter(Boolean).join(' ');
 }

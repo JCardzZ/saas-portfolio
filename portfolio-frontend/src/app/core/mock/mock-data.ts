@@ -51,8 +51,8 @@ export const MOCK_CAREER: CareerMilestone[] = [
     period: 'ene 2024 - actualidad',
     title: 'Microservicios y APIs para la banca central',
     role: 'Senior Software Engineer',
-    organization: 'PBS Consulting (proyecto para el Banco Central de Reserva de El Salvador)',
-    technologies: ['Java', 'Spring Boot', 'Spring Security', 'OAuth2', 'JWT', 'SQL Server', 'MongoDB', 'Redis', 'Azure AKS', 'Docker', 'Kubernetes', 'Azure Key Vault', 'Azure DevOps'],
+    organization: 'PBS Consulting (proyecto para el BCR)',
+    technologies: ['Java', 'Spring Boot', 'OAuth2', 'JWT', 'SQL Server', 'MongoDB', 'Azure AKS', 'Azure DevOps'],
     summary: 'Diseño y desarrollo microservicios de backend con Spring Boot para operaciones bancarias críticas, con APIs REST protegidas con OAuth2 y JWT. Lideré la migración de servicios a Kubernetes gestionado en Azure (AKS), con contenedores Docker, Azure Key Vault, Blob Storage y Redis, y pipelines de CI/CD en Azure DevOps. También optimizo consultas en SQL Server y MongoDB para volúmenes altos de transacciones y resuelvo incidencias en producción.',
   },
   {
@@ -60,7 +60,7 @@ export const MOCK_CAREER: CareerMilestone[] = [
     title: 'Plataforma financiera híbrida fiat y cripto',
     role: 'Tech Lead',
     organization: 'Monetae',
-    technologies: ['Java', 'Spring Boot', 'WebFlux', 'OAuth2', 'OpenID Connect', 'OpenAPI', 'AsyncAPI', 'Kafka', 'Redis', 'WebSockets', 'AWS', 'Docker', 'Kubernetes'],
+    technologies: ['Java', 'Spring Boot', 'WebFlux', 'OpenAPI', 'Kafka', 'Redis', 'AWS', 'Kubernetes'],
     summary: 'Liderazgo técnico de punta a punta de una plataforma financiera híbrida (fiat y cripto) con arquitectura hexagonal y Clean Architecture. Sistemas distribuidos de alta concurrencia con Spring Boot y WebFlux, enfoque contract-first con OpenAPI y AsyncAPI, arquitectura orientada a eventos con Kafka, Redis y WebSockets, y patrones de resiliencia (idempotencia, reintentos con backoff, colas de mensajes fallidos). En AWS: ECS, EKS, Lambda, API Gateway, Secrets Manager y CloudWatch. Integración con servicios de custodia como Fireblocks, revisiones de código y mentoría del equipo.',
   },
   {
@@ -68,8 +68,8 @@ export const MOCK_CAREER: CareerMilestone[] = [
     title: 'Integración del core bancario AS400 con servicios REST y SOAP',
     role: 'Desarrollador Java Broker',
     organization: 'Banco Agrícola',
-    technologies: ['Java', 'Spring Boot', 'Spring Batch', 'IBM AS400', 'COBOL', 'IBM MQ Series', 'AWS Lambda', 'AWS SQS', 'Jenkins', 'Azure DevOps', 'Prometheus', 'Grafana', 'ELK'],
-    summary: 'Soluciones Java para la integración con el core bancario: microservicios en Spring Boot entre aplicaciones internas y externas, procesos batch que transforman y validan archivos planos del AS400 y COBOL, conectores con IBM MQ Series y servicios REST y SOAP para terceros. Participé en la migración de aplicaciones monolíticas a microservicios sin interrumpir el servicio, con tareas asíncronas en AWS y observabilidad con Prometheus, Grafana y ELK.',
+    technologies: ['Java', 'Spring Boot', 'Spring Batch', 'IBM AS400', 'IBM MQ Series', 'AWS Lambda', 'Prometheus', 'ELK'],
+    summary: 'Integración del core bancario AS400 con servicios REST y SOAP en Java. Microservicios en Spring Boot entre aplicaciones internas y externas, procesos batch que transforman y validan archivos planos del AS400 y COBOL, conectores con IBM MQ Series y servicios REST y SOAP para terceros. Participé en la migración de aplicaciones monolíticas a microservicios sin interrumpir el servicio, con tareas asíncronas en AWS y observabilidad con Prometheus, Grafana y ELK.',
   },
   {
     period: '2018 - 2022',
@@ -82,7 +82,7 @@ export const MOCK_CAREER: CareerMilestone[] = [
     title: 'Sistemas electorales en tiempo real',
     role: 'Facilitador de aprendizaje',
     organization: 'Tribunal Supremo Electoral',
-    technologies: ['Java', 'Spring Boot', 'Angular', 'React', 'AWS', 'Azure', 'Prometheus', 'Grafana'],
+    technologies: ['Java', 'Spring Boot', 'Angular', 'React', 'AWS', 'Azure'],
     summary: 'Coordinación de equipos técnicos para implantar los sistemas electorales en tiempo real de las elecciones nacionales y capacitación técnica al personal. Pruebas de integración y monitorización antes y durante las elecciones, y trabajo con los equipos de ciberseguridad (cifrado, SSL/TLS y protección anti-DDoS).',
   },
   {
@@ -90,8 +90,8 @@ export const MOCK_CAREER: CareerMilestone[] = [
     title: 'Aplicaciones bancarias seguras y orientadas a eventos',
     role: 'Desarrollador Full Stack',
     organization: 'Banco Davivienda',
-    technologies: ['Java', 'Spring Boot', 'Spring Security', 'OAuth2', 'JWT', 'SQL Server', 'PostgreSQL', 'Apache Kafka', 'RabbitMQ', 'Docker', 'Kubernetes', 'AWS', 'Jenkins'],
-    summary: 'Aplicaciones bancarias con Java y el ecosistema Spring, microservicios REST con OAuth2 y JWT detrás de un API Gateway, y servicios distribuidos con Kafka, RabbitMQ y MQ Series para flujos de transacciones en tiempo real. Despliegue en contenedores con Docker y Kubernetes, y pipelines de CI/CD con Jenkins y Azure DevOps.',
+    technologies: ['Java', 'Spring Boot', 'OAuth2', 'Apache Kafka', 'RabbitMQ', 'Docker', 'Kubernetes', 'AWS'],
+    summary: 'Aplicaciones bancarias seguras con Java y el ecosistema Spring. Microservicios REST con OAuth2 y JWT detrás de un API Gateway, y servicios distribuidos con Kafka, RabbitMQ y MQ Series para flujos de transacciones en tiempo real. Despliegue en contenedores con Docker y Kubernetes, y pipelines de CI/CD con Jenkins y Azure DevOps.',
   },
 ];
 
@@ -101,8 +101,8 @@ export const MOCK_CAREER_EN: CareerMilestone[] = [
     period: 'Jan 2024 - present',
     title: 'Microservices and APIs for central banking',
     role: 'Senior Software Engineer',
-    organization: 'PBS Consulting (project for the Central Reserve Bank of El Salvador)',
-    technologies: ['Java', 'Spring Boot', 'Spring Security', 'OAuth2', 'JWT', 'SQL Server', 'MongoDB', 'Redis', 'Azure AKS', 'Docker', 'Kubernetes', 'Azure Key Vault', 'Azure DevOps'],
+    organization: 'PBS Consulting (project for BCR, the Central Reserve Bank)',
+    technologies: ['Java', 'Spring Boot', 'OAuth2', 'JWT', 'SQL Server', 'MongoDB', 'Azure AKS', 'Azure DevOps'],
     summary: 'I design and build backend microservices with Spring Boot for critical banking operations, with REST APIs secured with OAuth2 and JWT. I led the migration of services to managed Kubernetes on Azure (AKS), with Docker containers, Azure Key Vault, Blob Storage and Redis, and CI/CD pipelines in Azure DevOps. I also tune queries on SQL Server and MongoDB for high transaction volumes and resolve production incidents.',
   },
   {
@@ -110,7 +110,7 @@ export const MOCK_CAREER_EN: CareerMilestone[] = [
     title: 'Hybrid fiat and crypto financial platform',
     role: 'Tech Lead',
     organization: 'Monetae',
-    technologies: ['Java', 'Spring Boot', 'WebFlux', 'OAuth2', 'OpenID Connect', 'OpenAPI', 'AsyncAPI', 'Kafka', 'Redis', 'WebSockets', 'AWS', 'Docker', 'Kubernetes'],
+    technologies: ['Java', 'Spring Boot', 'WebFlux', 'OpenAPI', 'Kafka', 'Redis', 'AWS', 'Kubernetes'],
     summary: 'End-to-end technical leadership of a hybrid (fiat and crypto) financial platform built on hexagonal architecture and Clean Architecture. High-concurrency distributed systems with Spring Boot and WebFlux, a contract-first approach with OpenAPI and AsyncAPI, event-driven architecture with Kafka, Redis and WebSockets, and resilience patterns (idempotency, retries with backoff, dead-letter queues). On AWS: ECS, EKS, Lambda, API Gateway, Secrets Manager and CloudWatch. Integration with custody services such as Fireblocks, code reviews and mentoring of the team.',
   },
   {
@@ -118,8 +118,8 @@ export const MOCK_CAREER_EN: CareerMilestone[] = [
     title: 'Integrating the AS400 core banking system with REST and SOAP services',
     role: 'Java Broker Developer',
     organization: 'Banco Agrícola',
-    technologies: ['Java', 'Spring Boot', 'Spring Batch', 'IBM AS400', 'COBOL', 'IBM MQ Series', 'AWS Lambda', 'AWS SQS', 'Jenkins', 'Azure DevOps', 'Prometheus', 'Grafana', 'ELK'],
-    summary: 'Java solutions for core banking integration: Spring Boot microservices between internal and external applications, batch processes that transform and validate flat files from AS400 and COBOL, connectors to IBM MQ Series, and REST and SOAP services for third parties. I took part in migrating monolithic applications to microservices without service disruption, with asynchronous tasks on AWS and observability with Prometheus, Grafana and ELK.',
+    technologies: ['Java', 'Spring Boot', 'Spring Batch', 'IBM AS400', 'IBM MQ Series', 'AWS Lambda', 'Prometheus', 'ELK'],
+    summary: 'Integration of the AS400 core banking system through REST and SOAP services in Java. Spring Boot microservices between internal and external applications, batch processes that transform and validate flat files from AS400 and COBOL, connectors to IBM MQ Series, and REST and SOAP services for third parties. I took part in migrating monolithic applications to microservices without service disruption, with asynchronous tasks on AWS and observability with Prometheus, Grafana and ELK.',
   },
   {
     period: '2018 - 2022',
@@ -132,7 +132,7 @@ export const MOCK_CAREER_EN: CareerMilestone[] = [
     title: 'Real-time electoral systems',
     role: 'Learning Facilitator',
     organization: 'Supreme Electoral Tribunal of El Salvador',
-    technologies: ['Java', 'Spring Boot', 'Angular', 'React', 'AWS', 'Azure', 'Prometheus', 'Grafana'],
+    technologies: ['Java', 'Spring Boot', 'Angular', 'React', 'AWS', 'Azure'],
     summary: 'Coordinating technical teams to roll out the real-time electoral systems for the national elections and training the electoral staff. Integration testing and monitoring before and during the elections, and work with the cybersecurity teams (encryption, SSL/TLS and anti-DDoS protection).',
   },
   {
@@ -140,8 +140,8 @@ export const MOCK_CAREER_EN: CareerMilestone[] = [
     title: 'Secure, event-driven banking applications',
     role: 'Full Stack Developer',
     organization: 'Banco Davivienda',
-    technologies: ['Java', 'Spring Boot', 'Spring Security', 'OAuth2', 'JWT', 'SQL Server', 'PostgreSQL', 'Apache Kafka', 'RabbitMQ', 'Docker', 'Kubernetes', 'AWS', 'Jenkins'],
-    summary: 'Banking applications with Java and the Spring ecosystem, REST microservices with OAuth2 and JWT behind an API Gateway, and distributed services with Kafka, RabbitMQ and MQ Series for real-time transaction flows. Container deployments with Docker and Kubernetes, and CI/CD pipelines with Jenkins and Azure DevOps.',
+    technologies: ['Java', 'Spring Boot', 'OAuth2', 'Apache Kafka', 'RabbitMQ', 'Docker', 'Kubernetes', 'AWS'],
+    summary: 'Secure banking applications with Java and the Spring ecosystem. REST microservices with OAuth2 and JWT behind an API Gateway, and distributed services with Kafka, RabbitMQ and MQ Series for real-time transaction flows. Container deployments with Docker and Kubernetes, and CI/CD pipelines with Jenkins and Azure DevOps.',
   },
 ];
 
