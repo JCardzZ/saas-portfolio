@@ -86,8 +86,9 @@ jobs:
             # El despliegue manual del 2026-10-22 no encontró ninguna ejecución con esta consulta filtrada
             # por `status=success` (en local sí la devolvía): se filtra por conclusión con jq y, si no
             # queda ninguna, el job falla en vez de dar por buena una lista vacía.
-            CANDIDATES="$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?branch=main&event=push&per_page=50" \
-              --jq '.workflow_runs[] | select(.conclusion == "success") | .id')"
+            # De push o lanzadas a mano en main (las dos publican imagen y build).
+            CANDIDATES="$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?branch=main&per_page=50" \
+              --jq '.workflow_runs[] | select(.conclusion == "success" and (.event == "push" or .event == "workflow_dispatch")) | .id')"
             if [ -z "$CANDIDATES" ]; then
               echo "::error::No se encontró ninguna CI correcta de main de la que desplegar."
               exit 1

@@ -760,10 +760,10 @@ jobs:
       # En main, la imagen que acaba de pasar Trivy viaja tal cual al job que la publica: así ese
       # job es el único con permiso de escritura en el registro y este no lo necesita.
       - name: Guardar la imagen escaneada
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
         run: docker save saas-portfolio-backend:ci | gzip > backend-image.tar.gz
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
         with:
           name: backend-image-tar
           path: backend-image.tar.gz
@@ -773,8 +773,10 @@ jobs:
   publish-image:
     name: 📦 Publicar imagen
     needs: docker
-    # Solo en push a main y solo si la imagen se construyó y pasó Trivy.
-    if: ${{ !cancelled() && needs.docker.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    # En main (push, o a mano con `run_all` cuando un merge se quedó sin imagen) y solo si la imagen
+    # se construyó y pasó Trivy. GitHub deja una sola ejecución en cola por rama: si llegan varios
+    # merges seguidos, los intermedios se cancelan y su cambio de backend no tendría imagen.
+    if: ${{ !cancelled() && needs.docker.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
