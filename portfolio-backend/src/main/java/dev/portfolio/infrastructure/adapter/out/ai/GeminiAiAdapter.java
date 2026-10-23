@@ -41,7 +41,13 @@ import java.util.stream.Collectors;
 public class GeminiAiAdapter implements GeminiAiPort {
 
     private static final String API_KEY_HEADER = "x-goog-api-key";
-    private static final int EMBED_BATCH_SIZE = 100;
+    /**
+     * Trozos por petición al indexar. El límite de la API es 100, pero con la cuota gratuita (tokens
+     * por minuto) un lote de 100 trozos de ~1800 caracteres se rechaza con 429 entero.
+     */
+    static final int EMBED_BATCH_SIZE = 20;
+    /** Esperas ante un 429 al indexar: la cuota es por minuto, así que se reintenta hasta ~1,5 min. */
+    static final long[] RATE_LIMIT_BACKOFF_MS = {10_000, 20_000, 30_000, 30_000};
     private static final double ANSWER_TEMPERATURE = 0.2;
     private static final int ANSWER_MAX_TOKENS = 1024;
 
@@ -90,6 +96,13 @@ public class GeminiAiAdapter implements GeminiAiPort {
         this.circuitBreaker = circuitBreaker;
     }
 
+    /** Cómo se espera entre reintentos; los tests lo sustituyen para no dormir. */
+    interface Pause {
+        void millis(long millis) throws InterruptedException;
+    }
+
+    Pause pause = Thread::sleep;
+
     // La clave viaja en cabecera, no en la URL, para que no acabe en logs de acceso.
     static RestClient configure(RestClient.Builder builder, GeminiProperties properties) {
         return builder
@@ -107,12 +120,13 @@ public class GeminiAiAdapter implements GeminiAiPort {
 
     @Override
     public float[] embedQuery(String text) {
-        return embed(List.of(QUERY_PREFIX + text)).get(0);
+        // Una pregunta del visitante no espera a que se renueve la cuota: falla enseguida (503).
+        return embed(List.of(QUERY_PREFIX + text), false).get(0);
     }
 
     @Override
     public List<float[]> embedDocuments(List<String> texts) {
-        return embed(texts.stream().map(text -> DOCUMENT_PREFIX + text).toList());
+        return embed(texts.stream().map(text -> DOCUMENT_PREFIX + text).toList(), true);
     }
 
     @Override
@@ -166,7 +180,7 @@ public class GeminiAiAdapter implements GeminiAiPort {
                         .toList());
     }
 
-    private List<float[]> embed(List<String> texts) {
+    private List<float[]> embed(List<String> texts, boolean waitForQuota) {
         String model = "models/" + properties.embeddingModel();
         List<float[]> vectors = new ArrayList<>(texts.size());
         for (int start = 0; start < texts.size(); start += EMBED_BATCH_SIZE) {
@@ -174,8 +188,9 @@ public class GeminiAiAdapter implements GeminiAiPort {
             BatchEmbedRequest request = new BatchEmbedRequest(batch.stream()
                     .map(text -> new EmbedRequest(model, Content.ofText(text), EmbeddingDomain.DIMENSIONS))
                     .toList());
-            BatchEmbedResponse response =
-                    post(properties.embeddingModel(), "batchEmbedContents", request, BatchEmbedResponse.class);
+            BatchEmbedResponse response = waitForQuota
+                    ? postWaitingForQuota(properties.embeddingModel(), "batchEmbedContents", request, BatchEmbedResponse.class)
+                    : post(properties.embeddingModel(), "batchEmbedContents", request, BatchEmbedResponse.class);
             vectors.addAll(toVectors(response, batch.size()));
         }
         return vectors;
@@ -234,6 +249,32 @@ public class GeminiAiAdapter implements GeminiAiPort {
                 .map(Part::text)
                 .filter(Objects::nonNull)
                 .collect(Collectors.joining());
+    }
+
+    /**
+     * Para indexar: si Gemini responde 429 (cuota por minuto agotada), espera y reintenta. El
+     * reindexado lo lanza el administrador y termina dentro de su petición, así que puede esperar.
+     */
+    private <T> T postWaitingForQuota(String model, String action, Object body, Class<T> responseType) {
+        for (int attempt = 0; ; attempt++) {
+            try {
+                return post(model, action, body, responseType);
+            } catch (AiServiceUnavailableException e) {
+                // Los 429 cuentan para el circuit breaker; si llega a abrirse, también se espera (30 s).
+                boolean rateLimited = e.getCause() instanceof RestClientResponseException response && response.getStatusCode().value() == 429
+                        || e.getCause() instanceof CallNotPermittedException;
+                if (!rateLimited || attempt >= RATE_LIMIT_BACKOFF_MS.length) {
+                    throw e;
+                }
+                log.info("Gemini {} rate limited; retrying in {} s", action, RATE_LIMIT_BACKOFF_MS[attempt] / 1000);
+                try {
+                    pause.millis(RATE_LIMIT_BACKOFF_MS[attempt]);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw e;
+                }
+            }
+        }
     }
 
     private <T> T post(String model, String action, Object body, Class<T> responseType) {

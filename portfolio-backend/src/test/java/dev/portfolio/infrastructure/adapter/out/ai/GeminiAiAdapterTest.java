@@ -93,6 +93,43 @@ class GeminiAiAdapterTest {
     }
 
     @Test
+    void indexingSplitsDocumentsIntoSmallBatches() {
+        String url = BASE_URL + "/models/gemini-embedding-2:batchEmbedContents";
+        server.expect(requestTo(url)).andExpect(jsonPath("$.requests.length()").value(GeminiAiAdapter.EMBED_BATCH_SIZE))
+                .andRespond(withSuccess(embeddingsJson(GeminiAiAdapter.EMBED_BATCH_SIZE, 1.0f), MediaType.APPLICATION_JSON));
+        server.expect(requestTo(url)).andExpect(jsonPath("$.requests.length()").value(5))
+                .andRespond(withSuccess(embeddingsJson(5, 1.0f), MediaType.APPLICATION_JSON));
+
+        List<String> texts = IntStream.range(0, GeminiAiAdapter.EMBED_BATCH_SIZE + 5).mapToObj(String::valueOf).toList();
+        assertThat(adapter.embedDocuments(texts)).hasSize(GeminiAiAdapter.EMBED_BATCH_SIZE + 5);
+        server.verify();
+    }
+
+    @Test
+    void indexingWaitsAndRetriesWhenTheQuotaRunsOut() {
+        List<Long> waits = new java.util.ArrayList<>();
+        adapter.pause = waits::add;
+        String url = BASE_URL + "/models/gemini-embedding-2:batchEmbedContents";
+        server.expect(ExpectedCount.times(2), requestTo(url)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS));
+        server.expect(requestTo(url)).andRespond(withSuccess(embeddingsJson(1, 1.0f), MediaType.APPLICATION_JSON));
+
+        assertThat(adapter.embedDocuments(List.of("uno"))).hasSize(1);
+        assertThat(waits).containsExactly(GeminiAiAdapter.RATE_LIMIT_BACKOFF_MS[0], GeminiAiAdapter.RATE_LIMIT_BACKOFF_MS[1]);
+        server.verify();
+    }
+
+    @Test
+    void aVisitorQuestionDoesNotWaitForTheQuota() {
+        List<Long> waits = new java.util.ArrayList<>();
+        adapter.pause = waits::add;
+        server.expect(requestTo(BASE_URL + "/models/gemini-embedding-2:batchEmbedContents")).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS));
+
+        assertThatThrownBy(() -> adapter.embedQuery("hola")).isInstanceOf(AiServiceUnavailableException.class);
+        assertThat(waits).isEmpty();
+        server.verify();
+    }
+
+    @Test
     void rejectsEmbeddingsWithUnexpectedDimensions() {
         server.expect(requestTo(BASE_URL + "/models/gemini-embedding-2:batchEmbedContents"))
                 .andRespond(withSuccess("{\"embeddings\":[{\"values\":[0.1,0.2,0.3]}]}", MediaType.APPLICATION_JSON));
