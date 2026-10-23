@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { environment } from '../../../../environments/environment';
 import { provideApi } from '../../../core/api';
@@ -19,7 +20,7 @@ describe('ArticlesHubComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideApi(environment.apiBaseUrl)],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideApi(environment.apiBaseUrl), provideRouter([])],
     });
     fixture = TestBed.createComponent(ArticlesHubComponent);
     element = fixture.nativeElement;
@@ -33,7 +34,7 @@ describe('ArticlesHubComponent', () => {
     element.remove();
   });
 
-  const cards = () => Array.from(element.querySelectorAll<HTMLButtonElement>('button.bento-card'));
+  const cards = () => Array.from(element.querySelectorAll<HTMLAnchorElement>('a.bento-card'));
 
   it('lists the articles from the API with a plain-text excerpt', () => {
     backend.expectOne(url).flush(ARTICLES);
@@ -46,22 +47,11 @@ describe('ArticlesHubComponent', () => {
     expect(cards()[0].textContent).not.toContain('int x');
   });
 
-  it('opens the article rendered as Markdown and closes it with Escape', () => {
+  it('links every card to the article page, so it can be shared', () => {
     backend.expectOne(url).flush(ARTICLES);
     fixture.detectChanges();
 
-    cards()[0].click();
-    fixture.detectChanges();
-
-    const reader = element.querySelector('[role="dialog"]')!;
-    expect(reader.getAttribute('aria-label')).toBe('Cache-aside');
-    expect(reader.querySelector('app-markdown strong')?.textContent).toBe('best-effort');
-    expect(reader.querySelector('app-markdown pre code')?.textContent).toContain('int x;');
-    expect(document.activeElement?.getAttribute('aria-label')).toBe('Cerrar el artículo');
-
-    reader.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    fixture.detectChanges();
-    expect(element.querySelector('[role="dialog"]')).toBeNull();
+    expect(cards().map((card) => card.getAttribute('href'))).toEqual(['/articulos/cache-aside', '/articulos/dominio-puro']);
   });
 
   it('shows a neutral message when nothing is published and a retry when the API fails', () => {

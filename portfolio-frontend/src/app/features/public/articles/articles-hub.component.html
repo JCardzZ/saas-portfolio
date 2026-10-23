@@ -13,18 +13,18 @@
       }
     } @else {
       @for (article of articles(); track article.id; let index = $index) {
-        <button
-          type="button"
+        <a
           class="bento-card focus-ring flex animate-slide-up flex-col text-left"
           [class]="index === 0 ? 'md:col-span-4' : 'md:col-span-2'"
           [style.animation-delay.ms]="index * 60"
-          (click)="reading.set(article)"
+          [routerLink]="['/articulos', article.slug]"
+          data-testid="article-card"
         >
           <span class="font-mono text-xs text-accent-text">{{ article.publishedAt | date: 'd MMM y' }}</span>
           <span class="mt-1 font-semibold tracking-tight text-ink-1" [class]="index === 0 ? 'text-2xl' : 'text-lg'">{{ article.title }}</span>
           <span class="mt-2 text-sm leading-relaxed text-ink-2">{{ excerpt(article) }}</span>
           <span class="mt-auto pt-5 text-sm font-medium text-accent-text">{{ 'Leer artículo →' | t }}</span>
-        </button>
+        </a>
       } @empty {
         <p class="border border-line-subtle bg-surface-1 rounded-card p-6 text-sm text-ink-2 md:col-span-6">{{ 'Aún no hay artículos publicados.' | t }}</p>
       }
@@ -32,33 +32,3 @@
   </div>
 }
 
-@if (reading(); as article) {
-  <div
-    class="fixed inset-0 z-50 flex animate-fade-in items-start justify-center overflow-y-auto bg-canvas/70 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(6dvh,env(safe-area-inset-bottom))] pt-[max(6dvh,env(safe-area-inset-top))] backdrop-blur-sm"
-    (click)="reading.set(null)"
-    (keydown.escape)="reading.set(null)"
-  >
-    <article
-      appFocusTrap
-      role="dialog"
-      aria-modal="true"
-      [attr.aria-label]="article.title"
-      class="relative w-full max-w-2xl animate-scale-up rounded-card border border-line-subtle bg-surface-2/90 p-6 text-ink-1 shadow-2xl shadow-black/70 backdrop-blur-2xl sm:p-10"
-      (click)="$event.stopPropagation()"
-    >
-      <button
-        appAutofocus
-        type="button"
-        class="focus-ring absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-control border border-line-subtle bg-surface-3 text-ink-2 transition hover:bg-surface-3 hover:text-ink-1"
-        [attr.aria-label]="'Cerrar el artículo' | t"
-        (click)="reading.set(null)"
-      >
-        <svg viewBox="0 0 16 16" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
-      </button>
-
-      <p class="font-mono text-xs text-accent-text">{{ article.publishedAt | date: 'd MMM y' }}</p>
-      <h3 class="mt-1 pr-10 text-3xl font-semibold tracking-tight text-ink-1">{{ article.title }}</h3>
-      <app-markdown class="mt-6 block text-[15px] leading-relaxed text-ink-1" [text]="article.contentMarkdown ?? ''" />
-    </article>
-  </div>
-}

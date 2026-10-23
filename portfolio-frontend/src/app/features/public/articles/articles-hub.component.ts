@@ -5,16 +5,14 @@ import { finalize } from 'rxjs';
 
 import { Article, PublicCatalogShowcasesService } from '../../../core/api';
 import { describeHttpError } from '../../../core/errors/http-error';
-import { AutofocusDirective } from '../../../shared/ui/autofocus.directive';
-import { FocusTrapDirective } from '../../../shared/ui/focus-trap.directive';
-import { MarkdownComponent } from '../../../shared/ui/markdown.component';
+import { RouterLink } from '@angular/router';
 
 const EXCERPT_LENGTH = 170;
 
-/** Hub de artículos: tarjetas con las publicaciones de `GET /public/articles` y un lector en modal. */
+/** Hub de artículos: tarjetas con las publicaciones de `GET /public/articles`; cada una lleva a su página. */
 @Component({
     selector: 'app-articles-hub',
-    imports: [TranslatePipe, DatePipe, MarkdownComponent, FocusTrapDirective, AutofocusDirective],
+    imports: [TranslatePipe, DatePipe, RouterLink],
     templateUrl: './articles-hub.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -24,8 +22,6 @@ export class ArticlesHubComponent implements OnInit {
   readonly articles = signal<Article[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  /** Artículo abierto en el lector. */
-  readonly reading = signal<Article | null>(null);
   readonly skeletons = [0, 1, 2];
 
   ngOnInit(): void {
@@ -44,15 +40,18 @@ export class ArticlesHubComponent implements OnInit {
       });
   }
 
-  /** Primeras líneas del artículo en texto plano, sin la sintaxis de Markdown. */
-  excerpt(article: Article): string {
-    const text = (article.contentMarkdown ?? '')
-      .replace(/```[\s\S]*?```/g, ' ')
-      .replace(/^\s*(#{1,6}|>|[-*+]|\d+\.)\s+/gm, '')
-      .replace(/[*_`]/g, '')
-      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-      .replace(/\s+/g, ' ')
-      .trim();
-    return text.length > EXCERPT_LENGTH ? text.slice(0, EXCERPT_LENGTH).trimEnd() + '…' : text;
-  }
+  readonly excerpt = articleExcerpt;
+}
+
+/** Primeras líneas del artículo en texto plano, sin la sintaxis de Markdown (tarjetas y vista previa). */
+export function articleExcerpt(article: Article): string {
+  const text = (article.contentMarkdown ?? '')
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/^\s*(#{1,6}|>|[-*+]|\d+\.)\s+/gm, '')
+    .replace(/[*_`]/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text.length > EXCERPT_LENGTH ? text.slice(0, EXCERPT_LENGTH).trimEnd() + '…' : text;
 }
