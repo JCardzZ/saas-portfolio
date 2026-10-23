@@ -1111,4 +1111,5 @@ export const EN: Readonly<Record<string, string>> = {
   'En este artículo': 'In this article',
   'Escrito por': 'Written by',
   'Más artículos': 'More articles',
+  'Volver arriba': 'Back to top',
 };

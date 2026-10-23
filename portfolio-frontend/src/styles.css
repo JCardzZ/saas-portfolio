@@ -391,9 +391,10 @@ app-section-header::before {
   text-wrap: balance;
 }
 .hero-greeting {
-  /* Escala ~1:4 respecto al nombre (antes 1:6, se perdía). */
-  font-size: clamp(1.25rem, 2.1vw, 1.9rem);
-  line-height: 1.2;
+  /* Escala ~1:2,5 respecto al nombre: a 1:4 el saludo se perdía junto al nombre en mayúsculas. */
+  font-size: clamp(1.5rem, 3.4vw, 2.875rem);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
 }
 /* La escena del hero se funde con la galaxia por abajo: sin corte ni línea al final. */
 .hero-canvas {
@@ -410,6 +411,11 @@ app-section-header::before {
   text-wrap: balance;
 }
 /* Letras que el robot «empuja» al levantarse: una ola que sube y baja letra a letra. */
+.hero-word {
+  /* Una palabra no se parte: el rol solo salta de línea entre palabras (antes «AP / I»). */
+  display: inline-block;
+  white-space: nowrap;
+}
 .hero-letter {
   display: inline-block;
   transform: translateY(calc(var(--robot-lift, 0) * -16px * sin(var(--i) / var(--n) * 3.14)));
