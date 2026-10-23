@@ -107,9 +107,9 @@ class CvPdfRenderingTest {
         String story = new MarkdownCareerStoryAdapter(properties).loadStory(CvLanguage.ES).orElseThrow();
         CvContentDomain content = CvMarkdownParserAccess.parse(story);
 
-        assertThat(StyledCvPdfWriter.topTechnologies(content, 4)).containsExactly("Java", "Spring Boot", "AWS", "OAuth2");
+        assertThat(StyledCvPdfWriter.topTechnologies(content, 4)).containsExactly("Java", "Spring Boot", "Docker", "OAuth2");
         assertThat(new StyledCvPdfWriter(properties).html(content, false, CvLanguage.ES, Portrait.NONE))
-                .contains("<span class=\"badge\">Java</span>", "<span class=\"chip\">IBM MQ Series</span>")
+                .contains("<span class=\"badge\">Java</span>", "<span class=\"chip\">Spring Batch</span>")
                 .contains("<div class=\"period\">may 2022 - ene 2024</div>", "<div class=\"meta\">Desarrollador Java Broker  ·  Banco Agrícola</div>")
                 .doesNotContain("Contacto");
     }
@@ -138,7 +138,7 @@ class CvPdfRenderingTest {
     void theAtsCvIsPlainTextWithEveryKeyword() throws IOException {
         CvDocumentDomain ats = service("").download(CvLanguage.EN, CvType.ATS, true);
 
-        assertThat(text(ats)).contains("Technologies: Java, Spring Boot, OAuth2, Apache Kafka, RabbitMQ, Docker, Kubernetes, AWS")
+        assertThat(text(ats)).contains("Technologies: Java, Spring Boot, OAuth2, Apache Kafka, RabbitMQ, Docker")
                 .contains("- REST, SOAP and GraphQL services").doesNotContain("•");
         // Sin color de acento ni líneas: solo texto negro.
         assertThat(new String(ats.content(), java.nio.charset.StandardCharsets.ISO_8859_1)).doesNotContain("0 0.4 0.8 rg");

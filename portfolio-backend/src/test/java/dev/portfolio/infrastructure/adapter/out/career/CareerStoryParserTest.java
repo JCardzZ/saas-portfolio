@@ -108,7 +108,7 @@ class CareerStoryParserTest {
                 .containsExactly("PBS Consulting (proyecto para el BCR)", "Monetae", "Banco Agrícola", "Universidad Dr. Andrés Bello",
                         "Tribunal Supremo Electoral", "Banco Davivienda");
         assertThat(milestones.get(2).role()).isEqualTo("Desarrollador Java Broker");
-        assertThat(milestones.get(2).technologies()).contains("IBM AS400", "IBM MQ Series", "Spring Batch");
+        assertThat(milestones.get(2).technologies()).contains("Spring Batch", "REST", "SOAP");
         // Nada a medio rellenar ni datos de contacto en un documento que es público.
         assertThat(Files.readString(story)).doesNotContain("[COMPLETAR").doesNotContain("@");
     }

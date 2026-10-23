@@ -29,39 +29,37 @@ servicios REST, SOAP y GraphQL protegidos con OAuth2, JWT y RBAC.
 
 - **Rol:** Senior Software Engineer
 - **Organización:** PBS Consulting (proyecto para el BCR)
-- **Tecnologías:** Java, Spring Boot, OAuth2, JWT, SQL Server, MongoDB, Azure AKS, Azure DevOps
+- **Tecnologías:** Java, Spring Boot, Spring Security, OAuth2, JWT, Docker, Kubernetes, CI/CD
 
 Diseño y desarrollo microservicios de backend con Spring Boot para operaciones bancarias críticas,
-con APIs REST protegidas con OAuth2 y JWT. Lideré la migración de servicios a Kubernetes
-gestionado en Azure (AKS), con contenedores Docker, Azure Key Vault, Blob Storage y Redis, y
-pipelines de CI/CD en Azure DevOps. También optimizo consultas en SQL Server y MongoDB para
-volúmenes altos de transacciones y resuelvo incidencias en producción.
+con APIs REST protegidas con OAuth2 y JWT. Participo en la modernización de servicios hacia
+contenedores y Kubernetes gestionado en la nube, con gestión segura de secretos y pipelines de
+CI/CD. También optimizo consultas en bases de datos SQL y NoSQL para volúmenes altos de
+transacciones y doy soporte a producción.
 
 ## ago 2025 - oct 2026 — Plataforma financiera híbrida fiat y cripto
 
 - **Rol:** Tech Lead
 - **Organización:** Monetae
-- **Tecnologías:** Java, Spring Boot, WebFlux, OpenAPI, Kafka, Redis, AWS, Kubernetes
+- **Tecnologías:** Java, Spring Boot, WebFlux, OpenAPI, AsyncAPI, Kafka, Docker, Kubernetes
 
 Liderazgo técnico de punta a punta de una plataforma financiera híbrida (fiat y cripto) con
-arquitectura hexagonal y Clean Architecture. Sistemas distribuidos de alta concurrencia con
-Spring Boot y WebFlux, enfoque contract-first con OpenAPI y AsyncAPI, arquitectura orientada a
-eventos con Kafka, Redis y WebSockets, y patrones de resiliencia (idempotencia, reintentos con
-backoff, colas de mensajes fallidos). En AWS: ECS, EKS, Lambda, API Gateway, Secrets Manager y
-CloudWatch. Integración con servicios de custodia como Fireblocks, revisiones de código y
-mentoría del equipo.
+arquitectura hexagonal y Clean Architecture. Sistemas distribuidos de alta concurrencia con Spring
+Boot y WebFlux, enfoque contract-first con OpenAPI y AsyncAPI, arquitectura orientada a eventos y
+patrones de resiliencia (idempotencia, reintentos con backoff, colas de mensajes fallidos).
+Despliegue cloud-native con contenedores y Kubernetes, integración con un proveedor de custodia
+institucional, revisiones de código y mentoría del equipo.
 
-## may 2022 - ene 2024 — Integración del core bancario AS400 con servicios REST y SOAP
+## may 2022 - ene 2024 — Integración del core bancario con servicios REST y SOAP
 
 - **Rol:** Desarrollador Java Broker
 - **Organización:** Banco Agrícola
-- **Tecnologías:** Java, Spring Boot, Spring Batch, IBM AS400, IBM MQ Series, AWS Lambda, Prometheus, ELK
+- **Tecnologías:** Java, Spring Boot, Spring Batch, REST, SOAP, JMS
 
-Integración del core bancario AS400 con servicios REST y SOAP en Java. Microservicios en Spring
-Boot entre aplicaciones internas y externas, procesos batch que transforman y validan archivos planos del
-AS400 y COBOL, conectores con IBM MQ Series y servicios REST y SOAP para terceros. Participé en la
-migración de aplicaciones monolíticas a microservicios sin interrumpir el servicio, con tareas
-asíncronas en AWS y observabilidad con Prometheus, Grafana y ELK.
+Integración del core bancario con servicios REST y SOAP en Java. Microservicios en Spring Boot entre
+aplicaciones internas y externas, procesos batch que transforman y validan los archivos del sistema
+core, mensajería con colas y servicios para terceros. Participé en la migración de aplicaciones
+monolíticas a microservicios sin interrumpir el servicio.
 
 ## 2018 - 2022 — Ingeniería en Sistemas y Computación
 
@@ -69,29 +67,27 @@ asíncronas en AWS y observabilidad con Prometheus, Grafana y ELK.
 
 Ingeniería en Sistemas y Computación. Durante la carrera trabajé ya en proyectos bancarios, con
 Java, bases de datos relacionales y no relacionales e integraciones del backend con el core
-bancario en IBM AS400.
+bancario.
 
 ## nov 2020 - feb 2021 — Sistemas electorales en tiempo real
 
 - **Rol:** Facilitador de aprendizaje
 - **Organización:** Tribunal Supremo Electoral
-- **Tecnologías:** Java, Spring Boot, Angular, React, AWS, Azure
+- **Tecnologías:** Java, Spring Boot, Angular, React
 
-Coordinación de equipos técnicos para implantar los sistemas electorales en tiempo real de las
-elecciones nacionales y capacitación técnica al personal. Pruebas de integración y monitorización
-antes y durante las elecciones, y trabajo con los equipos de ciberseguridad (cifrado, SSL/TLS y
-protección anti-DDoS).
+Coordinación de equipos técnicos para implantar los sistemas electorales de las elecciones
+nacionales y capacitación técnica al personal. Pruebas de integración y seguimiento antes y durante
+las elecciones, en coordinación con los equipos de ciberseguridad.
 
 ## jun 2019 - dic 2019 — Aplicaciones bancarias seguras y orientadas a eventos
 
 - **Rol:** Desarrollador Full Stack
 - **Organización:** Banco Davivienda
-- **Tecnologías:** Java, Spring Boot, OAuth2, Apache Kafka, RabbitMQ, Docker, Kubernetes, AWS
+- **Tecnologías:** Java, Spring Boot, OAuth2, Apache Kafka, RabbitMQ, Docker
 
 Aplicaciones bancarias seguras con Java y el ecosistema Spring. Microservicios REST con OAuth2 y
-JWT detrás de un API Gateway, y servicios distribuidos con Kafka, RabbitMQ y MQ Series para flujos de
-transacciones en tiempo real. Despliegue en contenedores con Docker y Kubernetes, y pipelines de
-CI/CD con Jenkins y Azure DevOps.
+JWT y servicios orientados a eventos con Kafka y RabbitMQ para flujos de transacciones en tiempo
+real, desplegados en contenedores con integración y entrega continuas.
 
 <!-- timeline:end -->
 
