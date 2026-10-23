@@ -1097,4 +1097,6 @@ export const EN: Readonly<Record<string, string>> = {
   'Aún no hay eventos de': 'No events yet from',
   'Aparecerán aquí en cuanto intervenga en una petición.': 'They will show up here as soon as it takes part in a request.',
   'Actual': 'Current',
+  'GitHub de Manuel Cardoza': 'Manuel Cardoza on GitHub',
+  'LinkedIn de Manuel Cardoza': 'Manuel Cardoza on LinkedIn',
 };

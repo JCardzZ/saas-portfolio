@@ -25,12 +25,14 @@ import { LANDING_COPY } from './landing-copy';
 import { HeroSceneComponent } from './hero3d/hero-scene.component';
 import { GalaxyBackdropComponent } from './galaxy/galaxy-backdrop.component';
 import { MeshTrafficLegendComponent } from './galaxy/mesh-traffic-legend.component';
+import { SocialLinksComponent } from '../../../shared/ui/social-links.component';
 import { ScrollBuddyComponent } from './scroll-buddy.component';
 
 @Component({
     selector: 'app-landing-page',
     imports: [
         RouterLink,
+        SocialLinksComponent,
         SectionHeaderComponent,
         HeroSceneComponent,
         GalaxyBackdropComponent, MeshTrafficLegendComponent,
