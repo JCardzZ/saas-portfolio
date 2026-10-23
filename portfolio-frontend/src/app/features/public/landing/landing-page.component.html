@@ -5,7 +5,7 @@
   <!-- Escena 3D a sangre, del ancho y el alto de la pantalla, detrás del hero. -->
   <!-- La escena 3D (y sus controles) se carga aparte, enseguida: el arranque no la espera. -->
   @defer (on immediate) {
-    <app-hero-scene class="absolute inset-x-0 top-0 z-0 h-dvh [@media(max-height:500px)_and_(orientation:landscape)]:hidden" (stackOpen)="immersive.set($event)" (ask)="askAi($event)" />
+    <app-hero-scene class="absolute inset-x-0 top-0 z-0 h-dvh [@media(max-height:500px)_and_(orientation:landscape)]:hidden" (stackOpen)="immersive.set($event)" (ask)="askAi($event)" (robot)="robot.set($event)" />
   }
   <app-public-navbar (openChat)="chatOpen.set(true)" />
 
@@ -13,7 +13,7 @@
     <!-- Primero quién: nombre y rol se leen antes que nada (docs/DESIGN.md §8.2). -->
     <!-- Hero: el nombre gigante de borde a borde y, encima, el avatar 3D (genérico por ahora). -->
     <!-- El hero deja pasar los clics a la escena salvo en sus enlaces y botones. -->
-    <section class="hero pointer-events-none relative flex min-h-[calc(100dvh-7rem-env(safe-area-inset-top,0px)-var(--dock-bottom,0px))] flex-col pb-6 sm:min-h-[calc(100dvh-9rem-env(safe-area-inset-top,0px)-var(--dock-bottom,0px))] sm:pb-10 [&_a]:pointer-events-auto [&_button]:pointer-events-auto" aria-labelledby="hero-titulo" [class.hero-dimmed]="immersive()">
+    <section class="hero pointer-events-none relative flex min-h-[calc(100dvh-7rem-env(safe-area-inset-top,0px)-var(--dock-bottom,0px))] flex-col pb-6 sm:min-h-[calc(100dvh-9rem-env(safe-area-inset-top,0px)-var(--dock-bottom,0px))] sm:pb-10 [&_a]:pointer-events-auto [&_button]:pointer-events-auto" aria-labelledby="hero-titulo" [class.hero-dimmed]="immersive()" [class.hero-no-robot]="robot() === 'none'">
       <!-- Con el mazo abierto (hero-dimmed), el texto se retira para que las fichas ocupen la pantalla. -->
       <!--
         Jerarquía de tres niveles, de más a menos: saludo pequeño, nombre enorme (h1) y rol mediano en
@@ -32,8 +32,23 @@
         <span class="sr-only">{{ heroRole() }}</span>
         @for (word of roleWords(); track $index) {<span class="hero-word">@for (l of word; track l.index) {<span class="hero-letter" aria-hidden="true" [style.--i]="l.index" [style.--n]="roleLetters().length">{{ l.letter }}</span>}</span><wbr />}
       </p>
-      <!-- Hueco para el robot: crece lo que haga falta para que la frase y los botones queden dentro de la pantalla. -->
-      <div class="min-h-[12rem] flex-1 [@media(max-height:700px)]:min-h-[2rem]" aria-hidden="true"></div>
+      <!-- Credenciales en una línea: lo que un reclutador busca primero, con datos del CV (CAREER_STORY.md). -->
+      <ul class="hero-credentials pointer-events-auto relative z-10 mx-auto mt-5 flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 text-body-sm text-ink-2" data-testid="hero-credentials">
+        @for (item of credentials; track $index) {
+          <li class="flex items-center gap-3">
+            @if ($index) {<span class="h-1 w-1 rounded-full" style="background: var(--text-3)" aria-hidden="true"></span>}
+            <span>{{ i18n.t(item) }}</span>
+          </li>
+        }
+      </ul>
+      <!--
+        Hueco para el robot: crece lo que haga falta para que la frase y los botones queden dentro de la
+        pantalla. Mientras la escena carga, un resplandor ocupa su sitio; sin robot (sin WebGL rápido o
+        si falla), el hueco se cierra y el bloque se centra (.hero-no-robot).
+      -->
+      <div class="hero-gap relative min-h-[12rem] flex-1 [@media(max-height:700px)]:min-h-[2rem]" aria-hidden="true">
+        @if (robot() === 'loading') {<div class="robot-placeholder"></div>}
+      </div>
       <div class="hero-foot relative z-10 mt-auto flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
         <!-- En móvil la dice el bocadillo del robot: aquí pisaría al robot. -->
         <p class="max-w-[30rem] text-balance text-body-lg text-ink-2 max-sm:hidden">

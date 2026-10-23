@@ -58,3 +58,12 @@ export const LANDING_COPY = {
     es: 'El CV sale del mismo documento que la línea de tiempo y el asistente.',
   },
 } satisfies Record<string, Localized>;
+
+/** Credenciales bajo el rol, del perfil de CAREER_STORY.md: no añadir nada que no esté allí. */
+export const HERO_CREDENTIALS: readonly Localized[] = [
+  { en: '7+ years', es: '+7 años' },
+  { en: 'Banking & fintech', es: 'Banca y fintech' },
+  { en: 'Java · Spring Boot', es: 'Java · Spring Boot' },
+  { en: 'Apigee', es: 'Apigee' },
+  { en: 'AWS · Azure · GCP', es: 'AWS · Azure · GCP' },
+];
