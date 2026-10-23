@@ -102,10 +102,11 @@ class CareerStoryParserTest {
         assertThat(story).exists();
         List<CareerMilestoneDomain> milestones = CareerStoryParser.parse(Files.readString(story));
         assertThat(milestones).extracting(CareerMilestoneDomain::period)
-                .containsExactly("2024 - actualidad", "2023", "2022", "2020", "2019");
+                .containsExactly("ene 2024 - actualidad", "ago 2025 - oct 2026", "may 2022 - ene 2024", "2018 - 2022",
+                        "nov 2020 - feb 2021", "jun 2019 - dic 2019");
         assertThat(milestones).extracting(CareerMilestoneDomain::organization)
-                .containsExactly("PBS Consulting (proyecto para el BCR)", "Universidad Dr. Andrés Bello, Chalatenango",
-                        "Banco Agrícola", "Banco Davivienda", "Tribunal Supremo Electoral");
+                .containsExactly("PBS Consulting (proyecto para el BCR)", "Monetae", "Banco Agrícola", "Universidad Dr. Andrés Bello",
+                        "Tribunal Supremo Electoral", "Banco Davivienda");
         assertThat(milestones.get(2).role()).isEqualTo("Desarrollador Java Broker");
         assertThat(milestones.get(2).technologies()).contains("IBM AS400", "IBM MQ Series", "Spring Batch");
         // Nada a medio rellenar ni datos de contacto en un documento que es público.
@@ -121,9 +122,10 @@ class CareerStoryParserTest {
         // Mismos hitos, en el mismo orden: la traducción se mantiene a mano y este test lo vigila.
         assertThat(english).hasSameSizeAs(spanish);
         assertThat(english).extracting(CareerMilestoneDomain::period)
-                .containsExactly("2024 - present", "2023", "2022", "2020", "2019");
-        assertThat(english.get(0).role()).isEqualTo("Backend Developer");
-        assertThat(english.get(0).organization()).isEqualTo("PBS Consulting (project for BCR)");
+                .containsExactly("Jan 2024 - present", "Aug 2025 - Oct 2026", "May 2022 - Jan 2024", "2018 - 2022",
+                        "Nov 2020 - Feb 2021", "Jun 2019 - Dec 2019");
+        assertThat(english.get(0).role()).isEqualTo("Senior Software Engineer");
+        assertThat(english.get(0).organization()).isEqualTo("PBS Consulting (project for BCR, the Central Reserve Bank)");
         for (int i = 0; i < english.size(); i++) {
             assertThat(english.get(i).technologies()).as("tecnologías del hito %d", i).isEqualTo(spanish.get(i).technologies());
             assertThat(english.get(i).summary()).as("resumen del hito %d", i).isNotBlank().isNotEqualTo(spanish.get(i).summary());

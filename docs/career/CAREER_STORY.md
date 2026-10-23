@@ -1,4 +1,4 @@
-# Manuel de Jesús Cardoza Cardoza — Desarrollador Backend
+# Manuel de Jesús Cardoza Cardoza — Senior Backend & API Platform Engineer
 
 <!-- Fuente única de la trayectoria. De este archivo salen: la línea de tiempo pública (los hitos
 entre los dos marcadores de la sección de experiencia), lo que el asistente RAG sabe de la trayectoria y el CV
@@ -10,86 +10,110 @@ párrafos. Solo hechos defendibles en una entrevista y nada confidencial: este t
 
 # Perfil
 
-Soy Manuel Cardoza, ingeniero en Sistemas y Computación (Universidad Dr. Andrés Bello,
-Chalatenango, 2023) y desarrollador backend. He trabajado sobre todo en proyectos bancarios:
-microservicios con Java y Spring Boot, integraciones con el core bancario en IBM AS400 y
-despliegues en la nube con Azure, AWS y GCP.
+Soy Manuel Cardoza, ingeniero en Sistemas y Computación (Universidad Dr. Andrés Bello) e
+ingeniero backend con más de siete años construyendo sistemas críticos para banca, fintech y
+entornos regulados. Mi base es Java (8 a 17) con Spring Boot y Spring Cloud, y las arquitecturas
+orientadas a APIs: seguras, escalables y bien gobernadas.
 
-Convierto problemas de negocio en flujos técnicos y en software en producción. Mi base es el
-backend (Java y el ecosistema de Spring), y también trabajo el frontend con Angular, React y
-Vue.js. Cuento con más de cuatro años de experiencia en arquitectura de sistemas bancarios, con
-metodologías ágiles (Scrum, Kanban) y herramientas como Azure DevOps, Jira y Jenkins.
+Diseño y gobierno APIs empresariales con Apigee: enrutamiento, políticas de seguridad, gestión de
+tráfico, versionado e integración con los sistemas de backend. Trabajo como desarrollador cloud en
+AWS, Azure y Google Cloud, con microservicios, sistemas distribuidos y arquitecturas orientadas a
+eventos (Kafka, RabbitMQ, JMS), e integro sistemas legados (AS400, COBOL, MQ Series) con
+servicios REST, SOAP y GraphQL protegidos con OAuth2, JWT y RBAC.
 
 # Experiencia profesional
 
 <!-- timeline:start -->
 
-## 2024 - actualidad — Modernización de servicios del BCR
+## ene 2024 - actualidad — Microservicios y APIs para la banca central
 
-- **Rol:** Desarrollador Backend
+- **Rol:** Senior Software Engineer
 - **Organización:** PBS Consulting (proyecto para el BCR)
-- **Tecnologías:** Java, Spring Boot, PostgreSQL, AWS, Azure AKS, OAuth2, JWT
+- **Tecnologías:** Java, Spring Boot, OAuth2, JWT, SQL Server, MongoDB, Azure AKS, Azure DevOps
 
-Desde enero de 2024 desarrollo microservicios y el backend de proyectos estratégicos del BCR, a
-nivel bancario y empresarial. El trabajo incluye la modernización de servicios, su despliegue en
-Kubernetes gestionado (Azure AKS) y la seguridad de las APIs con OAuth2 y JWT.
+Diseño y desarrollo microservicios de backend con Spring Boot para operaciones bancarias críticas,
+con APIs REST protegidas con OAuth2 y JWT. Lideré la migración de servicios a Kubernetes
+gestionado en Azure (AKS), con contenedores Docker, Azure Key Vault, Blob Storage y Redis, y
+pipelines de CI/CD en Azure DevOps. También optimizo consultas en SQL Server y MongoDB para
+volúmenes altos de transacciones y resuelvo incidencias en producción.
 
-## 2023 — Ingeniería en Sistemas y Computación
+## ago 2025 - oct 2026 — Plataforma financiera híbrida fiat y cripto
 
-- **Organización:** Universidad Dr. Andrés Bello, Chalatenango
+- **Rol:** Tech Lead
+- **Organización:** Monetae
+- **Tecnologías:** Java, Spring Boot, WebFlux, OpenAPI, Kafka, Redis, AWS, Kubernetes
 
-Título de Ingeniero en Sistemas y Computación. Durante la carrera trabajé ya en proyectos
-bancarios, con Java, C# y PHP, bases de datos relacionales y no relacionales e integraciones del
-backend con el core bancario en IBM AS400.
+Liderazgo técnico de punta a punta de una plataforma financiera híbrida (fiat y cripto) con
+arquitectura hexagonal y Clean Architecture. Sistemas distribuidos de alta concurrencia con
+Spring Boot y WebFlux, enfoque contract-first con OpenAPI y AsyncAPI, arquitectura orientada a
+eventos con Kafka, Redis y WebSockets, y patrones de resiliencia (idempotencia, reintentos con
+backoff, colas de mensajes fallidos). En AWS: ECS, EKS, Lambda, API Gateway, Secrets Manager y
+CloudWatch. Integración con servicios de custodia como Fireblocks, revisiones de código y
+mentoría del equipo.
 
-## 2022 — Integración del core bancario AS400 con servicios REST y SOAP
+## may 2022 - ene 2024 — Integración del core bancario AS400 con servicios REST y SOAP
 
 - **Rol:** Desarrollador Java Broker
 - **Organización:** Banco Agrícola
-- **Tecnologías:** Java, Spring Boot, IBM AS400, COBOL, IBM MQ Series, Spring Batch, Azure Functions, AWS Lambda, AWS SQS, Prometheus, ELK
+- **Tecnologías:** Java, Spring Boot, Spring Batch, IBM AS400, IBM MQ Series, AWS Lambda, Prometheus, ELK
 
-Desarrollo de servicios REST y SOAP integrados con el broker y con el core bancario en IBM AS400:
-tramas planas del AS400 expuestas como APIs en Spring Boot, mensajería con colas MQ y componentes
-serverless en la nube, con monitorización en Prometheus y ELK.
+Integración del core bancario AS400 con servicios REST y SOAP en Java. Microservicios en Spring
+Boot entre aplicaciones internas y externas, procesos batch que transforman y validan archivos planos del
+AS400 y COBOL, conectores con IBM MQ Series y servicios REST y SOAP para terceros. Participé en la
+migración de aplicaciones monolíticas a microservicios sin interrumpir el servicio, con tareas
+asíncronas en AWS y observabilidad con Prometheus, Grafana y ELK.
 
-## 2020 — Desconexión del motor de decisiones de Colombia a El Salvador
+## 2018 - 2022 — Ingeniería en Sistemas y Computación
 
-- **Rol:** Desarrollador Backend
-- **Organización:** Banco Davivienda
-- **Tecnologías:** Java, Spring Boot, Oracle, Apache Kafka, RabbitMQ, Docker, Kubernetes
+- **Organización:** Universidad Dr. Andrés Bello
 
-Desarrollo backend en el proyecto de desconexión del motor de decisiones de Colombia a El
-Salvador, con servicios en Spring Boot sobre Oracle, mensajería con Kafka y RabbitMQ y despliegue
-en contenedores.
+Ingeniería en Sistemas y Computación. Durante la carrera trabajé ya en proyectos bancarios, con
+Java, bases de datos relacionales y no relacionales e integraciones del backend con el core
+bancario en IBM AS400.
 
-## 2019 — Integración del sistema de votación
+## nov 2020 - feb 2021 — Sistemas electorales en tiempo real
 
-- **Rol:** Facilitador Técnico
+- **Rol:** Facilitador de aprendizaje
 - **Organización:** Tribunal Supremo Electoral
-- **Tecnologías:** Java, AWS, Azure, Angular, React
+- **Tecnologías:** Java, Spring Boot, Angular, React, AWS, Azure
 
-Integración del sistema para la votación y capacitación técnica a sus usuarios. Sistemas
-electorales en tiempo real, con atención a la ciberseguridad y a la protección frente a ataques
-de denegación de servicio (anti-DDoS).
+Coordinación de equipos técnicos para implantar los sistemas electorales en tiempo real de las
+elecciones nacionales y capacitación técnica al personal. Pruebas de integración y monitorización
+antes y durante las elecciones, y trabajo con los equipos de ciberseguridad (cifrado, SSL/TLS y
+protección anti-DDoS).
+
+## jun 2019 - dic 2019 — Aplicaciones bancarias seguras y orientadas a eventos
+
+- **Rol:** Desarrollador Full Stack
+- **Organización:** Banco Davivienda
+- **Tecnologías:** Java, Spring Boot, OAuth2, Apache Kafka, RabbitMQ, Docker, Kubernetes, AWS
+
+Aplicaciones bancarias seguras con Java y el ecosistema Spring. Microservicios REST con OAuth2 y
+JWT detrás de un API Gateway, y servicios distribuidos con Kafka, RabbitMQ y MQ Series para flujos de
+transacciones en tiempo real. Despliegue en contenedores con Docker y Kubernetes, y pipelines de
+CI/CD con Jenkins y Azure DevOps.
 
 <!-- timeline:end -->
 
 # Competencias
 
-- Servicios REST y SOAP con Java y Spring Boot, con versionado de cada API.
-- Mensajería: JMS, colas MQ, Azure Service Bus y Kafka.
-- Integración de tramas planas de AS400 con APIs en Spring Boot; conexiones JNDI.
-- Microservicios en la nube (Azure, AWS, GCP), arquitectura SOA y patrones de integración.
-- Bases de datos SQL y NoSQL: MySQL, SQL Server, PostgreSQL, Oracle, MariaDB, Cassandra, Redis,
-  Firebase, DynamoDB y Cosmos DB.
-- CI/CD y control de versiones con Azure Repos, GitHub, Bitbucket y SVN.
-- Diagramas UML de alto nivel, análisis técnico con las áreas implicadas, pruebas de aceptación
-  de usuario (UAT) y soporte en los entornos de desarrollo, QA y producción.
+- Diseño y gobierno de APIs con Apigee: enrutamiento, políticas de seguridad, gestión de tráfico y versionado.
+- Servicios REST, SOAP y GraphQL con Java y Spring Boot; contract-first con OpenAPI y AsyncAPI.
+- Cloud: AWS (ECS, EKS, Lambda, API Gateway, RDS), Azure (AKS, Key Vault, DevOps) y Google Cloud.
+- Mensajería y eventos: Kafka, RabbitMQ, JMS e IBM MQ Series.
+- Integración de sistemas legados (AS400, COBOL, MQ Series) con APIs modernas.
+- Seguridad: OAuth2, OpenID Connect, JWT, RBAC y estándares OWASP.
+- Bases de datos: PostgreSQL, Oracle, SQL Server, MySQL, MongoDB, Redis y DynamoDB.
+- Docker, Kubernetes y CI/CD con Jenkins, GitHub Actions, Azure DevOps y GitLab CI/CD.
+- Observabilidad: Prometheus, Grafana, ELK Stack y SonarQube.
+- Patrones: arquitectura hexagonal, Clean Architecture, Circuit Breaker, CQRS y Event Sourcing.
 
 # Formación
 
 <!-- cv:sidebar -->
 
-- 2023: Ingeniería en Sistemas y Computación, Universidad Dr. Andrés Bello (Chalatenango).
+- 2018 - 2022: Ingeniería en Sistemas y Computación, Universidad Dr. Andrés Bello.
+- Google Cloud Skill Badges: Develop Serverless Applications on Cloud Run; Deploy Kubernetes
+  Applications on Google Cloud; Develop Serverless Apps with Firebase.
 - Cursos: arquitectura de microservicios con Java y GCP; desarrollo backend; máster en Java con
   infraestructura backend y cloud; máster en cloud con AWS, Azure y GCP.

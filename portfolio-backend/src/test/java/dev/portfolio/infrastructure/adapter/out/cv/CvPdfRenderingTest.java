@@ -78,7 +78,7 @@ class CvPdfRenderingTest {
         assertThat(cv.filename()).isEqualTo("cv-manuel-de-jesus-cardoza-cardoza-es-full.pdf");
         assertThat(new String(cv.content(), 0, 5)).isEqualTo("%PDF-");
         assertThat(text(cv))
-                .contains("Manuel de Jesús Cardoza Cardoza", "Desarrollador Backend", "EXPERIENCIA PROFESIONAL")
+                .contains("Manuel de Jesús Cardoza Cardoza", "Senior Backend & API Platform Engineer", "EXPERIENCIA PROFESIONAL")
                 .contains("Banco Agrícola", "Banco Davivienda", "Tribunal Supremo Electoral", "IBM MQ Series")
                 .contains("Desarrollador Java Broker · Banco Agrícola", "COMPETENCIAS", "FORMACIÓN", "STACK")
                 // Ni marcas de Markdown ni notas para quien edita.
@@ -107,10 +107,10 @@ class CvPdfRenderingTest {
         String story = new MarkdownCareerStoryAdapter(properties).loadStory(CvLanguage.ES).orElseThrow();
         CvContentDomain content = CvMarkdownParserAccess.parse(story);
 
-        assertThat(StyledCvPdfWriter.topTechnologies(content, 4)).containsExactly("Java", "Spring Boot", "AWS", "PostgreSQL");
+        assertThat(StyledCvPdfWriter.topTechnologies(content, 4)).containsExactly("Java", "Spring Boot", "AWS", "OAuth2");
         assertThat(new StyledCvPdfWriter(properties).html(content, false, CvLanguage.ES, Portrait.NONE))
                 .contains("<span class=\"badge\">Java</span>", "<span class=\"chip\">IBM MQ Series</span>")
-                .contains("<div class=\"period\">2022</div>", "<div class=\"meta\">Desarrollador Java Broker  ·  Banco Agrícola</div>")
+                .contains("<div class=\"period\">may 2022 - ene 2024</div>", "<div class=\"meta\">Desarrollador Java Broker  ·  Banco Agrícola</div>")
                 .doesNotContain("Contacto");
     }
 
@@ -130,7 +130,7 @@ class CvPdfRenderingTest {
     void theEnglishCvComesFromTheTranslationAndLeavesItsEditorNoteOut() throws IOException {
         String english = text(service("").download(CvLanguage.EN, CvType.FULL, true));
 
-        assertThat(english).contains("Backend Developer", "PROFESSIONAL EXPERIENCE", "Java Broker Developer · Banco Agrícola", "EDUCATION")
+        assertThat(english).contains("Senior Backend & API Platform Engineer", "PROFESSIONAL EXPERIENCE", "Java Broker Developer · Banco Agrícola", "EDUCATION")
                 .doesNotContain("rag:skip").doesNotContain("Experiencia profesional");
     }
 
@@ -138,8 +138,8 @@ class CvPdfRenderingTest {
     void theAtsCvIsPlainTextWithEveryKeyword() throws IOException {
         CvDocumentDomain ats = service("").download(CvLanguage.EN, CvType.ATS, true);
 
-        assertThat(text(ats)).contains("Technologies: Java, Spring Boot, Oracle, Apache Kafka, RabbitMQ, Docker, Kubernetes")
-                .contains("- REST and SOAP services").doesNotContain("•");
+        assertThat(text(ats)).contains("Technologies: Java, Spring Boot, OAuth2, Apache Kafka, RabbitMQ, Docker, Kubernetes, AWS")
+                .contains("- REST, SOAP and GraphQL services").doesNotContain("•");
         // Sin color de acento ni líneas: solo texto negro.
         assertThat(new String(ats.content(), java.nio.charset.StandardCharsets.ISO_8859_1)).doesNotContain("0 0.4 0.8 rg");
     }
