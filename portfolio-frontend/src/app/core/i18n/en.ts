@@ -1097,4 +1097,11 @@ export const EN: Readonly<Record<string, string>> = {
   'Aún no hay eventos de': 'No events yet from',
   'Aparecerán aquí en cuanto intervenga en una petición.': 'They will show up here as soon as it takes part in a request.',
   'Actual': 'Current',
+  'Volver a los artículos': 'Back to the articles',
+  'de lectura': 'read',
+  'Copiar enlace': 'Copy link',
+  'Enlace copiado': 'Link copied',
+  'Compartir en LinkedIn': 'Share on LinkedIn',
+  'Este artículo no existe o ya no está publicado.': 'This article does not exist or is no longer published.',
+  'Ver todos los artículos': 'See all articles',
 };

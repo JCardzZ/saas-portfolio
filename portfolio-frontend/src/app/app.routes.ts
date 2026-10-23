@@ -15,6 +15,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/public/legal/legal-page.component').then((m) => m.LegalPageComponent),
   },
   {
+    path: 'articulos/:slug',
+    loadComponent: () => import('./features/public/articles/article-page.component').then((m) => m.ArticlePageComponent),
+  },
+  {
     path: 'login',
     loadComponent: () => import('./features/auth/login/login.component').then((m) => m.LoginComponent),
   },
