@@ -14,18 +14,19 @@ export class DemoNoticeHost {
   readonly hosted = signal(false);
 }
 
-/** El aviso en sí: una insignia de aviso. `short` deja solo «Modo demo», para cabeceras estrechas. */
+/** El aviso en sí: una insignia discreta. `short` deja solo «Modo demo», para cabeceras estrechas. */
 @Component({
   selector: 'app-demo-notice',
   standalone: true,
   host: { class: 'inline-flex min-w-0' },
   template: `
-    <span class="ui-badge ui-badge-warn" data-testid="demo-notice" [attr.title]="short() ? full() : null">
-      <span class="ui-badge-dot" aria-hidden="true"></span>
+    <!-- Neutra y con el punto en ámbar: informa sin alarmar. El motivo va en el título y para lectores de pantalla. -->
+    <span class="ui-badge" data-testid="demo-notice" [attr.title]="full()">
+      <span class="ui-badge-dot text-status-warn" aria-hidden="true"></span>
       @if (short()) {
         {{ text().demo }}<span class="sr-only">{{ text().reason }} · {{ text().simulated }}</span>
       } @else {
-        {{ text().demo }}<span class="hidden sm:inline">{{ text().reason }}</span> · {{ text().simulated }}
+        {{ text().demo }}<span class="sr-only">{{ text().reason }}</span> · {{ text().simulated }}
       }
     </span>
   `,

@@ -1,15 +1,22 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ThemeService } from './core/theme/theme.service';
-import { RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { filter, map } from 'rxjs';
 
 import { runtimeConfig } from './core/config/runtime-config';
+import { BackToTopComponent } from './shared/ui/back-to-top.component';
 import { DemoNoticeComponent, DemoNoticeHost } from './shared/ui/demo-notice.component';
 
 @Component({
     selector: 'app-root',
-    imports: [RouterOutlet, DemoNoticeComponent],
+    imports: [RouterOutlet, DemoNoticeComponent, BackToTopComponent],
     template: `
     <router-outlet />
+    <!-- «Volver arriba» en las páginas públicas (landing y artículos); la administración no lo necesita. -->
+    @if (publicPage()) {
+      <app-back-to-top />
+    }
     <!-- En la página pública el aviso va en la barra del Inspector de traza; aquí, donde no lo hay. -->
     @if (mockMode && !host.hosted()) {
       <p
@@ -28,4 +35,12 @@ export class AppComponent {
   readonly host = inject(DemoNoticeHost);
   /** Aplica el tema elegido (o el del sistema) desde el primer pintado, en cualquier página. */
   private readonly theme = inject(ThemeService);
+  private readonly router = inject(Router);
+  readonly publicPage = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => !/^\/(admin|login)(\/|$|\?|#)/.test(event.urlAfterRedirects)),
+    ),
+    { initialValue: false },
+  );
 }
