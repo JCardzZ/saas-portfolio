@@ -26,6 +26,7 @@ import { HeroSceneComponent } from './hero3d/hero-scene.component';
 import { GalaxyBackdropComponent } from './galaxy/galaxy-backdrop.component';
 import { MeshTrafficLegendComponent } from './galaxy/mesh-traffic-legend.component';
 import { SocialLinksComponent } from '../../../shared/ui/social-links.component';
+import { BackToTopComponent } from '../../../shared/ui/back-to-top.component';
 import { ScrollBuddyComponent } from './scroll-buddy.component';
 
 @Component({
@@ -33,6 +34,7 @@ import { ScrollBuddyComponent } from './scroll-buddy.component';
     imports: [
         RouterLink,
         SocialLinksComponent,
+        BackToTopComponent,
         SectionHeaderComponent,
         HeroSceneComponent,
         GalaxyBackdropComponent, MeshTrafficLegendComponent,
