@@ -68,4 +68,15 @@ class FileProfilePhotoAdapterTest {
         assertThat(new FileProfilePhotoAdapter(new CareerProperties("story.md", "", file.toString())).load()).isEmpty();
         assertThat(new FileProfilePhotoAdapter(new CareerProperties("story.md")).load()).isEmpty();
     }
+
+    @Test
+    void withoutAnUploadedPhotoTheRepositoryOneIsServed(@TempDir Path directory) throws IOException {
+        Path uploaded = directory.resolve("data/profile-photo");
+        Path shipped = Path.of("../docs/career/profile-photo");
+        FileProfilePhotoAdapter adapter = new FileProfilePhotoAdapter(new CareerProperties("story.md", "", uploaded.toString(), shipped.toString()));
+
+        // Sin nada subido (en Cloud Run, tras un reinicio): la foto del repositorio.
+        assertThat(adapter.load()).isPresent();
+        assertThat(adapter.load().get().content()).isEqualTo(Files.readAllBytes(shipped));
+    }
 }

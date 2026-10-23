@@ -19,7 +19,9 @@ import java.util.Optional;
 /**
  * Guarda la foto de perfil en un archivo, junto al documento de trayectoria. Se relee en cada
  * uso, así que también vale dejar el archivo ahí a mano. En un contenedor la ruta debe estar
- * en un volumen: si no, lo subido se pierde al recrearlo.
+ * en un volumen: si no, lo subido se pierde al recrearlo. Sin foto subida se usa la de respaldo
+ * (`career.photo-fallback-path`, la del repositorio): en Cloud Run, que no tiene disco
+ * persistente, es la que se sirve tras cada reinicio.
  */
 @Slf4j
 @Component
@@ -30,7 +32,7 @@ public class FileProfilePhotoAdapter implements ProfilePhotoPort {
 
     @Override
     public Optional<ProfilePhotoDomain> load() {
-        Optional<Path> path = path().filter(Files::isRegularFile);
+        Optional<Path> path = path().filter(Files::isRegularFile).or(() -> fallback().filter(Files::isRegularFile));
         if (path.isEmpty()) {
             return Optional.empty();
         }
@@ -67,6 +69,10 @@ public class FileProfilePhotoAdapter implements ProfilePhotoPort {
                 throw new UncheckedIOException("No se pudo eliminar la foto de perfil", e);
             }
         });
+    }
+
+    private Optional<Path> fallback() {
+        return StringUtils.hasText(properties.photoFallbackPath()) ? Optional.of(Path.of(properties.photoFallbackPath())) : Optional.empty();
     }
 
     private Optional<Path> path() {
