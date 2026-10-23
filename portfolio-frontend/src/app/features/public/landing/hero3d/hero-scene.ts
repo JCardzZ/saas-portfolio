@@ -85,10 +85,15 @@ export interface HeroScene {
   stretch(): void;
   /** Avisa cada vez que una ficha lanzada rebota (para el sonido). */
   onBounce(callback: () => void): void;
+  /** Avisa cuando una ficha termina de entrar en el proyector (nombre de la tecnología). */
+  onDock(callback: (title: string) => void): void;
   /** Lleva la ficha agarrada al punto (x, y) del lienzo. */
   fling(x: number, y: number): void;
-  /** Suelta la ficha: sale con la velocidad del gesto, cae con gravedad, rebota y vuelve al globo. */
-  release(): void;
+  /**
+   * Suelta la ficha: allí donde caiga, vuela hasta el proyector «</>», se mete en él y su logo queda
+   * flotando como holograma. Devuelve su nombre (`null` si no había ninguna agarrada).
+   */
+  release(): string | null;
   /** Cuánto se está estirando ahora (0–1): la página mueve con ello el nombre, el rol y el bocadillo. */
   stretchLevel(): number;
   /** Mientras `true`, teclea en el portátil (lo marca el texto que escribe el bocadillo). */
@@ -751,6 +756,8 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       tech, art, texture, mesh, index, hover: 0, glow, face, picture: null as HTMLImageElement | null,
       /** Vuelo libre tras lanzarla: velocidad y hasta cuándo dura (luego vuelve a su sitio). */
       flight: null as { velocity: THREE.Vector3; spin: number; until: number } | null,
+      /** Entrando en el proyector: desde dónde y cuándo empezó. */
+      docking: null as { from: THREE.Vector3; start: number } | null,
     };
     if (tech.image) {
       const picture = new Image();
@@ -1036,6 +1043,12 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         character.localToWorld(target);
         targetQuat.copy(faceCamera);
         scale = 2.1 * character.scale.x;
+      } else if (open && tile === loadedTile) {
+        // Cargada en el proyector: se queda dentro del cubo; su logo lo enseña el holograma.
+        holoCube.getWorldPosition(target);
+        targetQuat.copy(faceCamera);
+        scale = 0.001;
+        opacity = 0;
       } else if (open) {
         const y = 1 - ((rank + 0.5) / shownCount) * 2;
         const ring = Math.sqrt(1 - y * y);
@@ -1058,6 +1071,26 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
         scale = 0.11 * character.scale.x;
         opacity = 0.15 + 0.85 * Math.max(0, Math.sin(orbit)) ** 2;
         inDock = true;
+      }
+      if (tile.docking) {
+        // Entra en el proyector: vuela hasta el cubo girando y encogiendo.
+        const k = Math.min(1, (clock - tile.docking.start) / 0.55);
+        const eased = k * k * (3 - 2 * k);
+        holoCube.getWorldPosition(cubeWorld);
+        tile.mesh.position.copy(tile.docking.from).lerp(cubeWorld, eased);
+        tile.mesh.scale.setScalar(Math.max(0.001, cardScale * 1.25 * (1 - eased)));
+        tile.mesh.rotateY(dt * 9);
+        tile.face.opacity = tile.glow.opacity = 1 - eased * 0.6;
+        if (k >= 1) {
+          tile.docking = null;
+          loadedTile = tile;
+          loadedAt = clock;
+          dockFlash = 1;
+          loadedMat.map = tile.texture;
+          loadedMat.needsUpdate = true;
+          onDock?.(tile.tech.title);
+        }
+        continue;
       }
       if (tile === grabbed) {
         // Sigue al dedo o al cursor, con un poco de retraso para que se note el peso.
@@ -1128,6 +1161,27 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   const grabVelocity = new three.Vector3();
   let lastGrabAt = 0;
   let onBounce: (() => void) | null = null;
+  let onDock: ((title: string) => void) | null = null;
+
+  // Proyector como destino: la ficha soltada encima se mete en el «</>» y su logo queda en holograma.
+  let loadedTile: (typeof tiles)[number] | null = null;
+  let loadedAt = -99;
+  let dockFlash = 0;
+  let dropGlow = 0;
+  const cubeWorld = new three.Vector3();
+  const projected = new three.Vector3();
+  const loadedMat = keep(new three.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, side: three.DoubleSide }));
+  const loadedPanel = new three.Mesh(keep(new three.PlaneGeometry(TILE_W * 1.5, TILE_H * 1.5)), loadedMat);
+  loadedPanel.position.y = 2.05;
+  loadedPanel.visible = false;
+  holo.add(loadedPanel);
+  /** ¿Está el punto (en el mundo) sobre el proyector, visto desde la cámara? */
+  function overDock(point: THREE.Vector3): boolean {
+    holoCube.getWorldPosition(cubeWorld);
+    projected.copy(point).project(camera);
+    const cube = cubeWorld.project(camera);
+    return Math.hypot((projected.x - cube.x) * camera.aspect, projected.y - cube.y) < 0.32;
+  }
   /** Punto del plano z = 2 (delante del robot) bajo (x, y) normalizadas del lienzo. */
   function planePoint(x: number, y: number, out: THREE.Vector3): void {
     raycaster.setFromCamera(new three.Vector2(x, y), camera);
@@ -1561,7 +1615,20 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
     // Gira sobre su eje vertical, flotando un poco.
     holoCube.rotation.set(0, animate ? t * 0.9 : 0.4, 0);
     holoCube.position.y = 0.66 + (animate ? Math.sin(t * 1.8) * 0.04 : 0);
-    beamMat.opacity = 0.09 + (animate ? Math.sin(t * 3) * 0.03 : 0);
+    // Con una ficha agarrada, el cubo la espera (crece y se enciende) y más aún si está encima.
+    const waiting = grabbed ? (overDock(grabbed.mesh.position) ? 1 : 0.5) : 0;
+    dropGlow += (waiting - dropGlow) * (1 - Math.exp(-dt * 10));
+    dockFlash = Math.max(0, dockFlash - dt * 1.4);
+    holoCube.scale.setScalar(1 + dropGlow * 0.35 + dockFlash * 0.45);
+    cubeMat.emissiveIntensity = 1.2 + dropGlow * 1.6 + dockFlash * 3;
+    beamMat.opacity = 0.09 + (animate ? Math.sin(t * 3) * 0.03 : 0) + dropGlow * 0.14 + dockFlash * 0.3;
+    // Holograma de la ficha cargada: aparece sobre el haz, flota y gira despacio hacia los lados.
+    const loadedShow = loadedTile ? Math.min(1, (clock - loadedAt) / 0.45) : 0;
+    loadedPanel.visible = loadedShow > 0.01;
+    loadedMat.opacity = loadedShow * 0.92;
+    loadedPanel.scale.setScalar(Math.max(0.001, easeOutBack(loadedShow)));
+    loadedPanel.position.y = 2.05 + (animate ? Math.sin(t * 1.5) * 0.05 : 0);
+    loadedPanel.rotation.y = animate ? Math.sin(t * 0.8) * 0.35 : 0;
     // La pantalla avanza mientras teclea; al terminar el fragmento, vuelve a empezar.
     // El diagrama se dibuja en ciclos de 9 s (repinta a ~20 fps, solo si se ve).
     archT += animate ? dt : 0;
@@ -1684,9 +1751,14 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
       lastGrabAt = clock;
     },
     release() {
-      if (!grabbed) return;
-      grabbed.flight = { velocity: grabVelocity.clone().setZ(0), spin: grabVelocity.x * -0.6, until: clock + 3 };
+      if (!grabbed) return null;
+      const tile = grabbed;
       grabbed = null;
+      tile.docking = { from: tile.mesh.position.clone(), start: clock };
+      return tile.tech.title;
+    },
+    onDock(callback: (title: string) => void) {
+      onDock = callback;
     },
     onBounce(callback: () => void) {
       onBounce = callback;
