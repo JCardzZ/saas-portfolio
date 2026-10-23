@@ -26,6 +26,7 @@ import { HeroSceneComponent } from './hero3d/hero-scene.component';
 import { GalaxyBackdropComponent } from './galaxy/galaxy-backdrop.component';
 import { MeshTrafficLegendComponent } from './galaxy/mesh-traffic-legend.component';
 import { SocialLinksComponent } from '../../../shared/ui/social-links.component';
+import { BackToTopComponent } from '../../../shared/ui/back-to-top.component';
 import { ScrollBuddyComponent } from './scroll-buddy.component';
 
 @Component({
@@ -33,6 +34,7 @@ import { ScrollBuddyComponent } from './scroll-buddy.component';
     imports: [
         RouterLink,
         SocialLinksComponent,
+        BackToTopComponent,
         SectionHeaderComponent,
         HeroSceneComponent,
         GalaxyBackdropComponent, MeshTrafficLegendComponent,
@@ -98,6 +100,9 @@ export class LandingPageComponent implements OnInit {
   /** Letras del nombre y del rol (los espacios, sin romper la línea). */
   readonly nameLetters = computed(() => [...this.i18n.t(this.copy.heroTitle)].map((c) => (c === ' ' ? '\u00a0' : c)));
   readonly roleLetters = computed(() => [...this.heroRole()].map((c) => (c === ' ' ? '\u00a0' : c)));
+  /** Letras agrupadas por palabra (con su índice global) para que el título solo se parta entre palabras. */
+  readonly nameWords = computed(() => wordsOf(this.nameLetters()));
+  readonly roleWords = computed(() => wordsOf(this.roleLetters()));
 
   /** Clase de la tarjeta «¿Cómo está construido?», que cierra la rejilla de proyectos. */
   readonly askSpan = computed(() => ASK_SPAN[askCardColumns(this.catalog.projects().length)]);
@@ -140,4 +145,14 @@ export function askCardColumns(projects: number): 2 | 4 | 6 {
   }
   // Tarjetas pequeñas que ya ocupan la fila de la última: en la primera fila solo cabe una.
   return ([6, 4, 2] as const)[(projects - 2) % 3];
+}
+
+/** Agrupa las letras en palabras; el espacio duro queda al final de su palabra y conserva su índice. */
+function wordsOf(letters: string[]): { letter: string; index: number }[][] {
+  const words: { letter: string; index: number }[][] = [[]];
+  letters.forEach((letter, index) => {
+    words[words.length - 1].push({ letter, index });
+    if (letter === '\u00a0') words.push([]);
+  });
+  return words.filter((word) => word.length);
 }
