@@ -27,6 +27,24 @@ describe('CareerTimelineComponent', () => {
   /** La petición de la trayectoria en un idioma (la URL lleva `?lang=`). */
   const timeline = (lang = 'es') => backend.expectOne((request) => request.url === url && request.params.get('lang') === lang);
 
+  it('marks the current role and the education on the timeline, and previews closed rows', () => {
+    timeline().flush([
+      { period: '2024 - actualidad', title: 'Puesto actual', role: 'Backend Developer', organization: 'Acme', summary: 'Lo que hago hoy.' },
+      { period: '2023', title: 'Ingeniería', organization: 'Universidad', summary: 'Título universitario.' },
+    ]);
+    fixture.detectChanges();
+
+    const rows = Array.from(element.querySelectorAll<HTMLElement>('li.row'));
+    expect(rows[0].classList).toContain('current');
+    expect(rows[0].querySelector('.now')?.textContent?.trim()).toBe('Actual');
+    expect(rows[1].classList).toContain('education');
+    expect(rows[1].classList).not.toContain('current');
+    expect(rows[1].querySelector('.node svg')).not.toBeNull();
+    // El actual viene abierto (sin vista previa); el cerrado enseña una línea de su resumen.
+    expect(rows[0].querySelector('.preview')).toBeNull();
+    expect(rows[1].querySelector('.preview')?.textContent).toBe('Título universitario.');
+  });
+
   it('renders one compact row per milestone, in order, with optional fields only when present', () => {
     timeline().flush([
       { period: '2023 - 2025', title: 'Plataforma de pagos', role: 'Staff Engineer', organization: 'Acme', technologies: ['Java 21', 'Kotlin'], summary: 'Rediseño del núcleo.' },
