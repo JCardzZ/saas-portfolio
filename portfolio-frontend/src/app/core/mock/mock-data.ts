@@ -24,6 +24,7 @@ export const MOCK_PROJECTS: Project[] = [
       'Plataforma contract-first con arquitectura hexagonal, caché cache-aside resiliente y un asistente RAG que responde citando el código fuente.',
     githubRepoUrl: 'https://github.com/example/saas-portfolio',
     demoVideoUrl: 'https://example.com/demo',
+    coverImageUrl: '/projects/saas-portfolio.jpg',
     metricsImpact: 'Dominio y aplicación sin dependencias de framework',
     technologiesUsed: ['tech-java', 'tech-hexagonal', 'tech-gemini', 'tech-tailwind', 'tech-angular'],
   },

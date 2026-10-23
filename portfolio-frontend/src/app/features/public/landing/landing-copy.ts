@@ -39,6 +39,7 @@ export const LANDING_COPY = {
   projectsTitle: { en: 'Projects', es: 'Proyectos' },
   projectsIntro: { en: 'Published work, with its code and the technologies it uses.', es: 'Trabajo publicado, con su código y las tecnologías que usa.' },
   technologiesUsed: { en: 'Technologies used', es: 'Tecnologías usadas' },
+  projectCoverAlt: { en: 'Screenshot of', es: 'Captura de' },
   code: { en: 'Code ↗', es: 'Código ↗' },
   noProjects: { en: 'No projects published yet.', es: 'Aún no hay proyectos publicados.' },
   askTitle: { en: 'How is it built?', es: '¿Cómo está construido?' },

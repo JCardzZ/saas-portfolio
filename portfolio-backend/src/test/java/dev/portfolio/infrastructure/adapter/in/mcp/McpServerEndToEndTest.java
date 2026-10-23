@@ -95,7 +95,7 @@ class McpServerEndToEndTest {
         CloudCatalogUseCase cloudCatalog = mock(CloudCatalogUseCase.class);
         given(cloudCatalog.find(any())).willReturn(List.of(new CloudCatalogItemDomain("aws:queue", CloudProviderDomain.AWS, "queue", "SQS", "messaging", null, false)));
         ProjectUseCase portfolio = mock(ProjectUseCase.class);
-        given(portfolio.findAll()).willReturn(List.of(new ProjectDomain("p1", "Plataforma de portafolio", "Resumen", "https://github.com/example/repo", null, "Impacto", List.of())));
+        given(portfolio.findAll()).willReturn(List.of(new ProjectDomain("p1", "Plataforma de portafolio", "Resumen", "https://github.com/example/repo", null, null, "Impacto", List.of())));
 
         server = new McpSdkServer(
                 PortfolioTools.all(projects, new TerraformService(limiter, generous), pricing, rag, systemDesign),

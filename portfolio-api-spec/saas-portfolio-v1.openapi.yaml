@@ -1472,6 +1472,11 @@ components:
         summary: { type: string, example: "High-throughput microservices SaaS platform." }
         githubRepoUrl: { type: string, example: "https://github.com/user/saas-portfolio" }
         demoVideoUrl: { type: string, example: "https://loom.com/share/12345" }
+        coverImageUrl:
+          type: string
+          maxLength: 2048
+          description: Captura o imagen del proyecto. URL https o ruta del propio sitio (`/projects/…`).
+          example: "/projects/saas-portfolio.webp"
         technologiesUsed: { type: array, items: { type: string }, example: ["Java 21", "Spring Boot 3", "Angular 18"] }
         metricsImpact: { type: string, example: "Reduced P99 latency to 1.2ms" }
 
@@ -1483,6 +1488,12 @@ components:
         summary: { type: string, example: "Event-driven architecture showcase." }
         githubRepoUrl: { type: string, example: "https://github.com/user/saas-portfolio" }
         demoVideoUrl: { type: string, example: "https://loom.com/share/998877" }
+        coverImageUrl:
+          type: string
+          maxLength: 2048
+          pattern: '^(https://|/)[^\s"<>]*$'
+          description: Captura o imagen del proyecto. URL https o ruta del propio sitio (`/projects/…`).
+          example: "/projects/saas-portfolio.webp"
         technologiesUsed: { type: array, items: { type: string } }
         metricsImpact: { type: string, example: "99.99% Uptime SLA" }
 

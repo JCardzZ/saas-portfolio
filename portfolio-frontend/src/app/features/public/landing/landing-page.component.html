@@ -124,6 +124,17 @@
                 [class]="index === 0 ? 'md:col-span-4' : 'md:col-span-2'"
                 [style.animation-delay.ms]="index * 60"
               >
+                @if (project.coverImageUrl) {
+                  <!-- Captura del proyecto: 16:9, con borde de tarjeta; si no carga, se retira sin dejar hueco. -->
+                  <img
+                    class="project-cover mb-5 aspect-video w-full rounded-control border border-line-subtle bg-surface-2 object-cover object-top"
+                    [src]="project.coverImageUrl"
+                    [alt]="i18n.t(copy.projectCoverAlt) + ' ' + project.title"
+                    loading="lazy"
+                    decoding="async"
+                    (error)="hideBrokenIcon($event)"
+                  />
+                }
                 <h3 class="text-ink-1" [class]="index === 0 ? 'text-title-1-sm' : 'text-title-2'">
                   {{ project.title }}
                 </h3>
