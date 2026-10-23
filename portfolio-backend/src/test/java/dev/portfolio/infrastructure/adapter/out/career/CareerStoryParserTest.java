@@ -125,7 +125,7 @@ class CareerStoryParserTest {
                 .containsExactly("Jan 2024 - present", "Aug 2025 - Oct 2026", "May 2022 - Jan 2024", "2018 - 2022",
                         "Nov 2020 - Feb 2021", "Jun 2019 - Dec 2019");
         assertThat(english.get(0).role()).isEqualTo("Senior Software Engineer");
-        assertThat(english.get(0).organization()).isEqualTo("PBS Consulting (project for BCR, the Central Reserve Bank)");
+        assertThat(english.get(0).organization()).isEqualTo("PBS Consulting (project for BCR)");
         for (int i = 0; i < english.size(); i++) {
             assertThat(english.get(i).technologies()).as("tecnologías del hito %d", i).isEqualTo(spanish.get(i).technologies());
             assertThat(english.get(i).summary()).as("resumen del hito %d", i).isNotBlank().isNotEqualTo(spanish.get(i).summary());

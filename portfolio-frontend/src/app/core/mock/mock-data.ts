@@ -53,7 +53,7 @@ export const MOCK_CAREER: CareerMilestone[] = [
     role: 'Senior Software Engineer',
     organization: 'PBS Consulting (proyecto para el BCR)',
     technologies: ['Java', 'Spring Boot', 'Spring Security', 'OAuth2', 'JWT', 'Docker', 'Kubernetes', 'CI/CD'],
-    summary: 'Diseño y desarrollo microservicios de backend con Spring Boot para operaciones bancarias críticas, con APIs REST protegidas con OAuth2 y JWT. Participo en la modernización de servicios hacia contenedores y Kubernetes gestionado en la nube, con gestión segura de secretos y pipelines de CI/CD. También optimizo consultas en bases de datos SQL y NoSQL para volúmenes altos de transacciones y doy soporte a producción.',
+    summary: 'Microservicios y APIs seguras con Spring Boot para operaciones bancarias críticas. Diseño, desarrollo y pongo en marcha servicios de backend escalables y de alto rendimiento, con APIs REST protegidas con OAuth2 y JWT para resguardar datos financieros sensibles. Optimizo estructuras de datos y consultas en bases de datos SQL y NoSQL que manejan volúmenes altos de transacciones. Participo en la modernización de servicios hacia contenedores y Kubernetes gestionado en la nube, con gestión segura de secretos y pipelines de CI/CD que aceleran las entregas sin perder calidad. Diagnostico y resuelvo incidencias en producción para mantener la disponibilidad de sistemas de misión crítica. Genero reportes dinámicos en Java con exportación a varios formatos y documento las soluciones con estándares de calidad (Javadoc y diagramas de arquitectura). Trabajo en equipos multidisciplinarios con Scrum: planificación, seguimiento diario y revisión de cada sprint.',
   },
   {
     period: 'ago 2025 - oct 2026',
@@ -61,7 +61,7 @@ export const MOCK_CAREER: CareerMilestone[] = [
     role: 'Tech Lead',
     organization: 'Monetae',
     technologies: ['Java', 'Spring Boot', 'WebFlux', 'OpenAPI', 'AsyncAPI', 'Kafka', 'Docker', 'Kubernetes'],
-    summary: 'Liderazgo técnico de punta a punta de una plataforma financiera híbrida (fiat y cripto) con arquitectura hexagonal y Clean Architecture. Sistemas distribuidos de alta concurrencia con Spring Boot y WebFlux, enfoque contract-first con OpenAPI y AsyncAPI, arquitectura orientada a eventos y patrones de resiliencia (idempotencia, reintentos con backoff, colas de mensajes fallidos). Despliegue cloud-native con contenedores y Kubernetes, integración con un proveedor de custodia institucional, revisiones de código y mentoría del equipo.',
+    summary: 'Liderazgo técnico de una plataforma financiera fiat y cripto. Lideré de punta a punta su desarrollo con Scrum, arquitectura hexagonal y Clean Architecture. Diseñé sistemas distribuidos de alta concurrencia con Spring Boot y WebFlux, con seguridad empresarial basada en OAuth2 y OpenID Connect. Definí y adopté el enfoque contract-first con OpenAPI y AsyncAPI para estandarizar las APIs y la comunicación entre microservicios. Diseñé flujos financieros y transaccionales que garantizan consistencia, trazabilidad y cumplimiento en operaciones críticas. Arquitectura orientada a eventos con mensajería asíncrona, estado distribuido y comunicación en tiempo real, y patrones de resiliencia: idempotencia, reintentos con backoff, colas de mensajes fallidos y consistencia eventual. Despliegue cloud-native con contenedores y Kubernetes, gestión segura de secretos y configuración, observabilidad con logs centralizados, métricas y trazas, y estándares de seguridad OWASP. Integré servicios externos de custodia institucional, identidad y procesamiento de activos digitales. Participé en las decisiones estratégicas junto a negocio y producto, programé a diario, hice revisiones de código y mentoría al equipo, y documenté la arquitectura y las decisiones técnicas.',
   },
   {
     period: 'may 2022 - ene 2024',
@@ -69,7 +69,7 @@ export const MOCK_CAREER: CareerMilestone[] = [
     role: 'Desarrollador Java Broker',
     organization: 'Banco Agrícola',
     technologies: ['Java', 'Spring Boot', 'Spring Batch', 'REST', 'SOAP', 'JMS'],
-    summary: 'Integración del core bancario con servicios REST y SOAP en Java. Microservicios en Spring Boot entre aplicaciones internas y externas, procesos batch que transforman y validan los archivos del sistema core, mensajería con colas y servicios para terceros. Participé en la migración de aplicaciones monolíticas a microservicios sin interrumpir el servicio.',
+    summary: 'Integración del core bancario con servicios REST y SOAP en Java. Diseñé, desarrollé y mantuve soluciones de integración que aseguran una comunicación estable y segura entre sistemas críticos. Implementé microservicios en Spring Boot entre aplicaciones internas y externas, con mejor escalabilidad y resiliencia. Desarrollé procesos batch que transforman y validan los archivos del sistema core para garantizar la integridad de los datos financieros, e integré aplicaciones legadas mediante conectores propios y mensajería con colas. Expuse funcionalidades bancarias a terceros con servicios REST y SOAP bajo estándares estrictos de seguridad y fiabilidad. Optimicé procesos de integración de alto volumen, con mejores tiempos de respuesta y menor consumo de recursos. Participé en la migración de aplicaciones monolíticas a microservicios sin interrumpir el servicio. Aseguré la calidad con pruebas unitarias, integración continua y revisiones de código en equipos Scrum y Kanban, en coordinación con los equipos de infraestructura, redes y QA.',
   },
   {
     period: '2018 - 2022',
@@ -83,7 +83,7 @@ export const MOCK_CAREER: CareerMilestone[] = [
     role: 'Facilitador de aprendizaje',
     organization: 'Tribunal Supremo Electoral',
     technologies: ['Java', 'Spring Boot', 'Angular', 'React'],
-    summary: 'Coordinación de equipos técnicos para implantar los sistemas electorales de las elecciones nacionales y capacitación técnica al personal. Pruebas de integración y seguimiento antes y durante las elecciones, en coordinación con los equipos de ciberseguridad.',
+    summary: 'Coordinación técnica de los sistemas de las elecciones nacionales. Coordiné equipos técnicos para implantar y desplegar sistemas electorales en tiempo real. Preparé material formativo y di capacitación técnica y operativa al personal electoral con sesiones prácticas. Ejecuté pruebas de integración, validación funcional y seguimiento continuo antes y durante las elecciones para asegurar su calidad, estabilidad y disponibilidad. Contribuí al diseño de interfaces accesibles y fáciles de usar para perfiles ciudadanos diversos. Trabajé junto a los equipos de ciberseguridad para reducir riesgos. Desarrollé componentes de backend y frontend para módulos internos de soporte con Java, Spring Boot, Angular y React. Participé en el análisis posterior a la elección con métricas técnicas y operativas para proponer mejoras a futuros procesos.',
   },
   {
     period: 'jun 2019 - dic 2019',
@@ -91,7 +91,7 @@ export const MOCK_CAREER: CareerMilestone[] = [
     role: 'Desarrollador Full Stack',
     organization: 'Banco Davivienda',
     technologies: ['Java', 'Spring Boot', 'OAuth2', 'Apache Kafka', 'RabbitMQ', 'Docker'],
-    summary: 'Aplicaciones bancarias seguras con Java y el ecosistema Spring. Microservicios REST con OAuth2 y JWT y servicios orientados a eventos con Kafka y RabbitMQ para flujos de transacciones en tiempo real, desplegados en contenedores con integración y entrega continuas.',
+    summary: 'Aplicaciones bancarias seguras con Java y el ecosistema Spring. Diseñé y desarrollé aplicaciones modulares con Spring Boot, Spring Data y Spring Security, con foco en escalabilidad, mantenibilidad y protección de datos. Microservicios REST con autenticación OAuth2 y JWT para operaciones distribuidas de alto volumen. Servicios orientados a eventos con Kafka y RabbitMQ para flujos de transacciones en tiempo real. Optimicé bases de datos relacionales y NoSQL para acelerar las consultas y soportar operaciones concurrentes. Despliegue en contenedores con pipelines de integración y entrega continuas que incluyen validaciones y pruebas. Integraciones con terceros mediante REST y SOAP, alineadas con la regulación del sector financiero. Participé en reuniones de diseño de arquitectura, hice revisiones de código y acompañé a desarrolladores junior, en equipos Scrum y Kanban.',
   },
 ];
 
@@ -101,9 +101,9 @@ export const MOCK_CAREER_EN: CareerMilestone[] = [
     period: 'Jan 2024 - present',
     title: 'Microservices and APIs for central banking',
     role: 'Senior Software Engineer',
-    organization: 'PBS Consulting (project for BCR, the Central Reserve Bank)',
+    organization: 'PBS Consulting (project for BCR)',
     technologies: ['Java', 'Spring Boot', 'Spring Security', 'OAuth2', 'JWT', 'Docker', 'Kubernetes', 'CI/CD'],
-    summary: 'I design and build backend microservices with Spring Boot for critical banking operations, with REST APIs secured with OAuth2 and JWT. I take part in modernising services towards containers and managed Kubernetes in the cloud, with secure secret management and CI/CD pipelines. I also tune queries on SQL and NoSQL databases for high transaction volumes and support production.',
+    summary: 'Secure microservices and APIs for critical banking operations. I design, build and roll out scalable, high-performance backend services with Spring Boot, with REST APIs secured with OAuth2 and JWT to protect sensitive financial data. I tune data structures and queries on SQL and NoSQL databases that handle high transaction volumes. I take part in modernising services towards containers and managed Kubernetes in the cloud, with secure secret management and CI/CD pipelines that speed up delivery without losing quality. I diagnose and fix production incidents to keep mission-critical systems available. I build dynamic reports in Java with multi-format export and document solutions to quality standards (Javadoc and architecture diagrams). I work in cross-functional Scrum teams: sprint planning, daily stand-ups and reviews.',
   },
   {
     period: 'Aug 2025 - Oct 2026',
@@ -111,15 +111,15 @@ export const MOCK_CAREER_EN: CareerMilestone[] = [
     role: 'Tech Lead',
     organization: 'Monetae',
     technologies: ['Java', 'Spring Boot', 'WebFlux', 'OpenAPI', 'AsyncAPI', 'Kafka', 'Docker', 'Kubernetes'],
-    summary: 'End-to-end technical leadership of a hybrid (fiat and crypto) financial platform built on hexagonal architecture and Clean Architecture. High-concurrency distributed systems with Spring Boot and WebFlux, a contract-first approach with OpenAPI and AsyncAPI, event-driven architecture and resilience patterns (idempotency, retries with backoff, dead-letter queues). Cloud-native deployment with containers and Kubernetes, integration with an institutional custody provider, code reviews and mentoring of the team.',
+    summary: 'Technical leadership of a fiat and crypto financial platform. I led its development end to end with Scrum, hexagonal architecture and Clean Architecture. I designed high-concurrency distributed systems with Spring Boot and WebFlux, with enterprise security based on OAuth2 and OpenID Connect. I defined and adopted a contract-first approach with OpenAPI and AsyncAPI to standardise the APIs and the communication between microservices. I designed financial and transactional flows that ensure consistency, traceability and compliance in critical operations. Event-driven architecture with asynchronous messaging, distributed state and real-time communication, and resilience patterns: idempotency, retries with backoff, dead-letter queues and eventual consistency. Cloud-native deployment with containers and Kubernetes, secure secret and configuration management, observability with centralised logs, metrics and tracing, and OWASP security standards. I integrated external services for institutional custody, identity and digital asset processing. I took part in strategic decisions with business and product, coded hands-on every day, reviewed code, mentored the team and documented the architecture and technical decisions.',
   },
   {
     period: 'May 2022 - Jan 2024',
-    title: 'Integrating the core banking system with REST and SOAP services',
+    title: 'Core banking integration with REST and SOAP services',
     role: 'Java Broker Developer',
     organization: 'Banco Agrícola',
     technologies: ['Java', 'Spring Boot', 'Spring Batch', 'REST', 'SOAP', 'JMS'],
-    summary: 'Integration of the core banking system through REST and SOAP services in Java. Spring Boot microservices between internal and external applications, batch processes that transform and validate the core system\'s files, queue-based messaging and services for third parties. I took part in migrating monolithic applications to microservices without service disruption.',
+    summary: 'Core banking integration in Java through REST and SOAP. I designed, built and maintained integration solutions that keep communication between critical systems stable and secure. I implemented Spring Boot microservices between internal and external applications, improving scalability and resilience. I developed batch processes that transform and validate the core system\'s files to protect the integrity of financial data, and integrated legacy applications through custom connectors and queue-based messaging. I exposed banking features to third parties with REST and SOAP services under strict security and reliability standards. I optimised high-volume integration processes, improving response times and resource usage. I took part in migrating monolithic applications to microservices without service disruption. I ensured quality with unit tests, continuous integration and code reviews in Scrum and Kanban teams, working with the infrastructure, networking and QA teams.',
   },
   {
     period: '2018 - 2022',
@@ -133,7 +133,7 @@ export const MOCK_CAREER_EN: CareerMilestone[] = [
     role: 'Learning Facilitator',
     organization: 'Supreme Electoral Tribunal of El Salvador',
     technologies: ['Java', 'Spring Boot', 'Angular', 'React'],
-    summary: 'Coordinating technical teams to roll out the electoral systems for the national elections and training the electoral staff. Integration testing and follow-up before and during the elections, in coordination with the cybersecurity teams.',
+    summary: 'Technical coordination of the national elections\' systems. I coordinated technical teams to roll out and deploy real-time electoral systems. I prepared training material and gave technical and operational training to electoral staff in hands-on sessions. I ran integration testing, functional validation and continuous monitoring before and during the elections to keep the systems reliable, stable and available. I contributed to the design of accessible, easy-to-use interfaces for diverse citizen profiles. I worked alongside the cybersecurity teams to reduce risk. I developed backend and frontend components for internal support modules with Java, Spring Boot, Angular and React. I took part in the post-election analysis, using technical and operational metrics to propose improvements for future processes.',
   },
   {
     period: 'Jun 2019 - Dec 2019',
@@ -141,7 +141,7 @@ export const MOCK_CAREER_EN: CareerMilestone[] = [
     role: 'Full Stack Developer',
     organization: 'Banco Davivienda',
     technologies: ['Java', 'Spring Boot', 'OAuth2', 'Apache Kafka', 'RabbitMQ', 'Docker'],
-    summary: 'Secure banking applications with Java and the Spring ecosystem. REST microservices with OAuth2 and JWT and event-driven services with Kafka and RabbitMQ for real-time transaction flows, deployed in containers with continuous integration and delivery.',
+    summary: 'Secure banking applications with Java and the Spring ecosystem. I designed and built modular applications with Spring Boot, Spring Data and Spring Security, focused on scalability, maintainability and data protection. REST microservices with OAuth2 and JWT authentication for high-volume distributed operations. Event-driven services with Kafka and RabbitMQ for real-time transaction flows. I optimised relational and NoSQL databases to speed up queries and support concurrent operations. Container deployment with continuous integration and delivery pipelines that include validation and testing. Third-party integrations through REST and SOAP, aligned with financial industry regulation. I took part in architecture design meetings, reviewed code and mentored junior developers, in Scrum and Kanban teams.',
   },
 ];
 
