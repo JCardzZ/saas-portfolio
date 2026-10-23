@@ -29,6 +29,9 @@ public class ProjectEntity {
     @Column(name = "demo_video_url")
     private String demoVideoUrl;
 
+    @Column(name = "cover_image_url")
+    private String coverImageUrl;
+
     @Column(name = "metrics_impact", columnDefinition = "TEXT")
     private String metricsImpact;
 

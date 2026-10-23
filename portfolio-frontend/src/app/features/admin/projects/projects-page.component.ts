@@ -22,6 +22,7 @@ export class ProjectsPageComponent implements OnInit {
     summary: ['', Validators.required],
     githubRepoUrl: ['', Validators.required],
     demoVideoUrl: [''],
+    coverImageUrl: ['', Validators.pattern(/^(https:\/\/|\/)[^\s"<>]*$/)],
     metricsImpact: [''],
     technologiesUsed: [[] as string[]],
   });
@@ -59,6 +60,7 @@ export class ProjectsPageComponent implements OnInit {
       summary: project.summary ?? '',
       githubRepoUrl: project.githubRepoUrl ?? '',
       demoVideoUrl: project.demoVideoUrl ?? '',
+      coverImageUrl: project.coverImageUrl ?? '',
       metricsImpact: project.metricsImpact ?? '',
       technologiesUsed: project.technologiesUsed ?? [],
     });
@@ -101,6 +103,7 @@ export class ProjectsPageComponent implements OnInit {
       summary: value.summary,
       githubRepoUrl: value.githubRepoUrl,
       demoVideoUrl: value.demoVideoUrl.trim() || undefined,
+      coverImageUrl: value.coverImageUrl.trim() || undefined,
       metricsImpact: value.metricsImpact.trim() || undefined,
       technologiesUsed: value.technologiesUsed,
     };

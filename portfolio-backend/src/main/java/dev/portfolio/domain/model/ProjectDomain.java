@@ -8,6 +8,7 @@ public record ProjectDomain(
         String summary,
         String githubRepoUrl,
         String demoVideoUrl,
+        String coverImageUrl,
         String metricsImpact,
         List<String> technologyIds
 ) {
@@ -17,6 +18,6 @@ public record ProjectDomain(
     }
 
     public ProjectDomain withId(String newId) {
-        return new ProjectDomain(newId, title, summary, githubRepoUrl, demoVideoUrl, metricsImpact, technologyIds);
+        return new ProjectDomain(newId, title, summary, githubRepoUrl, demoVideoUrl, coverImageUrl, metricsImpact, technologyIds);
     }
 }

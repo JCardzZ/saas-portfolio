@@ -54,7 +54,7 @@ class RAGIndexingServiceTest {
         given(technologyRepository.findAll()).willReturn(List.of(
                 new TechnologyDomain("tech-1", "Java 21", "Backend", "Expert", "https://cdn/java.svg", true)));
         given(projectRepository.findAll()).willReturn(List.of(new ProjectDomain(
-                "prj-1", "SaaS Portfolio", "Plataforma hexagonal", "https://github.com/u/r", null,
+                "prj-1", "SaaS Portfolio", "Plataforma hexagonal", "https://github.com/u/r", null, null,
                 "P99 1.2ms", List.of("tech-1"))));
         given(articleRepository.findAllNewestFirst()).willReturn(List.of(new ArticleDomain(
                 "art-1", "Cache-aside resiliente", "cache-aside-resiliente", "Redis nunca tumba la API.",
