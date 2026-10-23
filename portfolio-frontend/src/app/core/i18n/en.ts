@@ -1107,4 +1107,8 @@ export const EN: Readonly<Record<string, string>> = {
   'GitHub de Manuel Cardoza': 'Manuel Cardoza on GitHub',
   'LinkedIn de Manuel Cardoza': 'Manuel Cardoza on LinkedIn',
   'Lo que hice': 'What I did',
+  'Artículo técnico': 'Technical article',
+  'En este artículo': 'In this article',
+  'Escrito por': 'Written by',
+  'Más artículos': 'More articles',
 };
