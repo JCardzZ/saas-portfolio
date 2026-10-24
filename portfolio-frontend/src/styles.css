@@ -411,6 +411,24 @@ app-section-header::before {
   text-wrap: balance;
 }
 /* Letras que el robot «empuja» al levantarse: una ola que sube y baja letra a letra. */
+/* Indicador para bajar, al pie del hero: rótulo pequeño y una línea por la que cae un punto del acento. */
+.scroll-cue {
+  position: relative; z-index: 10; align-self: center; margin-top: 2rem; display: flex; flex-direction: column;
+  align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; border-radius: 8px; pointer-events: auto;
+  color: var(--text-3); transition: color var(--duration-fast) var(--ease-standard);
+}
+.scroll-cue:hover { color: var(--text-1); }
+.scroll-cue-text { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.16em; text-transform: uppercase; }
+.scroll-cue-track { position: relative; width: 1px; height: 2.25rem; overflow: hidden; background: var(--border-subtle); order: 2; }
+.scroll-cue-track::after {
+  content: ''; position: absolute; left: -1.5px; top: -0.5rem; width: 4px; height: 0.5rem; border-radius: 999px;
+  background: var(--accent-solid); animation: scroll-cue-fall 1.8s var(--ease-standard) infinite;
+}
+@keyframes scroll-cue-fall { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(2.75rem); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .scroll-cue-track::after { animation: none; top: 0.875rem; } }
+/* En pantallas bajas no cabe sin empujar los botones fuera de la vista. */
+@media (max-height: 700px) { .scroll-cue { display: none; } }
+.hero-dimmed .scroll-cue { opacity: 0; pointer-events: none; }
 /* Sin robot (sin WebGL rápido o si la escena falla): el hueco se cierra y el bloque queda centrado. */
 .hero-no-robot { justify-content: center; }
 .hero-no-robot .hero-gap { flex: none; min-height: 3.5rem; }

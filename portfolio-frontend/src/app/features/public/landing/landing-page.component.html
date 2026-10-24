@@ -66,6 +66,11 @@
           <app-social-links />
         </div>
       </div>
+      <!-- Indicador para bajar: una línea por la que cae un punto. Lleva a la primera sección. -->
+      <a href="#trayectoria" class="scroll-cue ui-focus tap" data-testid="scroll-cue" [attr.aria-label]="i18n.t(copy.scrollCueLabel)">
+        <span class="scroll-cue-track" aria-hidden="true"></span>
+        <span class="scroll-cue-text" aria-hidden="true">{{ i18n.t(copy.scrollCue) }}</span>
+      </a>
     </section>
 
     @if (catalog.error(); as message) {
@@ -302,7 +307,6 @@
   </footer>
 
   <app-scroll-buddy />
-  <app-back-to-top />
   <app-trace-inspector />
   <app-icon-pop-layer />
   <app-rag-chat [(open)]="chatOpen" [projects]="catalog.projects()" [technologies]="catalog.technologies()" />
