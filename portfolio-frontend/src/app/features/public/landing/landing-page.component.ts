@@ -25,6 +25,7 @@ import { HERO_CREDENTIALS, LANDING_COPY } from './landing-copy';
 import { HeroSceneComponent } from './hero3d/hero-scene.component';
 import { GalaxyBackdropComponent } from './galaxy/galaxy-backdrop.component';
 import { MeshTrafficLegendComponent } from './galaxy/mesh-traffic-legend.component';
+import { ReleaseBadgeComponent } from '../../../shared/ui/release-badge.component';
 import { SocialLinksComponent } from '../../../shared/ui/social-links.component';
 import { ScrollBuddyComponent } from './scroll-buddy.component';
 
@@ -33,6 +34,7 @@ import { ScrollBuddyComponent } from './scroll-buddy.component';
     imports: [
         RouterLink,
         SocialLinksComponent,
+        ReleaseBadgeComponent,
         SectionHeaderComponent,
         HeroSceneComponent,
         GalaxyBackdropComponent, MeshTrafficLegendComponent,

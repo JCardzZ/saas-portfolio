@@ -281,4 +281,5 @@ export const MOCK_FLAG_DESCRIPTIONS: Record<FeatureFlagKey, string> = {
   'studio.system-design': 'Diseño de sistemas completos: vistas de aplicación e infraestructura',
   'studio.system-templates': 'Plantillas de sistemas completos',
   'mcp.section': 'Servidor MCP y la sección «Usa mi plataforma desde tu IA»',
+  'site.release-version': 'Versión desplegada y novedades en el pie de página',
 };

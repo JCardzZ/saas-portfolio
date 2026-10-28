@@ -15,5 +15,9 @@ export interface SystemHealthResponse {
     database?: string;
     redisCache?: string;
     circuitBreakers?: SystemHealthResponseCircuitBreakers;
+    /**
+     * Release currently serving traffic (the vX.Y.Z tag the CD deployed). Absent when the API runs outside a CD deploy.
+     */
+    version?: string;
 }
 
