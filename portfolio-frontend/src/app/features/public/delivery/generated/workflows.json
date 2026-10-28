@@ -273,6 +273,8 @@
         "name": "✅ Release",
         "needs": [
           "source",
+          "frontend-deploy",
+          "deploy",
           "smoke"
         ],
         "matrix": false,
