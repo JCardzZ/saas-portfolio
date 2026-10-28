@@ -193,6 +193,11 @@ ai:
   rag:
     code-root: ${RAG_CODE_ROOT:}
 
+# VERSIÓN DESPLEGADA: la escribe el CD en cada revisión de Cloud Run (APP_VERSION=vX.Y.Z) y la
+# devuelve GET /telemetry/health. Fuera de un despliegue queda vacía y no se informa.
+release:
+  version: ${APP_VERSION:}
+
 # TRAYECTORIA: documento Markdown del que sale GET /public/career-timeline
 # (en local, relativo a portfolio-backend; en la imagen Docker se copia a /app/docs).
 career:
