@@ -705,6 +705,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      # Una vez al día se vuelven a instalar los paquetes del sistema aunque la capa esté en caché.
+      - name: Fecha de los paquetes del sistema
+        id: packages
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
       - name: Construir la imagen (sin publicar)
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -713,6 +717,7 @@ jobs:
           platforms: linux/amd64
           load: true
           tags: saas-portfolio-backend:ci
+          build-args: SYSTEM_PACKAGES_DATE=${{ steps.packages.outputs.date }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}

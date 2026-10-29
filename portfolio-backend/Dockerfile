@@ -31,7 +31,10 @@ WORKDIR /app
 # Paquetes del sistema al día al construir: la imagen base puede traer alguno con un parche de
 # seguridad ya publicado (p. ej. libexpat, CVE-2026-77214), que Trivy rechazaría.
 # El CV en PDF se maqueta con librerías que usan AWT: en Alpine necesitan fontconfig y una fuente del sistema.
-RUN apk upgrade --no-cache && apk add --no-cache fontconfig ttf-dejavu
+# La CI pasa la fecha del día: con la caché de capas, sin ella esta capa se reutilizaría y no
+# llegarían los parches publicados después (brotli-libs, CVE-2026-111497).
+ARG SYSTEM_PACKAGES_DATE=unset
+RUN echo "Paquetes del sistema al $SYSTEM_PACKAGES_DATE" && apk upgrade --no-cache && apk add --no-cache fontconfig ttf-dejavu
 
 # Sin privilegios de root dentro del contenedor.
 RUN addgroup -S app && adduser -S app -G app

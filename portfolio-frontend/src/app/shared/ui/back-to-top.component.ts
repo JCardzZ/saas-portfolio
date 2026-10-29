@@ -44,10 +44,11 @@ const RING_LENGTH = 2 * Math.PI * RING_R;
       border: 1px solid var(--border-subtle); border-radius: 999px; background: rgb(var(--c-surface-1) / 0.8);
       color: var(--text-2); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       box-shadow: var(--shadow-floating);
-      opacity: 0; transform: translateY(0.75rem) scale(0.9); pointer-events: none;
-      transition: opacity var(--duration-base) var(--ease-standard), transform var(--duration-base) var(--ease-emphasized), color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+      /* Oculto de verdad, no solo transparente: ni se enfoca ni cuenta como control (al mostrarse, visibility cambia al instante; al ocultarse, al terminar el fundido). */
+      opacity: 0; visibility: hidden; transform: translateY(0.75rem) scale(0.9); pointer-events: none;
+      transition: visibility var(--duration-base), opacity var(--duration-base) var(--ease-standard), transform var(--duration-base) var(--ease-emphasized), color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
     }
-    .to-top.shown { opacity: 1; transform: none; pointer-events: auto; }
+    .to-top.shown { opacity: 1; visibility: visible; transform: none; pointer-events: auto; }
     .to-top:hover { color: var(--text-1); border-color: var(--border-strong); }
     .to-top:hover .arrow { transform: translateY(-2px); }
     .progress { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
