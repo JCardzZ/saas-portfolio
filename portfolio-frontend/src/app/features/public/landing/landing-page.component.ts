@@ -67,6 +67,8 @@ export class LandingPageComponent implements OnInit {
   readonly mcpSection = computed(() => this.flags.isEnabled('mcp.section'));
   /** Rediseño de la portada (`site.refresh`): hero con pruebas en vivo, fondo limpio y menos cajas. */
   readonly refresh = computed(() => this.flags.isEnabled('site.refresh'));
+  /** Página de decisiones de arquitectura (`site.adr`). */
+  readonly adr = computed(() => this.flags.isEnabled('site.adr'));
 
   // Un enlace a /#chat abre el asistente directamente.
   readonly chatOpen = signal(inject(ActivatedRoute).snapshot.fragment === 'chat');

@@ -1,0 +1,397 @@
+[
+  {
+    "number": "0001",
+    "slug": "arquitectura-hexagonal",
+    "date": "2026-10",
+    "area": "architecture",
+    "evidence": [
+      "portfolio-backend/src/test/java/dev/portfolio/architecture/HexagonalArchitectureTest.java",
+      "portfolio-backend/src/main/java/dev/portfolio/infrastructure/config/UseCaseConfig.java"
+    ],
+    "es": {
+      "title": "Arquitectura hexagonal con las reglas comprobadas por ArchUnit",
+      "status": "Aceptada",
+      "summary": "El dominio y los casos de uso son Java puro; Spring, JPA, Redis y Gemini viven en adaptadores, y un test de arquitectura impide que eso se rompa.",
+      "gains": "Casos de uso que se prueban sin levantar el framework y proveedores que se cambian sin tocar el núcleo.",
+      "costs": "Más piezas por funcionalidad (puerto, adaptador, mapper) y registro manual de cada servicio.",
+      "revisit": "Si el producto se queda en CRUD sin reglas propias, el coste de las capas dejaría de pagarse.",
+      "gainsDetail": "Los casos de uso se prueban con dobles de los puertos, sin contexto de Spring. Cambiar de proveedor es escribir otro adaptador: el reindexado pasó de un hilo en segundo plano a ejecutarse dentro de la petición (ADR 0004) sin tocar el dominio.",
+      "costsDetail": "Cada funcionalidad añade un puerto, su adaptador y un mapper (MapStruct), y cada servicio hay que registrarlo a mano. Para una pantalla simple es más ceremonia que un repositorio de Spring.",
+      "sections": {
+        "context": "La plataforma combina cosas muy distintas: un CMS, autenticación, RAG con un proveedor de IA externo, caché, límites de consumo, estimación de costes en tres nubes y un servidor MCP. Los proveedores cambian (la IA, la base de datos sin servidor, la nube) y el trabajo lo hace una sola persona, así que el diseño tiene que **aguantar cambios de proveedor sin reescribir la lógica** y dejar probar las reglas sin infraestructura.",
+        "options": "| Opción | A favor | En contra / coste |\n|---|---|---|\n| Capas clásicas de Spring (controller → service → repository) | La más rápida de escribir; es lo que conoce cualquiera | El dominio acaba anotado con JPA y acoplado a Spring; cambiar un proveedor toca la lógica |\n| Módulos por funcionalidad, sin reglas | Cohesión por funcionalidad | Sin una frontera comprobada, las dependencias se cruzan con el tiempo |\n| **Hexagonal (puertos y adaptadores) con ArchUnit** | Dependencias hacia dentro y verificadas en cada build | Más código de unión; curva para quien no lo conoce |",
+        "decision": "`domain` y `application` no importan Spring, JPA ni ningún SDK: los casos de uso solo conocen *puertos*. Los adaptadores (web, persistencia, Redis, Gemini, nubes) implementan esos puertos, y los servicios se registran a mano en `UseCaseConfig`. `HexagonalArchitectureTest` (ArchUnit) hace que una importación en la dirección equivocada **rompa la CI**, no una revisión de código.",
+        "consequences": "",
+        "revisit": "Si una parte del sistema se queda en lectura y escritura sin reglas (un CRUD puro), se le puede permitir un atajo documentado en lugar de las cuatro piezas."
+      }
+    },
+    "en": {
+      "title": "Hexagonal architecture with its rules enforced by ArchUnit",
+      "status": "Accepted",
+      "summary": "The domain and use cases are plain Java; Spring, JPA, Redis and Gemini live in adapters, and an architecture test stops that from eroding.",
+      "gains": "Use cases tested without starting the framework, and providers swapped without touching the core.",
+      "costs": "More pieces per feature (port, adapter, mapper) and manual registration of every service.",
+      "revisit": "If the product stays a plain CRUD with no rules of its own, the layers would stop paying for themselves.",
+      "gainsDetail": "Use cases are tested with port doubles, no Spring context. Changing a provider means writing another adapter: reindexing moved from a background thread to running inside the request (ADR 0004) without touching the domain.",
+      "costsDetail": "Every feature adds a port, its adapter and a mapper (MapStruct), and every service is registered by hand. For a simple screen it is more ceremony than a Spring repository.",
+      "sections": {
+        "context": "The platform mixes very different things: a CMS, authentication, RAG over an external AI provider, caching, usage limits, cost estimates for three clouds and an MCP server. Providers change (the AI, the serverless database, the cloud) and one person does the work, so the design has to **survive a provider change without rewriting the logic** and let the rules be tested without infrastructure.",
+        "options": "| Option | For | Against / cost |\n|---|---|---|\n| Classic Spring layers (controller → service → repository) | Fastest to write; everybody knows it | The domain ends up annotated with JPA and tied to Spring; changing a provider touches the logic |\n| Feature modules, no rules | Cohesive per feature | Without an enforced boundary, dependencies cross over time |\n| **Hexagonal (ports and adapters) with ArchUnit** | Dependencies point inwards and are checked on every build | More glue code; a learning curve |",
+        "decision": "`domain` and `application` import neither Spring, JPA nor any SDK: use cases only know *ports*. Adapters (web, persistence, Redis, Gemini, clouds) implement those ports, and services are wired by hand in `UseCaseConfig`. `HexagonalArchitectureTest` (ArchUnit) makes an import in the wrong direction **fail CI**, not a code review.",
+        "consequences": "",
+        "revisit": "If part of the system stays read-and-write with no rules (pure CRUD), it can take a documented shortcut instead of the four pieces."
+      }
+    }
+  },
+  {
+    "number": "0002",
+    "slug": "contrato-openapi-primero",
+    "date": "2026-10",
+    "area": "api",
+    "evidence": [
+      "portfolio-api-spec/saas-portfolio-v1.openapi.yaml",
+      ".github/workflows/ci.yml"
+    ],
+    "es": {
+      "title": "El contrato OpenAPI primero y el código generado a partir de él",
+      "status": "Aceptada",
+      "summary": "La API se diseña en un único archivo OpenAPI; de él se generan las interfaces del backend y el cliente del frontend, y la CI rechaza los cambios incompatibles.",
+      "gains": "Servidor y cliente no pueden desalinearse, y un cambio que rompe a los consumidores se detecta antes del merge.",
+      "costs": "Un paso de generación en cada cambio de la API y menos libertad para improvisar un endpoint.",
+      "revisit": "Si la API pasara a ser interna de un solo consumidor y el contrato no aportara más que fricción.",
+      "gainsDetail": "Un campo renombrado no compila en el otro lado; un cambio incompatible para el PR antes del merge; el contrato documenta errores RFC 7807, cabeceras y flags en un solo sitio.",
+      "costsDetail": "Cada cambio de la API pasa por editar el YAML y regenerar. Algunos casos (respuestas SSE) necesitan mapeos especiales en el generador.",
+      "sections": {
+        "context": "El frontend (Angular) y el backend (Spring Boot) evolucionan juntos, y la misma API la consumen también el servidor MCP y las pruebas de humo. Con tantos consumidores, el riesgo no es escribir el endpoint: es que **cliente y servidor dejen de estar de acuerdo** sin que nadie se entere hasta producción.",
+        "options": "| Opción | A favor | En contra / coste |\n|---|---|---|\n| Código primero y documentación generada (springdoc) | Sin pasos extra | El contrato es un efecto secundario: cambia sin querer y el cliente se escribe a mano |\n| Tipos compartidos a mano | Simple al principio | Se desincronizan; nada avisa |\n| **Contrato primero (OpenAPI) con generación y detección de cambios incompatibles** | Una sola fuente de verdad, revisable en el PR | Paso de generación; hay que pensar el contrato antes de programar |",
+        "decision": "`portfolio-api-spec/saas-portfolio-v1.openapi.yaml` es la fuente de verdad. El backend genera interfaces que los controladores implementan y el frontend genera su cliente tipado. La CI pasa Spectral (estilo), oasdiff (cambios incompatibles contra la rama destino) y comprueba que el código generado está al día.",
+        "consequences": "",
+        "revisit": "Si el sistema se partiera en servicios con contratos propios, cada uno tendría el suyo; la regla de «contrato primero» se mantendría."
+      }
+    },
+    "en": {
+      "title": "The OpenAPI contract first, with code generated from it",
+      "status": "Accepted",
+      "summary": "The API is designed in a single OpenAPI file; the backend interfaces and the frontend client are generated from it, and CI rejects breaking changes.",
+      "gains": "Server and client cannot drift apart, and a change that breaks consumers is caught before the merge.",
+      "costs": "A generation step on every API change and less freedom to improvise an endpoint.",
+      "revisit": "If the API became internal to a single consumer and the contract added nothing but friction.",
+      "gainsDetail": "A renamed field does not compile on the other side; a breaking change stops the PR before the merge; RFC 7807 errors, headers and flags are documented in one place.",
+      "costsDetail": "Every API change means editing the YAML and regenerating. Some cases (SSE responses) need special mappings in the generator.",
+      "sections": {
+        "context": "The frontend (Angular) and the backend (Spring Boot) evolve together, and the same API is also used by the MCP server and the smoke tests. With that many consumers, the risk is not writing the endpoint: it is **client and server silently disagreeing** until production.",
+        "options": "| Option | For | Against / cost |\n|---|---|---|\n| Code first, docs generated (springdoc) | No extra steps | The contract is a side effect: it changes by accident and the client is hand-written |\n| Hand-shared types | Simple at first | They drift; nothing warns |\n| **Contract first (OpenAPI) with generation and breaking-change detection** | One source of truth, reviewable in the PR | A generation step; the contract is designed before coding |",
+        "decision": "`portfolio-api-spec/saas-portfolio-v1.openapi.yaml` is the source of truth. The backend generates interfaces the controllers implement and the frontend generates its typed client. CI runs Spectral (style), oasdiff (breaking changes against the target branch) and checks the generated code is up to date.",
+        "consequences": "",
+        "revisit": "If the system split into services with their own contracts, each would get its own; the contract-first rule would stay."
+      }
+    }
+  },
+  {
+    "number": "0003",
+    "slug": "cloud-run-escala-a-cero",
+    "date": "2026-10",
+    "area": "infrastructure",
+    "evidence": [
+      "docs/deploy/backend-cloud-run-plan.md",
+      ".github/workflows/cd.yml"
+    ],
+    "es": {
+      "title": "Cloud Run con escala a cero en lugar de un servidor siempre encendido",
+      "status": "Aceptada",
+      "summary": "La API corre en Cloud Run con facturación por petición, de 0 a 1 instancia, junto a Neon (PostgreSQL) y Upstash (Redis) en sus capas gratuitas, con un corte automático de gasto.",
+      "gains": "Coste objetivo de 0 $/mes con un peor caso acotado, sin servidores que parchear.",
+      "costs": "Arranques en frío y CPU solo mientras se atiende una petición, lo que obliga a diseñar el trabajo en segundo plano de otra forma.",
+      "revisit": "Si el tráfico sostenido acercara el uso al límite gratuito o los arranques en frío empezaran a costar visitas.",
+      "gainsDetail": "Coste real de 0 $ o céntimos, despliegues sin tiempo de inactividad (revisión nueva sin tráfico, prueba de salud y cambio de tráfico) y vuelta atrás instantánea a la revisión anterior.",
+      "costsDetail": "La primera visita tras un rato espera el arranque en frío de Spring Boot y la reanudación de Neon, y la CPU desaparece al enviar la respuesta (ver ADR 0004). Neon y Upstash son un punto único de fallo, aceptado para un portafolio.",
+      "sections": {
+        "context": "Es un portafolio: tráfico bajo y a ráfagas, sin presupuesto y con una sola persona operándolo. El objetivo era **0 $ al mes con un tope de gasto acotado**, sin renunciar a una infraestructura que se pueda defender en una entrevista de plataforma.",
+        "options": "| Opción | A favor | En contra / coste |\n|---|---|---|\n| VPS siempre encendido (el `deploy/` original) | Control total, sin arranques en frío | 24/7 de pago y mantenimiento propio (parches, TLS, copias) |\n| Kubernetes gestionado (GKE, AKS) | Estándar de la industria | El plano de control y los nodos cuestan aunque no haya tráfico; desproporcionado |\n| Cloud Run con instancias mínimas | Sin arranques en frío | Se paga en reposo |\n| **Cloud Run por petición, 0→1 instancia** | Se paga solo mientras atiende; escala a cero | Arranque en frío; CPU solo durante la petición |",
+        "decision": "Cloud Run en `us-east4` (junto a Neon `aws-us-east-1`), facturación por petición, `--max-instances 1`, imagen por digest y secretos en Secret Manager. Datos en Neon (PostgreSQL + pgvector) y Upstash (Redis), ambos en capa gratuita. El peor caso teórico de una instancia ocupada 24/7 rondaría los 66 $/mes (estimado en el plan); lo impiden los límites por IP y un **corte automático**: con 1 $ gastado el servicio deja de aceptar tráfico de Internet, y con 3 $ se desactiva la facturación.",
+        "consequences": "",
+        "revisit": "Con tráfico sostenido (instancias mínimas o CPU siempre asignada empiezan a compensar) o si el arranque en frío hace que el frontend entre en modo demo con frecuencia."
+      }
+    },
+    "en": {
+      "title": "Cloud Run scaling to zero instead of an always-on server",
+      "status": "Accepted",
+      "summary": "The API runs on Cloud Run with request-based billing, 0 to 1 instance, next to Neon (PostgreSQL) and Upstash (Redis) on their free tiers, with an automatic spending cut-off.",
+      "gains": "A target cost of $0/month with a bounded worst case, and no servers to patch.",
+      "costs": "Cold starts and CPU only while a request is being served, which forces background work to be designed differently.",
+      "revisit": "If sustained traffic brought usage close to the free tier, or cold starts started costing visits.",
+      "gainsDetail": "A real cost of $0 or cents, zero-downtime deploys (new revision without traffic, health check, traffic switch) and instant rollback to the previous revision.",
+      "costsDetail": "The first visit after a while waits for Spring Boot's cold start and Neon resuming, and the CPU goes away once the response is sent (see ADR 0004). Neon and Upstash are a single point of failure, accepted for a portfolio.",
+      "sections": {
+        "context": "It is a portfolio: low, bursty traffic, no budget and a single person running it. The goal was **$0 a month with a bounded spending cap**, without giving up infrastructure that holds up in a platform interview.",
+        "options": "| Option | For | Against / cost |\n|---|---|---|\n| Always-on VPS (the original `deploy/`) | Full control, no cold starts | Paid 24/7 plus own maintenance (patches, TLS, backups) |\n| Managed Kubernetes (GKE, AKS) | Industry standard | Control plane and nodes cost money with no traffic; out of proportion |\n| Cloud Run with minimum instances | No cold starts | Paid while idle |\n| **Cloud Run per request, 0→1 instance** | Paid only while serving; scales to zero | Cold start; CPU only during the request |",
+        "decision": "Cloud Run in `us-east4` (next to Neon `aws-us-east-1`), request-based billing, `--max-instances 1`, image by digest and secrets in Secret Manager. Data in Neon (PostgreSQL + pgvector) and Upstash (Redis), both on free tiers. The theoretical worst case of one instance busy 24/7 would be around $66/month (estimated in the plan); per-IP limits and an **automatic cut-off** prevent it: at $1 spent the service stops accepting Internet traffic, and at $3 billing is disabled.",
+        "consequences": "",
+        "revisit": "With sustained traffic (minimum instances or always-on CPU start to pay off) or if cold starts often push the frontend into demo mode."
+      }
+    }
+  },
+  {
+    "number": "0004",
+    "slug": "trabajo-largo-dentro-de-la-peticion",
+    "date": "2026-10",
+    "area": "infrastructure",
+    "evidence": [
+      "portfolio-backend/src/main/java/dev/portfolio/infrastructure/adapter/in/web/controller/AiRagController.java"
+    ],
+    "es": {
+      "title": "El reindexado termina dentro de la petición, no en segundo plano",
+      "status": "Aceptada",
+      "summary": "En Cloud Run con facturación por petición la CPU se retira al responder, así que el reindexado del RAG se hace completo antes de contestar.",
+      "gains": "Funciona sin pagar CPU permanente ni añadir infraestructura, y un fallo llega al administrador como 503 en vez de perderse en el log.",
+      "costs": "La petición dura lo que tarda el reindexado (segundos hoy) y depende del timeout del servicio.",
+      "revisit": "Si el reindexado se acercara al timeout de la petición: el siguiente paso es un Cloud Run job, no la CPU siempre asignada.",
+      "gainsDetail": "Cero coste añadido y errores visibles: si falla, el administrador recibe un 503 RFC 7807.",
+      "costsDetail": "La llamada es síncrona y lenta para quien la lanza, y su límite es el timeout del servicio.",
+      "sections": {
+        "context": "`POST /admin/ai/rag/reindex` respondía 202 y seguía el trabajo en otro hilo. En producción el reindexado se quedaba parado en «Loaded 5 source files». La causa, según la documentación de Cloud Run (*Billing settings*): con facturación por petición **la CPU solo se asigna mientras se procesa una petición**. Al enviar el 202, el hilo seguía vivo pero casi sin CPU, y la instancia podía apagarse.",
+        "options": "| Opción | A favor | En contra / coste |\n|---|---|---|\n| CPU siempre asignada (`--no-cpu-throttling`) | Arreglo de una línea | Se paga todo el tiempo encendido; cambia la factura |\n| Cloud Tasks | Reintentos incluidos | Otro servicio que configurar y asegurar |\n| Cloud Run job | El mejor encaje para trabajos largos | Otra pieza que desplegar y versionar |\n| **Terminar dentro de la petición** | Sin coste extra ni infraestructura nueva | La petición dura lo que dure el trabajo |",
+        "decision": "El controlador hace el reindexado completo y responde al final. Hoy tarda segundos, solo lo lanza el administrador y el timeout de Cloud Run es de varios minutos. El contrato conserva el 202 y lo documenta. Gracias a la arquitectura hexagonal (ADR 0001), el cambio no tocó el dominio.",
+        "consequences": "",
+        "revisit": "Si el corpus crece y el reindexado se acerca al timeout. Entonces, un Cloud Run job con la misma imagen (diseño ya escrito en el plan de despliegue), no la CPU permanente."
+      }
+    },
+    "en": {
+      "title": "Reindexing finishes inside the request, not in the background",
+      "status": "Accepted",
+      "summary": "On Cloud Run with request-based billing the CPU is taken away once the response is sent, so the RAG reindex runs to completion before replying.",
+      "gains": "It works without paying for always-on CPU or adding infrastructure, and a failure reaches the admin as a 503 instead of getting lost in the logs.",
+      "costs": "The request lasts as long as the reindex (seconds today) and depends on the service timeout.",
+      "revisit": "If reindexing approached the request timeout: the next step is a Cloud Run job, not always-on CPU.",
+      "gainsDetail": "Zero added cost and visible errors: if it fails, the admin gets an RFC 7807 503.",
+      "costsDetail": "The call is synchronous and slow for whoever triggers it, and the service timeout is its ceiling.",
+      "sections": {
+        "context": "`POST /admin/ai/rag/reindex` replied 202 and carried on in another thread. In production the reindex got stuck at «Loaded 5 source files». The cause, per the Cloud Run docs (*Billing settings*): with request-based billing **CPU is only allocated during request processing**. Once the 202 was sent, the thread was alive but starved of CPU, and the instance could shut down.",
+        "options": "| Option | For | Against / cost |\n|---|---|---|\n| Always-on CPU (`--no-cpu-throttling`) | One-line fix | Paid for all the time the instance is up; changes the bill |\n| Cloud Tasks | Retries included | Another service to configure and secure |\n| Cloud Run job | The best fit for long work | Another piece to deploy and version |\n| **Finish inside the request** | No extra cost or infrastructure | The request lasts as long as the work |",
+        "decision": "The controller runs the whole reindex and replies at the end. It takes seconds today, only the admin triggers it and Cloud Run's timeout is several minutes. The contract keeps and documents the 202. Thanks to the hexagonal architecture (ADR 0001), the change did not touch the domain.",
+        "consequences": "",
+        "revisit": "If the corpus grows and the reindex approaches the timeout. Then a Cloud Run job with the same image (design already written in the deployment plan), not always-on CPU."
+      }
+    }
+  },
+  {
+    "number": "0005",
+    "slug": "pgvector-en-postgresql",
+    "date": "2026-10",
+    "area": "data",
+    "evidence": [
+      "portfolio-backend/src/main/java/dev/portfolio/infrastructure/adapter/out/vector/PgVectorRepositoryAdapter.java"
+    ],
+    "es": {
+      "title": "pgvector en la misma PostgreSQL en lugar de una base vectorial aparte",
+      "status": "Aceptada",
+      "summary": "Los embeddings del RAG viven en PostgreSQL, en una columna vector(768) con índice HNSW, junto a los datos del CMS.",
+      "gains": "Una base de datos menos que operar, pagar y asegurar, y consultas en SQL normal con el filtro de tenant.",
+      "costs": "Con índices aproximados el filtro se aplica después del índice, y HNSW ocupa más memoria y tarda más en construirse.",
+      "revisit": "Con muchos tenants (aparece la trampa del filtro) o con millones de trozos, donde una base vectorial dedicada empieza a compensar.",
+      "gainsDetail": "El RAG es una consulta SQL con `WHERE tenant_id = ?` y `ORDER BY embedding <=> ?`, sin sincronizar dos almacenes.",
+      "costsDetail": "Con índices aproximados pgvector filtra *después* de recorrer el índice: con muchos tenants una consulta podría devolver menos de `k` filas (hoy hay uno; anotado en el adaptador, con `hnsw.iterative_scan` como salida). El tamaño de trozo está elegido con criterio, no medido.",
+      "sections": {
+        "context": "El asistente responde sobre los proyectos y el propio código citando `archivo:líneas`. El índice son unos miles de trozos, el presupuesto es cero (ADR 0003) y ya había una PostgreSQL (Neon) con pgvector disponible en la capa gratuita.",
+        "options": "| Opción | A favor | En contra / coste |\n|---|---|---|\n| Base vectorial gestionada (Pinecone, Qdrant…) | Hecha para esto; escala a millones | Otro proveedor, otra cuenta, otra factura y otra frontera de seguridad |\n| Índice en memoria | Rapidísimo | Se pierde con cada arranque en frío (escala a cero) |\n| **pgvector en la misma PostgreSQL, HNSW, 768 dimensiones** | Sin piezas nuevas; SQL; transacciones con el CMS | Trampa del filtro y memoria del índice |",
+        "decision": "Columna `vector(768)` con índice HNSW (mejor equilibrio velocidad/*recall* que IVFFlat, según la documentación de pgvector) y distancia coseno. `gemini-embedding-2` a 768 dimensiones (entrenado con Matryoshka; el índice ocupa la cuarta parte que a 3072). Trozos por líneas, de hasta 1800 caracteres o 60 líneas, para poder citar rangos de líneas.",
+        "consequences": "",
+        "revisit": "Con varios tenants reales (activar los *iterative index scans*) o un corpus de millones de trozos. Antes de ajustar parámetros: un conjunto de evaluación con preguntas y respuestas esperadas."
+      }
+    },
+    "en": {
+      "title": "pgvector in the same PostgreSQL instead of a separate vector database",
+      "status": "Accepted",
+      "summary": "The RAG embeddings live in PostgreSQL, in a vector(768) column with an HNSW index, next to the CMS data.",
+      "gains": "One fewer database to run, pay for and secure, and plain SQL queries with the tenant filter.",
+      "costs": "With approximate indexes the filter applies after the index, and HNSW uses more memory and takes longer to build.",
+      "revisit": "With many tenants (the filter trap shows up) or millions of chunks, where a dedicated vector database starts to pay off.",
+      "gainsDetail": "RAG is one SQL query with `WHERE tenant_id = ?` and `ORDER BY embedding <=> ?`, with no two stores to keep in sync.",
+      "costsDetail": "With approximate indexes pgvector filters *after* walking the index: with many tenants a query could return fewer than `k` rows (there is one today; noted in the adapter, with `hnsw.iterative_scan` as the way out). The chunk size is chosen with judgement, not measured.",
+      "sections": {
+        "context": "The assistant answers about the projects and the codebase itself, citing `file:lines`. The index is a few thousand chunks, the budget is zero (ADR 0003) and there already was a PostgreSQL (Neon) with pgvector on the free tier.",
+        "options": "| Option | For | Against / cost |\n|---|---|---|\n| Managed vector database (Pinecone, Qdrant…) | Built for this; scales to millions | Another vendor, account, bill and security boundary |\n| In-memory index | Very fast | Lost on every cold start (scale to zero) |\n| **pgvector in the same PostgreSQL, HNSW, 768 dimensions** | No new pieces; SQL; transactions with the CMS | Filter trap and index memory |",
+        "decision": "A `vector(768)` column with an HNSW index (better speed/recall balance than IVFFlat, per the pgvector docs) and cosine distance. `gemini-embedding-2` at 768 dimensions (trained with Matryoshka; the index is a quarter of the size at 3072). Line-based chunks of up to 1800 characters or 60 lines, so answers can cite line ranges.",
+        "consequences": "",
+        "revisit": "With several real tenants (turn on iterative index scans) or a corpus of millions of chunks. Before tuning parameters: an evaluation set of questions with expected answers."
+      }
+    }
+  },
+  {
+    "number": "0006",
+    "slug": "redis-best-effort",
+    "date": "2026-10",
+    "area": "resilience",
+    "evidence": [
+      "portfolio-backend/src/main/java/dev/portfolio/infrastructure/adapter/out/cache/RedisCacheAdapter.java",
+      "portfolio-backend/src/main/java/dev/portfolio/infrastructure/adapter/out/ratelimit/RedisRateLimiterAdapter.java"
+    ],
+    "es": {
+      "title": "Redis como caché best-effort que nunca tumba la API",
+      "status": "Aceptada",
+      "summary": "Cache-aside con TTL y un timeout de 2 s; si Redis falla, la petición se sirve desde PostgreSQL. Los límites de consumo usan un script Lua atómico en el mismo Redis.",
+      "gains": "Una caída de Redis degrada la velocidad, no la disponibilidad, y los límites por IP son atómicos y compartidos entre instancias.",
+      "costs": "Datos hasta un TTL desactualizados, más carga en PostgreSQL y límites sin aplicar (fail-open) mientras Redis no responde.",
+      "revisit": "Si un dato necesitara consistencia fuerte o la carga sin caché pusiera en riesgo la base de datos.",
+      "gainsDetail": "La salud del sistema pasa a `DEGRADED`, no a caído; los límites son globales (cambiar de instancia no regala intentos).",
+      "costsDetail": "Una lectura puede estar desactualizada hasta su TTL; con Redis caído, todas las lecturas van a PostgreSQL y los límites no se aplican hasta que vuelva.",
+      "sections": {
+        "context": "Redis (Upstash, capa gratuita) acelera las lecturas del CMS y guarda los contadores de los límites de consumo. Es un servicio externo y gratuito: puede ir lento o caerse. La pregunta es qué pasa entonces con la API.",
+        "options": "| Opción | A favor | En contra / coste |\n|---|---|---|\n| Caché obligatoria (si falla, error) | Lecturas siempre rápidas o nada | Redis pasa a ser crítico: su caída es la de la API |\n| Caché en memoria de cada instancia | Sin dependencia externa | Se pierde al escalar a cero; incoherente entre instancias |\n| **Cache-aside best-effort con timeout corto** | La caché acelera pero no es crítica | Datos algo viejos; más carga en la base de datos en un fallo |",
+        "decision": "Lectura: Redis primero; si no está, PostgreSQL y se guarda con TTL. Escritura: se persiste y se invalida la clave. Timeout de 2 s: **un fallo de Redis nunca llega al usuario**, se registra un aviso y se sirve desde la base de datos. Los límites (login, preguntas a la IA, estimaciones) usan un script Lua atómico: comprobar y sumar es una sola operación, así que dos instancias no pueden saltárselo. Si Redis cae, el limitador deja pasar las peticiones (*fail-open*) en lugar de bloquear a todo el mundo.",
+        "consequences": "",
+        "revisit": "Si algún dato exigiera consistencia fuerte (invalidación activa en lugar de TTL) o si la carga sin caché amenazara a Neon."
+      }
+    },
+    "en": {
+      "title": "Redis as a best-effort cache that never brings the API down",
+      "status": "Accepted",
+      "summary": "Cache-aside with a TTL and a 2 s timeout; if Redis fails, the request is served from PostgreSQL. Usage limits use an atomic Lua script on the same Redis.",
+      "gains": "A Redis outage costs speed, not availability, and per-IP limits are atomic and shared across instances.",
+      "costs": "Data up to one TTL stale, more load on PostgreSQL while Redis is down, and limits fail open until it returns.",
+      "revisit": "If some data needed strong consistency or the uncached load put the database at risk.",
+      "gainsDetail": "System health goes to `DEGRADED`, not down; limits are global (switching instance grants no extra attempts).",
+      "costsDetail": "A read can be stale up to its TTL; with Redis down, every read hits PostgreSQL and limits are not enforced until it comes back.",
+      "sections": {
+        "context": "Redis (Upstash, free tier) speeds up CMS reads and holds the usage-limit counters. It is an external, free service: it can be slow or go down. The question is what happens to the API then.",
+        "options": "| Option | For | Against / cost |\n|---|---|---|\n| Mandatory cache (fail if it fails) | Reads are always fast or nothing | Redis becomes critical: its outage is the API's |\n| Per-instance in-memory cache | No external dependency | Lost when scaling to zero; inconsistent across instances |\n| **Best-effort cache-aside with a short timeout** | The cache speeds things up without being critical | Somewhat stale data; more database load during an outage |",
+        "decision": "Read: Redis first; if missing, PostgreSQL and store with a TTL. Write: persist, then invalidate the key. A 2 s timeout: **a Redis failure never reaches the user**, a warning is logged and the database serves the request. Limits (login, AI questions, estimates) use an atomic Lua script: checking and counting is a single operation, so two instances cannot get around it. If Redis is down, the limiter lets requests through (fail-open) rather than blocking everyone.",
+        "consequences": "",
+        "revisit": "If some data required strong consistency (active invalidation instead of TTL) or if the uncached load threatened Neon."
+      }
+    }
+  },
+  {
+    "number": "0007",
+    "slug": "ia-que-puede-fallar",
+    "date": "2026-10",
+    "area": "ai",
+    "evidence": [
+      "portfolio-backend/src/main/java/dev/portfolio/infrastructure/adapter/out/ai/GeminiAiAdapter.java",
+      "portfolio-backend/src/main/resources/application.yml"
+    ],
+    "es": {
+      "title": "La IA puede fallar sin tumbar nada, y su contexto es un dato, no una orden",
+      "status": "Aceptada",
+      "summary": "Las llamadas a Gemini pasan por un circuit breaker y por límites de consumo, y el índice solo contiene material que podría ser público.",
+      "gains": "Un fallo o una cuota agotada del proveedor afectan solo al asistente, y un visitante no puede agotar la cuota de todos.",
+      "costs": "Con el circuito abierto el asistente responde 503, y la defensa frente a la inyección de prompts es una mitigación, no una garantía.",
+      "revisit": "Si el asistente pasara a ser crítico (habría que añadir un segundo proveedor) o si el índice incluyera algo privado.",
+      "gainsDetail": "Con Gemini caído, el resto del portafolio sigue igual y el panel de salud lo muestra (estado del circuito). La factura del proveedor no depende de un solo visitante.",
+      "costsDetail": "Mientras el circuito está abierto no hay asistente. La mitigación de la inyección reduce el riesgo pero no lo elimina; por eso el índice no contiene nada que no pudiera ser público.",
+      "sections": {
+        "context": "El endpoint de preguntas es público y depende de un proveedor externo con cuota limitada. Todo lo indexado acaba en el prompt. Dos riesgos: que la IA caiga y arrastre al resto del sitio, y que alguien use el contexto (o el propio endpoint) para algo que no debe.",
+        "options": "| Opción | A favor | En contra / coste |\n|---|---|---|\n| Llamar al proveedor sin protección | Simple | Una caída o latencia alta se propaga; una persona agota la cuota |\n| Varios proveedores con conmutación | Más disponibilidad | Doble integración, doble coste y doble evaluación de calidad |\n| **Circuit breaker + límites + frontera de confianza en el contexto** | Fallo aislado y cuota protegida | 503 cuando el circuito está abierto |",
+        "decision": "Resilience4j: el circuito se abre con un 50 % de fallos en las últimas 10 llamadas, responde 503 RFC 7807 al instante y vuelve a probar a los 30 s. Límites con Lua en Redis (ADR 0006): por IP y por minuto, y un total diario. Dos fronteras de confianza: al índice solo entra una lista cerrada de extensiones (sin dotfiles, `application*.yml`, `tfvars` ni nombres con `secret` o `password`), y el prompt de sistema ordena ignorar cualquier instrucción dentro de los fragmentos (OWASP LLM Top 10, inyección indirecta).",
+        "consequences": "",
+        "revisit": "Si el asistente se volviera parte crítica del producto (segundo proveedor detrás del mismo puerto) o si hubiera que indexar contenido privado (control de acceso por fragmento)."
+      }
+    },
+    "en": {
+      "title": "The AI can fail without taking anything down, and its context is data, not instructions",
+      "status": "Accepted",
+      "summary": "Calls to Gemini go through a circuit breaker and usage limits, and the index only holds material that could be public.",
+      "gains": "A provider failure or exhausted quota only affects the assistant, and one visitor cannot drain everyone's quota.",
+      "costs": "With the circuit open the assistant answers 503, and the prompt-injection defence is a mitigation, not a guarantee.",
+      "revisit": "If the assistant became critical (a second provider would be needed) or if the index ever held anything private.",
+      "gainsDetail": "With Gemini down, the rest of the portfolio is unaffected and the health panel shows it (circuit state). The provider bill does not depend on a single visitor.",
+      "costsDetail": "While the circuit is open there is no assistant. The injection mitigation lowers the risk but does not remove it; that is why the index holds nothing that could not be public.",
+      "sections": {
+        "context": "The question endpoint is public and depends on an external provider with a limited quota. Everything indexed ends up in the prompt. Two risks: the AI going down and dragging the rest of the site with it, and someone using the context (or the endpoint itself) for something it should not do.",
+        "options": "| Option | For | Against / cost |\n|---|---|---|\n| Call the provider unprotected | Simple | An outage or high latency spreads; one person drains the quota |\n| Several providers with failover | More availability | Double integration, double cost, double quality evaluation |\n| **Circuit breaker + limits + a trust boundary on the context** | Isolated failure and protected quota | 503 while the circuit is open |",
+        "decision": "Resilience4j: the circuit opens at 50% failures over the last 10 calls, answers an RFC 7807 503 straight away and tries again after 30 s. Lua limits on Redis (ADR 0006): per IP per minute, and a daily total. Two trust boundaries: only a closed list of extensions enters the index (no dotfiles, `application*.yml`, `tfvars` or names containing `secret` or `password`), and the system prompt tells the model to ignore any instruction found inside the chunks (OWASP LLM Top 10, indirect injection).",
+        "consequences": "",
+        "revisit": "If the assistant became a critical part of the product (a second provider behind the same port) or private content had to be indexed (per-chunk access control)."
+      }
+    }
+  },
+  {
+    "number": "0008",
+    "slug": "construir-una-vez-desplegar-muchas",
+    "date": "2026-10",
+    "area": "delivery",
+    "evidence": [
+      ".github/workflows/ci.yml",
+      ".github/workflows/cd.yml",
+      "portfolio-frontend/tools/write-deploy-config.mjs"
+    ],
+    "es": {
+      "title": "Construir una vez y desplegar ese mismo artefacto, firmado",
+      "status": "Aceptada",
+      "summary": "La CI construye y verifica una sola vez; el CD despliega exactamente ese build y esa imagen por digest, con firma cosign, sin reconstruir, y vuelve atrás solo si las pruebas de humo fallan.",
+      "gains": "Lo que llega a producción es lo que se probó, con trazabilidad commit → imagen → revisión → versión, y vuelta atrás en segundos.",
+      "costs": "Un pipeline más complejo (artefactos, firma, configuración inyectada al desplegar) y escaneos de seguridad que ahora avisan en vez de bloquear.",
+      "revisit": "Si un escaneo dejara pasar algo grave: volver a bloquear con Trivy en la rama principal o con una lista de excepciones con caducidad.",
+      "gainsDetail": "De merge a producción en unos minutos, con firma verificada, versión visible en el sitio y en `/telemetry/health`, y vuelta atrás en segundos.",
+      "costsDetail": "El pipeline es largo de leer y depende de artefactos con caducidad. Con Trivy sin bloquear, una vulnerabilidad nueva puede estar en producción hasta el escaneo nocturno: se aceptó a cambio de no frenar cada despliegue por la imagen base.",
+      "sections": {
+        "context": "Un despliegue es un cambio en producción, y el riesgo más común no es el código: es desplegar algo distinto de lo que se probó (otra compilación, otra dependencia, otra configuración). Además había que poder volver atrás sin reconstruir nada y sin aprobar nada a mano.",
+        "options": "| Opción | A favor | En contra / coste |\n|---|---|---|\n| Compilar en el despliegue | Simple | Lo desplegado no es lo probado; builds no reproducibles |\n| Imagen etiquetada `latest` | Fácil de referenciar | Mutable: no se sabe qué se ejecuta |\n| **Un build verificado, imagen por digest firmada, configuración por entorno** | Lo probado es lo desplegado; vuelta atrás exacta | Más piezas en el pipeline |",
+        "decision": "La CI construye el frontend y la imagen del backend una vez, la escanea con Trivy, la firma con cosign (sin claves, con la identidad del workflow) y publica su SBOM. El CD verifica la firma, copia la imagen **por digest** a Artifact Registry, crea una revisión sin tráfico, comprueba su salud y le pasa el tráfico; si las pruebas de humo fallan, el tráfico vuelve solo a la revisión anterior. El frontend es el mismo artefacto en cada entorno: la URL de la API y la CSP se escriben al desplegar (`config.json`), sin recompilar. Cada despliegue lleva una versión semántica.\n\nPara que lo nuevo llegue a producción en minutos, los e2e de móvil y Lighthouse informan en los PR sin bloquear, y Trivy avisa sin frenar la publicación; la batería completa y el escaneo van cada noche.",
+        "consequences": "",
+        "revisit": "Si apareciera una vulnerabilidad grave en producción sin detectar a tiempo, o si el sitio pasara a manejar datos sensibles: volver a hacer bloqueante Trivy en la rama principal."
+      }
+    },
+    "en": {
+      "title": "Build once and deploy that same signed artifact",
+      "status": "Accepted",
+      "summary": "CI builds and verifies once; CD deploys exactly that build and that image by digest, cosign-signed, without rebuilding, and rolls back on its own if the smoke tests fail.",
+      "gains": "What reaches production is what was tested, traceable commit → image → revision → version, with rollback in seconds.",
+      "costs": "A more complex pipeline (artifacts, signing, configuration injected at deploy) and security scans that now warn instead of block.",
+      "revisit": "If a scan let something serious through: make Trivy blocking again on the main branch, or use an expiring exceptions list.",
+      "gainsDetail": "From merge to production in a few minutes, with a verified signature, a version visible on the site and in `/telemetry/health`, and rollback in seconds.",
+      "costsDetail": "The pipeline is long to read and relies on expiring artifacts. With Trivy not blocking, a new vulnerability can be in production until the nightly scan: accepted in exchange for not stopping every deploy over the base image.",
+      "sections": {
+        "context": "A deploy is a change in production, and the most common risk is not the code: it is deploying something other than what was tested (another build, another dependency, another configuration). On top of that, rolling back had to work without rebuilding or approving anything by hand.",
+        "options": "| Option | For | Against / cost |\n|---|---|---|\n| Build at deploy time | Simple | What is deployed is not what was tested; non-reproducible builds |\n| Image tagged `latest` | Easy to reference | Mutable: you do not know what is running |\n| **One verified build, image by digest and signed, configuration per environment** | Tested is deployed; exact rollback | More pieces in the pipeline |",
+        "decision": "CI builds the frontend and the backend image once, scans it with Trivy, signs it with cosign (keyless, with the workflow identity) and publishes its SBOM. CD verifies the signature, copies the image **by digest** to Artifact Registry, creates a revision without traffic, checks its health and moves traffic to it; if the smoke tests fail, traffic returns to the previous revision on its own. The frontend is the same artifact in every environment: the API URL and the CSP are written at deploy time (`config.json`), without rebuilding. Every deploy carries a semantic version.\n\nTo get changes to production in minutes, mobile e2e and Lighthouse report on PRs without blocking, and Trivy warns without stopping the release; the full battery and the scan run every night.",
+        "consequences": "",
+        "revisit": "If a serious vulnerability reached production undetected, or if the site started handling sensitive data: make Trivy blocking again on the main branch."
+      }
+    }
+  },
+  {
+    "number": "0009",
+    "slug": "feature-flags-propias",
+    "date": "2026-10",
+    "area": "product",
+    "evidence": [
+      "portfolio-backend/src/main/java/dev/portfolio/domain/model/FeatureFlagDomain.java",
+      "portfolio-frontend/src/app/core/flags/flag.service.ts"
+    ],
+    "es": {
+      "title": "Feature flags propias detrás de OpenFeature en lugar de un servicio externo",
+      "status": "Aceptada",
+      "summary": "Todo lo nuevo llega apagado detrás de una flag guardada en la base de datos, se lee en el frontend a través de OpenFeature y el backend devuelve 404 en sus rutas mientras está apagada.",
+      "gains": "Integrar a main sin exponer nada y encender o apagar en producción sin desplegar, sin coste ni proveedor nuevo.",
+      "costs": "Solo encendido o apagado global: sin porcentajes, segmentos ni experimentos.",
+      "revisit": "Si hicieran falta lanzamientos graduales o experimentos A/B: cambiar el proveedor de OpenFeature sin tocar el código que pregunta por las flags.",
+      "gainsDetail": "Lo nuevo entra apagado, se prueba en producción y se enciende cuando está listo; si algo va mal, se apaga sin desplegar.",
+      "costsDetail": "No hay lanzamientos graduales ni segmentos, y las flags viejas hay que retirarlas a mano cuando lo nuevo se queda para siempre.",
+      "sections": {
+        "context": "Los cambios llegan a main a diario (ADR 0008) y algunos tardan días en estar listos: un rediseño, una sección nueva, un endpoint. Hacía falta separar **integrar** de **lanzar**, y poder apagar algo en producción en segundos sin desplegar.",
+        "options": "| Opción | A favor | En contra / coste |\n|---|---|---|\n| Ramas largas hasta terminar | Nada a medias en main | Conflictos y merges enormes |\n| Servicio externo (LaunchDarkly, Unleash Cloud…) | Porcentajes, segmentos, auditoría | Otro proveedor y otra factura para un sitio pequeño |\n| **Flags propias en la base de datos, leídas con OpenFeature** | Sin coste; estándar abierto en el cliente | Solo encendido o apagado global |",
+        "decision": "Las flags se declaran en `FeatureFlagDomain` (backend) y en el frontend, empiezan apagadas y se cambian desde la administración o por API. El backend devuelve 404 en las rutas de una flag apagada (`FeatureGateConfig`) y el frontend las lee con OpenFeature (`PlatformFlagsProvider`), cacheadas en Redis en el servidor.",
+        "consequences": "",
+        "revisit": "Si hicieran falta porcentajes o experimentos. OpenFeature permite cambiar de proveedor sin tocar el código que consulta las flags."
+      }
+    },
+    "en": {
+      "title": "In-house feature flags behind OpenFeature instead of an external service",
+      "status": "Accepted",
+      "summary": "Everything new ships switched off behind a flag stored in the database, read in the frontend through OpenFeature, and the backend returns 404 on its routes while it is off.",
+      "gains": "Merge to main without exposing anything and switch features on or off in production without deploying, at no cost and with no new vendor.",
+      "costs": "Only global on/off: no percentages, segments or experiments.",
+      "revisit": "If gradual rollouts or A/B experiments were needed: swap the OpenFeature provider without touching the code that asks for flags.",
+      "gainsDetail": "New work lands switched off, is tested in production and is turned on when ready; if something goes wrong, it is switched off without deploying.",
+      "costsDetail": "No gradual rollouts or segments, and old flags have to be removed by hand once the feature is permanent.",
+      "sections": {
+        "context": "Changes reach main daily (ADR 0008) and some take days to be ready: a redesign, a new section, an endpoint. **Integrating** had to be separated from **releasing**, with the ability to switch something off in production in seconds without a deploy.",
+        "options": "| Option | For | Against / cost |\n|---|---|---|\n| Long-lived branches until done | Nothing half-finished on main | Conflicts and huge merges |\n| External service (LaunchDarkly, Unleash Cloud…) | Percentages, segments, audit | Another vendor and bill for a small site |\n| **In-house flags in the database, read through OpenFeature** | Free; open standard on the client | Global on/off only |",
+        "decision": "Flags are declared in `FeatureFlagDomain` (backend) and in the frontend, start switched off and are changed from the admin or via the API. The backend returns 404 on the routes of a disabled flag (`FeatureGateConfig`) and the frontend reads them through OpenFeature (`PlatformFlagsProvider`), cached in Redis on the server.",
+        "consequences": "",
+        "revisit": "If percentages or experiments were needed. OpenFeature allows swapping the provider without touching the code that reads the flags."
+      }
+    }
+  }
+]

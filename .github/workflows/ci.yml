@@ -285,7 +285,7 @@ jobs:
           git diff --exit-code --stat -- src/app/core/api
       # Los grafos de «Arquitectura real y entrega» se generan de los workflows y de deploy/topology.json.
       - name: Los datos generados de las vistas están al día
-        run: node tools/generate-delivery-data.mjs --check
+        run: node tools/generate-delivery-data.mjs --check && node tools/generate-adr-data.mjs --check
       - name: Tests de las herramientas de build
         run: npm run test:tools
       - name: Resumen

@@ -1,6 +1,12 @@
+import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 
+import { FlagService } from './core/flags/flag.service';
 import { authGuard } from './core/guards/auth.guard';
+
+/** Las decisiones de arquitectura existen solo con su flag: apagada, la ruta no casa y cae en la portada. */
+const adrEnabled = () => inject(FlagService).isEnabled('site.adr');
+const loadDecisions = () => import('./features/public/decisions/decisions-page.component').then((m) => m.DecisionsPageComponent);
 
 export const routes: Routes = [
   {
@@ -17,6 +23,17 @@ export const routes: Routes = [
   {
     path: 'articulos/:slug',
     loadComponent: () => import('./features/public/articles/article-page.component').then((m) => m.ArticlePageComponent),
+  },
+  {
+    path: 'decisiones',
+    title: 'Decisiones de arquitectura · Manuel Cardoza',
+    canMatch: [adrEnabled],
+    loadComponent: loadDecisions,
+  },
+  {
+    path: 'decisiones/:slug',
+    canMatch: [adrEnabled],
+    loadComponent: loadDecisions,
   },
   {
     path: 'login',
