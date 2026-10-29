@@ -7,6 +7,7 @@ import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { DeliveryStatusService } from './delivery-status.service';
 import { DELIVERY_TABS, DeliveryTab, DeliveryTabsService, tabAnchor, tabFromHash } from './delivery-tabs.service';
 import { DeployTimelineComponent } from './deploy-timeline.component';
+import { ReleaseCardComponent } from './release-card.component';
 import { TOPOLOGY } from './delivery-data';
 import { LiveHealthService } from './live-health.service';
 import { MergeHistoryComponent } from './merge-history.component';
@@ -43,7 +44,7 @@ const TABS: readonly TabMeta[] = [
   selector: 'app-delivery-tabs',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe, ProductionArchitectureComponent, MergeHistoryComponent, PipelineViewComponent, DeployTimelineComponent],
+  imports: [TranslatePipe, ProductionArchitectureComponent, MergeHistoryComponent, PipelineViewComponent, DeployTimelineComponent, ReleaseCardComponent],
   host: { class: 'block' },
   template: `
     <!-- La consulta de contenedor va en este envoltorio y no en el host: un contenedor con
@@ -99,7 +100,7 @@ const TABS: readonly TabMeta[] = [
             @case ('arquitectura') { <app-production-architecture /> }
             @case ('historial') { <app-merge-history /> }
             @case ('pipeline') { <app-pipeline-view /> }
-            @case ('despliegues') { <app-deploy-timeline /> }
+            @case ('despliegues') { <app-release-card /> <app-deploy-timeline /> }
           }
           @if (tabs[i + 1]; as next) {
             <button type="button" class="next ui-focus" (click)="open(next.id, true)" [attr.data-next]="next.id">

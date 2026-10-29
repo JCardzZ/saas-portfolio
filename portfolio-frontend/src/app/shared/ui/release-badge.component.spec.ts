@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { OpenFeature } from '@openfeature/web-sdk';
 
+import { RuntimeConfig, resetRuntimeConfig, runtimeConfig } from '../../core/config/runtime-config';
 import { PlatformFlagsProvider } from '../../core/flags/feature-flags';
 import { LanguageService } from '../../core/i18n/language.service';
 import { RELEASE_INFO_URL, parseReleaseInfo } from '../../core/release/release';
@@ -51,7 +52,9 @@ describe('ReleaseBadgeComponent (site.release-version)', () => {
   let backend: HttpTestingController;
   let element: HTMLElement;
 
-  async function setUp(enabled: boolean): Promise<void> {
+  async function setUp(enabled: boolean, mockMode = false): Promise<void> {
+    // Con backend salvo que se pida: en modo demo la línea dice «Modo demo» y no llama a /telemetry/health.
+    Object.assign(runtimeConfig as RuntimeConfig, { mockMode });
     await OpenFeature.setProviderAndWait(new PlatformFlagsProvider(() => Promise.resolve({ 'site.release-version': enabled })));
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
     backend = TestBed.inject(HttpTestingController);
@@ -65,13 +68,15 @@ describe('ReleaseBadgeComponent (site.release-version)', () => {
     backend.verify();
     element?.remove();
     await OpenFeature.clearProviders();
+    resetRuntimeConfig();
   });
 
   const $ = <T extends HTMLElement>(selector: string) => element.querySelector<T>(selector);
   const health = () => backend.expectOne((request) => request.url.endsWith('/telemetry/health'));
 
-  function deployed(file: object = FILE): void {
+  function deployed(file: object = FILE, api: object = { status: 'UP', version: 'v0.2.0' }): void {
     backend.expectOne(RELEASE_INFO_URL).flush(file);
+    health().flush(api);
     fixture.detectChanges();
   }
 
@@ -83,20 +88,28 @@ describe('ReleaseBadgeComponent (site.release-version)', () => {
   it('shows nothing and asks for nothing with the flag off', async () => {
     await setUp(false);
     backend.expectNone(RELEASE_INFO_URL);
+    backend.expectNone((request) => request.url.endsWith('/telemetry/health'));
     expect($('[data-testid="release-badge"]')).toBeNull();
   });
 
-  it('shows the deployed version, its commit and how long ago, without calling the API yet', async () => {
+  it('is a status line: the API state, the deployed version and how long ago', async () => {
     await setUp(true);
     deployed();
 
     const badge = $('[data-testid="release-badge"]')!;
+    expect($('[data-testid="release-status"]')!.textContent).toContain('Operativo');
     expect(badge.textContent).toContain('v0.2.0');
-    expect(badge.textContent).toContain('548cae9');
     const lang = TestBed.inject(LanguageService).lang();
     expect(badge.textContent).toContain(new Intl.RelativeTimeFormat(lang, { numeric: 'auto' }).format(-2, 'hour'));
+    expect(badge.querySelector('.bg-status-ok')).not.toBeNull();
     expect(badge.getAttribute('aria-expanded')).toBe('false');
-    backend.expectNone((request) => request.url.endsWith('/telemetry/health'));
+  });
+
+  it('turns amber when the API is degraded and red when it does not answer', async () => {
+    await setUp(true);
+    deployed(FILE, { status: 'DEGRADED', version: 'v0.2.0' });
+    expect($('[data-testid="release-status"]')!.textContent).toContain('Degradado');
+    expect($('[data-testid="release-badge"]')!.querySelector('.bg-status-warn')).not.toBeNull();
   });
 
   it('opens the notes: what changed, links to GitHub and an API on the same version', async () => {
@@ -113,29 +126,24 @@ describe('ReleaseBadgeComponent (site.release-version)', () => {
     expect($<HTMLAnchorElement>('[data-testid="release-link-notes"]')!.href)
       .toBe('https://github.com/JCardzZ/saas-portfolio/releases/tag/v0.2.0');
     expect(notes.querySelector<HTMLAnchorElement>('a[href*="/compare/v0.1.0...v0.2.0"]')).not.toBeNull();
-    expect($('[data-testid="release-skew"]')!.textContent).toContain('consultando…');
-
-    health().flush({ status: 'UP', version: 'v0.2.0' });
-    fixture.detectChanges();
     expect($('[data-testid="release-skew"]')!.textContent).toContain('misma versión');
   });
 
-  it('warns when the API runs another version, and when it does not answer', async () => {
+  it('warns when the API runs another version', async () => {
     await setUp(true);
-    deployed();
+    deployed(FILE, { status: 'UP', version: 'v0.1.0' });
     openNotes();
-    health().flush({ status: 'UP', version: 'v0.1.0' });
-    fixture.detectChanges();
     expect($('[data-testid="release-skew"]')!.textContent).toContain('v0.1.0');
     expect($('[data-testid="release-skew"]')!.textContent).toContain('se despliega aparte');
   });
 
   it('says so when the API is down', async () => {
     await setUp(true);
-    deployed();
-    openNotes();
+    backend.expectOne(RELEASE_INFO_URL).flush(FILE);
     health().flush({ status: 503 }, { status: 503, statusText: 'Unavailable' });
     fixture.detectChanges();
+    expect($('[data-testid="release-status"]')!.textContent).toContain('Sin conexión con la API');
+    openNotes();
     expect($('[data-testid="release-skew"]')!.textContent).toContain('sin respuesta');
   });
 
@@ -143,7 +151,6 @@ describe('ReleaseBadgeComponent (site.release-version)', () => {
     await setUp(true);
     deployed();
     openNotes();
-    health().flush({ status: 'UP' });
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
@@ -156,9 +163,17 @@ describe('ReleaseBadgeComponent (site.release-version)', () => {
     expect($('[data-testid="release-notes"]')).toBeNull();
   });
 
+  it('says it is the demo, without asking the API, when there is no backend', async () => {
+    await setUp(true, true);
+    backend.expectOne(RELEASE_INFO_URL).flush(FILE);
+    fixture.detectChanges();
+    expect($('[data-testid="release-status"]')!.textContent).toContain('Modo demo');
+  });
+
   it('marks a build that was never deployed as local', async () => {
     await setUp(true);
     backend.expectOne(RELEASE_INFO_URL).flush('Not found', { status: 404, statusText: 'Not Found' });
+    health().flush({ status: 'UP' });
     fixture.detectChanges();
     expect($('[data-testid="release-badge"]')!.textContent).toContain('dev');
     expect($('[data-testid="release-badge"]')!.textContent).toContain('build local');

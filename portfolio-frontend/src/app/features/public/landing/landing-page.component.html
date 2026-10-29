@@ -294,17 +294,17 @@
   <!-- El pie deja sitio a la píldora del inspector (o del aviso de demo) y a la barra de gestos. -->
   <footer class="mt-8 border-t border-line-subtle pb-[calc(var(--pill-space,0px)+env(safe-area-inset-bottom,0px))]">
     <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8 max-[399px]:px-4">
-      <div class="flex flex-col items-start gap-3">
-        <p class="max-w-[40rem] text-body-sm text-ink-2">
-          <span class="font-medium text-ink-1">Manuel Cardoza</span> · {{ i18n.t(copy.footer) }}
-        </p>
-        <app-release-badge />
-      </div>
+      <p class="max-w-[40rem] text-body-sm text-ink-2">
+        <span class="font-medium text-ink-1">Manuel Cardoza</span> · {{ i18n.t(copy.footer) }}
+      </p>
       <div class="flex flex-wrap items-center gap-2">
         <app-social-links />
         <a routerLink="/legal" class="ui-btn-ghost ui-btn-lg tap">{{ i18n.t(legalLink) }}</a>
         <a routerLink="/admin" class="ui-btn-ghost ui-btn-lg tap">Admin</a>
         <app-cv-download />
+      </div>
+      <div class="flex w-full justify-start sm:justify-end">
+        <app-release-badge />
       </div>
     </div>
   </footer>
