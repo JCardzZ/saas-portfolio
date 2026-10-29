@@ -491,7 +491,7 @@ jobs:
   # ───────────────────────────── 📦 Build ─────────────────────────────
   frontend-build:
     name: 📦 Build front
-    needs: [changes, backend-unit, backend-integration, backend-arch, frontend-test]
+    needs: [changes, spec-lint, spec-breaking, spec-codegen, frontend-test]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -532,8 +532,9 @@ jobs:
   lighthouse:
     name: 📦 Lighthouse
     needs: frontend-build
-    if: ${{ !cancelled() && needs.frontend-build.result == 'success' }}
-    # Informa, no bloquea: un PR no espera por la puntuación (de noche sí cuenta como fallo).
+    # En PR y de noche. En main no: el despliegue no espera por la puntuación.
+    if: ${{ !cancelled() && needs.frontend-build.result == 'success' && github.event_name != 'push' }}
+    # Informa, no bloquea: ni el gate ni el PR esperan por ella (de noche sí cuenta como fallo).
     continue-on-error: ${{ github.event_name != 'schedule' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -580,10 +581,10 @@ jobs:
   responsive:
     name: 🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})
     needs: frontend-build
-    if: ${{ !cancelled() && needs.frontend-build.result == 'success' }}
-    # En PR y en main: versión rápida (iPhone SE y tablet, ~2 min) que informa pero no bloquea, para
-    # que lo nuevo siga llegando a main. La batería completa (todos los perfiles, 11-20 min por
-    # fragmento) va de noche y a mano, y ahí sí cuenta como fallo.
+    # En PR: versión rápida (iPhone SE y tablet, ~2 min) que informa pero no bloquea. En main no se
+    # ejecuta, para que el despliegue no la espere. La batería completa (todos los perfiles, 11-20
+    # min por fragmento) va de noche y a mano, y ahí sí cuenta como fallo.
+    if: ${{ !cancelled() && needs.frontend-build.result == 'success' && github.event_name != 'push' }}
     continue-on-error: ${{ github.event_name != 'schedule' }}
     runs-on: ubuntu-24.04
     # Completa, en dos fragmentos: rozaba el límite de 30 min y se caía por tiempo.
@@ -714,7 +715,8 @@ jobs:
 
   docker:
     name: 📦 Imagen + Trivy
-    needs: [changes, backend-unit, backend-integration, backend-arch, frontend-test]
+    # En paralelo con los tests, para no sumar su tiempo: publish-image espera a los dos.
+    needs: [changes, spec-lint, spec-breaking, spec-codegen]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.backend == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -792,11 +794,13 @@ jobs:
 
   publish-image:
     name: 📦 Publicar imagen
-    needs: docker
+    needs: [docker, backend-unit, backend-integration, backend-arch]
     # En main (push, o a mano con `run_all` cuando un merge se quedó sin imagen) y solo si la imagen
     # se construyó y pasó Trivy. GitHub deja una sola ejecución en cola por rama: si llegan varios
     # merges seguidos, los intermedios se cancelan y su cambio de backend no tendría imagen.
-    if: ${{ !cancelled() && needs.docker.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}
+    if: >-
+      ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.docker.result == 'success'
+          && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -939,8 +943,6 @@ jobs:
       - backend-arch
       - frontend-test
       - frontend-build
-      - lighthouse
-      - responsive
       - preview
       - docker
     if: always()
@@ -959,9 +961,8 @@ jobs:
             echo "$NEEDS" | jq -r 'to_entries[] | "| \(.key) | \(.value.result) |"'
           } >> "$GITHUB_STEP_SUMMARY"
           # Omitido (lo filtró paths-filter o no aplica) cuenta como correcto; fallado o cancelado, no.
-          # Móviles y Lighthouse solo informan (salvo de noche): salen en la tabla pero no bloquean.
-          INFORMATIVE='${{ github.event_name != 'schedule' && '["responsive","lighthouse"]' || '[]' }}'
-          BAD="$(echo "$NEEDS" | jq -r --argjson informative "$INFORMATIVE" '[to_entries[] | select((.key | IN($informative[])) | not) | select(.value.result == "failure" or .value.result == "cancelled") | .key] | join(", ")')"
+          # Móviles y Lighthouse no están aquí: informan aparte y el gate (y el despliegue) no los espera.
+          BAD="$(echo "$NEEDS" | jq -r '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key] | join(", ")')"
           if [ -n "$BAD" ]; then
             echo "::error::Jobs fallidos o cancelados: $BAD"
             exit 1
