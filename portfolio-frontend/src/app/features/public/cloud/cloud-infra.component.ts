@@ -25,6 +25,7 @@ import { ArchitectureCopilotComponent } from './architecture-copilot.component';
 import { AuditCardComponent } from './audit-card.component';
 import { autoLayout } from './auto-layout';
 import { contentBounds, directNodes, reflow, resizeToContent } from './zone-layout';
+import { FULL_VIEW, Point, View, panView, placementVerdict, resolveCollision, withFriction, zoomLevel, zoomView } from './studio-physics';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
 import { CatalogItem } from './cloud-catalog.data';
 import { estimateCost, formatUsd } from './cloud-costs.data';
@@ -147,8 +148,15 @@ export class CloudInfraComponent {
   readonly smartRules = computed(() => this.flags.isEnabled('studio.smart-rules'));
   /** «Ajustar a pantalla»: la vista se ciñe al diagrama y se ve entero, sin desplazar el marco. */
   readonly fitted = signal(false);
+  /** Zoom y desplazamiento del lienzo (reglas inteligentes): rueda con Ctrl/⌘ o pellizco, y botones. */
+  readonly camera = signal<View>(FULL_VIEW);
+  readonly zoom = computed(() => zoomLevel(this.camera()));
   readonly viewBox = computed(() => {
     if (!this.fitted()) {
+      if (this.smartRules()) {
+        const { x, y, w, h } = this.camera();
+        return `${Math.round(x)} ${Math.round(y)} ${Math.round(w)} ${Math.round(h)}`;
+      }
       return `0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`;
     }
     const { x, y, w, h } = contentBounds(this.nodes(), this.zones());
@@ -340,7 +348,11 @@ export class CloudInfraComponent {
   }));
   readonly mobileLinks = computed(() => this.links().map((link): [string, string] => [link.from, link.to]));
   private nextCustomId = 1;
-  private dragging: { id: string; dx: number; dy: number; recorded: boolean } | null = null;
+  private dragging: { id: string; dx: number; dy: number; recorded: boolean; lastAllowed: Point; origin: Point } | null = null;
+  /** Mientras se arrastra un nodo a una zona que no lo admite (reglas inteligentes): cuál y por qué. */
+  readonly placementRefusal = signal<{ zoneId: string | null; reason: string; suggestion: string } | null>(null);
+  /** Aviso tras soltar un nodo donde no podía quedarse: volvió a su sitio. */
+  readonly placementNotice = signal<{ reason: string; suggestion: string } | null>(null);
   private zoneDrag: { id: string; mode: 'move' | ZoneCorner; x: number; y: number; origin: StudioZone; nodes: CloudNode[]; zones: StudioZone[]; recorded: boolean } | null = null;
   readonly corners: ZoneCorner[] = ['nw', 'ne', 'sw', 'se'];
   /** Recuadro sobre el que está el nodo que se arrastra: es el que lo adoptará al soltarlo. */
@@ -663,7 +675,7 @@ export class CloudInfraComponent {
     this.tooltipTarget = byPointer ? target : null;
     this.tooltipTimer = setTimeout(() => {
       const stage = this.host.querySelector<HTMLElement>('[data-stage]');
-      if (!stage || !target.isConnected) {
+      if (!stage || !target.isConnected || this.dragging?.recorded) {
         return;
       }
       const frame = stage.getBoundingClientRect();
@@ -1096,7 +1108,8 @@ export class CloudInfraComponent {
       return;
     }
     event.preventDefault();
-    this.add(item, this.toCanvas(event.clientX, event.clientY));
+    const point = this.toCanvas(event.clientX, event.clientY);
+    this.add(item, this.smartRules() ? resolveCollision('', point, this.nodes(), this.zones()) : point);
   }
 
   // Mover un nodo arrastrándolo (ratón o dedo).
@@ -1105,9 +1118,10 @@ export class CloudInfraComponent {
       return;
     }
     const point = this.toCanvas(event.clientX, event.clientY);
-    this.dragging = { id: node.id, dx: node.x - point.x, dy: node.y - point.y, recorded: false };
+    this.dragging = { id: node.id, dx: node.x - point.x, dy: node.y - point.y, recorded: false, lastAllowed: { x: node.x, y: node.y }, origin: { x: node.x, y: node.y } };
     capturePointer(event.currentTarget, event.pointerId);
     this.activeId.set(node.id);
+    this.placementNotice.set(null);
   }
 
   onNodePointerMove(event: PointerEvent): void {
@@ -1117,16 +1131,86 @@ export class CloudInfraComponent {
     if (!this.dragging.recorded) {
       this.record();
       this.dragging.recorded = true;
+      // Arrastrando, la ficha del nodo estorba: se oculta (y no vuelve a salir hasta soltar).
+      this.hideTooltip();
     }
     const point = this.toCanvas(event.clientX, event.clientY);
-    this.moveTo(this.dragging.id, point.x + this.dragging.dx, point.y + this.dragging.dy);
+    const target = { x: point.x + this.dragging.dx, y: point.y + this.dragging.dy };
+    if (this.smartRules()) {
+      // Fricción: en una zona que no admite la pieza, el nodo solo sigue al puntero en parte y se dice por qué.
+      const node = this.nodes().find((candidate) => candidate.id === this.dragging!.id)!;
+      const role = roleAt(this.zones(), target.x, target.y, node.zone);
+      const verdict = placementVerdict(node.type, this.serviceOf(node), role);
+      if (verdict.allowed) {
+        this.dragging.lastAllowed = target;
+        this.placementRefusal.set(null);
+        this.moveTo(this.dragging.id, target.x, target.y);
+      } else {
+        this.placementRefusal.set({ zoneId: zoneAt(this.zones(), target.x, target.y)?.id ?? null, reason: verdict.reason!, suggestion: verdict.suggestion! });
+        const resisted = withFriction(this.dragging.lastAllowed, target);
+        this.moveTo(this.dragging.id, resisted.x, resisted.y);
+      }
+    } else {
+      this.moveTo(this.dragging.id, target.x, target.y);
+    }
     const moved = this.nodes().find((node) => node.id === this.dragging!.id);
     this.dropZoneId.set(moved ? (zoneAt(this.zones(), moved.x, moved.y)?.id ?? null) : null);
   }
 
   onNodePointerUp(): void {
+    const drag = this.dragging;
     this.dragging = null;
     this.dropZoneId.set(null);
+    if (!drag || !drag.recorded || !this.smartRules()) {
+      return;
+    }
+    // Soltado donde no podía quedarse: vuelve a donde estaba al empezar y se explica.
+    const refusal = this.placementRefusal();
+    if (refusal) {
+      this.moveTo(drag.id, drag.origin.x, drag.origin.y);
+      this.placementRefusal.set(null);
+      this.placementNotice.set({ reason: refusal.reason, suggestion: refusal.suggestion });
+    }
+    // Sin montarse: si pisa a otro nodo, al hueco libre más cercano de su mismo recuadro.
+    this.settleNode(drag.id);
+  }
+
+  /** Lleva un nodo al hueco libre más cercano si ha quedado encima de otro (reglas inteligentes). */
+  private settleNode(id: string): void {
+    const node = this.nodes().find((candidate) => candidate.id === id);
+    if (!node) {
+      return;
+    }
+    const free = resolveCollision(id, node, this.nodes(), this.zones());
+    if (free.x !== node.x || free.y !== node.y) {
+      this.moveTo(id, free.x, free.y);
+    }
+  }
+
+  // ── Zoom y desplazamiento del lienzo (reglas inteligentes) ──
+  onCanvasWheel(event: WheelEvent): void {
+    if (!this.smartRules() || this.fitted()) {
+      return;
+    }
+    if (event.ctrlKey || event.metaKey) {
+      // Ctrl/⌘ + rueda, o pellizco en el trackpad (llega como rueda con Ctrl): zoom alrededor del cursor.
+      event.preventDefault();
+      this.camera.set(zoomView(this.camera(), Math.exp(-event.deltaY * 0.0025), this.toCanvas(event.clientX, event.clientY)));
+    } else if (this.zoom() > 100) {
+      // Acercado, la rueda recorre el lienzo; a tamaño normal deja desplazar la página.
+      event.preventDefault();
+      const scale = this.camera().w / Math.max(1, this.canvas()?.nativeElement.clientWidth ?? CANVAS_WIDTH);
+      this.camera.set(panView(this.camera(), event.deltaX * scale, event.deltaY * scale));
+    }
+  }
+
+  zoomBy(factor: number): void {
+    const { x, y, w, h } = this.camera();
+    this.camera.set(zoomView(this.camera(), factor, { x: x + w / 2, y: y + h / 2 }));
+  }
+
+  resetView(): void {
+    this.camera.set(FULL_VIEW);
   }
 
   // Con teclado: las flechas mueven el nodo enfocado y Supr o Retroceso lo quitan.

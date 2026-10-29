@@ -102,3 +102,17 @@
 
 /* «Ajustar a pantalla»: el diagrama se ve entero en su marco, sin el ancho mínimo de trabajo ni más alto que la ventana. */
 .canvas-fitted { min-width: 0; max-height: 70dvh; }
+
+/* Zoom del lienzo (reglas inteligentes): abajo a la derecha, sobre el diagrama. */
+.zoom-controls { position: absolute; right: 0.5rem; bottom: 0.5rem; z-index: 10; display: flex; align-items: center; overflow: hidden; border-radius: 0.75rem; border: 1px solid var(--border-subtle); background: rgb(var(--c-surface-1) / 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.zoom-controls button { min-width: 2.25rem; height: 2.25rem; padding: 0 0.5rem; color: var(--text-2); font-size: 0.875rem; transition: background var(--duration-fast), color var(--duration-fast); }
+.zoom-controls button:hover:not(:disabled) { background: rgb(var(--c-ink-1) / 0.06); color: var(--text-1); }
+.zoom-controls button:disabled { opacity: 0.35; }
+.zoom-controls .zoom-level { min-width: 3.5rem; border-inline: 1px solid var(--border-subtle); font-family: var(--font-mono); font-size: 0.75rem; }
+
+/* Aviso de ubicación (reglas inteligentes): flota arriba, centrado, sin empujar el diagrama. */
+.placement-toast { position: absolute; top: 0.5rem; left: 50%; z-index: 20; transform: translateX(-50%); display: flex; align-items: center; gap: 0.625rem; width: max-content; max-width: min(40rem, calc(100% - 1rem)); padding: 0.5rem 0.75rem; border-radius: 0.75rem; border: 1px solid; font-size: 0.75rem; line-height: 1.4; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: var(--shadow-floating); pointer-events: none; animation: toast-in 160ms ease-out; }
+.placement-toast[data-tone='danger'] { color: var(--status-danger); border-color: rgb(var(--c-status-danger) / 0.35); background: rgb(var(--c-surface-1) / 0.92); }
+.placement-toast[data-tone='warn'] { color: var(--status-warn); border-color: rgb(var(--c-status-warn) / 0.35); background: rgb(var(--c-surface-1) / 0.92); pointer-events: auto; }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, -4px); } }
+@media (prefers-reduced-motion: reduce) { .placement-toast { animation: none; } }
