@@ -10,9 +10,10 @@ name: CD
 # se calcula una vez en Origen, el sitio la sirve en version.json, Cloud Run la recibe en APP_VERSION
 # (GET /telemetry/health) y, si todo lo desplegado termina bien, se publica como release de GitHub.
 #
-# El despliegue del backend es SOLO manual (Run workflow → "Desplegar el backend en Cloud Run").
-# A mano se despliega lo último que la CI publicó en main: el frontend y la imagen pueden venir de
-# ejecuciones distintas, porque cada una solo se construye si cambió.
+# El backend se despliega solo cuando la CI de main publicó una imagen nueva (cambió el backend),
+# con sus pruebas de humo y vuelta atrás automática. A mano (Run workflow → "Desplegar el backend
+# en Cloud Run") se despliega lo último que la CI publicó en main: el frontend y la imagen pueden
+# venir de ejecuciones distintas, porque cada una solo se construye si cambió.
 #
 # Secrets:   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID            (frontend)
 #            ninguno para Google Cloud: el job se autentica con Workload Identity Federation
@@ -166,7 +167,7 @@ jobs:
           IMAGE_SHA: ${{ steps.find.outputs.image_sha }}
           # Las mismas condiciones que los jobs de despliegue de más abajo.
           DEPLOYS_FRONTEND: ${{ steps.find.outputs.frontend_run != '' && vars.CLOUDFLARE_PAGES_PROJECT != '' }}
-          DEPLOYS_BACKEND: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_backend && steps.find.outputs.image_ref != '' && vars.GCP_WIF_PROVIDER != '' }}
+          DEPLOYS_BACKEND: ${{ (github.event_name == 'workflow_run' || inputs.deploy_backend) && steps.find.outputs.image_ref != '' && vars.GCP_WIF_PROVIDER != '' }}
         run: |
           set -euo pipefail
           SHAS=()
@@ -340,9 +341,9 @@ jobs:
   deploy:
     name: 🚀 Cloud Run
     needs: source
-    # Solo a mano y pidiéndolo expresamente: la CI nunca despliega el backend por sí sola.
+    # Tras la CI de main, si publicó una imagen nueva; a mano, si se pide expresamente.
     if: >-
-      github.event_name == 'workflow_dispatch' && inputs.deploy_backend
+      (github.event_name == 'workflow_run' || inputs.deploy_backend)
       && needs.source.outputs.image-ref != '' && needs.source.outputs.signature == 'success'
       && vars.GCP_WIF_PROVIDER != ''
     runs-on: ubuntu-24.04
