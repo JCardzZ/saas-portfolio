@@ -114,9 +114,9 @@
         "name": "📦 Build front",
         "needs": [
           "changes",
-          "backend-unit",
-          "backend-integration",
-          "backend-arch",
+          "spec-lint",
+          "spec-breaking",
+          "spec-codegen",
           "frontend-test"
         ],
         "matrix": false,
@@ -140,7 +140,7 @@
           "frontend-build"
         ],
         "matrix": true,
-        "namePattern": "^🧪 Móvil \\(.+ · .+/2\\)$",
+        "namePattern": "^🧪 Móvil \\(.+ · .+\\)$",
         "stage": 4
       },
       {
@@ -158,24 +158,26 @@
         "name": "📦 Imagen + Trivy",
         "needs": [
           "changes",
-          "backend-unit",
-          "backend-integration",
-          "backend-arch",
-          "frontend-test"
+          "spec-lint",
+          "spec-breaking",
+          "spec-codegen"
         ],
         "matrix": false,
         "namePattern": "^📦 Imagen \\+ Trivy$",
-        "stage": 3
+        "stage": 2
       },
       {
         "id": "publish-image",
         "name": "📦 Publicar imagen",
         "needs": [
-          "docker"
+          "docker",
+          "backend-unit",
+          "backend-integration",
+          "backend-arch"
         ],
         "matrix": false,
         "namePattern": "^📦 Publicar imagen$",
-        "stage": 4
+        "stage": 3
       },
       {
         "id": "coverage-badge",
@@ -202,8 +204,6 @@
           "backend-arch",
           "frontend-test",
           "frontend-build",
-          "lighthouse",
-          "responsive",
           "preview",
           "docker"
         ],

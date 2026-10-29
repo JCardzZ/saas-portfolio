@@ -18,6 +18,9 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Cada noche, todo y con la batería completa de móviles (en PR y en main va la versión rápida).
+  schedule:
+    - cron: '30 7 * * *'
   workflow_dispatch:
     inputs:
       run_all:
@@ -61,7 +64,7 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      # A mano con run_all se fuerza todo; si no, manda lo que cambió.
+      # A mano con run_all o en la ejecución nocturna se fuerza todo; si no, manda lo que cambió.
       spec: ${{ steps.force.outputs.all == 'true' || steps.filter.outputs.spec == 'true' }}
       backend: ${{ steps.force.outputs.all == 'true' || steps.filter.outputs.backend == 'true' }}
       frontend: ${{ steps.force.outputs.all == 'true' || steps.filter.outputs.frontend == 'true' }}
@@ -69,13 +72,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: ¿Ejecución completa a mano?
         id: force
-        run: echo "all=${{ github.event_name == 'workflow_dispatch' && inputs.run_all }}" >> "$GITHUB_OUTPUT"
+        run: echo "all=${{ (github.event_name == 'workflow_dispatch' && inputs.run_all) || github.event_name == 'schedule' }}" >> "$GITHUB_OUTPUT"
       # Se filtra aquí y no con `on.paths` para que el workflow se ejecute siempre: así el gate
       # siempre informa, y lo que no cambió se omite en vez de dejar el check esperando.
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
-        # A mano no hay un "antes" con el que comparar.
-        if: github.event_name != 'workflow_dispatch'
+        # A mano o de noche no hay un "antes" con el que comparar.
+        if: github.event_name != 'workflow_dispatch' && github.event_name != 'schedule'
         with:
           filters: |
             spec:
@@ -488,7 +491,7 @@ jobs:
   # ───────────────────────────── 📦 Build ─────────────────────────────
   frontend-build:
     name: 📦 Build front
-    needs: [changes, backend-unit, backend-integration, backend-arch, frontend-test]
+    needs: [changes, spec-lint, spec-breaking, spec-codegen, frontend-test]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -529,7 +532,10 @@ jobs:
   lighthouse:
     name: 📦 Lighthouse
     needs: frontend-build
-    if: ${{ !cancelled() && needs.frontend-build.result == 'success' }}
+    # En PR y de noche. En main no: el despliegue no espera por la puntuación.
+    if: ${{ !cancelled() && needs.frontend-build.result == 'success' && github.event_name != 'push' }}
+    # Informa, no bloquea: ni el gate ni el PR esperan por ella (de noche sí cuenta como fallo).
+    continue-on-error: ${{ github.event_name != 'schedule' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
@@ -573,11 +579,15 @@ jobs:
   # El build que se va a desplegar, abierto en móviles y tabletas con los dos motores: Chromium
   # (Chrome en Android) y WebKit (Safari en iOS). Perfiles y anchos en playwright.config.ts.
   responsive:
-    name: 🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }}/2)
+    name: 🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})
     needs: frontend-build
-    if: ${{ !cancelled() && needs.frontend-build.result == 'success' }}
+    # En PR: versión rápida (iPhone SE y tablet, ~2 min) que informa pero no bloquea. En main no se
+    # ejecuta, para que el despliegue no la espere. La batería completa (todos los perfiles, 11-20
+    # min por fragmento) va de noche y a mano, y ahí sí cuenta como fallo.
+    if: ${{ !cancelled() && needs.frontend-build.result == 'success' && github.event_name != 'push' }}
+    continue-on-error: ${{ github.event_name != 'schedule' }}
     runs-on: ubuntu-24.04
-    # En dos fragmentos: la batería completa rozaba el límite de 30 min y se caía por tiempo.
+    # Completa, en dos fragmentos: rozaba el límite de 30 min y se caía por tiempo.
     timeout-minutes: ${{ matrix.engine == 'webkit' && 90 || 40 }}
     strategy:
       fail-fast: false
@@ -586,7 +596,7 @@ jobs:
         # Mac la misma batería tarda minutos): solo se lanza a mano, marcando `webkit`, y en local
         # con `npx playwright test --project='*-webkit'`.
         engine: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.webkit && '["chromium","webkit"]' || '["chromium"]') }}
-        shard: [1, 2]
+        shard: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '[1, 2]' || '[1]') }}
     defaults:
       run:
         working-directory: portfolio-frontend
@@ -604,8 +614,15 @@ jobs:
           path: portfolio-frontend/dist/portfolio-frontend/browser
       - name: Instalar ${{ matrix.engine }}
         run: npx playwright install --with-deps ${{ matrix.engine }}
-      - name: Pruebas en todos los perfiles
-        run: npx playwright test --project='*-${{ matrix.engine }}' --shard=${{ matrix.shard }}/2
+      - name: Pruebas (rápidas o en todos los perfiles)
+        env:
+          FULL: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          if [ "$FULL" = true ]; then
+            npx playwright test --project='*-${{ matrix.engine }}' --shard=${{ matrix.shard }}/2
+          else
+            npx playwright test --project=iphone-se-chromium --project=tablet-820-chromium
+          fi
       - name: Resumen
         if: always()
         run: |
@@ -698,7 +715,8 @@ jobs:
 
   docker:
     name: 📦 Imagen + Trivy
-    needs: [changes, backend-unit, backend-integration, backend-arch, frontend-test]
+    # En paralelo con los tests, para no sumar su tiempo: publish-image espera a los dos.
+    needs: [changes, spec-lint, spec-breaking, spec-codegen]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.backend == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -723,8 +741,11 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
+      # Avisa, no bloquea: una vulnerabilidad nueva en la imagen base no frena el despliegue. El
+      # escaneo nocturno (nightly-security.yml) la sigue vigilando.
       - name: Trivy
         id: trivy
+        continue-on-error: true
         run: |
           mkdir -p "$HOME/.cache/trivy"
           trivy() {
@@ -739,14 +760,15 @@ jobs:
           cat trivy.txt
           # Falla con vulnerabilidades altas o críticas que ya tienen versión corregida.
           # Las excepciones, con motivo y fecha de caducidad, están en .trivyignore.yaml.
-          trivy --format table --exit-code 1 --quiet > /dev/null
+          trivy --format table --exit-code 1 --quiet > /dev/null \
+            || { echo "::warning::Trivy encontró vulnerabilidades altas o críticas con corrección: revisa el resumen."; exit 1; }
       - name: Resumen
         if: always()
         run: |
           {
             echo "### Imagen del backend · Trivy (HIGH y CRITICAL con corrección disponible)"
             echo ""
-            if [ "${{ steps.trivy.outcome }}" = "success" ]; then echo "✅ Sin vulnerabilidades que bloqueen."; else echo "❌ Hay vulnerabilidades por corregir (o el escaneo no terminó)."; fi
+            if [ "${{ steps.trivy.outcome }}" = "success" ]; then echo "✅ Sin vulnerabilidades altas o críticas con corrección."; else echo "⚠️ Hay vulnerabilidades por corregir (o el escaneo no terminó). No bloquea: la imagen se publica igual."; fi
             echo ""
             echo '```'
             head -c 60000 trivy.txt 2>/dev/null || echo "sin informe"
@@ -777,11 +799,13 @@ jobs:
 
   publish-image:
     name: 📦 Publicar imagen
-    needs: docker
+    needs: [docker, backend-unit, backend-integration, backend-arch]
     # En main (push, o a mano con `run_all` cuando un merge se quedó sin imagen) y solo si la imagen
     # se construyó y pasó Trivy. GitHub deja una sola ejecución en cola por rama: si llegan varios
     # merges seguidos, los intermedios se cancelan y su cambio de backend no tendría imagen.
-    if: ${{ !cancelled() && needs.docker.result == 'success' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}
+    if: >-
+      ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.docker.result == 'success'
+          && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -924,8 +948,6 @@ jobs:
       - backend-arch
       - frontend-test
       - frontend-build
-      - lighthouse
-      - responsive
       - preview
       - docker
     if: always()
@@ -944,6 +966,7 @@ jobs:
             echo "$NEEDS" | jq -r 'to_entries[] | "| \(.key) | \(.value.result) |"'
           } >> "$GITHUB_STEP_SUMMARY"
           # Omitido (lo filtró paths-filter o no aplica) cuenta como correcto; fallado o cancelado, no.
+          # Móviles y Lighthouse no están aquí: informan aparte y el gate (y el despliegue) no los espera.
           BAD="$(echo "$NEEDS" | jq -r '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key] | join(", ")')"
           if [ -n "$BAD" ]; then
             echo "::error::Jobs fallidos o cancelados: $BAD"

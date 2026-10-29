@@ -54,11 +54,11 @@ export const JOB_NOTES: Record<WorkflowKey, Record<string, JobNote>> = {
     },
     lighthouse: {
       what: 'Mide rendimiento, accesibilidad, buenas prácticas y SEO sobre el build.',
-      why: 'Una regresión de rendimiento o de accesibilidad se detiene con un umbral, no a ojo.',
+      why: 'Una regresión de rendimiento o de accesibilidad se ve con un umbral, no a ojo. Informa en cada PR sin frenarlo.',
     },
     responsive: {
-      what: 'Abre el build en doce tamaños de móvil y tableta con Playwright.',
-      why: 'Sin scroll horizontal, controles de 44 px y nada fijo tapando un botón, comprobado en cada cambio.',
+      what: 'Abre el build en móvil y tableta con Playwright: dos perfiles en cada PR, los doce cada noche.',
+      why: 'Sin scroll horizontal, controles de 44 px y nada fijo tapando un botón, sin hacer esperar al despliegue.',
     },
     preview: {
       what: 'Publica el build del PR en una URL temporal de Cloudflare Pages.',
@@ -66,7 +66,7 @@ export const JOB_NOTES: Record<WorkflowKey, Record<string, JobNote>> = {
     },
     docker: {
       what: 'Construye la imagen del backend y la escanea con Trivy.',
-      why: 'Falla con vulnerabilidades altas o críticas que ya tienen corrección.',
+      why: 'Avisa de vulnerabilidades altas o críticas que ya tienen corrección, sin frenar el despliegue.',
     },
     'publish-image': {
       what: 'Publica en GHCR la misma imagen que pasó Trivy, la firma con cosign y le adjunta el SBOM.',
