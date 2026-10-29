@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-29T03:29:13.212Z",
+  "updatedAt": "2026-10-29T03:56:14.818Z",
   "workflows": {
     "ci": {
-      "runId": 40811848084,
-      "runNumber": 259,
-      "sha": "c9df1a20c8f7a962372261a97edd1e3ac3e76345",
+      "runId": 40814468105,
+      "runNumber": 261,
+      "sha": "62c9d5667916ff347bd6ff39738a2fc9003d3eb2",
       "event": "push",
-      "startedAt": "2026-10-29T03:23:17Z",
-      "finishedAt": "2026-10-29T03:28:05.361Z",
-      "durationSeconds": 288,
+      "startedAt": "2026-10-29T03:51:19Z",
+      "finishedAt": "2026-10-29T03:56:14.818Z",
+      "durationSeconds": 296,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 7,
+          "durationSeconds": 6,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 10,
+          "durationSeconds": 8,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 269,
+          "durationSeconds": 156,
           "runs": 2
         },
         {
@@ -47,40 +47,56 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 25,
+          "durationSeconds": 32,
           "runs": 1
         },
         {
           "id": "backend-unit",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 100,
+          "runs": 1,
+          "metrics": {
+            "tests": 375,
+            "failed": 0,
+            "skipped": 2,
+            "coverage": 89.1
+          }
         },
         {
           "id": "backend-integration",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 147,
+          "runs": 1,
+          "metrics": {
+            "tests": 8,
+            "failed": 0,
+            "skipped": 0
+          }
         },
         {
           "id": "backend-arch",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 39,
+          "runs": 1,
+          "metrics": {
+            "tests": 15,
+            "failed": 0,
+            "skipped": 0
+          }
         },
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 79,
+          "durationSeconds": 52,
           "runs": 3,
           "metrics": {
-            "tests": 777
+            "tests": 780
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 34,
+          "durationSeconds": 39,
           "runs": 1,
           "metrics": {
             "bundleKb": 331.5,
@@ -107,20 +123,27 @@
         },
         {
           "id": "docker",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 84,
+          "runs": 1,
+          "metrics": {
+            "vulnerabilities": 0
+          }
         },
         {
           "id": "publish-image",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 88,
+          "runs": 1,
+          "metrics": {
+            "digest": "sha256:cea6a3cde3a242eab577c22d0b6d67be97f0e0130ae6afeee8cf6927231553ad",
+            "sbomPackages": 217
+          }
         },
         {
           "id": "coverage-badge",
-          "status": "skipped",
-          "durationSeconds": null,
+          "status": "success",
+          "durationSeconds": 4,
           "runs": 1
         },
         {
@@ -424,6 +447,113 @@
     ]
   },
   "merges": [
+    {
+      "number": 109,
+      "title": "feat: declare v1.0.0 and highlight the SemVer bump in the release",
+      "branch": "feat/v1-and-version-mark",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-29T03:51:17Z",
+      "sha": "62c9d5667916ff347bd6ff39738a2fc9003d3eb2",
+      "additions": 112,
+      "deletions": 4,
+      "changedFiles": 6,
+      "ci": {
+        "runId": 40814468105,
+        "runNumber": 261,
+        "conclusion": "success",
+        "durationSeconds": 296,
+        "jobs": [
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "skipped"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "success"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "success"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "success"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "success"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "success"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
     {
       "number": 108,
       "title": "feat(frontend): live status line with the version and the release in the delivery section",
@@ -1074,27 +1204,37 @@
           }
         ]
       }
-    },
-    {
-      "number": 97,
-      "title": "feat: add the profile photo to the CV and keep it on Cloud Run",
-      "branch": "feat/profile-photo",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-23T02:18:39Z",
-      "sha": "673bb7f883f4a4446876d0880c90d17bf39129ec",
-      "additions": 31,
-      "deletions": 5,
-      "changedFiles": 20,
-      "ci": {
-        "runId": 39888870267,
-        "runNumber": 231,
-        "conclusion": "pending",
-        "durationSeconds": 1,
-        "jobs": []
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "62c9d5667916ff347bd6ff39738a2fc9003d3eb2",
+      "parents": [
+        "c9df1a20c8f7a962372261a97edd1e3ac3e76345",
+        "b4125423f44cdd7bea6a198d1920cc0a3603c8d8"
+      ],
+      "subject": "Merge pull request #109 from JCardzZ/feat/v1-and-version-mark",
+      "author": "JCardzZ",
+      "date": "2026-10-29T03:51:17Z"
+    },
+    {
+      "sha": "b4125423f44cdd7bea6a198d1920cc0a3603c8d8",
+      "parents": [
+        "132ff5f5c264a5886c6cba80f0ed80c836286db7"
+      ],
+      "subject": "feat(cd): honour a Release-As footer and declare the first stable release",
+      "author": "JCardzZ",
+      "date": "2026-10-29T03:43:18Z"
+    },
+    {
+      "sha": "132ff5f5c264a5886c6cba80f0ed80c836286db7",
+      "parents": [
+        "c9df1a20c8f7a962372261a97edd1e3ac3e76345"
+      ],
+      "subject": "feat(frontend): highlight which SemVer part went up in the release",
+      "author": "JCardzZ",
+      "date": "2026-10-29T03:43:18Z"
+    },
     {
       "sha": "c9df1a20c8f7a962372261a97edd1e3ac3e76345",
       "parents": [
@@ -1634,34 +1774,6 @@
       "subject": "Merge pull request #86 from JCardzZ/perf/hero-scene-startup",
       "author": "JCardzZ",
       "date": "2026-10-22T15:08:22Z"
-    },
-    {
-      "sha": "76800b16c95156d53a27dc2f98492864c577823b",
-      "parents": [
-        "4a43c4b28a394be63537c6e0c5d21aff6eae2ff2"
-      ],
-      "subject": "perf(frontend): compile the hero scene's shaders asynchronously instead of on the first frame",
-      "author": "JCardzZ",
-      "date": "2026-10-22T15:03:20Z"
-    },
-    {
-      "sha": "4a43c4b28a394be63537c6e0c5d21aff6eae2ff2",
-      "parents": [
-        "af902b2954606e227ae71bfc3923729eaaf92356",
-        "d44aa7db903cdd198e347806948027a9b0c9a6a3"
-      ],
-      "subject": "Merge pull request #85 from JCardzZ/feat/professional-hologram",
-      "author": "JCardzZ",
-      "date": "2026-10-22T14:42:11Z"
-    },
-    {
-      "sha": "d44aa7db903cdd198e347806948027a9b0c9a6a3",
-      "parents": [
-        "cc356c11123590d69c16913682a0d9b7360cd1c9"
-      ],
-      "subject": "fix(frontend): anchor the compact bubble just above the head and clear the shoulder on desktop",
-      "author": "JCardzZ",
-      "date": "2026-10-22T14:21:08Z"
     }
   ]
 }
