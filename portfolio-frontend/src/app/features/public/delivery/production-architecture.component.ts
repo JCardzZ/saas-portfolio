@@ -106,7 +106,7 @@ interface Fact {
          por encima del inspector. Vuelve al cerrarlos o al tocar una pieza. -->
     <div class="detail-fold" [class.folded]="detailFolded()" data-testid="detail-fold">
     <div class="min-h-0 overflow-hidden">
-    <div #detail class="mt-4 min-h-[7rem] scroll-mb-24 scroll-mt-24 rounded-panel border border-line-subtle bg-surface-2 p-4" aria-live="polite">
+    <div #detail class="ui-nested mt-4 min-h-[7rem] scroll-mb-24 scroll-mt-24 rounded-panel border border-line-subtle bg-surface-2 p-4" aria-live="polite">
       @if (active(); as node) {
         <p class="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink-1">
           {{ en() ? node.en.label : node.label }}

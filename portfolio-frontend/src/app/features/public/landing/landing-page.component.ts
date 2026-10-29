@@ -26,6 +26,7 @@ import { HeroSceneComponent } from './hero3d/hero-scene.component';
 import { GalaxyBackdropComponent } from './galaxy/galaxy-backdrop.component';
 import { MeshTrafficLegendComponent } from './galaxy/mesh-traffic-legend.component';
 import { ReleaseBadgeComponent } from '../../../shared/ui/release-badge.component';
+import { HeroProofComponent } from './hero-proof.component';
 import { SocialLinksComponent } from '../../../shared/ui/social-links.component';
 import { ScrollBuddyComponent } from './scroll-buddy.component';
 
@@ -35,6 +36,7 @@ import { ScrollBuddyComponent } from './scroll-buddy.component';
         RouterLink,
         SocialLinksComponent,
         ReleaseBadgeComponent,
+        HeroProofComponent,
         SectionHeaderComponent,
         HeroSceneComponent,
         GalaxyBackdropComponent, MeshTrafficLegendComponent,
@@ -63,6 +65,8 @@ export class LandingPageComponent implements OnInit {
   private readonly flags = inject(FlagService);
   /** La sección del servidor MCP solo existe con su flag encendida. */
   readonly mcpSection = computed(() => this.flags.isEnabled('mcp.section'));
+  /** Rediseño de la portada (`site.refresh`): hero con pruebas en vivo, fondo limpio y menos cajas. */
+  readonly refresh = computed(() => this.flags.isEnabled('site.refresh'));
 
   // Un enlace a /#chat abre el asistente directamente.
   readonly chatOpen = signal(inject(ActivatedRoute).snapshot.fragment === 'chat');

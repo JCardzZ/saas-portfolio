@@ -14,7 +14,8 @@ public enum FeatureFlagDomain {
     STUDIO_SYSTEM_DESIGN("studio.system-design", "Diseño de sistemas completos: vistas de aplicación e infraestructura"),
     STUDIO_SYSTEM_TEMPLATES("studio.system-templates", "Plantillas de sistemas completos"),
     MCP_SECTION("mcp.section", "Servidor MCP y la sección «Usa mi plataforma desde tu IA»"),
-    SITE_RELEASE_VERSION("site.release-version", "Versión desplegada y novedades en el pie de página");
+    SITE_RELEASE_VERSION("site.release-version", "Versión desplegada y novedades en el pie de página"),
+    SITE_REFRESH("site.refresh", "Rediseño de la portada: hero con pruebas en vivo, fondo limpio y menos cajas");
 
     private final String key;
     private final String description;

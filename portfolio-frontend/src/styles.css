@@ -669,3 +669,35 @@ svg .pulse.pulse-boost { stroke: var(--status-ok); }
   100% { box-shadow: 0 0 0 14px rgb(var(--c-accent-solid) / 0), 0 0 0 1px rgb(var(--c-accent-solid) / 0); }
 }
 @media (prefers-reduced-motion: reduce) { .card-adapted { animation: none; } }
+
+/* ───────────── Rediseño de la portada (flag site.refresh, clase .refresh en la landing) ─────────────
+   Menos recursos de plantilla: sin papel tapiz, el acento solo para lo vivo y la acción principal,
+   rótulos en minúscula y un solo nivel de tarjeta. Con la flag apagada no aplica nada de esto. */
+.refresh app-galaxy-backdrop .doodles { display: none; }
+.refresh app-galaxy-backdrop .aurora { opacity: 0.6; }
+/* Rol: segundo nivel sobrio, en minúscula y sin espaciado de rótulo; el verde queda para lo que está vivo. */
+.refresh .hero-role {
+  text-transform: none; letter-spacing: -0.01em; color: var(--text-2);
+  font-size: clamp(1.05rem, 1.9vw, 1.6rem); font-weight: 500;
+}
+/* Una sola acción en verde a la vista: la del hero. La de la barra pasa a secundaria. */
+.refresh app-public-navbar .nav-ask {
+  background: transparent; color: var(--text-1); border: 1px solid var(--border-strong); box-shadow: none;
+}
+.refresh app-public-navbar .nav-ask:hover { background: rgb(var(--c-ink-1) / 0.06); }
+.refresh app-public-navbar .nav-ask kbd { color: var(--text-3); border-color: var(--border-strong); }
+/* Rótulos: en minúscula y con la fuente del texto, no MONO MAYÚSCULAS espaciadas. */
+.refresh main .uppercase:is(.tracking-wider, .tracking-widest, .tracking-wide, [class*='tracking-[0.0']),
+.refresh app-career-timeline .label {
+  text-transform: none; letter-spacing: 0; font-family: var(--font-sans); font-size: 0.8125rem; font-weight: 500;
+  color: var(--text-3);
+}
+/* Un solo nivel de caja: lo que va dentro de una tarjeta se separa con una línea, no con otra tarjeta. */
+.refresh .ui-nested {
+  border-width: 1px 0 0; border-radius: 0; background: transparent; padding-left: 0; padding-right: 0;
+}
+.refresh app-data-blueprints.bento-card {
+  background: transparent; border-color: transparent; box-shadow: none; padding-left: 0; padding-right: 0;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.refresh app-data-blueprints [data-blueprint] > svg { border-color: transparent; }

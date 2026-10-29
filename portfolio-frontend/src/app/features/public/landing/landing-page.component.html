@@ -1,5 +1,5 @@
 <!-- El fondo lo pone la galaxia (fija, detrás de todo): esta capa no lleva color propio. -->
-<div class="dock-aware dark safe-x relative min-h-dvh overflow-x-clip text-ink-1 selection:bg-accent-solid/50">
+<div class="dock-aware dark safe-x relative min-h-dvh overflow-x-clip text-ink-1 selection:bg-accent-solid/50" [class.refresh]="refresh()">
   <app-galaxy-backdrop />
   <app-mesh-traffic-legend />
   <!-- Escena 3D a sangre, del ancho y el alto de la pantalla, detrás del hero. -->
@@ -19,7 +19,12 @@
         Jerarquía de tres niveles, de más a menos: saludo pequeño, nombre enorme (h1) y rol mediano en
         el acento. Un solo elemento gigante: si nombre y rol pesan igual, compiten y el bloque se satura.
       -->
-      <p class="hero-greeting pointer-events-auto relative z-10 text-center font-semibold text-ink-2">{{ i18n.t(copy.heroGreeting) }}</p>
+      @if (refresh()) {
+        <!-- Rediseño: en vez del saludo, la prueba de que esto está en producción (estado, latencia, versión). -->
+        <app-hero-proof class="pointer-events-auto relative z-10 mx-auto mb-5" />
+      } @else {
+        <p class="hero-greeting pointer-events-auto relative z-10 text-center font-semibold text-ink-2">{{ i18n.t(copy.heroGreeting) }}</p>
+      }
       <!--
         Nombre y rol en mayúsculas (Space Grotesk). Cada letra es un span para que el robot las mueva
         al levantarse (variable --robot-lift); el texto completo va en aria-label.
@@ -52,7 +57,7 @@
       <div class="hero-foot relative z-10 mt-auto flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
         <!-- En móvil la dice el bocadillo del robot: aquí pisaría al robot. -->
         <p class="max-w-[30rem] text-balance text-body-lg text-ink-2 max-sm:hidden">
-          {{ i18n.t(copy.heroIntro) }}
+          {{ i18n.t(refresh() ? copy.heroIntroRefresh : copy.heroIntro) }}
         </p>
         <div class="flex flex-wrap gap-3">
           <app-cv-download variant="primary" />
@@ -67,10 +72,12 @@
         </div>
       </div>
       <!-- Indicador para bajar: una línea por la que cae un punto. Lleva a la primera sección. -->
-      <a href="#trayectoria" class="scroll-cue ui-focus tap" data-testid="scroll-cue" [attr.aria-label]="i18n.t(copy.scrollCueLabel)">
-        <span class="scroll-cue-track" aria-hidden="true"></span>
-        <span class="scroll-cue-text" aria-hidden="true">{{ i18n.t(copy.scrollCue) }}</span>
-      </a>
+      @if (!refresh()) {
+        <a href="#trayectoria" class="scroll-cue ui-focus tap" data-testid="scroll-cue" [attr.aria-label]="i18n.t(copy.scrollCueLabel)">
+          <span class="scroll-cue-track" aria-hidden="true"></span>
+          <span class="scroll-cue-text" aria-hidden="true">{{ i18n.t(copy.scrollCue) }}</span>
+        </a>
+      }
     </section>
 
     @if (catalog.error(); as message) {
