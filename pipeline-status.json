@@ -2,89 +2,105 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-29T05:49:52.810Z",
+  "updatedAt": "2026-10-29T06:35:15.299Z",
   "workflows": {
     "ci": {
-      "runId": 40825183890,
-      "runNumber": 265,
-      "sha": "7bb3dacb30425f3fc92037bc11b567a5ddfd4ae5",
+      "runId": 40829649063,
+      "runNumber": 267,
+      "sha": "27f96c373595ebfb21dac9d693fbdc3763b7cf92",
       "event": "push",
-      "startedAt": "2026-10-29T05:45:07Z",
-      "finishedAt": "2026-10-29T05:48:08.271Z",
-      "durationSeconds": 181,
+      "startedAt": "2026-10-29T06:30:43Z",
+      "finishedAt": "2026-10-29T06:35:15.299Z",
+      "durationSeconds": 272,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 7,
+          "durationSeconds": 6,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 10,
+          "durationSeconds": 8,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 109,
+          "durationSeconds": 144,
           "runs": 2
         },
         {
           "id": "spec-lint",
-          "status": "skipped",
-          "durationSeconds": null,
+          "status": "success",
+          "durationSeconds": 26,
           "runs": 1
         },
         {
           "id": "spec-breaking",
-          "status": "skipped",
-          "durationSeconds": null,
+          "status": "success",
+          "durationSeconds": 8,
           "runs": 1
         },
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 27,
+          "durationSeconds": 24,
           "runs": 1
         },
         {
           "id": "backend-unit",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 99,
+          "runs": 1,
+          "metrics": {
+            "tests": 375,
+            "failed": 0,
+            "skipped": 2,
+            "coverage": 89.2
+          }
         },
         {
           "id": "backend-integration",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 130,
+          "runs": 1,
+          "metrics": {
+            "tests": 8,
+            "failed": 0,
+            "skipped": 0
+          }
         },
         {
           "id": "backend-arch",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 65,
+          "runs": 1,
+          "metrics": {
+            "tests": 15,
+            "failed": 0,
+            "skipped": 0
+          }
         },
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 70,
+          "durationSeconds": 85,
           "runs": 3,
           "metrics": {
-            "tests": 785
+            "tests": 790
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 48,
+          "durationSeconds": 29,
           "runs": 1,
           "metrics": {
-            "bundleKb": 332.1,
-            "bundleGzipKb": 79.7
+            "bundleKb": 308.7,
+            "bundleGzipKb": 72.8
           }
         },
         {
@@ -107,26 +123,33 @@
         },
         {
           "id": "docker",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 156,
+          "runs": 1,
+          "metrics": {
+            "vulnerabilities": 0
+          }
         },
         {
           "id": "publish-image",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 61,
+          "runs": 1,
+          "metrics": {
+            "digest": "sha256:2af99e84972b753b3144841aa538bd1f1a3345517f3f1e04e30e57e2102c8e10",
+            "sbomPackages": 217
+          }
         },
         {
           "id": "coverage-badge",
-          "status": "skipped",
-          "durationSeconds": null,
+          "status": "success",
+          "durationSeconds": 7,
           "runs": 1
         },
         {
           "id": "gate",
           "status": "success",
-          "durationSeconds": 3,
+          "durationSeconds": 2,
           "runs": 1
         }
       ]
@@ -444,6 +467,113 @@
     ]
   },
   "merges": [
+    {
+      "number": 112,
+      "title": "feat: architecture decision records published at /decisiones behind site.adr",
+      "branch": "feat/architecture-decisions",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-29T06:30:40Z",
+      "sha": "27f96c373595ebfb21dac9d693fbdc3763b7cf92",
+      "additions": 2079,
+      "deletions": 4,
+      "changedFiles": 37,
+      "ci": {
+        "runId": 40829649063,
+        "runNumber": 267,
+        "conclusion": "success",
+        "durationSeconds": 272,
+        "jobs": [
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "success"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "success"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "success"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "success"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})",
+            "status": "skipped"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "success"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "success"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
     {
       "number": 111,
       "title": "feat(frontend): live production hologram and broader role title behind site.refresh",
@@ -1268,27 +1398,37 @@
         "durationSeconds": 134,
         "jobs": []
       }
-    },
-    {
-      "number": 98,
-      "title": "fix(career): stop describing the infrastructure of employers and clients",
-      "branch": "fix/career-no-client-infrastructure",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-23T03:21:07Z",
-      "sha": "780ef9b1f6b4fdee7b6570399d17ccc2877d89ad",
-      "additions": 77,
-      "deletions": 85,
-      "changedFiles": 25,
-      "ci": {
-        "runId": 39894544494,
-        "runNumber": 240,
-        "conclusion": "cancelled",
-        "durationSeconds": 554,
-        "jobs": []
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "27f96c373595ebfb21dac9d693fbdc3763b7cf92",
+      "parents": [
+        "7bb3dacb30425f3fc92037bc11b567a5ddfd4ae5",
+        "43583b3ad26d46458ef3c5308af11719bc33128e"
+      ],
+      "subject": "Merge pull request #112 from JCardzZ/feat/architecture-decisions",
+      "author": "JCardzZ",
+      "date": "2026-10-29T06:30:40Z"
+    },
+    {
+      "sha": "43583b3ad26d46458ef3c5308af11719bc33128e",
+      "parents": [
+        "c472b684f9e588ea904680a907148f2d804ab4bc"
+      ],
+      "subject": "feat(frontend): publish the architecture decisions at /decisiones behind site.adr",
+      "author": "JCardzZ",
+      "date": "2026-10-29T06:09:30Z"
+    },
+    {
+      "sha": "c472b684f9e588ea904680a907148f2d804ab4bc",
+      "parents": [
+        "7bb3dacb30425f3fc92037bc11b567a5ddfd4ae5"
+      ],
+      "subject": "docs(adr): record the platform's architecture decisions",
+      "author": "JCardzZ",
+      "date": "2026-10-29T06:09:29Z"
+    },
     {
       "sha": "7bb3dacb30425f3fc92037bc11b567a5ddfd4ae5",
       "parents": [
@@ -1827,33 +1967,6 @@
       "subject": "Merge pull request #90 from JCardzZ/feat/social-links",
       "author": "JCardzZ",
       "date": "2026-10-23T00:43:07Z"
-    },
-    {
-      "sha": "b2d38883813e9989ea9ae7333162aa2e89c714f9",
-      "parents": [
-        "614ef50a587ae618dbcb462ddfb8f4703022f24f"
-      ],
-      "subject": "feat: show a screenshot on each project card",
-      "author": "JCardzZ",
-      "date": "2026-10-23T00:42:00Z"
-    },
-    {
-      "sha": "e7e7e60d9450ddce8c3420639d3ff30e12ca7001",
-      "parents": [
-        "614ef50a587ae618dbcb462ddfb8f4703022f24f"
-      ],
-      "subject": "feat(frontend): give every article its own page that can be linked and shared",
-      "author": "JCardzZ",
-      "date": "2026-10-23T00:37:48Z"
-    },
-    {
-      "sha": "6e8969eeb5a97551878e86eb36c421282b15acc4",
-      "parents": [
-        "614ef50a587ae618dbcb462ddfb8f4703022f24f"
-      ],
-      "subject": "feat(frontend): link the GitHub and LinkedIn profiles from the hero and the footer",
-      "author": "JCardzZ",
-      "date": "2026-10-23T00:34:15Z"
     }
   ]
 }
