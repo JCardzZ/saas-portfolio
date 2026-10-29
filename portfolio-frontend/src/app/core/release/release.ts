@@ -35,7 +35,7 @@ export interface ReleaseInfo {
  */
 export type ApiHealth =
   | { state: 'loading' }
-  | { state: 'up' | 'degraded'; version: string | null }
+  | { state: 'up' | 'degraded'; version: string | null; database?: boolean; cache?: boolean; ai?: string | null }
   | { state: 'unreachable' }
   | { state: 'demo' };
 
@@ -69,7 +69,11 @@ export function parseReleaseInfo(value: unknown): ReleaseInfo | null {
 export function parseApiHealth(value: unknown): ApiHealth {
   const raw = (typeof value === 'object' && value !== null ? value : {}) as Record<string, unknown>;
   const version = matches(raw['version'], VERSION) ? raw['version'] : null;
-  return { state: raw['status'] === 'UP' ? 'up' : 'degraded', version };
+  const healthy = (value: unknown) => typeof value === 'string' && /connected|healthy/i.test(value);
+  const breakers = (typeof raw['circuitBreakers'] === 'object' && raw['circuitBreakers'] !== null ? raw['circuitBreakers'] : {}) as Record<string, unknown>;
+  const ai = typeof breakers['aiEngine'] === 'string' && /^[A-Z_]{1,12}$/.test(breakers['aiEngine']) ? breakers['aiEngine'] : null;
+  // Con 200 la base de datos responde (sin ella la API contesta 503); la caché lo dice su descripción.
+  return { state: raw['status'] === 'UP' ? 'up' : 'degraded', version, database: true, cache: raw['status'] === 'UP' || healthy(raw['redisCache']), ai };
 }
 
 function parseNote(value: unknown): ReleaseNote | null {
@@ -148,6 +152,12 @@ export class ReleaseService {
       this._release.set(release);
       this._local.set(!release && !environment.production);
     });
+    this.loadHealth();
+  }
+
+  /** Vuelve a medir la salud y la latencia (el panel en vivo lo pide cada 20 s). */
+  refreshHealth(): void {
+    this.healthRequested = false;
     this.loadHealth();
   }
 

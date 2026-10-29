@@ -19,7 +19,7 @@ import { TraceInspectorComponent } from '../widgets/trace-inspector.component';
 import { CvDownloadComponent, CvPickerComponent } from '../../../shared/ui/cv-download.component';
 import { FlagService } from '../../../core/flags/flag.service';
 import { McpSectionComponent } from '../mcp/mcp-section.component';
-import { HERO_ROLE_PLACEHOLDER } from './hero-content';
+import { HERO_ROLE_PLACEHOLDER, HERO_ROLE_REFRESH } from './hero-content';
 import { LanguageService } from '../../../core/i18n/language.service';
 import { HERO_CREDENTIALS, LANDING_COPY } from './landing-copy';
 import { HeroSceneComponent } from './hero3d/hero-scene.component';
@@ -103,7 +103,7 @@ export class LandingPageComponent implements OnInit {
   }
   readonly copy = LANDING_COPY;
   readonly legalLink = { es: 'Aviso legal y privacidad', en: 'Legal notice and privacy' };
-  readonly heroRole = computed(() => this.i18n.t(HERO_ROLE_PLACEHOLDER));
+  readonly heroRole = computed(() => this.i18n.t(this.refresh() ? HERO_ROLE_REFRESH : HERO_ROLE_PLACEHOLDER));
   /** Letras del nombre y del rol (los espacios, sin romper la línea). */
   readonly nameLetters = computed(() => [...this.i18n.t(this.copy.heroTitle)].map((c) => (c === ' ' ? '\u00a0' : c)));
   readonly roleLetters = computed(() => [...this.heroRole()].map((c) => (c === ' ' ? '\u00a0' : c)));

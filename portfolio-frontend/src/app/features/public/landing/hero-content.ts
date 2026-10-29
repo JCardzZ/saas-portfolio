@@ -6,3 +6,5 @@
 import type { Localized } from '../../../core/i18n/language.service';
 
 export const HERO_ROLE_PLACEHOLDER: Localized = { en: 'Senior Backend & API Platform Engineer', es: 'Senior Backend & API Platform Engineer' };
+/** Título del rediseño (`site.refresh`): backend, nube e IA aplicada, que es lo que la propia plataforma demuestra. */
+export const HERO_ROLE_REFRESH: Localized = { en: 'Senior Software Engineer — Backend, Cloud & Applied AI', es: 'Senior Software Engineer — Backend, Cloud & Applied AI' };

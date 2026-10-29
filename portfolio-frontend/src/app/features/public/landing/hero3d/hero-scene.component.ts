@@ -1,17 +1,28 @@
 import {
-  ChangeDetectionStrategy, Component, ViewEncapsulation, DestroyRef, computed, output, ElementRef, NgZone, afterNextRender, effect, inject, input, signal, viewChild,
+  ChangeDetectionStrategy, Component, ViewEncapsulation, DestroyRef, Injector, computed, output, ElementRef, NgZone, afterNextRender, effect, inject, input, signal, untracked, viewChild,
 } from '@angular/core';
 
 import { LanguageService } from '../../../../core/i18n/language.service';
 import { ThemeService } from '../../../../core/theme/theme.service';
 import { TECH_ICONS, TechIconKey } from '../../../../shared/ui/tech-icons';
 import type { HeroScene, ScenePalette, SceneTech } from './hero-scene';
+import type { IacLive } from './iac-panel';
+import { FlagService } from '../../../../core/flags/flag.service';
+import { ReleaseService } from '../../../../core/release/release';
+import { DeliveryStatusService } from '../../delivery/delivery-status.service';
+import { SystemEventKind, SystemEventsService } from '../../data/system-events.service';
+import { TelemetryStreamService } from '../../data/telemetry-stream.service';
 import { HERO_ROLE_PLACEHOLDER } from '../hero-content';
 import { PAGE_SECTIONS } from '../../navbar/page-sections';
 import { GUIDE_SCRIPT } from './guide-script';
 import { HeroSound, bestVoice, countVisit, greeting } from './hero-sound';
 import { hasFastWebGL } from '../../../../shared/ui/webgl-support';
 import type * as StackCardsModule from './stack-cards';
+
+/** Holograma en vivo: a qué pieza del mapa llega cada tipo de evento real del backend. */
+const EVENT_TARGET: Record<SystemEventKind, IacLive['events'][number]['target']> = {
+  cache: 'cache', vector: 'db', ai: 'ai', auth: 'api', ok: 'api', info: 'api', warn: 'api',
+};
 
 /** Textos de las cartas: se cargan con la escena 3D (no pesan en el arranque). */
 let cards: typeof StackCardsModule | null = null;
@@ -932,6 +943,49 @@ export class HeroSceneComponent {
   private scene: HeroScene | null = null;
   private readonly zone = inject(NgZone);
 
+  // ── Holograma en vivo (site.refresh): la infraestructura real con datos de producción ──
+  private readonly flags = inject(FlagService);
+  private readonly injector = inject(Injector);
+  private readonly liveIac = computed(() => this.flags.isEnabled('site.refresh'));
+  /** Se piden al encender la flag: con ella apagada, el hero no carga ni llama a nada nuevo. */
+  private readonly sources = signal<{ release: ReleaseService; delivery: DeliveryStatusService; events: SystemEventsService; telemetry: TelemetryStreamService } | null>(null);
+  /** Eventos reales del backend (SSE) del último minuto, con el instante en que llegaron. */
+  private iacEvents: IacLive['events'] = [];
+  private lastEventId = 0;
+  /** Lo que se sabe ahora de producción: salud y latencia, versiones y el último CD y CI. */
+  private readonly iacData = computed<Omit<IacLive, 'events'> | null>(() => {
+    const sources = this.sources();
+    if (!sources) {
+      return null;
+    }
+    const api = sources.release.api();
+    const release = sources.release.release();
+    const status = sources.delivery.status();
+    const health = api.state === 'up' || api.state === 'degraded' ? api : null;
+    const cd = status?.workflows.cd;
+    const ci = status?.workflows.ci;
+    return {
+      api: api.state === 'unreachable' ? 'down' : api.state,
+      latencyMs: sources.release.latency(),
+      siteVersion: release?.version ?? null,
+      apiVersion: health?.version ?? null,
+      sha: release?.sha ?? cd?.sha ?? null,
+      database: health?.database ?? null,
+      cache: health?.cache ?? null,
+      ai: health?.ai ?? null,
+      cd: cd ? {
+        run: cd.runNumber, seconds: cd.durationSeconds,
+        jobs: cd.jobs.map((job) => ({ id: job.id, seconds: job.durationSeconds, ok: job.status === 'success' ? true : job.status === 'failure' ? false : null })),
+      } : null,
+      ci: ci ? { run: ci.runNumber, ok: ci.conclusion === 'success' } : null,
+    };
+  });
+
+  private pushIac(): void {
+    const data = this.liveIac() ? this.iacData() : null;
+    this.scene?.setIac(data ? { ...data, events: this.iacEvents } : null);
+  }
+
   constructor() {
     const zone = this.zone;
     const destroyRef = inject(DestroyRef);
@@ -943,6 +997,44 @@ export class HeroSceneComponent {
     });
 
     effect(() => this.robot.emit(this.failed() ? 'none' : this.ready() ? 'ready' : 'loading'));
+
+    // Holograma en vivo: pide los datos, abre el stream de telemetría y vuelve a medir la salud cada 20 s.
+    effect((onCleanup) => {
+      if (!this.liveIac()) {
+        return;
+      }
+      const sources = this.sources() ?? {
+        release: this.injector.get(ReleaseService), delivery: this.injector.get(DeliveryStatusService),
+        events: this.injector.get(SystemEventsService), telemetry: this.injector.get(TelemetryStreamService),
+      };
+      untracked(() => this.sources.set(sources));
+      sources.release.load();
+      sources.delivery.load();
+      sources.telemetry.acquire();
+      const timer = setInterval(() => sources.release.refreshHealth(), 20_000);
+      onCleanup(() => {
+        clearInterval(timer);
+        sources.telemetry.release();
+      });
+    });
+    effect(() => {
+      const events = this.sources()?.events.events() ?? [];
+      if (this.liveIac()) {
+        const now = performance.now();
+        for (const event of events) {
+          if (event.origin === 'live' && event.id > this.lastEventId) {
+            this.iacEvents.push({ at: now + (event.stagger ?? 0), target: EVENT_TARGET[event.kind] });
+          }
+        }
+        this.lastEventId = events.reduce((max, event) => Math.max(max, event.id), this.lastEventId);
+        this.iacEvents = this.iacEvents.filter((event) => now - event.at < 60_000).slice(-120);
+      }
+      this.pushIac();
+    });
+    effect(() => {
+      this.iacData();
+      this.pushIac();
+    });
 
     afterNextRender(() => {
       if (!this.enabled() || !hasFastWebGL()) {
@@ -1003,6 +1095,7 @@ export class HeroSceneComponent {
         this.zone.run(() => this.docked.set(title));
       });
       this.scene = scene;
+      this.pushIac();
     } catch {
       this.failed.set(true);
       return;
@@ -1469,6 +1562,9 @@ function readPalette(): ScenePalette {
     muted: get('--text-3'),
     surface: get('--bg-surface-2'),
     line: get('--border-strong'),
+    ok: get('--status-ok'),
+    warn: get('--status-warn'),
+    danger: get('--status-danger'),
     light: css.getPropertyValue('color-scheme').trim() === 'light' || document.documentElement.getAttribute('data-theme') === 'light'
       || (!document.documentElement.hasAttribute('data-theme') && matchMedia('(prefers-color-scheme: light)').matches),
   };
