@@ -85,6 +85,24 @@ function matches(value: unknown, pattern: RegExp): value is string {
   return typeof value === 'string' && pattern.test(value);
 }
 
+export type VersionBump = 'major' | 'minor' | 'patch';
+
+/**
+ * Qué parte de la versión subió respecto a la anterior (SemVer: MAYOR.MENOR.PARCHE), para
+ * resaltarla. `null` en la primera versión o si no se puede comparar.
+ */
+export function versionBump(version: string, previous: string | null): { segments: [string, string, string]; bump: VersionBump | null } {
+  const segments = version.replace(/^v/, '').split('.') as [string, string, string];
+  if (!previous) {
+    return { segments, bump: null };
+  }
+  const before = previous.replace(/^v/, '').split('.').map(Number);
+  const now = segments.map(Number);
+  const changed = now.findIndex((part, index) => part !== before[index]);
+  const bump: VersionBump | null = changed === 0 ? 'major' : changed === 1 ? 'minor' : changed === 2 ? 'patch' : null;
+  return { segments, bump };
+}
+
 /** Enlaces a GitHub de una release: sus notas, el commit desplegado y lo que cambió desde la anterior. */
 export function releaseLinks(release: ReleaseInfo): { notes: string; commit: string; compare: string | null } {
   const base = `https://github.com/${release.repository}`;
