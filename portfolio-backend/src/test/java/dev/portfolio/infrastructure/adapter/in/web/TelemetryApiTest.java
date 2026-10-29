@@ -80,7 +80,7 @@ class TelemetryApiTest {
                 .andExpect(jsonPath("$.status").value("UP"))
                 .andExpect(jsonPath("$.database").value("PostgreSQL 16 - Connected"))
                 .andExpect(jsonPath("$.redisCache").value("Redis - Healthy"))
-                .andExpect(jsonPath("$.circuitBreakers.aiEngine").value("CLOSED")
+                .andExpect(jsonPath("$.circuitBreakers.aiEngine").value("CLOSED"))
                 .andExpect(jsonPath("$.version").value("v1.4.0"));
     }
 
