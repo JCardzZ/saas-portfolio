@@ -5,6 +5,7 @@ import { LanguageService } from '../../core/i18n/language.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { ReleaseService } from '../../core/release/release';
 import { ReleaseDetailsComponent, TONE_DOT, apiStatus, useDeployedTime } from './release-details.component';
+import { VersionMarkComponent } from './version-mark.component';
 
 export { relativeTime } from './release-details.component';
 
@@ -18,7 +19,7 @@ export { relativeTime } from './release-details.component';
   selector: 'app-release-badge',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe, ReleaseDetailsComponent],
+  imports: [TranslatePipe, ReleaseDetailsComponent, VersionMarkComponent],
   host: {
     class: 'relative inline-block',
     '(document:click)': 'onDocumentClick($event)',
@@ -61,7 +62,7 @@ export { relativeTime } from './release-details.component';
           <header class="mb-4 flex items-start justify-between gap-3">
             <div>
               <h2 id="release-notes-title" class="text-base font-semibold tracking-tight">
-                @if (release(); as r) { {{ 'Versión' | t }} <span class="font-mono">{{ r.version }}</span> } @else { {{ 'Build local' | t }} }
+                @if (release(); as r) { <span class="sr-only">{{ 'Versión' | t }} </span><app-version-mark [version]="r.version" [previous]="r.previous" /> } @else { {{ 'Build local' | t }} }
               </h2>
               <p class="mt-0.5 text-body-sm text-ink-2">
                 @if (release()) { {{ 'Desplegada el' | t }} {{ time.on() }} } @else { {{ 'La versión la pone el CD al desplegar.' | t }} }

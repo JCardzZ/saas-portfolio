@@ -5,6 +5,7 @@ import { LanguageService } from '../../../core/i18n/language.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { ReleaseService } from '../../../core/release/release';
 import { ReleaseDetailsComponent, TONE_DOT, apiStatus, useDeployedTime } from '../../../shared/ui/release-details.component';
+import { VersionMarkComponent } from '../../../shared/ui/version-mark.component';
 
 /**
  * La release que está en producción, al principio de la vista «Despliegues»: versión semántica,
@@ -15,7 +16,7 @@ import { ReleaseDetailsComponent, TONE_DOT, apiStatus, useDeployedTime } from '.
   selector: 'app-release-card',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe, ReleaseDetailsComponent],
+  imports: [TranslatePipe, ReleaseDetailsComponent, VersionMarkComponent],
   host: { class: 'block' },
   template: `
     @if (visible()) {
@@ -27,7 +28,10 @@ import { ReleaseDetailsComponent, TONE_DOT, apiStatus, useDeployedTime } from '.
 
         <div class="mt-5 grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] [&>*]:min-w-0">
           <div>
-            <p class="font-mono text-4xl font-semibold tracking-tight text-ink-1" data-testid="release-card-version">{{ release()?.version ?? 'dev' }}</p>
+            <p data-testid="release-card-version">
+              @if (release(); as r) { <app-version-mark size="lg" [version]="r.version" [previous]="r.previous" /> }
+              @else { <span class="font-mono text-4xl font-semibold tracking-tight text-ink-1">dev</span> }
+            </p>
             <p class="mt-3 inline-flex items-center gap-2 rounded-full border border-line-subtle px-2.5 py-1 text-xs text-ink-2">
               <span class="h-2 w-2 rounded-full" [class]="dot()" aria-hidden="true"></span>{{ status().label | t }}
             </p>
