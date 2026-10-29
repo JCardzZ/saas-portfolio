@@ -23,7 +23,8 @@ import { TONE_DOT, useDeployedTime } from '../../../shared/ui/release-details.co
         <span class="relative inline-flex h-2 w-2 rounded-full" [class]="dot()"></span>
       </span>
       <span class="text-ink-1">{{ label() | t }}</span>
-      @if (latency(); as ms) { <span class="sep" aria-hidden="true"></span><span class="font-mono tabular-nums">{{ ms }} ms</span> }
+      <!-- 0 ms es un dato: no vale @if (latency()), que lo daría por vacío. -->
+      @if (latency() !== null) { <span class="sep" aria-hidden="true"></span><span class="font-mono tabular-nums">{{ latency() }} ms</span> }
       @if (release(); as r) {
         <span class="sep" aria-hidden="true"></span><span class="font-mono text-ink-1">{{ r.version }}</span>
         <span class="sep max-sm:hidden" aria-hidden="true"></span><span class="max-sm:hidden">{{ 'desplegada' | t }} {{ time.ago() }}</span>

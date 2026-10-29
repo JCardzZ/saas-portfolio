@@ -1,5 +1,7 @@
 import type * as THREE from '../../../../shared/three/three-lite';
 
+import { IacLive, paintIacPanel } from './iac-panel';
+
 /**
  * Escena 3D del hero (Three.js, cargado bajo demanda): un robot genérico de carcasa brillante —
  * casco con visor de cristal negro, ojos de luz con el acento que siguen al cursor y parpadean,
@@ -21,6 +23,10 @@ export interface ScenePalette {
   surface: string;
   line: string;
   light: boolean;
+  /** Colores de estado (--status-*): el panel en vivo los usa para sano, aviso y fallo. */
+  ok?: string;
+  warn?: string;
+  danger?: string;
 }
 
 /** Una tecnología del mazo: trazado de Simple Icons (viewBox 24 × 24) y color de marca. */
@@ -127,6 +133,8 @@ export interface HeroScene {
   /** Modo guía: `true` si (x, y), normalizadas del lienzo (-1…1), caen sobre el robot. */
   hitRobot(x: number, y: number): boolean;
   setPalette(palette: ScenePalette): void;
+  /** Rediseño (`site.refresh`): el holograma pasa a ser el panel de la infraestructura real; `null` vuelve al diagrama. */
+  setIac(live: IacLive | null): void;
   dispose(): void;
 }
 
@@ -562,11 +570,17 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
   let archT = 0;
   let codeTick = 0;
   let genieOut = 1;
+  let iac: IacLive | null = null;
   function paintCode(colors: ScenePalette): void {
     const ctx = codeArt.getContext('2d');
     if (!ctx) return;
     const W = codeArt.width;
     const H = codeArt.height;
+    if (iac) {
+      paintIacPanel(ctx, W, H, archT, performance.now(), colors, iac);
+      codeTexture.needsUpdate = true;
+      return;
+    }
     ctx.clearRect(0, 0, W, H);
     // Marco del holograma: fondo verdoso, rejilla y líneas de barrido.
     ctx.fillStyle = colors.light ? 'rgba(255,255,255,0.92)' : 'rgba(14,17,15,0.9)';
@@ -1644,6 +1658,16 @@ export function createHeroScene(three: typeof THREE, canvas: HTMLCanvasElement, 
 
   return {
     frame,
+    setIac(live: IacLive | null) {
+      // El panel en vivo es una interfaz, no un objeto iluminado: sin tone mapping sus colores (y el
+      // tema claro) salen tal cual; el diagrama anterior se diseñó con él.
+      if (!!live !== !!iac) {
+        codeMat.toneMapped = !live;
+        codeMat.needsUpdate = true;
+      }
+      iac = live;
+      paintCode(current);
+    },
     async prepare() {
       try {
         await renderer.compileAsync(scene, camera);
