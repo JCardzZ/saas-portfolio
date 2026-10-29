@@ -7,7 +7,7 @@ import { runtimeConfig } from '../config/runtime-config';
 /** Las flags que conoce el frontend. Son las mismas que declara el backend (`FeatureFlagDomain`). */
 export const FEATURE_FLAGS = [
   'studio.smart-rules', 'cloud.oracle', 'studio.system-design', 'studio.system-templates', 'mcp.section',
-  'site.release-version',
+  'site.release-version', 'site.refresh',
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAGS)[number];

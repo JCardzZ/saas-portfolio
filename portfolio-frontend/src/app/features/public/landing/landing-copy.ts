@@ -8,6 +8,11 @@ export const LANDING_COPY = {
     en: 'Engineering you can interrogate: projects, technologies and the very code of this platform, with an assistant that answers citing its sources.',
     es: 'Ingeniería que se puede interrogar: proyectos, tecnologías y el propio código de esta plataforma, con un asistente que responde citando sus fuentes.',
   },
+  /** Con `site.refresh`: concreto y verificable en la propia página, sin eslóganes. */
+  heroIntroRefresh: {
+    en: 'Building APIs and microservices for banking since 2019. This site is its own case study: the architecture, the pipeline and the telemetry you see are the production ones.',
+    es: 'Construyo APIs y microservicios para banca desde 2019. Esta web es su propio caso de estudio: la arquitectura, el pipeline y la telemetría que ves son los de producción.',
+  },
   scrollCue: { en: 'Scroll', es: 'Desliza' },
   scrollCueLabel: { en: 'Go to experience', es: 'Ir a la trayectoria' },
   askAi: { en: 'Ask the AI', es: 'Preguntar a la IA' },

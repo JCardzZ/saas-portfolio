@@ -68,7 +68,7 @@ interface Card {
                 <dd class="text-ink-1">{{ card.blueprint.tradeoff | t }}</dd>
               </div>
               <div>
-                <dt class="text-xs font-medium uppercase tracking-wider text-ink-3">En {{ providerName() }}</dt>
+                <dt class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'En' | t }} {{ providerName() }}</dt>
                 <dd class="text-ink-2">{{ card.services }}</dd>
               </div>
             </dl>

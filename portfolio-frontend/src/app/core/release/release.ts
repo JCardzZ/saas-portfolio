@@ -127,11 +127,14 @@ export class ReleaseService {
   private readonly _release = signal<ReleaseInfo | null>(null);
   private readonly _local = signal(false);
   private readonly _api = signal<ApiHealth>({ state: 'loading' });
+  private readonly _latency = signal<number | null>(null);
 
   readonly release = this._release.asReadonly();
   /** `true` en un build sin desplegar (desarrollo): no hay versión que mostrar. */
   readonly local = this._local.asReadonly();
   readonly api = this._api.asReadonly();
+  /** Lo que tardó `/telemetry/health` desde este navegador, en ms; `null` si no se midió. */
+  readonly latency = this._latency.asReadonly();
 
   load(): void {
     if (this.requested) {
@@ -157,9 +160,13 @@ export class ReleaseService {
       this._api.set({ state: 'demo' });
       return;
     }
+    const started = performance.now();
     this.http.get<unknown>(`${runtimeConfig.apiBaseUrl}/telemetry/health`).pipe(
       map(parseApiHealth),
       catchError(() => of<ApiHealth>({ state: 'unreachable' })),
-    ).subscribe((api) => this._api.set(api));
+    ).subscribe((api) => {
+      this._latency.set(api.state === 'unreachable' ? null : Math.round(performance.now() - started));
+      this._api.set(api);
+    });
   }
 }
