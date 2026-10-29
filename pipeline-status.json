@@ -2,16 +2,16 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-29T02:48:49.592Z",
+  "updatedAt": "2026-10-29T03:28:05.361Z",
   "workflows": {
     "ci": {
-      "runId": 40807454719,
-      "runNumber": 257,
-      "sha": "12026cf2dc6ac16537fea8869531067bc55da104",
+      "runId": 40811848084,
+      "runNumber": 259,
+      "sha": "c9df1a20c8f7a962372261a97edd1e3ac3e76345",
       "event": "push",
-      "startedAt": "2026-10-29T02:37:28Z",
-      "finishedAt": "2026-10-29T02:46:47.686Z",
-      "durationSeconds": 560,
+      "startedAt": "2026-10-29T03:23:17Z",
+      "finishedAt": "2026-10-29T03:28:05.361Z",
+      "durationSeconds": 288,
       "conclusion": "success",
       "jobs": [
         {
@@ -23,83 +23,67 @@
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 12,
+          "durationSeconds": 10,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 108,
+          "durationSeconds": 269,
           "runs": 2
         },
         {
           "id": "spec-lint",
-          "status": "success",
-          "durationSeconds": 16,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
           "id": "spec-breaking",
-          "status": "success",
-          "durationSeconds": 8,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 30,
+          "durationSeconds": 25,
           "runs": 1
         },
         {
           "id": "backend-unit",
-          "status": "success",
-          "durationSeconds": 112,
-          "runs": 1,
-          "metrics": {
-            "tests": 375,
-            "failed": 0,
-            "skipped": 2,
-            "coverage": 89.1
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "backend-integration",
-          "status": "success",
-          "durationSeconds": 131,
-          "runs": 1,
-          "metrics": {
-            "tests": 8,
-            "failed": 0,
-            "skipped": 0
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "backend-arch",
-          "status": "success",
-          "durationSeconds": 53,
-          "runs": 1,
-          "metrics": {
-            "tests": 15,
-            "failed": 0,
-            "skipped": 0
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 71,
+          "durationSeconds": 79,
           "runs": 3,
           "metrics": {
-            "tests": 773
+            "tests": 777
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 38,
+          "durationSeconds": 34,
           "runs": 1,
           "metrics": {
-            "bundleKb": 331.2,
+            "bundleKb": 331.5,
             "bundleGzipKb": 79.8
           }
         },
@@ -123,27 +107,20 @@
         },
         {
           "id": "docker",
-          "status": "success",
-          "durationSeconds": 76,
-          "runs": 1,
-          "metrics": {
-            "vulnerabilities": 0
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "publish-image",
-          "status": "success",
-          "durationSeconds": 90,
-          "runs": 1,
-          "metrics": {
-            "digest": "sha256:5263931cccd59dcb9cd322268bf8539b182a98c550cdbdd09aed3beed862ab4b",
-            "sbomPackages": 217
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "coverage-badge",
-          "status": "success",
-          "durationSeconds": 5,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
@@ -454,6 +431,113 @@
     ]
   },
   "merges": [
+    {
+      "number": 108,
+      "title": "feat(frontend): live status line with the version and the release in the delivery section",
+      "branch": "feat/release-status-and-delivery",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-29T03:23:15Z",
+      "sha": "c9df1a20c8f7a962372261a97edd1e3ac3e76345",
+      "additions": 357,
+      "deletions": 140,
+      "changedFiles": 9,
+      "ci": {
+        "runId": 40811848084,
+        "runNumber": 259,
+        "conclusion": "success",
+        "durationSeconds": 288,
+        "jobs": [
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "skipped"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "success"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
     {
       "number": 107,
       "title": "ci: reach production in minutes and deploy the backend automatically",
@@ -1015,27 +1099,28 @@
         "durationSeconds": 1,
         "jobs": []
       }
-    },
-    {
-      "number": 96,
-      "title": "feat(frontend): show each career entry in sections: duration, what I did and stack",
-      "branch": "feat/career-detail-sections",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-23T02:09:23Z",
-      "sha": "04663cbb7d05a7d7acad7d082c49908855da58ba",
-      "additions": 98,
-      "deletions": 19,
-      "changedFiles": 4,
-      "ci": {
-        "runId": 39888023280,
-        "runNumber": 229,
-        "conclusion": "cancelled",
-        "durationSeconds": 557,
-        "jobs": []
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "c9df1a20c8f7a962372261a97edd1e3ac3e76345",
+      "parents": [
+        "12026cf2dc6ac16537fea8869531067bc55da104",
+        "2ad22e74d82420c8ffae9e7b0a5a3aa7c6732a7c"
+      ],
+      "subject": "Merge pull request #108 from JCardzZ/feat/release-status-and-delivery",
+      "author": "JCardzZ",
+      "date": "2026-10-29T03:23:14Z"
+    },
+    {
+      "sha": "2ad22e74d82420c8ffae9e7b0a5a3aa7c6732a7c",
+      "parents": [
+        "12026cf2dc6ac16537fea8869531067bc55da104"
+      ],
+      "subject": "feat(frontend): show the live API status with the version and the release in the delivery section",
+      "author": "JCardzZ",
+      "date": "2026-10-29T03:19:33Z"
+    },
     {
       "sha": "12026cf2dc6ac16537fea8869531067bc55da104",
       "parents": [
@@ -1584,25 +1669,6 @@
       "subject": "fix(frontend): anchor the compact bubble just above the head and clear the shoulder on desktop",
       "author": "JCardzZ",
       "date": "2026-10-22T14:21:08Z"
-    },
-    {
-      "sha": "cc356c11123590d69c16913682a0d9b7360cd1c9",
-      "parents": [
-        "af902b2954606e227ae71bfc3923729eaaf92356"
-      ],
-      "subject": "fix(frontend): keep the robot's bubble off the robot and make its code window sober",
-      "author": "JCardzZ",
-      "date": "2026-10-22T04:36:58Z"
-    },
-    {
-      "sha": "af902b2954606e227ae71bfc3923729eaaf92356",
-      "parents": [
-        "1a4845076971839cbb50421140e836877da7239f",
-        "a573bb77ebb756f2e83816518606202071b25c6d"
-      ],
-      "subject": "Merge pull request #84 from JCardzZ/perf/smooth-mobile-scroll",
-      "author": "JCardzZ",
-      "date": "2026-10-22T04:33:07Z"
     }
   ]
 }
