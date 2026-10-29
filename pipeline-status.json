@@ -2,22 +2,22 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-10-24T16:06:57.187Z",
+  "updatedAt": "2026-10-29T00:19:21.986Z",
   "workflows": {
     "ci": {
-      "runId": 40109836516,
-      "runNumber": 249,
-      "sha": "548cae9b3ccfd115f5df8ab1fc51d757435d0aac",
+      "runId": 40792915084,
+      "runNumber": 251,
+      "sha": "4be3a9a266c473964834d57be43d0cc9e62a8efe",
       "event": "push",
-      "startedAt": "2026-10-24T16:04:07Z",
-      "finishedAt": "2026-10-24T16:06:57.187Z",
-      "durationSeconds": 170,
+      "startedAt": "2026-10-29T00:15:59Z",
+      "finishedAt": "2026-10-29T00:19:21.986Z",
+      "durationSeconds": 203,
       "conclusion": "failure",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 8,
+          "durationSeconds": 6,
           "runs": 1
         },
         {
@@ -29,52 +29,59 @@
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 154,
+          "durationSeconds": 148,
           "runs": 2
         },
         {
           "id": "spec-lint",
-          "status": "skipped",
-          "durationSeconds": null,
+          "status": "success",
+          "durationSeconds": 17,
           "runs": 1
         },
         {
           "id": "spec-breaking",
-          "status": "skipped",
-          "durationSeconds": null,
+          "status": "success",
+          "durationSeconds": 10,
           "runs": 1
         },
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 28,
+          "durationSeconds": 24,
           "runs": 1
         },
         {
           "id": "backend-unit",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "failure",
+          "durationSeconds": 26,
+          "runs": 1,
+          "metrics": {}
         },
         {
           "id": "backend-integration",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 149,
+          "runs": 1,
+          "metrics": {
+            "tests": 8,
+            "failed": 0,
+            "skipped": 0
+          }
         },
         {
           "id": "backend-arch",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "failure",
+          "durationSeconds": 54,
+          "runs": 1,
+          "metrics": {}
         },
         {
           "id": "frontend-test",
-          "status": "failure",
-          "durationSeconds": 75,
+          "status": "success",
+          "durationSeconds": 71,
           "runs": 3,
           "metrics": {
-            "tests": 388
+            "tests": 773
           }
         },
         {
@@ -122,7 +129,7 @@
         {
           "id": "gate",
           "status": "failure",
-          "durationSeconds": 3,
+          "durationSeconds": 2,
           "runs": 1
         }
       ]
@@ -400,6 +407,113 @@
     ]
   },
   "merges": [
+    {
+      "number": 105,
+      "title": "feat: version every deploy and show it in the footer behind site.release-version",
+      "branch": "feat/deploy-version",
+      "author": "JCardzZ",
+      "mergedAt": "2026-10-29T00:15:56Z",
+      "sha": "4be3a9a266c473964834d57be43d0cc9e62a8efe",
+      "additions": 817,
+      "deletions": 31,
+      "changedFiles": 23,
+      "ci": {
+        "runId": 40792915084,
+        "runNumber": 251,
+        "conclusion": "failure",
+        "durationSeconds": 203,
+        "jobs": [
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "success"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "success"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "failure"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "failure"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "skipped"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "failure"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }}/2)",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
     {
       "number": 104,
       "title": "feat(frontend): add a scroll cue to the hero, show back-to-top on articles and quiet the demo notice",
@@ -779,120 +893,46 @@
         "durationSeconds": 14,
         "jobs": []
       }
-    },
-    {
-      "number": 95,
-      "title": "feat: update the career, the headline and the CV from the LinkedIn profile",
-      "branch": "feat/career-from-linkedin",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-23T01:32:40Z",
-      "sha": "c23cbfb35450d850da657462c0e7b3e0a329aa93",
-      "additions": 230,
-      "deletions": 169,
-      "changedFiles": 26,
-      "ci": {
-        "runId": 39884594945,
-        "runNumber": 225,
-        "conclusion": "success",
-        "durationSeconds": 1677,
-        "jobs": [
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "success"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 2/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 1/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "success"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "4be3a9a266c473964834d57be43d0cc9e62a8efe",
+      "parents": [
+        "548cae9b3ccfd115f5df8ab1fc51d757435d0aac",
+        "4cde058f0faf23ca6927d9e7541207c883d3f43d"
+      ],
+      "subject": "Merge pull request #105 from JCardzZ/feat/deploy-version",
+      "author": "JCardzZ",
+      "date": "2026-10-29T00:15:56Z"
+    },
+    {
+      "sha": "4cde058f0faf23ca6927d9e7541207c883d3f43d",
+      "parents": [
+        "09d3298b23835a0a7592558810a539b7a25b18f9"
+      ],
+      "subject": "feat(cd): version every deploy and publish it to the site, the API and GitHub releases",
+      "author": "JCardzZ",
+      "date": "2026-10-28T23:43:04Z"
+    },
+    {
+      "sha": "09d3298b23835a0a7592558810a539b7a25b18f9",
+      "parents": [
+        "a0272f7dc03d1d96cf516317ff30778c86399057"
+      ],
+      "subject": "feat(frontend): show the deployed version and its release notes in the footer behind site.release-version",
+      "author": "JCardzZ",
+      "date": "2026-10-28T23:42:57Z"
+    },
+    {
+      "sha": "a0272f7dc03d1d96cf516317ff30778c86399057",
+      "parents": [
+        "548cae9b3ccfd115f5df8ab1fc51d757435d0aac"
+      ],
+      "subject": "feat(backend): report the deployed release in /telemetry/health behind site.release-version",
+      "author": "JCardzZ",
+      "date": "2026-10-28T23:42:50Z"
+    },
     {
       "sha": "548cae9b3ccfd115f5df8ab1fc51d757435d0aac",
       "parents": [
@@ -1424,44 +1464,6 @@
       "subject": "feat(frontend): tell visitors whether the network mesh shows real or simulated traffic",
       "author": "JCardzZ",
       "date": "2026-10-22T03:43:26Z"
-    },
-    {
-      "sha": "58b2937719285627b2ee673e4fa1ad11add7e7c7",
-      "parents": [
-        "f45c65215b34797ac1e3f000641fe9ffa50ac02e",
-        "7da1e7fa8841402183b9c7f92ca5ded8170f83c7"
-      ],
-      "subject": "Merge pull request #80 from JCardzZ/fix/rag-reindex-in-request",
-      "author": "JCardzZ",
-      "date": "2026-10-22T03:32:29Z"
-    },
-    {
-      "sha": "7da1e7fa8841402183b9c7f92ca5ded8170f83c7",
-      "parents": [
-        "f45c65215b34797ac1e3f000641fe9ffa50ac02e"
-      ],
-      "subject": "fix(backend): finish the RAG reindex inside the request so Cloud Run keeps its CPU",
-      "author": "JCardzZ",
-      "date": "2026-10-22T03:29:10Z"
-    },
-    {
-      "sha": "f45c65215b34797ac1e3f000641fe9ffa50ac02e",
-      "parents": [
-        "1578ec6c96719373ae24f7fb27a03c7b3c66da5a",
-        "7f562ed32e45ba86ab30bcd674d5e9e5ea886071"
-      ],
-      "subject": "Merge pull request #79 from JCardzZ/feat/network-mesh-live",
-      "author": "JCardzZ",
-      "date": "2026-10-22T03:07:54Z"
-    },
-    {
-      "sha": "7f562ed32e45ba86ab30bcd674d5e9e5ea886071",
-      "parents": [
-        "1578ec6c96719373ae24f7fb27a03c7b3c66da5a"
-      ],
-      "subject": "feat(frontend): drive the network mesh with system events, a cursor probe, fog and packet trails",
-      "author": "JCardzZ",
-      "date": "2026-10-22T02:56:10Z"
     }
   ]
 }
