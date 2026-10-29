@@ -10,8 +10,8 @@ export const LANDING_COPY = {
   },
   /** Con `site.refresh`: concreto y verificable en la propia página, sin eslóganes. */
   heroIntroRefresh: {
-    en: '7+ years building APIs and microservices for banking. This site is its own case study: the architecture, the pipeline and the telemetry you see are the production ones.',
-    es: 'Más de 7 años construyendo APIs y microservicios para banca. Esta web es su propio caso de estudio: la arquitectura, el pipeline y la telemetría que ves son los de producción.',
+    en: 'Building APIs and microservices for banking since 2019. This site is its own case study: the architecture, the pipeline and the telemetry you see are the production ones.',
+    es: 'Construyo APIs y microservicios para banca desde 2019. Esta web es su propio caso de estudio: la arquitectura, el pipeline y la telemetría que ves son los de producción.',
   },
   scrollCue: { en: 'Scroll', es: 'Desliza' },
   scrollCueLabel: { en: 'Go to experience', es: 'Ir a la trayectoria' },

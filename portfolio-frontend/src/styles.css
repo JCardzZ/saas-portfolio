@@ -675,6 +675,10 @@ svg .pulse.pulse-boost { stroke: var(--status-ok); }
    rótulos en minúscula y un solo nivel de tarjeta. Con la flag apagada no aplica nada de esto. */
 .refresh app-galaxy-backdrop .doodles { display: none; }
 .refresh app-galaxy-backdrop .aurora { opacity: 0.6; }
+/* La red de fondo acompaña sin competir con el texto. */
+.refresh app-galaxy-backdrop canvas { filter: brightness(0.62) saturate(0.85); }
+/* La leyenda del tráfico simulado flotaba sola en la esquina: fuera del rediseño. */
+.refresh app-mesh-traffic-legend { display: none; }
 /* Rol: segundo nivel sobrio, en minúscula y sin espaciado de rótulo; el verde queda para lo que está vivo. */
 .refresh .hero-role {
   text-transform: none; letter-spacing: -0.01em; color: var(--text-2);
