@@ -1130,4 +1130,12 @@ export const EN: Readonly<Record<string, string>> = {
   'se despliega aparte': 'deployed separately',
   'Notas completas': 'Full notes',
   'Comparar con': 'Compare with',
+  'Operativo': 'Operational',
+  'Degradado': 'Degraded',
+  'Sin conexión con la API': 'API unreachable',
+  'modo demo, sin API': 'demo mode, no API',
+  'desplegada': 'deployed',
+  'Release en producción': 'Release in production',
+  'Versionado semántico con Conventional Commits': 'Semantic versioning with Conventional Commits',
+  'Cada despliegue lleva su versión: el CD la calcula con los commits, el sitio la sirve en version.json y la API la devuelve en /telemetry/health.': 'Every deploy carries its version: the CD computes it from the commits, the site serves it in version.json and the API returns it in /telemetry/health.',
 };

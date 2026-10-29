@@ -29,12 +29,15 @@ export interface ReleaseInfo {
   notes: ReleaseNote[];
 }
 
-/** Qué versión contesta la API (`GET /telemetry/health` → `version`), que se despliega aparte. */
-export type ApiVersion =
+/**
+ * Estado de la API (`GET /telemetry/health`) y la versión que sirve, que se despliega aparte.
+ * `demo`: no hay API, el sitio funciona con datos simulados.
+ */
+export type ApiHealth =
   | { state: 'loading' }
-  | { state: 'known'; version: string }
-  | { state: 'unknown' }
-  | { state: 'unreachable' };
+  | { state: 'up' | 'degraded'; version: string | null }
+  | { state: 'unreachable' }
+  | { state: 'demo' };
 
 const VERSION = /^v\d{1,4}\.\d{1,4}\.\d{1,4}$/;
 const SHA = /^[0-9a-f]{40}$/;
@@ -62,6 +65,13 @@ export function parseReleaseInfo(value: unknown): ReleaseInfo | null {
   };
 }
 
+/** Lo que responde `/telemetry/health`: estado (UP o DEGRADED; 503 es que no responde) y versión. */
+export function parseApiHealth(value: unknown): ApiHealth {
+  const raw = (typeof value === 'object' && value !== null ? value : {}) as Record<string, unknown>;
+  const version = matches(raw['version'], VERSION) ? raw['version'] : null;
+  return { state: raw['status'] === 'UP' ? 'up' : 'degraded', version };
+}
+
 function parseNote(value: unknown): ReleaseNote | null {
   const { type, scope, text } = (typeof value === 'object' && value !== null ? value : {}) as Record<string, unknown>;
   if (typeof type !== 'string' || !NOTE_TYPES.includes(type) || typeof text !== 'string' || !text.trim()) {
@@ -86,19 +96,19 @@ export function releaseLinks(release: ReleaseInfo): { notes: string; commit: str
 }
 
 /**
- * La versión desplegada del sitio y, bajo demanda, la de la API. `version.json` es un archivo
- * estático del propio despliegue: no se llama a GitHub. Sin él (un build local), en desarrollo se
- * informa de que es un build local y en producción no se muestra nada.
+ * La versión desplegada del sitio y el estado de la API. `version.json` es un archivo estático del
+ * propio despliegue: no se llama a GitHub. Sin él (un build local), en desarrollo se informa de que
+ * es un build local y en producción no se muestra nada. Cada dato se pide una vez por visita.
  */
 @Injectable({ providedIn: 'root' })
 export class ReleaseService {
   private readonly http = inject(HttpClient);
   private requested = false;
-  private apiRequested = false;
+  private healthRequested = false;
 
   private readonly _release = signal<ReleaseInfo | null>(null);
   private readonly _local = signal(false);
-  private readonly _api = signal<ApiVersion>({ state: 'loading' });
+  private readonly _api = signal<ApiHealth>({ state: 'loading' });
 
   readonly release = this._release.asReadonly();
   /** `true` en un build sin desplegar (desarrollo): no hay versión que mostrar. */
@@ -117,20 +127,21 @@ export class ReleaseService {
       this._release.set(release);
       this._local.set(!release && !environment.production);
     });
+    this.loadHealth();
   }
 
-  /** Solo al abrir las novedades: cargar la página no le cuesta una petición más a la API. */
-  loadApiVersion(): void {
-    if (this.apiRequested) {
+  private loadHealth(): void {
+    if (this.healthRequested) {
       return;
     }
-    this.apiRequested = true;
+    this.healthRequested = true;
+    if (runtimeConfig.mockMode) {
+      this._api.set({ state: 'demo' });
+      return;
+    }
     this.http.get<unknown>(`${runtimeConfig.apiBaseUrl}/telemetry/health`).pipe(
-      map((body): ApiVersion => {
-        const version = (typeof body === 'object' && body !== null ? body : {}) as Record<string, unknown>;
-        return matches(version['version'], VERSION) ? { state: 'known', version: version['version'] } : { state: 'unknown' };
-      }),
-      catchError(() => of<ApiVersion>({ state: 'unreachable' })),
+      map(parseApiHealth),
+      catchError(() => of<ApiHealth>({ state: 'unreachable' })),
     ).subscribe((api) => this._api.set(api));
   }
 }
