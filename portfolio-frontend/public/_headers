@@ -20,6 +20,8 @@
   Cache-Control: no-store
 /pipeline-status.json
   Cache-Control: no-cache
+/version.json
+  Cache-Control: no-cache
 
 # JavaScript y CSS llevan un hash en el nombre: si cambia el contenido, cambia la URL.
 /*.js

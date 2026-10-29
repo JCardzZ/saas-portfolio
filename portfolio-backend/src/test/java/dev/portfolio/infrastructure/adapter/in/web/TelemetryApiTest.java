@@ -50,7 +50,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         TelemetryWebMapperImpl.class,
         TelemetryStreamBroadcaster.class
 })
-@TestPropertySource(properties = "security.jwt.secret=dGVzdC1vbmx5LWhtYWMta2V5LTAxMjM0NTY3ODlhYmNkZWY=")
+@TestPropertySource(properties = {
+        "security.jwt.secret=dGVzdC1vbmx5LWhtYWMta2V5LTAxMjM0NTY3ODlhYmNkZWY=",
+        "release.version=v1.4.0"
+})
 class TelemetryApiTest {
 
     private static final ComponentHealth DATABASE_OK = new ComponentHealth(true, "PostgreSQL 16 - Connected");
@@ -77,7 +80,8 @@ class TelemetryApiTest {
                 .andExpect(jsonPath("$.status").value("UP"))
                 .andExpect(jsonPath("$.database").value("PostgreSQL 16 - Connected"))
                 .andExpect(jsonPath("$.redisCache").value("Redis - Healthy"))
-                .andExpect(jsonPath("$.circuitBreakers.aiEngine").value("CLOSED"));
+                .andExpect(jsonPath("$.circuitBreakers.aiEngine").value("CLOSED")
+                .andExpect(jsonPath("$.version").value("v1.4.0"));
     }
 
     @Test

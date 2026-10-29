@@ -122,7 +122,7 @@ cd portfolio-frontend && npx ng test --watch=false --browsers=ChromeHeadless && 
 | Workflow | Cuándo | Qué hace |
 | --- | --- | --- |
 | `ci.yml` | cada PR y cada push a `main` | Contrato (lint, cambios incompatibles, código generado) → tests (unitarios, integración, arquitectura, frontend en 3 grupos) → build (presupuesto de bundle, Lighthouse, preview, imagen escaneada con Trivy) → **✅ CI gate**. En paralelo, gitleaks y CodeQL. En `main` publica en GHCR la imagen ya escaneada (firmada con cosign y con SBOM) y guarda el build del frontend. |
-| `cd.yml` | cuando la CI termina bien en `main` | No construye nada: despliega el mismo build del frontend en Cloudflare Pages y la misma imagen por digest. El despliegue al servidor es manual: pruebas de humo, y release con etiqueta semver o vuelta a la imagen anterior. |
+| `cd.yml` | cuando la CI termina bien en `main` | No construye nada: despliega el mismo build del frontend en Cloudflare Pages y la misma imagen por digest. El despliegue al servidor es manual: pruebas de humo o vuelta a la imagen anterior. Cada despliegue lleva una versión `vX.Y.Z` (Conventional Commits) que el sitio sirve en `version.json`, la API devuelve en `/telemetry/health` y, si todo termina bien, se publica como release. |
 | `nightly-security.yml` | cada noche | CodeQL ampliado, Trivy sobre la imagen y las dependencias, revisión de dependencias. |
 
 Lo que no cambió en un PR no se ejecuta, y un job omitido no bloquea el gate.

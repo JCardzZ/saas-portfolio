@@ -1923,6 +1923,10 @@ components:
           type: object
           properties:
             aiEngine: { type: string, example: "CLOSED" }
+        version:
+          type: string
+          example: "v0.2.0"
+          description: Release currently serving traffic (the vX.Y.Z tag the CD deployed). Absent when the API runs outside a CD deploy.
 
     TelemetryStream:
       type: string
