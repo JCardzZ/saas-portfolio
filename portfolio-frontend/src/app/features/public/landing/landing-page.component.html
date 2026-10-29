@@ -115,6 +115,14 @@
     <!-- Lo que hay desplegado de verdad y cómo llega hasta ahí. Datos reales o etiquetados como planificados. -->
     <section id="entrega" class="mt-24 sm:mt-32 scroll-mt-24" aria-labelledby="entrega-titulo">
       <app-section-header headingId="entrega-titulo" [title]="i18n.t(copy.deliveryTitle)" [intro]="i18n.t(copy.deliveryIntro)" />
+      @if (adr()) {
+        <!-- El porqué de lo que se ve aquí: cada decisión con sus opciones y su coste. -->
+        <a routerLink="/decisiones" class="adr-teaser tap focus-ring" data-testid="adr-teaser">
+          <span class="adr-teaser-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5 20.5 7.25v9.5L12 21.5 3.5 16.75v-9.5L12 2.5zM12 8.5 8.75 10.4v3.2L12 15.5l3.25-1.9v-3.2L12 8.5z" /></svg></span>
+          <span><span class="block text-body-sm font-medium text-ink-1">{{ i18n.t(copy.adrTeaserTitle) }}</span><span class="block text-body-sm text-ink-3">{{ i18n.t(copy.adrTeaserText) }}</span></span>
+          <span class="ml-auto text-ink-3" aria-hidden="true">→</span>
+        </a>
+      }
       @defer (on viewport; prefetch on idle) {
         <!-- Una tarjeta con cuatro pestañas (como el Estudio): la sección no ocupa cuatro pantallas. -->
         <app-delivery-tabs class="animate-slide-up" />
@@ -322,6 +330,9 @@
       </p>
       <div class="flex flex-wrap items-center gap-2">
         <app-social-links />
+        @if (adr()) {
+          <a routerLink="/decisiones" class="ui-btn-ghost ui-btn-lg tap">{{ i18n.t(copy.adrFooter) }}</a>
+        }
         <a routerLink="/legal" class="ui-btn-ghost ui-btn-lg tap">{{ i18n.t(legalLink) }}</a>
         <a routerLink="/admin" class="ui-btn-ghost ui-btn-lg tap">Admin</a>
         <app-cv-download />
