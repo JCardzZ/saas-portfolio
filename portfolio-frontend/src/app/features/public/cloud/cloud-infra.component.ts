@@ -25,6 +25,7 @@ import { ArchitectureCopilotComponent } from './architecture-copilot.component';
 import { AuditCardComponent } from './audit-card.component';
 import { autoLayout } from './auto-layout';
 import { contentBounds, directNodes, reflow, resizeToContent } from './zone-layout';
+import { settleZones, zoneParents } from './zone-solver';
 import { FULL_VIEW, Point, View, panView, placementVerdict, resolveCollision, withFriction, zoomLevel, zoomView } from './studio-physics';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
 import { CatalogItem } from './cloud-catalog.data';
@@ -336,6 +337,8 @@ export class CloudInfraComponent {
   private readonly stageBox = viewChild(ContainerWidthDirective);
   /** Sin ancho para el lienzo de trabajo, el diagrama se muestra de arriba abajo y de solo lectura. */
   readonly compact = computed(() => this.stageBox()?.narrowerThan(minCanvasWidth()) ?? false);
+  /** Métricas y FinOps debajo del lienzo, nunca encima de un nodo: siempre con las reglas inteligentes. */
+  readonly panelsBelow = computed(() => this.fitted() || this.compact() || this.smartRules());
   /** Las piezas del proyecto para la vista estrecha: nombre, papel, zona de red y coste. */
   readonly mobileRows = computed<MobileRow[]>(() => this.nodes().map((node) => {
     const zone = zoneAt(this.zones(), node.x, node.y);
@@ -353,7 +356,11 @@ export class CloudInfraComponent {
   readonly placementRefusal = signal<{ zoneId: string | null; reason: string; suggestion: string } | null>(null);
   /** Aviso tras soltar un nodo donde no podía quedarse: volvió a su sitio. */
   readonly placementNotice = signal<{ reason: string; suggestion: string } | null>(null);
-  private zoneDrag: { id: string; mode: 'move' | ZoneCorner; x: number; y: number; origin: StudioZone; nodes: CloudNode[]; zones: StudioZone[]; recorded: boolean } | null = null;
+  private zoneDrag: {
+    id: string; mode: 'move' | ZoneCorner; x: number; y: number; origin: StudioZone; nodes: CloudNode[]; zones: StudioZone[]; recorded: boolean;
+    /** Recuadros elásticos: el lienzo antes del gesto y su árbol de recuadros. */
+    before?: { zones: StudioZone[]; nodes: CloudNode[]; parents: Map<string, string | null> };
+  } | null = null;
   readonly corners: ZoneCorner[] = ['nw', 'ne', 'sw', 'se'];
   /** Recuadro sobre el que está el nodo que se arrastra: es el que lo adoptará al soltarlo. */
   readonly dropZoneId = signal<string | null>(null);
@@ -1696,6 +1703,9 @@ export class CloudInfraComponent {
       id: zone.id, mode, x: point.x, y: point.y, origin: { ...zone }, recorded: false,
       nodes: mode === 'move' ? this.nodes().filter(inside).map((node) => ({ ...node })) : this.resizeContent(zone).nodes,
       zones: mode === 'move' ? zonesInside(this.zones(), zone).map((inner) => ({ ...inner })) : this.resizeContent(zone).zones,
+      before: this.smartRules()
+        ? { zones: this.zones().map((z) => ({ ...z })), nodes: this.nodes().map((n) => ({ ...n })), parents: zoneParents(this.zones()) }
+        : undefined,
     };
     capturePointer(event.currentTarget, event.pointerId);
     this.activeZoneId.set(zone.id);
@@ -1712,6 +1722,24 @@ export class CloudInfraComponent {
     }
     const point = this.toCanvas(event.clientX, event.clientY);
     this.transformZone(drag, point.x - drag.x, point.y - drag.y);
+    if (drag.before) {
+      this.settleAround(drag.id, drag.before, new Set([drag.id, ...drag.zones.map((zone) => zone.id)]), new Set(drag.nodes.map((node) => node.id)));
+    }
+  }
+
+  /**
+   * Recuadros elásticos: lo que el gesto ha cambiado (el recuadro, lo que lleva dentro) se queda como
+   * está; el resto parte del estado de antes del gesto y el solver lo aparta o lo hace crecer. Así, al
+   * deshacer el gesto a medio camino, cada recuadro vuelve a su sitio.
+   */
+  private settleAround(anchorId: string, before: { zones: StudioZone[]; nodes: CloudNode[]; parents: Map<string, string | null> }, zoneIds: Set<string>, nodeIds: Set<string>): void {
+    const nowZones = new Map(this.zones().map((zone) => [zone.id, zone]));
+    const nowNodes = new Map(this.nodes().map((node) => [node.id, node]));
+    const zones = before.zones.map((zone) => (zoneIds.has(zone.id) ? nowZones.get(zone.id) ?? zone : zone));
+    const nodes = before.nodes.map((node) => (nodeIds.has(node.id) ? nowNodes.get(node.id) ?? node : node));
+    const settled = settleZones(zones, nodes, anchorId, before.parents, before);
+    this.zones.set(settled.zones);
+    this.nodes.set(settled.nodes);
   }
 
   onZonePointerUp(): void {

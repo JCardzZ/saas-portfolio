@@ -569,6 +569,13 @@
       <button type="button" class="focus-ring rounded-control border border-current/40 px-2 text-xs" (click)="placementNotice.set(null)">{{ 'Entendido' | t }}</button>
     </p>
   }
+
+  <!-- Con la vista ajustada el diagrama se ve entero: los dos paneles bajan debajo del lienzo en vez de flotar encima. -->
+  <!-- En estrecho también: métricas y FinOps van en una fila bajo el diagrama, nunca encima. -->
+  <div [class]="panelsBelow() ? 'mt-2 flex flex-wrap items-start gap-2' : 'contents'" data-testid="studio-panels">
+  <app-live-vitals [class]="panelsBelow() ? 'block min-w-0 max-w-full flex-1 basis-56' : 'absolute left-2 top-2 z-10 max-w-[calc(100%-1rem)]'" [vitals]="vitals()" (beat)="onBeat()" />
+
+  <app-cost-badge [class]="panelsBelow() ? 'block w-fit max-w-full' : 'absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)]'" [estimate]="cost()" [providerName]="selected().name" [pricingState]="pricingState()" />
   @if (smartRules() && !fitted() && !compact()) {
     <!-- Zoom del lienzo: también Ctrl/⌘ + rueda o pellizco; acercado, la rueda lo recorre. -->
     <div class="zoom-controls" role="group" [attr.aria-label]="'Zoom del lienzo' | t" data-testid="zoom-controls" data-export="skip">
@@ -577,13 +584,6 @@
       <button type="button" class="focus-ring" [attr.aria-label]="'Acercar' | t" (click)="zoomBy(1.25)" [disabled]="zoom() >= 250">+</button>
     </div>
   }
-
-  <!-- Con la vista ajustada el diagrama se ve entero: los dos paneles bajan debajo del lienzo en vez de flotar encima. -->
-  <!-- En estrecho también: métricas y FinOps van en una fila bajo el diagrama, nunca encima. -->
-  <div [class]="fitted() || compact() ? 'mt-2 flex flex-wrap items-start gap-2' : 'contents'" data-testid="studio-panels">
-  <app-live-vitals [class]="fitted() || compact() ? 'block min-w-0 max-w-full flex-1 basis-56' : 'absolute left-2 top-2 z-10 max-w-[calc(100%-1rem)]'" [vitals]="vitals()" (beat)="onBeat()" />
-
-  <app-cost-badge [class]="fitted() || compact() ? 'block w-fit max-w-full' : 'absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)]'" [estimate]="cost()" [providerName]="selected().name" [pricingState]="pricingState()" />
   </div>
 
   @if (tooltip(); as tip) {

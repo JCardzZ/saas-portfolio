@@ -103,8 +103,8 @@
 /* «Ajustar a pantalla»: el diagrama se ve entero en su marco, sin el ancho mínimo de trabajo ni más alto que la ventana. */
 .canvas-fitted { min-width: 0; max-height: 70dvh; }
 
-/* Zoom del lienzo (reglas inteligentes): abajo a la derecha, sobre el diagrama. */
-.zoom-controls { position: absolute; right: 0.5rem; bottom: 0.5rem; z-index: 10; display: flex; align-items: center; overflow: hidden; border-radius: 0.75rem; border: 1px solid var(--border-subtle); background: rgb(var(--c-surface-1) / 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+/* Zoom del lienzo (reglas inteligentes): en la fila de paneles, fuera del diagrama. */
+.zoom-controls { margin-left: auto; display: flex; align-items: center; overflow: hidden; border-radius: 0.75rem; border: 1px solid var(--border-subtle); background: rgb(var(--c-surface-1) / 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .zoom-controls button { min-width: 2.25rem; height: 2.25rem; padding: 0 0.5rem; color: var(--text-2); font-size: 0.875rem; transition: background var(--duration-fast), color var(--duration-fast); }
 .zoom-controls button:hover:not(:disabled) { background: rgb(var(--c-ink-1) / 0.06); color: var(--text-1); }
 .zoom-controls button:disabled { opacity: 0.35; }
