@@ -26,6 +26,7 @@ import { AuditCardComponent } from './audit-card.component';
 import { autoLayout } from './auto-layout';
 import { contentBounds, directNodes, reflow, resizeToContent } from './zone-layout';
 import { settleZones, zoneParents } from './zone-solver';
+import { assignPorts, labelPoint, nodeRect, roundedPath, routeWire } from './wire-router';
 import { FULL_VIEW, Point, View, panView, placementVerdict, resolveCollision, withFriction, zoomLevel, zoomView } from './studio-physics';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
 import { CatalogItem } from './cloud-catalog.data';
@@ -187,6 +188,18 @@ export class CloudInfraComponent {
   /** Conexiones con su trazado bezier, recalculado cada vez que un nodo se mueve. */
   readonly wires = computed<Wire[]>(() => {
     const byId = new Map(this.nodes().map((node) => [node.id, node]));
+    // Reglas inteligentes: cables en ángulo recto que esquivan nodos, con puntos de salida repartidos.
+    const smart = this.smartRules();
+    const ports = smart ? assignPorts(this.links(), byId) : null;
+    const routed = (from: CloudNode, to: CloudNode, key: string) => {
+      const port = ports?.get(key);
+      if (!port) {
+        return connect(from, to);
+      }
+      const obstacles = this.nodes().filter((node) => node.id !== from.id && node.id !== to.id).map((node) => nodeRect(node));
+      const points = routeWire(port.from, port.to, port.sides, obstacles);
+      return { path: roundedPath(points), labelAt: labelPoint(points) };
+    };
     return this.links().flatMap((link) => {
       const from = byId.get(link.from);
       const to = byId.get(link.to);
@@ -199,7 +212,7 @@ export class CloudInfraComponent {
       const chaos: ChaosLevel | null = faults[from.id] === 'down' || faults[to.id] === 'down' ? 'down'
         : faults[to.id] === 'cpu' ? 'warn'
         : (this.chaosPhase()?.wires[`${link.from}>${link.to}`] ?? null);
-      return [{ ...link, ...connect(from, to), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
+      return [{ ...link, ...(smart ? routed(from, to, `${link.from}>${link.to}`) : connect(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
     });
   });
 
@@ -339,6 +352,8 @@ export class CloudInfraComponent {
   readonly compact = computed(() => this.stageBox()?.narrowerThan(minCanvasWidth()) ?? false);
   /** Métricas y FinOps debajo del lienzo, nunca encima de un nodo: siempre con las reglas inteligentes. */
   readonly panelsBelow = computed(() => this.fitted() || this.compact() || this.smartRules());
+  /** Tipos de conexión presentes en el lienzo, para la leyenda (reglas inteligentes). */
+  readonly wireKinds = computed(() => LINK_KINDS.filter((kind) => this.links().some((link) => link.kind === kind.kind)));
   /** Las piezas del proyecto para la vista estrecha: nombre, papel, zona de red y coste. */
   readonly mobileRows = computed<MobileRow[]>(() => this.nodes().map((node) => {
     const zone = zoneAt(this.zones(), node.x, node.y);

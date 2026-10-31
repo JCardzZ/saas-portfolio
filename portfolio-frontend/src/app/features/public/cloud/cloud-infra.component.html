@@ -389,8 +389,20 @@
         <text class="zone-sub" x="935" y="170" text-anchor="middle">{{ 'Servicios gestionados' | t }}</text>
       }
 
+      @if (smartRules()) {
+        <!-- Puntas de flecha: el sentido del tráfico. Una por estado, porque el color no se hereda del cable. -->
+        <defs data-export="skip">
+          @for (tone of ['base', 'active', 'warn', 'down']; track tone) {
+            <marker [attr.id]="'wire-arrow-' + tone" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+              <path d="M1 1.5 8.5 5 1 8.5z" [attr.class]="'wire-arrow wire-arrow-' + tone" />
+            </marker>
+          }
+        </defs>
+      }
       @for (wire of wires(); track wire.from + '>' + wire.to) {
-        <path class="wire" [class.wire-active]="isWireActive(wire)" [class.wire-glow]="wire.glow" [class.wire-warn]="wire.chaos === 'warn'" [class.wire-down]="wire.chaos === 'down'" [style.--glow]="wire.glow" [style.--flow]="isWireActive(wire) ? activeColor() : null" [attr.data-kind]="wire.kind ?? null" [attr.d]="wire.path" />
+        <path class="wire" [class.wire-smart]="smartRules()" [class.wire-dim]="smartRules() && !!activeId() && !isWireActive(wire)"
+          [attr.marker-end]="smartRules() ? 'url(#wire-arrow-' + (wire.chaos === 'down' ? 'down' : wire.chaos === 'warn' ? 'warn' : isWireActive(wire) || wire.glow ? 'active' : 'base') + ')' : null"
+          [class.wire-active]="isWireActive(wire)" [class.wire-glow]="wire.glow" [class.wire-warn]="wire.chaos === 'warn'" [class.wire-down]="wire.chaos === 'down'" [style.--glow]="wire.glow" [style.--flow]="isWireActive(wire) ? activeColor() : null" [attr.data-kind]="wire.kind ?? null" [attr.d]="wire.path" />
         @if (wire.chaos === 'down') {
           <path class="pulse pulse-off" [attr.d]="wire.path" pathLength="100" />
         } @else {
@@ -576,6 +588,15 @@
   <app-live-vitals [class]="panelsBelow() ? 'block min-w-0 max-w-full flex-1 basis-56' : 'absolute left-2 top-2 z-10 max-w-[calc(100%-1rem)]'" [vitals]="vitals()" (beat)="onBeat()" />
 
   <app-cost-badge [class]="panelsBelow() ? 'block w-fit max-w-full' : 'absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)]'" [estimate]="cost()" [providerName]="selected().name" [pricingState]="pricingState()" />
+  @if (smartRules() && wireKinds().length) {
+    <!-- Qué significa cada trazo: solo los tipos que hay en el lienzo. -->
+    <ul class="wire-legend" data-testid="wire-legend" data-export="skip">
+      <li><svg viewBox="0 0 28 6" aria-hidden="true"><path class="wire wire-smart" d="M1 3h26" /></svg>{{ 'Petición' | t }}</li>
+      @for (kind of wireKinds(); track kind.kind) {
+        <li><svg viewBox="0 0 28 6" aria-hidden="true"><path class="wire wire-smart" [attr.data-kind]="kind.kind" d="M1 3h26" /></svg>{{ kind.name | t }}</li>
+      }
+    </ul>
+  }
   @if (smartRules() && !fitted() && !compact()) {
     <!-- Zoom del lienzo: también Ctrl/⌘ + rueda o pellizco; acercado, la rueda lo recorre. -->
     <div class="zoom-controls" role="group" [attr.aria-label]="'Zoom del lienzo' | t" data-testid="zoom-controls" data-export="skip">
