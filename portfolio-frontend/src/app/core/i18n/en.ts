@@ -1139,6 +1139,7 @@ export const EN: Readonly<Record<string, string>> = {
   'La pieza volvió a su sitio.': 'The piece went back to its place.',
   'Zoom del lienzo': 'Canvas zoom',
   'Petición': 'Request',
+  'No cabe otra instancia.': 'No room for another instance.',
   'Tamaño normal': 'Actual size',
   'En producción · operativa': 'In production · operational',
   'En producción · degradada': 'In production · degraded',

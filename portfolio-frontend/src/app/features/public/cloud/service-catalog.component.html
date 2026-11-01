@@ -22,15 +22,20 @@
         <h4 [id]="'catalog-' + category.id" class="text-xs font-medium uppercase tracking-wider text-ink-3">{{ category.name }}</h4>
         <ul class="mt-1.5 space-y-1">
           @for (item of category.items; track item.type) {
+            @let limit = limits()?.get(item.type);
+            @let full = limit?.allowed === false;
             <li>
               <button
                 type="button"
-                draggable="true"
-                class="focus-ring group flex w-full cursor-grab items-center gap-2.5 rounded-panel border border-transparent px-2 py-1.5 text-left transition duration-300 ease-spring hover:border-line-strong hover:bg-surface-2 active:cursor-grabbing"
-                [attr.aria-label]="('Añadir ' | t) + nameOf(item) + ': ' + item.capability"
-                [title]="item.why + (gapOf(item) ? ' ' + gapOf(item) : '') + ' · ' + terraformOf(item)"
-                (click)="picked.emit(item)"
-                (dragstart)="onDragStart($event, item)"
+                [attr.draggable]="!full"
+                class="focus-ring group flex w-full items-center gap-2.5 rounded-panel border border-transparent px-2 py-1.5 text-left transition duration-300 ease-spring"
+                [class]="full ? 'cursor-not-allowed opacity-55' : 'cursor-grab hover:border-line-strong hover:bg-surface-2 active:cursor-grabbing'"
+                [attr.aria-disabled]="full || null"
+                [attr.aria-label]="('Añadir ' | t) + nameOf(item) + ': ' + item.capability + (full && limit && !limit.allowed ? '. ' + limit.reason : '')"
+                [title]="full && limit && !limit.allowed ? limit.reason + ' ' + limit.suggestion : item.why + (gapOf(item) ? ' ' + gapOf(item) : '') + ' · ' + terraformOf(item)"
+                [attr.data-full]="full || null"
+                (click)="full ? blocked.emit(item) : picked.emit(item)"
+                (dragstart)="full ? $event.preventDefault() : onDragStart($event, item)"
               >
                 <app-tech-icon class="brand-glow" [icon]="iconOf(item)" [size]="18" />
                 <span class="min-w-0 flex-1">
@@ -45,7 +50,15 @@
                     <span class="block text-xs text-status-warn" data-testid="no-equivalent">Sin equivalente directo en {{ providerName() }}</span>
                   }
                 </span>
-                <span class="text-base leading-none text-ink-3 transition group-hover:text-ink-1" aria-hidden="true">+</span>
+                @if (limit && limit.max !== null && limit.count > 0) {
+                  <!-- Cupo: cuántos hay en el lienzo de los que admite esta arquitectura. -->
+                  <span class="shrink-0 rounded-full border px-1.5 font-mono text-xs leading-[18px]" [class]="full ? 'border-status-warn/40 text-status-warn' : 'border-line-strong text-ink-3'" data-testid="catalog-quota">{{ limit.count }}/{{ limit.max }}</span>
+                }
+                @if (full) {
+                  <svg viewBox="0 0 16 16" class="h-3.5 w-3.5 shrink-0 text-ink-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" /></svg>
+                } @else {
+                  <span class="text-base leading-none text-ink-3 transition group-hover:text-ink-1" aria-hidden="true">+</span>
+                }
               </button>
             </li>
           }

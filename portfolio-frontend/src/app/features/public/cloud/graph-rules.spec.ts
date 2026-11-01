@@ -1,7 +1,7 @@
 import { SERVICE_CATALOG } from './cloud-catalog.data';
 import { CLOUD_LINKS, CLOUD_NODES, CloudNode, LINK_KINDS } from './cloud-topology.data';
 import { DATA_BLUEPRINTS } from './data-blueprints';
-import { GRAPH_RULES, advisories, anchorFor, canConnect, checkGraph, connectionVerdict, endpointOf, inferKind } from './graph-rules';
+import { GRAPH_RULES, advisories, instanceVerdict, anchorFor, canConnect, checkGraph, connectionVerdict, endpointOf, inferKind } from './graph-rules';
 import { STUDIO_PRESETS } from './studio-project';
 import { TERRAFORM_UNSUPPORTED_TYPES } from './terraform-generator';
 
@@ -107,6 +107,22 @@ describe('graph rules', () => {
       { rule: 'max-instances', nodeId: 'bi-2', message: 'Instancia duplicada: bi-2. Este lienzo admite una sola.' },
       { rule: 'max-instances', nodeId: 'cdc-4', message: 'Demasiadas instancias de cdc-4: 4 de 3 como máximo.' },
     ]);
+  });
+
+  it('limits services that play the same role, like two secret stores', () => {
+    expect(checkGraph([node('s', 'secrets'), node('v', 'vault')], [])).toEqual([
+      jasmine.objectContaining({ rule: 'max-instances', nodeId: 'v', suggestion: 'Quédate con el gestor de la nube o con Vault, no con los dos.' }),
+    ]);
+  });
+
+  it('says why another instance does not fit, as a cloud architect would', () => {
+    const platform = instanceVerdict('native-monitoring', [{ type: 'native-monitoring' }], 'CloudWatch');
+    expect(platform.allowed).toBeFalse();
+    expect(!platform.allowed && platform.reason).toContain('servicio de plataforma');
+    const compute = instanceVerdict('containers', Array.from({ length: 6 }, () => ({ type: 'containers' })), 'ECS Fargate');
+    expect(!compute.allowed && compute.reason).toContain('orquestador');
+    expect(instanceVerdict('containers', [{ type: 'containers' }], 'ECS Fargate')).toEqual({ allowed: true, count: 1, max: 6 });
+    expect(instanceVerdict('vault', [{ type: 'secrets' }], 'Vault').allowed).toBeFalse();
   });
 
   it('ignores links to nodes that are not there', () => {

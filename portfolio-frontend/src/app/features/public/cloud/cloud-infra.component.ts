@@ -34,7 +34,8 @@ import { estimateCost, formatUsd } from './cloud-costs.data';
 import { telemetryFor } from './component-telemetry';
 import { CopilotAddition, catalogItem } from './copilot';
 import { CostBadgeComponent } from './cost-badge.component';
-import { ConnectionVerdict, RuleViolation, advisories, anchorFor, checkGraph, connectionVerdict, endpointOf, inferKind } from './graph-rules';
+import { ConnectionVerdict, InstanceVerdict, RuleViolation, advisories, anchorFor, checkGraph, connectionVerdict, endpointOf, inferKind, instanceVerdict } from './graph-rules';
+import { INSTANCE_LIMITS } from './instance-policy';
 import { BlueprintLoad, mergeBlueprint } from './data-blueprints';
 import { downloadBlob, rasterize, serializeDiagram } from './diagram-export';
 import {
@@ -352,6 +353,15 @@ export class CloudInfraComponent {
   readonly compact = computed(() => this.stageBox()?.narrowerThan(minCanvasWidth()) ?? false);
   /** Métricas y FinOps debajo del lienzo, nunca encima de un nodo: siempre con las reglas inteligentes. */
   readonly panelsBelow = computed(() => this.fitted() || this.compact() || this.smartRules());
+  /** Cupo de cada servicio del catálogo en el lienzo actual (reglas inteligentes). */
+  readonly catalogLimits = computed<Map<string, InstanceVerdict> | null>(() => {
+    if (!this.smartRules()) {
+      return null;
+    }
+    const nodes = this.nodes();
+    return new Map(this.catalog().flatMap((category) => category.items)
+      .map((item) => [item.type, instanceVerdict(item.type, nodes, forProvider(item.service, this.selectedId()))]));
+  });
   /** Tipos de conexión presentes en el lienzo, para la leyenda (reglas inteligentes). */
   readonly wireKinds = computed(() => LINK_KINDS.filter((kind) => this.links().some((link) => link.kind === kind.kind)));
   /** Las piezas del proyecto para la vista estrecha: nombre, papel, zona de red y coste. */
@@ -370,7 +380,7 @@ export class CloudInfraComponent {
   /** Mientras se arrastra un nodo a una zona que no lo admite (reglas inteligentes): cuál y por qué. */
   readonly placementRefusal = signal<{ zoneId: string | null; reason: string; suggestion: string } | null>(null);
   /** Aviso tras soltar un nodo donde no podía quedarse: volvió a su sitio. */
-  readonly placementNotice = signal<{ reason: string; suggestion: string } | null>(null);
+  readonly placementNotice = signal<{ reason: string; suggestion: string; title?: string } | null>(null);
   private zoneDrag: {
     id: string; mode: 'move' | ZoneCorner; x: number; y: number; origin: StudioZone; nodes: CloudNode[]; zones: StudioZone[]; recorded: boolean;
     /** Recuadros elásticos: el lienzo antes del gesto y su árbol de recuadros. */
@@ -1039,9 +1049,31 @@ export class CloudInfraComponent {
    * Coloca un servicio del catálogo: en el punto indicado (si se soltó sobre el lienzo) o en
    * el primer hueco libre de su zona, y lo conecta con el nodo del que recibe el tráfico.
    */
+  /** Un servicio del catálogo que ya no cabe: se explica por qué y qué hacer en su lugar. */
+  explainLimit(item: CatalogItem): void {
+    const verdict = instanceVerdict(item.type, this.nodes(), forProvider(item.service, this.selectedId()));
+    if (!verdict.allowed) {
+      this.placementNotice.set({ title: 'No cabe otra instancia.', reason: verdict.reason, suggestion: verdict.suggestion });
+    }
+  }
+
   add(item: CatalogItem, at?: { x: number; y: number }): void {
+    const serviceName = forProvider(item.service, this.selectedId());
+    let siblings: CloudNode[] = [];
+    if (this.smartRules()) {
+      // Antes de añadir nada: ¿cabe otra instancia de este servicio?
+      const verdict = instanceVerdict(item.type, this.nodes(), serviceName);
+      if (!verdict.allowed) {
+        this.placementNotice.set({ title: 'No cabe otra instancia.', reason: verdict.reason, suggestion: verdict.suggestion });
+        return;
+      }
+      this.placementNotice.set(null);
+      siblings = this.nodes().filter((candidate) => candidate.type === item.type);
+    }
     this.record();
-    const position = clamp(at ?? this.freeSlot(item.zone));
+    // Una copia va junto a la primera instancia (debajo, en su misma subred), no a un hueco cualquiera.
+    const beside = !at && siblings.length ? resolveCollision('', { x: siblings[0].x, y: siblings[0].y + NODE_HEIGHT + 18 }, this.nodes(), this.zones()) : null;
+    const position = clamp(at ?? beside ?? this.freeSlot(item.zone));
     // Soltado en un punto concreto, su zona de red es la del recuadro donde cae.
     const zone = at ? roleAt(this.zones(), position.x, position.y, item.zone) : item.zone;
     let id = `${item.type}-${this.nextCustomId++}`;
@@ -1051,6 +1083,8 @@ export class CloudInfraComponent {
     const node: CloudNode = {
       id, type: item.type, ...position, zone, role: item.capability, service: item.service, icon: item.icon,
       terraform: item.terraform, why: item.why, custom: true,
+      // Cómputo duplicado: cada copia es otro servicio y lleva su propio nombre (se puede cambiar).
+      ...(siblings.length && INSTANCE_LIMITS[item.type]?.kind === 'compute' ? { name: `${serviceName} · ${this.language.lang() === 'en' ? 'service' : 'servicio'} ${siblings.length + 1}` } : {}),
     };
 
     // Origen del tráfico según el tipo de servicio; si ya no está en el lienzo, el nodo más cercano.
@@ -1065,6 +1099,10 @@ export class CloudInfraComponent {
     }
     this.activeId.set(id);
     this.modified.set(true);
+    if (siblings.length && INSTANCE_LIMITS[item.type]?.kind === 'compute') {
+      // Abre sus propiedades con el nombre listo para cambiar: «pagos», «notificaciones»…
+      this.openProperties(node);
+    }
 
     const name = this.serviceOf(node);
     const resource = item.terraform ? forProvider(item.terraform, this.selectedId()) : null;

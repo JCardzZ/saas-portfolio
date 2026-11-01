@@ -306,7 +306,7 @@
 
 <div class="mt-3 gap-4" [class]="editing() && catalogDocked() ? 'grid [&>*]:min-w-0 lg:grid-cols-[16rem_minmax(0,1fr)]' : ''">
   @if (editing() && catalogDocked()) {
-    <app-service-catalog class="block h-72 animate-slide-up lg:h-auto lg:max-h-[34rem]" [provider]="selectedId()" [catalog]="catalog()" [fromServer]="catalogFromServer()" (picked)="add($event)" />
+    <app-service-catalog class="block h-72 animate-slide-up lg:h-auto lg:max-h-[34rem]" [provider]="selectedId()" [catalog]="catalog()" [fromServer]="catalogFromServer()" [limits]="catalogLimits()" (picked)="add($event)" (blocked)="explainLimit($event)" />
   }
 
   <div class="relative min-w-0" appContainerWidth data-stage>
@@ -577,7 +577,7 @@
     </p>
   } @else if (placementNotice(); as notice) {
     <p class="placement-toast" data-tone="warn" role="alert" data-testid="placement-notice" data-export="skip">
-      <span><strong class="font-semibold">{{ 'La pieza volvió a su sitio.' | t }}</strong> {{ notice.reason }} {{ notice.suggestion }}</span>
+      <span><strong class="font-semibold">{{ (notice.title ?? 'La pieza volvió a su sitio.') | t }}</strong> {{ notice.reason }} {{ notice.suggestion }}</span>
       <button type="button" class="focus-ring rounded-control border border-current/40 px-2 text-xs" (click)="placementNotice.set(null)">{{ 'Entendido' | t }}</button>
     </p>
   }

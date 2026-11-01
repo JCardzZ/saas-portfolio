@@ -1,5 +1,6 @@
 import { CatalogItem, LogicalType, SERVICE_CATALOG } from './cloud-catalog.data';
 import { CloudLink, CloudNode, LinkKind, ZoneId } from './cloud-topology.data';
+import { INSTANCE_GROUPS, INSTANCE_LIMITS, InstanceGroup, LIMIT_ADVICE } from './instance-policy';
 
 /** Extremo de una conexión a efectos de las reglas: un papel de datos o cualquier otra pieza. */
 export type Endpoint = LogicalType | 'service';
@@ -15,8 +16,10 @@ export interface GraphRules {
   incoming: Record<LogicalType, Endpoint[]>;
   /** Entre qué extremos tiene sentido cada tipo de conexión. */
   kinds: Record<LinkKind, { from: Endpoint[]; to: Endpoint[] }>;
-  /** Cuántas instancias de un mismo tipo admite un lienzo. */
+  /** Cuántas instancias de un mismo tipo admite un lienzo (instance-policy.ts). */
   maxInstances: Record<string, number>;
+  /** Servicios distintos con el mismo papel que, entre todos, no pasan de un máximo. */
+  instanceGroups: InstanceGroup[];
   /** Por qué cada papel no recibe de cualquiera y qué hacer en su lugar. */
   advice: Record<LogicalType, RuleAdvice>;
   /** Piezas que no deberían estar en ciertas zonas de red. Avisan; no impiden guardar. */
@@ -76,7 +79,12 @@ export const GRAPH_RULES: GraphRules = {
     ANALYTICS_SINK: { from: ['service', ...DATABASES, 'cdc', 'event-stream', 'queue', 'stream-processing', 'data-warehouse'], to: ['data-warehouse', 'bi'] },
     REPLICATION: { from: DATABASES, to: DATABASES },
   },
-  maxInstances: Object.fromEntries(ITEMS.flatMap((item) => (item.maxInstances ? [[item.type, item.maxInstances]] : []))),
+  maxInstances: {
+    ...Object.fromEntries(Object.entries(INSTANCE_LIMITS).map(([type, limit]) => [type, limit.max])),
+    // Un límite propio del catálogo, si lo hay, manda.
+    ...Object.fromEntries(ITEMS.flatMap((item) => (item.maxInstances ? [[item.type, item.maxInstances]] : []))),
+  },
+  instanceGroups: INSTANCE_GROUPS,
   advice: {
     database: { why: 'Una base de datos recibe escrituras de un servicio, de otra base de datos o de un flujo ya procesado.', suggestion: 'Pon un servicio o un procesador de streams en medio.' },
     'global-database': { why: 'Una base de datos global recibe escrituras de un servicio o de otra base de datos.', suggestion: 'Pon un servicio en medio.' },
@@ -204,7 +212,45 @@ export function checkGraph(
       }
     }
   }
+  // Un nodo que ya sobra por su tipo no se avisa otra vez por su grupo.
+  const flagged = new Set(violations.filter((violation) => violation.rule === 'max-instances').map((violation) => violation.nodeId));
+  for (const group of rules.instanceGroups) {
+    const members = nodes.filter((node) => group.types.includes(node.type));
+    for (const extra of members.slice(group.max).filter((node) => !flagged.has(node.id))) {
+      violations.push({ rule: 'max-instances', nodeId: extra.id, message: `${nameOf(extra)}: ${group.why}`, suggestion: group.suggestion });
+    }
+  }
   return violations;
+}
+
+export type InstanceVerdict =
+  | { allowed: true; count: number; max: number | null }
+  | { allowed: false; count: number; max: number; reason: string; suggestion: string };
+
+/**
+ * ¿Cabe otra instancia de `type` en el lienzo? `name` es el nombre del servicio en la nube activa.
+ * Mira su límite propio y el de su grupo (secretos, BI…), y explica el porqué con las palabras de un
+ * arquitecto: plataforma, cómputo o datos.
+ */
+export function instanceVerdict(type: string, nodes: Pick<CloudNode, 'type'>[], name: string, rules: GraphRules = GRAPH_RULES): InstanceVerdict {
+  const count = nodes.filter((node) => node.type === type).length;
+  const group = rules.instanceGroups.find((candidate) => candidate.types.includes(type));
+  if (group) {
+    const taken = nodes.filter((node) => group.types.includes(node.type)).length;
+    if (taken >= group.max) {
+      return { allowed: false, count: taken, max: group.max, reason: group.why, suggestion: group.suggestion };
+    }
+  }
+  const max = rules.maxInstances[type];
+  if (max === undefined) {
+    return { allowed: true, count, max: null };
+  }
+  if (count < max) {
+    return { allowed: true, count, max };
+  }
+  const advice = LIMIT_ADVICE[INSTANCE_LIMITS[type]?.kind ?? 'data'];
+  const text = (max === 1 ? advice.single : advice.many).replaceAll('{name}', name).replaceAll('{max}', String(max));
+  return { allowed: false, count, max, reason: text, suggestion: advice.suggestion };
 }
 
 /** Resultado de intentar una conexión: si no se admite, por qué y qué hacer en su lugar. */
