@@ -87,10 +87,11 @@ export const FULL_VIEW: View = { x: 0, y: 0, w: CANVAS_WIDTH, h: CANVAS_HEIGHT }
 
 /**
  * Acerca (`factor` > 1) o aleja la vista alrededor de `focus`, que queda quieto en pantalla.
- * El zoom se limita entre MIN_ZOOM y MAX_ZOOM respecto al lienzo completo.
+ * El zoom se limita entre MIN_ZOOM y MAX_ZOOM respecto a `base`: el ancho que se ve al 100 %
+ * (el lienzo completo, o el encuadre del diagrama).
  */
-export function zoomView(view: View, factor: number, focus: Point): View {
-  const zoom = CANVAS_WIDTH / view.w;
+export function zoomView(view: View, factor: number, focus: Point, base = CANVAS_WIDTH): View {
+  const zoom = base / view.w;
   const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
   const scale = zoom / next;
   const w = view.w * scale, h = view.h * scale;

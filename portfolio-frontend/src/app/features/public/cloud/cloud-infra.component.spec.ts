@@ -1049,7 +1049,9 @@ describe('CloudInfraComponent', () => {
         it('fits the diagram to the screen and back from the View menu', () => {
           const { fixture, element } = create();
           const canvas = diagram(element);
-          expect(canvas.getAttribute('viewBox')).toBe('0 0 1110 716');
+          // Con las reglas inteligentes la vista ya se ciñe al diagrama.
+          const framed = canvas.getAttribute('viewBox');
+          expect(canvas.classList).toContain('canvas-smart');
 
           openView(fixture, element);
           menuItem(element, 'Ajustar a pantalla').click();
@@ -1062,8 +1064,29 @@ describe('CloudInfraComponent', () => {
           openView(fixture, element);
           menuItem(element, 'Ver el lienzo completo').click();
           fixture.detectChanges();
-          expect(canvas.getAttribute('viewBox')).toBe('0 0 1110 716');
+          expect(canvas.getAttribute('viewBox')).toBe(framed);
           expect(canvas.classList).not.toContain('canvas-fitted');
+        });
+
+        it('frames a smaller diagram to fill the canvas, and zoom resets to that frame', () => {
+          const { fixture, element, component } = create();
+          const canvas = diagram(element);
+          component.nodes.set(component.nodes().filter((candidate) => ['users', 'edge'].includes(candidate.id)));
+          component.zones.set([]);
+          fixture.detectChanges();
+          const [, , width] = canvas.getAttribute('viewBox')!.split(' ').map(Number);
+          expect(width).toBeLessThan(1110);
+          const framed = canvas.getAttribute('viewBox');
+          expect(component.zoom()).toBe(100);
+
+          component.zoomBy(1.25);
+          fixture.detectChanges();
+          expect(component.zoom()).toBe(125);
+          expect(canvas.getAttribute('viewBox')).not.toBe(framed);
+
+          component.resetView();
+          fixture.detectChanges();
+          expect(canvas.getAttribute('viewBox')).toBe(framed);
         });
       });
     });
@@ -1587,9 +1610,11 @@ describe('CloudInfraComponent', () => {
   });
   describe('smart canvas', () => {
     function pointerOn(fixture: { detectChanges(): void }, element: HTMLElement) {
-      const bounds = () => diagram(element).getBoundingClientRect();
-      // De coordenadas del lienzo a coordenadas de ventana.
-      const client = (x: number, y: number) => ({ clientX: bounds().left + (x * bounds().width) / 1110, clientY: bounds().top + (y * bounds().height) / 716 });
+      // De coordenadas del lienzo a coordenadas de ventana, con el encuadre que tenga ahora la vista.
+      const client = (x: number, y: number) => {
+        const point = new DOMPoint(x, y).matrixTransform((diagram(element) as SVGSVGElement).getScreenCTM()!);
+        return { clientX: point.x, clientY: point.y };
+      };
       return (target: Element, type: string, x: number, y: number) => {
         target.dispatchEvent(new PointerEvent(type, { ...client(x, y), bubbles: true }));
         fixture.detectChanges();

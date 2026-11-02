@@ -27,7 +27,7 @@ import { autoLayout } from './auto-layout';
 import { contentBounds, directNodes, reflow, resizeToContent } from './zone-layout';
 import { settleZones, zoneParents } from './zone-solver';
 import { assignPorts, labelPoint, nodeRect, roundedPath, routeWire } from './wire-router';
-import { FULL_VIEW, Point, View, panView, placementVerdict, resolveCollision, withFriction, zoomLevel, zoomView } from './studio-physics';
+import { FULL_VIEW, Point, View, panView, placementVerdict, resolveCollision, withFriction, zoomView } from './studio-physics';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
 import { CatalogItem } from './cloud-catalog.data';
 import { estimateCost, formatUsd } from './cloud-costs.data';
@@ -99,10 +99,14 @@ interface Wire extends CloudLink {
  * que quepa casi a tamaño real: reducido, ni se lee ni se acierta a tocar.
  */
 const MIN_CANVAS_WIDTH = { mouse: 720, touch: 1088 };
+/** Con las reglas inteligentes el lienzo se ciñe al diagrama y hace zoom: con ratón basta menos ancho. */
+const MIN_SMART_CANVAS_WIDTH = 600;
+/** Margen del encuadre automático al editar, para tener dónde soltar piezas nuevas. */
+const FRAME_EDIT_PAD = 48;
 
-function minCanvasWidth(): number {
+function minCanvasWidth(smart = false): number {
   const touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
-  return touch ? MIN_CANVAS_WIDTH.touch : MIN_CANVAS_WIDTH.mouse;
+  return touch ? MIN_CANVAS_WIDTH.touch : smart ? MIN_SMART_CANVAS_WIDTH : MIN_CANVAS_WIDTH.mouse;
 }
 
 /** Espera antes de mostrar el aviso de un nodo: lo justo para que no salte al cruzar el lienzo. */
@@ -153,11 +157,21 @@ export class CloudInfraComponent {
   readonly fitted = signal(false);
   /** Zoom y desplazamiento del lienzo (reglas inteligentes): rueda con Ctrl/⌘ o pellizco, y botones. */
   readonly camera = signal<View>(FULL_VIEW);
-  readonly zoom = computed(() => zoomLevel(this.camera()));
+  /**
+   * Encuadre automático (reglas inteligentes): la vista se ciñe al diagrama, con margen para soltar
+   * piezas al editar. Se congela durante un arrastre para que el lienzo no se mueva bajo el cursor.
+   */
+  readonly frame = signal<View>(FULL_VIEW);
+  /** La vista sigue el encuadre automático hasta que el visitante hace zoom o se desplaza. */
+  readonly autoFrame = signal(true);
+  /** Lo que se ve ahora con las reglas inteligentes: el encuadre o la cámara del visitante. */
+  private readonly shown = computed(() => (this.autoFrame() ? this.frame() : this.camera()));
+  /** Zoom respecto al encuadre del diagrama: 100 % es «se ve entero». */
+  readonly zoom = computed(() => Math.round((this.frame().w / this.shown().w) * 100));
   readonly viewBox = computed(() => {
     if (!this.fitted()) {
       if (this.smartRules()) {
-        const { x, y, w, h } = this.camera();
+        const { x, y, w, h } = this.shown();
         return `${Math.round(x)} ${Math.round(y)} ${Math.round(w)} ${Math.round(h)}`;
       }
       return `0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`;
@@ -350,7 +364,7 @@ export class CloudInfraComponent {
   private readonly canvas = viewChild<ElementRef<SVGSVGElement>>('canvas');
   private readonly stageBox = viewChild(ContainerWidthDirective);
   /** Sin ancho para el lienzo de trabajo, el diagrama se muestra de arriba abajo y de solo lectura. */
-  readonly compact = computed(() => this.stageBox()?.narrowerThan(minCanvasWidth()) ?? false);
+  readonly compact = computed(() => this.stageBox()?.narrowerThan(minCanvasWidth(this.smartRules())) ?? false);
   /** Métricas y FinOps debajo del lienzo, nunca encima de un nodo: siempre con las reglas inteligentes. */
   readonly panelsBelow = computed(() => this.fitted() || this.compact() || this.smartRules());
   /** Cupo de cada servicio del catálogo en el lienzo actual (reglas inteligentes). */
@@ -439,6 +453,13 @@ export class CloudInfraComponent {
     });
     this.restore();
     this.studio.load();
+    // Encuadre automático: sigue al diagrama cuando cambian sus piezas, sus recuadros o el modo edición.
+    effect(() => {
+      this.nodes();
+      this.zones();
+      this.editing();
+      untracked(() => this.refit());
+    });
     // Al estrecharse (girar el móvil, acoplar el inspector) se sale de la edición: no hay lienzo donde editar.
     effect(() => {
       if (this.compact() && untracked(this.editing)) {
@@ -1233,6 +1254,7 @@ export class CloudInfraComponent {
     }
     // Sin montarse: si pisa a otro nodo, al hueco libre más cercano de su mismo recuadro.
     this.settleNode(drag.id);
+    this.refit();
   }
 
   /** Lleva un nodo al hueco libre más cercano si ha quedado encima de otro (reglas inteligentes). */
@@ -1255,22 +1277,50 @@ export class CloudInfraComponent {
     if (event.ctrlKey || event.metaKey) {
       // Ctrl/⌘ + rueda, o pellizco en el trackpad (llega como rueda con Ctrl): zoom alrededor del cursor.
       event.preventDefault();
-      this.camera.set(zoomView(this.camera(), Math.exp(-event.deltaY * 0.0025), this.toCanvas(event.clientX, event.clientY)));
+      this.setCamera(zoomView(this.shown(), Math.exp(-event.deltaY * 0.0025), this.toCanvas(event.clientX, event.clientY), this.frame().w));
     } else if (this.zoom() > 100) {
       // Acercado, la rueda recorre el lienzo; a tamaño normal deja desplazar la página.
       event.preventDefault();
-      const scale = this.camera().w / Math.max(1, this.canvas()?.nativeElement.clientWidth ?? CANVAS_WIDTH);
-      this.camera.set(panView(this.camera(), event.deltaX * scale, event.deltaY * scale));
+      const scale = this.shown().w / Math.max(1, this.canvas()?.nativeElement.clientWidth ?? CANVAS_WIDTH);
+      this.setCamera(panView(this.shown(), event.deltaX * scale, event.deltaY * scale));
     }
   }
 
   zoomBy(factor: number): void {
-    const { x, y, w, h } = this.camera();
-    this.camera.set(zoomView(this.camera(), factor, { x: x + w / 2, y: y + h / 2 }));
+    const { x, y, w, h } = this.shown();
+    this.setCamera(zoomView(this.shown(), factor, { x: x + w / 2, y: y + h / 2 }, this.frame().w));
   }
 
+  /** Vuelve al encuadre automático: el diagrama entero, ajustado al marco. */
   resetView(): void {
-    this.camera.set(FULL_VIEW);
+    this.autoFrame.set(true);
+  }
+
+  private setCamera(view: View): void {
+    this.camera.set(view);
+    this.autoFrame.set(false);
+  }
+
+  /**
+   * Recalcula el encuadre automático: el diagrama y, al editar, un margen alrededor para soltar
+   * piezas. No se mueve mientras se arrastra un nodo o un recuadro.
+   */
+  private refit(): void {
+    if (this.dragging || this.zoneDrag) {
+      return;
+    }
+    const bounds = contentBounds(this.nodes(), this.zones());
+    const pad = this.editing() ? FRAME_EDIT_PAD : 0;
+    const x = Math.max(0, bounds.x - pad), y = Math.max(0, bounds.y - pad);
+    const next = {
+      x, y,
+      w: Math.min(CANVAS_WIDTH, bounds.x + bounds.w + pad) - x,
+      h: Math.min(CANVAS_HEIGHT, bounds.y + bounds.h + pad) - y,
+    };
+    const current = this.frame();
+    if (next.x !== current.x || next.y !== current.y || next.w !== current.w || next.h !== current.h) {
+      this.frame.set(next);
+    }
   }
 
   // Con teclado: las flechas mueven el nodo enfocado y Supr o Retroceso lo quitan.
@@ -1800,6 +1850,7 @@ export class CloudInfraComponent {
       this.reassignZones();
     }
     this.zoneDrag = null;
+    this.refit();
   }
 
   // Con teclado: flechas para mover, Mayús+flechas para redimensionar y Supr para quitar.

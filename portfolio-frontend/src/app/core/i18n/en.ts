@@ -1140,6 +1140,7 @@ export const EN: Readonly<Record<string, string>> = {
   'Zoom del lienzo': 'Canvas zoom',
   'Petición': 'Request',
   'No cabe otra instancia.': 'No room for another instance.',
+  'Cómo se edita': 'How to edit',
   'Tamaño normal': 'Actual size',
   'En producción · operativa': 'In production · operational',
   'En producción · degradada': 'In production · degraded',

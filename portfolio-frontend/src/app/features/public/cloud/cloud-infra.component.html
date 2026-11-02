@@ -250,9 +250,17 @@
         <button type="button" class="focus-ring rounded-control border border-status-warn/40 px-2 text-xs" (click)="connectionRefusal.set(null)">{{ 'Entendido' | t }}</button>
       </p>
     }
-    <p class="order-last w-full text-xs leading-snug text-ink-2">
-      {{ 'Pulsa un servicio o arrástralo al lienzo. Mueve los nodos arrastrándolos (o con las flechas), abre sus propiedades con doble clic o Intro, conéctalos arrastrando la flecha de su borde y quítalos con la ✕ o Supr. Las zonas se mueven por su franja superior y se redimensionan desde las esquinas. Editas una copia: no cambia la plataforma real.' | t }}
-    </p>
+    @if (smartRules()) {
+      <!-- Reglas inteligentes: la ayuda se pliega en una línea y el lienzo gana alto. -->
+      <details class="ml-auto text-xs leading-snug text-ink-2 open:order-last open:ml-0 open:w-full" data-testid="edit-help">
+        <summary class="focus-ring w-fit cursor-pointer rounded-control text-ink-2 hover:text-ink-1">{{ 'Cómo se edita' | t }}</summary>
+        <p class="mt-1">{{ 'Pulsa un servicio o arrástralo al lienzo. Mueve los nodos arrastrándolos (o con las flechas), abre sus propiedades con doble clic o Intro, conéctalos arrastrando la flecha de su borde y quítalos con la ✕ o Supr. Las zonas se mueven por su franja superior y se redimensionan desde las esquinas. Editas una copia: no cambia la plataforma real.' | t }}</p>
+      </details>
+    } @else {
+      <p class="order-last w-full text-xs leading-snug text-ink-2">
+        {{ 'Pulsa un servicio o arrástralo al lienzo. Mueve los nodos arrastrándolos (o con las flechas), abre sus propiedades con doble clic o Intro, conéctalos arrastrando la flecha de su borde y quítalos con la ✕ o Supr. Las zonas se mueven por su franja superior y se redimensionan desde las esquinas. Editas una copia: no cambia la plataforma real.' | t }}
+      </p>
+    }
   </div>
 } @else {
   <p class="mt-3 text-sm text-ink-2">
@@ -304,7 +312,7 @@
   </section>
 }
 
-<div class="mt-3 gap-4" [class]="editing() && catalogDocked() ? 'grid [&>*]:min-w-0 lg:grid-cols-[16rem_minmax(0,1fr)]' : ''">
+<div class="mt-3 gap-4" [class]="editing() && catalogDocked() ? (smartRules() ? 'grid [&>*]:min-w-0 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[16rem_minmax(0,1fr)]' : 'grid [&>*]:min-w-0 lg:grid-cols-[16rem_minmax(0,1fr)]') : ''">
   @if (editing() && catalogDocked()) {
     <app-service-catalog class="block h-72 animate-slide-up lg:h-auto lg:max-h-[34rem]" [provider]="selectedId()" [catalog]="catalog()" [fromServer]="catalogFromServer()" [limits]="catalogLimits()" (picked)="add($event)" (blocked)="explainLimit($event)" />
   }
@@ -322,6 +330,7 @@
       [attr.viewBox]="viewBox()"
       class="block w-full"
       [class.canvas-fitted]="fitted()"
+      [class.canvas-smart]="smartRules() && !fitted()"
       [class.canvas-editing]="editing()"
       role="group"
       [style.--provider]="providerColor()"
