@@ -86,6 +86,24 @@ class ArchitectureGraphRulesTest {
     }
 
     @Test
+    void limitsServicesThatPlayTheSameRoleAndPlatformServices() {
+        assertThat(rules.violations(List.of(node("s", "secrets"), node("v", "vault")), List.of()))
+                .containsExactly("Demasiadas piezas con el papel «secrets-store»: 2 de 1 como máximo");
+        assertThat(rules.violations(List.of(node("m1", "native-monitoring"), node("m2", "native-monitoring")), List.of()))
+                .containsExactly("Demasiadas instancias de «native-monitoring»: 2 de 1 como máximo");
+        List<Map<String, Object>> services = new ArrayList<>();
+        for (int index = 0; index < 7; index++) {
+            services.add(node("api-" + index, "containers"));
+        }
+        assertThat(rules.violations(services, List.of())).containsExactly("Demasiadas instancias de «containers»: 7 de 6 como máximo");
+        assertThat(rules.diagnostics(List.of(node("s", "secrets"), node("v", "vault")), List.of()))
+                .singleElement().satisfies(diagnostic -> {
+                    assertThat(diagnostic.nodeId()).isEqualTo("v");
+                    assertThat(diagnostic.suggestion()).contains("Vault");
+                });
+    }
+
+    @Test
     void ignoresWhatTheEditorWouldDiscard() {
         List<Map<String, Object>> nodes = List.of(node("cdc-1", "cdc"), Map.of("id", "sin-tipo"));
         List<Map<String, Object>> links = List.of(link("fantasma", "cdc-1"), Map.of("from", 7, "to", "cdc-1"), Map.of());
@@ -95,7 +113,7 @@ class ArchitectureGraphRulesTest {
 
     @Test
     void withNoRulesAcceptsEverything() {
-        ArchitectureGraphRules none = new ArchitectureGraphRules(null, null, null, null, null, null, null);
+        ArchitectureGraphRules none = new ArchitectureGraphRules(null, null, null, null, null, null, null, null);
 
         assertThat(none.violations(List.of(node("api", "containers"), node("cdc", "cdc")), List.of(link("api", "cdc")))).isEmpty();
         assertThat(none.diagnostics(List.of(node("api", "containers"), node("cdc", "cdc")), List.of(link("api", "cdc")))).isEmpty();

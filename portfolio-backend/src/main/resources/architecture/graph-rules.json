@@ -140,12 +140,53 @@
     }
   },
   "maxInstances": {
+    "users": 1,
+    "edge": 1,
+    "static": 1,
+    "secrets": 1,
+    "vault": 1,
+    "native-monitoring": 1,
+    "prometheus": 1,
+    "datadog": 1,
+    "opentelemetry": 1,
+    "registry": 1,
+    "waf": 1,
+    "dns": 1,
+    "identity": 1,
+    "api-gateway": 1,
+    "cicd": 1,
+    "ml-platform": 1,
+    "gemini": 1,
+    "lb": 2,
+    "containers": 6,
+    "vm": 6,
+    "functions": 10,
+    "app-platform": 4,
+    "kubernetes": 2,
+    "workflow": 3,
+    "postgres": 3,
+    "redis": 2,
+    "nosql": 3,
+    "newsql-pg": 2,
+    "global-sql": 2,
     "global-database": 3,
+    "graph": 1,
+    "mongodb": 2,
+    "wide-column": 1,
+    "search": 1,
+    "warehouse": 1,
+    "sql-query": 1,
+    "bucket": 5,
+    "streaming": 2,
     "event-stream": 4,
+    "queue": 4,
+    "pubsub": 2,
+    "rabbitmq": 1,
+    "kafka": 1,
+    "stream-processing": 2,
     "cdc": 3,
     "debezium": 2,
     "goldengate": 1,
-    "kafka": 1,
     "snowflake": 1,
     "databricks": 1,
     "bi": 1,
@@ -153,6 +194,30 @@
     "powerbi": 1,
     "looker-studio": 1
   },
+  "instanceGroups": [
+    {
+      "id": "secrets-store",
+      "types": [
+        "secrets",
+        "vault"
+      ],
+      "max": 1,
+      "why": "Un solo almacén de secretos: dos fuentes de verdad para las credenciales acaban desincronizadas.",
+      "suggestion": "Quédate con el gestor de la nube o con Vault, no con los dos."
+    },
+    {
+      "id": "bi-tool",
+      "types": [
+        "bi",
+        "tableau",
+        "powerbi",
+        "looker-studio"
+      ],
+      "max": 1,
+      "why": "Una sola herramienta de paneles: dos dan cifras distintas para la misma pregunta.",
+      "suggestion": "Elige una herramienta de BI y conéctala al almacén de datos."
+    }
+  ],
   "advice": {
     "database": {
       "why": "Una base de datos recibe escrituras de un servicio, de otra base de datos o de un flujo ya procesado.",
