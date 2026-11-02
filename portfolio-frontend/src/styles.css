@@ -743,7 +743,8 @@ svg .pulse.pulse-boost { stroke: var(--status-ok); }
   transition: border-radius 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.2s, color 0.2s;
 }
 .admin-rail-item svg { width: 1.35rem; height: 1.35rem; }
-.admin-rail-item:hover, .admin-rail-item:focus-visible, .admin-rail-active { border-radius: 0.95rem; background: var(--a-accent); color: #fff; outline: none; }
+.admin-rail-item:hover, .admin-rail-item:focus-visible, .admin-rail-active { border-radius: 0.95rem; background: var(--sec, var(--a-accent)); color: #fff; outline: none; box-shadow: 0 6px 18px -6px var(--sec, var(--a-accent)); }
+.admin-rail-item:active { transform: translateY(1px) scale(0.96); }
 .admin-rail-out:hover, .admin-rail-out:focus-visible { background: var(--a-ok); }
 .admin-rail-home { font-weight: 700; font-size: 0.95rem; letter-spacing: 0.02em; color: var(--a-text-1); }
 /* La píldora de la izquierda: crece al pasar el cursor y llega a su alto en la sección abierta. */
@@ -893,3 +894,66 @@ body:has(.admin-shell) [data-testid="demo-notice-fallback"] { left: auto !import
 .flag-toast-show { opacity: 1; transform: translate(-50%, 0); }
 .flag-toast-check { display: grid; place-items: center; width: 1.25rem; height: 1.25rem; border-radius: 9999px; background: var(--a-ok, #23a55a); color: #fff; font-size: 0.75rem; font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { .flag-toast { transition: none; } }
+
+/* ── Panel vivo (admin.redesign): color por sección, fichas de icono, animaciones ── */
+.admin-rail-item { transition: border-radius 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.2s, color 0.2s, box-shadow 0.25s, transform 0.12s; }
+.admin-rail-item svg { color: var(--sec, currentColor); transition: color 0.2s, transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.admin-rail-item:hover svg, .admin-rail-active svg { color: #fff; transform: scale(1.08); }
+.admin-rail-home { background: linear-gradient(135deg, #6366f1, #a855f7 55%, #ec4899); color: #fff; background-size: 200% 200%; animation: admin-gradient 8s ease infinite; }
+.admin-rail-home:hover, .admin-rail-home.admin-rail-active { background: linear-gradient(135deg, #6366f1, #a855f7 55%, #ec4899); background-size: 200% 200%; }
+@keyframes admin-gradient { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+/* Ficha del icono: cuadrado redondeado teñido con el color de su sección. */
+.admin-link-chip { display: grid; place-items: center; flex: none; width: 1.6rem; height: 1.6rem; border-radius: 0.45rem; background: color-mix(in srgb, var(--sec, var(--a-accent)) 18%, transparent); color: var(--sec, var(--a-accent)); transition: background 0.15s, color 0.15s, transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.admin-link-chip svg { width: 1rem; height: 1rem; }
+.admin-link-chip-lg { width: 2.25rem; height: 2.25rem; border-radius: 0.65rem; }
+.admin-link-chip-lg svg { width: 1.25rem; height: 1.25rem; }
+.admin-link:hover .admin-link-chip { transform: scale(1.1) rotate(-4deg); }
+.admin-link-active .admin-link-chip { background: var(--sec, var(--a-accent)); color: #fff; }
+.admin-link-active { box-shadow: inset 2px 0 0 var(--sec, var(--a-accent)); }
+
+/* El estado «en línea» late despacio. */
+.admin-status::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: var(--a-ok); animation: admin-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite; }
+@keyframes admin-ping { 0% { transform: scale(1); opacity: 0.6; } 80%, 100% { transform: scale(2.2); opacity: 0; } }
+
+/* Cada página entra con un fundido corto al navegar; las tarjetas, escalonadas. */
+.admin-content > :not(router-outlet) { animation: admin-page-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes admin-page-in { from { opacity: 0; transform: translateY(8px); } }
+.admin-rise { animation: admin-page-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(var(--i, 0) * 55ms); }
+
+/* Banner de bienvenida del inicio. */
+.admin-banner { position: relative; overflow: hidden; margin-bottom: 1.5rem; padding: 1.75rem 1.75rem 1.6rem; border-radius: 1rem; color: #fff;
+  background: linear-gradient(120deg, #4338ca, #7c3aed 45%, #db2777); background-size: 200% 200%; animation: admin-gradient 12s ease infinite; box-shadow: 0 18px 40px -18px rgb(124 58 237 / 0.7); }
+.admin-banner-orb { position: absolute; border-radius: 9999px; filter: blur(30px); opacity: 0.55; pointer-events: none; }
+.admin-banner-orb-a { width: 14rem; height: 14rem; right: -3rem; top: -5rem; background: #22d3ee; animation: admin-float 9s ease-in-out infinite; }
+.admin-banner-orb-b { width: 10rem; height: 10rem; right: 9rem; bottom: -6rem; background: #f472b6; animation: admin-float 11s ease-in-out infinite reverse; }
+@keyframes admin-float { 50% { transform: translate(-1.5rem, 1rem) scale(1.1); } }
+.admin-banner-kicker { position: relative; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.8; }
+.admin-banner-title { position: relative; margin-top: 0.25rem; font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em; }
+.admin-banner-sub { position: relative; margin-top: 0.25rem; font-size: 0.9rem; opacity: 0.85; }
+
+/* Tarjetas del inicio con el color de su sección. */
+.admin-tile .admin-tile-icon { background: color-mix(in srgb, var(--sec, var(--a-accent)) 18%, transparent); color: var(--sec, #a5a8ff); transition: transform 0.3s cubic-bezier(0.3, 1.6, 0.5, 1), background 0.2s, color 0.2s; }
+.admin-tile:hover { border-color: color-mix(in srgb, var(--sec, var(--a-accent)) 60%, transparent); box-shadow: 0 14px 30px -16px var(--sec, var(--a-accent)); transform: translateY(-3px); }
+.admin-tile:hover .admin-tile-icon { background: var(--sec, var(--a-accent)); color: #fff; transform: scale(1.08) rotate(-6deg); }
+.admin-tile:hover .admin-tile-go { color: var(--sec, var(--a-text-1)); }
+
+/* Interruptor con ✓ y ✕ en el pomo, y un pequeño rebote al cambiar. */
+.flag-switch { background: #80848e; }
+.flag-switch-on { background: var(--a-ok, #23a55a); box-shadow: 0 0 0 0 rgb(35 165 90 / 0.5); animation: flag-glow 0.6s ease-out; }
+@keyframes flag-glow { from { box-shadow: 0 0 0 0 rgb(35 165 90 / 0.55); } to { box-shadow: 0 0 0 8px rgb(35 165 90 / 0); } }
+.flag-switch-knob { display: grid; place-items: center; }
+.flag-switch-knob svg { position: absolute; width: 0.7rem; height: 0.7rem; transition: opacity 0.18s, transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.flag-switch-on-icon { color: var(--a-ok, #23a55a); opacity: 0; transform: scale(0.4) rotate(-45deg); }
+.flag-switch-off-icon { color: #80848e; }
+.flag-switch-on .flag-switch-on-icon { opacity: 1; transform: none; }
+.flag-switch-on .flag-switch-off-icon { opacity: 0; transform: scale(0.4) rotate(45deg); }
+.flag-row-on { box-shadow: inset 3px 0 0 var(--sec, var(--a-ok, #23a55a)); }
+.flag-toast { animation: none; }
+.flag-toast-show { transition: opacity 0.2s, transform 0.4s cubic-bezier(0.3, 1.5, 0.5, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-rail-home, .admin-banner, .admin-banner-orb, .admin-status::after, .admin-content > :not(router-outlet), .admin-rise, .flag-switch-on { animation: none; }
+  .admin-link-chip, .admin-tile .admin-tile-icon, .flag-switch-knob svg { transition: none; }
+  .admin-tile:hover, .admin-tile:hover .admin-tile-icon, .admin-link:hover .admin-link-chip { transform: none; }
+}

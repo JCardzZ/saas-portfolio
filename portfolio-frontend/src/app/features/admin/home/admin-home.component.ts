@@ -12,6 +12,16 @@ import { SECTIONS, SECTION_META } from '../layout/admin-layout.component';
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <section class="space-y-6">
+      @if (redesign()) {
+        <!-- Banner de bienvenida: degradado vivo, saludo y el rol de quien ha entrado. -->
+        <div class="admin-banner" data-testid="admin-banner">
+          <span class="admin-banner-orb admin-banner-orb-a" aria-hidden="true"></span>
+          <span class="admin-banner-orb admin-banner-orb-b" aria-hidden="true"></span>
+          <p class="admin-banner-kicker">Portfolio CMS</p>
+          <p class="admin-banner-title">Hola{{ who() ? ', ' + firstName() : '' }}</p>
+          <p class="admin-banner-sub">{{ sections().length }} secciones a tu alcance · rol {{ who()?.role }}</p>
+        </div>
+      }
       <header>
         <h1 class="text-2xl font-semibold">Panel de administración</h1>
         @if (who(); as current) {
@@ -20,11 +30,11 @@ import { SECTIONS, SECTION_META } from '../layout/admin-layout.component';
       </header>
 
       @if (redesign() && sections().length) {
-        <!-- Panel rediseñado: cada sección con su icono y para qué sirve. -->
+        <!-- Panel rediseñado: cada sección con su icono, su color y para qué sirve. -->
         <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          @for (section of sections(); track section.path) {
-            <li>
-              <a class="admin-tile" [routerLink]="section.path">
+          @for (section of sections(); track section.path; let i = $index) {
+            <li class="admin-rise" [style.--i]="i">
+              <a class="admin-tile" [routerLink]="section.path" [style.--sec]="meta[section.path]?.color">
                 <span class="admin-tile-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="meta[section.path]?.icon" /></svg>
                 </span>
@@ -69,4 +79,5 @@ export class AdminHomeComponent {
   readonly permissions = computed(() => this.auth.profile()?.permissions ?? []);
   readonly redesign = computed(() => this.flags.isEnabled('admin.redesign'));
   readonly meta = SECTION_META;
+  readonly firstName = computed(() => (this.who()?.name ?? '').split(/\s+/)[0]);
 }

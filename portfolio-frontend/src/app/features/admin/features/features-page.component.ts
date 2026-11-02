@@ -13,18 +13,20 @@ import { AlertComponent } from '../../../shared/ui/alert.component';
 export type FlagFilter = 'all' | 'on' | 'off';
 
 /** Área de la plataforma de cada prefijo de flag (`studio.…`, `site.…`), en el orden en que se muestran. */
-const AREAS: { prefix: string; name: string; hint: string }[] = [
-  { prefix: 'site', name: 'Sitio público', hint: 'Lo que ve cualquier visitante del portafolio' },
-  { prefix: 'studio', name: 'Estudio de arquitectura', hint: 'El lienzo, sus reglas y sus plantillas' },
-  { prefix: 'cloud', name: 'Nubes', hint: 'Proveedores que ofrece el Estudio' },
-  { prefix: 'mcp', name: 'MCP', hint: 'La plataforma usada desde otra IA' },
-  { prefix: 'admin', name: 'Administración', hint: 'Esta consola' },
+const AREAS: { prefix: string; name: string; hint: string; color: string; icon: string }[] = [
+  { prefix: 'site', color: '#4f8cff', icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z', name: 'Sitio público', hint: 'Lo que ve cualquier visitante del portafolio' },
+  { prefix: 'studio', color: '#a970ff', icon: 'M12 3 3 8l9 5 9-5-9-5zM3 13l9 5 9-5M3 17.5l9 4.5 9-4.5', name: 'Estudio de arquitectura', hint: 'El lienzo, sus reglas y sus plantillas' },
+  { prefix: 'cloud', color: '#22c3e6', icon: 'M7 18a4.5 4.5 0 0 1-.5-9A6 6 0 0 1 18 9.5a4 4 0 0 1-.5 8.5z', name: 'Nubes', hint: 'Proveedores que ofrece el Estudio' },
+  { prefix: 'mcp', color: '#22c58b', icon: 'M9 3v5M15 3v5M7 8h10v3a5 5 0 0 1-10 0zM12 16v5', name: 'MCP', hint: 'La plataforma usada desde otra IA' },
+  { prefix: 'admin', color: '#ff5c93', icon: 'M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z', name: 'Administración', hint: 'Esta consola' },
 ];
 
 export interface FlagGroup {
   prefix: string;
   name: string;
   hint: string;
+  color: string;
+  icon: string;
   flags: FeatureFlagDetail[];
   on: number;
 }
@@ -77,7 +79,7 @@ export class FeaturesPageComponent implements OnInit {
       (filter === 'all' || flag.enabled === (filter === 'on'))
       && (!query || `${flag.key} ${flag.description}`.toLowerCase().includes(query)));
     const known = AREAS.map((area) => area.prefix);
-    const areas = [...AREAS, { prefix: '', name: 'Otras', hint: 'Sin área asignada' }];
+    const areas = [...AREAS, { prefix: '', name: 'Otras', hint: 'Sin área asignada', color: '#8d929c', icon: 'M5 12h.01M12 12h.01M19 12h.01' }];
     return areas
       .map((area) => {
         const all = this.flags().filter((flag) => area.prefix ? prefixOf(flag.key) === area.prefix : !known.includes(prefixOf(flag.key)));

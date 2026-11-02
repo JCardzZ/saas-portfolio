@@ -53,9 +53,10 @@
     </p>
 
     @for (group of groups(); track group.prefix) {
-      <section class="card p-0" [attr.aria-labelledby]="'flag-group-' + group.prefix" data-testid="flag-group">
-        <header class="flex items-baseline justify-between gap-3 border-b border-slate-100 px-5 py-3">
-          <div>
+      <section class="card admin-rise p-0" [style.--i]="$index" [style.--sec]="group.color" [attr.aria-labelledby]="'flag-group-' + group.prefix" data-testid="flag-group">
+        <header class="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-3">
+          <span class="admin-link-chip admin-link-chip-lg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="group.icon" /></svg></span>
+          <div class="min-w-0 flex-1">
             <h2 [id]="'flag-group-' + group.prefix" class="text-sm font-semibold text-slate-900">{{ group.name }}</h2>
             <p class="text-xs text-slate-500">{{ group.hint }}</p>
           </div>
@@ -96,7 +97,10 @@
                 [attr.title]="canWrite ? null : 'Tu rol puede ver las flags, pero no cambiarlas'"
                 (click)="toggle(flag)"
               >
-                <span class="flag-switch-knob" aria-hidden="true"></span>
+                <span class="flag-switch-knob" aria-hidden="true">
+                  <svg class="flag-switch-on-icon" viewBox="0 0 12 12"><path d="M2.5 6.2 5 8.5l4.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  <svg class="flag-switch-off-icon" viewBox="0 0 12 12"><path d="M3.5 3.5l5 5M8.5 3.5l-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                </span>
               </button>
             </li>
           }

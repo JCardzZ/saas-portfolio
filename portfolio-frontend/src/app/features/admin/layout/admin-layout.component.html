@@ -7,7 +7,7 @@
       </a>
       <span class="admin-rail-sep" aria-hidden="true"></span>
       @for (section of sections(); track section.path) {
-        <a [routerLink]="section.path" routerLinkActive="admin-rail-active" class="admin-rail-item" [attr.aria-label]="section.label" (mouseenter)="showTip($event, section.label)" (focus)="showTip($event, section.label)" (mouseleave)="tip.set(null)" (blur)="tip.set(null)">
+        <a [routerLink]="section.path" routerLinkActive="admin-rail-active" class="admin-rail-item" [style.--sec]="meta[section.path]?.color" [attr.aria-label]="section.label" (mouseenter)="showTip($event, section.label)" (focus)="showTip($event, section.label)" (mouseleave)="tip.set(null)" (blur)="tip.set(null)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path [attr.d]="meta[section.path]?.icon" /></svg>
         </a>
       }
@@ -27,14 +27,14 @@
       </div>
       <div class="admin-side-scroll">
         <a routerLink="/admin" class="admin-link" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="admin-link-active" (click)="drawerOpen.set(false)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 4l9 7v9H3zM9 20v-6h6v6" /></svg>
+          <span class="admin-link-chip" style="--sec: #8b93ff" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7v9H3zM9 20v-6h6v6" /></svg></span>
           Inicio
         </a>
         @for (group of groups(); track group.name) {
           <p class="admin-group">{{ group.name }}</p>
           @for (section of group.sections; track section.path) {
-            <a [routerLink]="section.path" routerLinkActive="admin-link-active" class="admin-link" (click)="drawerOpen.set(false)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path [attr.d]="meta[section.path]?.icon" /></svg>
+            <a [routerLink]="section.path" routerLinkActive="admin-link-active" class="admin-link" [style.--sec]="meta[section.path]?.color" (click)="drawerOpen.set(false)">
+              <span class="admin-link-chip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="meta[section.path]?.icon" /></svg></span>
               {{ section.label }}
             </a>
           }
@@ -62,7 +62,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
         </button>
         @if (current(); as section) {
-          <svg class="h-5 w-5 shrink-0 text-[var(--a-text-3)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path [attr.d]="meta[section.path]?.icon" /></svg>
+          <span class="admin-link-chip" [style.--sec]="meta[section.path]?.color" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="meta[section.path]?.icon" /></svg></span>
           <span class="font-semibold text-[var(--a-text-1)]">{{ section.label }}</span>
           <span class="admin-top-sep hidden sm:block" aria-hidden="true"></span>
           <span class="hidden truncate text-sm text-[var(--a-text-3)] sm:block">{{ meta[section.path]?.hint }}</span>
