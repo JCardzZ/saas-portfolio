@@ -2,7 +2,7 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-11-02T21:00:27.468Z",
+  "updatedAt": "2026-11-02T21:03:58.403Z",
   "workflows": {
     "ci": {
       "runId": 41522929539,
@@ -155,19 +155,19 @@
       ]
     },
     "cd": {
-      "runId": 40830118043,
-      "runNumber": 105,
-      "sha": "27f96c373595ebfb21dac9d693fbdc3763b7cf92",
+      "runId": 41524371556,
+      "runNumber": 112,
+      "sha": "40cda016503caed6788f7b2d49583cf8c627e6d2",
       "event": "workflow_run",
-      "startedAt": "2026-10-29T06:35:22Z",
-      "finishedAt": "2026-10-29T06:37:15.348Z",
-      "durationSeconds": 113,
+      "startedAt": "2026-11-02T21:00:34Z",
+      "finishedAt": "2026-11-02T21:03:58.403Z",
+      "durationSeconds": 204,
       "conclusion": "success",
       "jobs": [
         {
           "id": "source",
           "status": "success",
-          "durationSeconds": 13,
+          "durationSeconds": 23,
           "runs": 1,
           "metrics": {
             "signatureVerified": true
@@ -176,36 +176,36 @@
         {
           "id": "frontend-deploy",
           "status": "success",
-          "durationSeconds": 25,
+          "durationSeconds": 31,
           "runs": 1,
           "metrics": {
-            "deployedSha": "27f96c373595ebfb21dac9d693fbdc3763b7cf92",
+            "deployedSha": "40cda016503caed6788f7b2d49583cf8c627e6d2",
             "healthy": true,
-            "deploymentUrl": "https://b8effffd.saas-portfolio-a6s.pages.dev",
-            "deploymentId": "b8effffd-a3aa-431a-8dfb-98cc2de10c8f"
+            "deploymentUrl": "https://58212a51.saas-portfolio-a6s.pages.dev",
+            "deploymentId": "58212a51-928a-4e04-a013-fa3e09e1f42b"
           }
         },
         {
           "id": "deploy",
           "status": "success",
-          "durationSeconds": 54,
+          "durationSeconds": 123,
           "runs": 1,
           "metrics": {
-            "digest": "sha256:2af99e84972b753b3144841aa538bd1f1a3345517f3f1e04e30e57e2102c8e10",
-            "revision": "portfolio-api-00019-zid",
-            "previousRevision": "portfolio-api-00017-nel"
+            "digest": "sha256:d269294adf51fcb95fc79701d273f2191ff6ff4ed16d7ea834d58be774243dad",
+            "revision": "portfolio-api-00021-jut",
+            "previousRevision": "portfolio-api-00019-zid"
           }
         },
         {
           "id": "smoke",
           "status": "success",
-          "durationSeconds": 7,
+          "durationSeconds": 8,
           "runs": 1
         },
         {
           "id": "release",
           "status": "success",
-          "durationSeconds": 8,
+          "durationSeconds": 27,
           "runs": 1
         },
         {
@@ -219,6 +219,16 @@
   },
   "deployments": {
     "frontend": [
+      {
+        "kind": "deploy",
+        "at": "2026-11-02T21:03:58.403Z",
+        "by": "JCardzZ",
+        "runId": 41524371556,
+        "runNumber": 112,
+        "sha": "40cda016503caed6788f7b2d49583cf8c627e6d2",
+        "healthy": true,
+        "deploymentId": "58212a51-928a-4e04-a013-fa3e09e1f42b"
+      },
       {
         "kind": "deploy",
         "at": "2026-10-29T06:37:15.348Z",
@@ -408,19 +418,19 @@
         "sha": "43c054cfedb4d3ce6b462f61584a28ba035772d1",
         "healthy": true,
         "deploymentId": "696633b7-a1a2-41f3-82ac-6bb069d0a20b"
-      },
-      {
-        "kind": "deploy",
-        "at": "2026-10-22T04:02:19.250Z",
-        "by": "JCardzZ",
-        "runId": 39720035138,
-        "runNumber": 70,
-        "sha": "58b2937719285627b2ee673e4fa1ad11add7e7c7",
-        "healthy": true,
-        "deploymentId": "41db5133-f74a-4880-835f-b3388ebab858"
       }
     ],
     "backend": [
+      {
+        "kind": "deploy",
+        "at": "2026-11-02T21:03:58.403Z",
+        "by": "JCardzZ",
+        "runId": 41524371556,
+        "runNumber": 112,
+        "sha": "40cda016503caed6788f7b2d49583cf8c627e6d2",
+        "healthy": true,
+        "digest": "sha256:d269294adf51fcb95fc79701d273f2191ff6ff4ed16d7ea834d58be774243dad"
+      },
       {
         "kind": "deploy",
         "at": "2026-10-29T06:37:15.348Z",
