@@ -49,7 +49,7 @@ describe('AppCanvasComponent', () => {
     fixture.detectChanges();
 
     expect($('[data-node="cache-1"]')).not.toBeNull();
-    expect($('[data-testid="appc-inspector"]')!.textContent).toContain('Memoria rápida');
+    expect(($('[data-testid="appc-inspector"] input') as HTMLInputElement).placeholder).toBe('Caché');
     expect(JSON.parse(localStorage.getItem('studio-app-canvas')!).nodes.length).toBe(5);
   });
 
@@ -99,6 +99,53 @@ describe('AppCanvasComponent', () => {
     (all('button').find((button) => button.textContent!.trim() === 'Deshacer') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect($('[data-link="entry>backend"] text')!.textContent).toBe('gRPC');
+  });
+
+  it('reviews the design while drawing and applies a fix in one click', () => {
+    const findings = () => all('[data-finding]').map((item) => item.dataset['finding']);
+    expect(findings()).toContain('no-identity');
+    expect($('[data-testid="appc-verdict"]')!.textContent).toContain('punto débil');
+
+    ($('[data-finding="no-identity"] .appc-fix') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(findings()).not.toContain('no-identity');
+    expect(all('[data-node]').some((node) => node.dataset['node']!.startsWith('idp'))).toBeTrue();
+    expect($('[data-testid="appc-notice"]')!.textContent).toContain('Hecho.');
+  });
+
+  it('explains why a connection applies when it is created', () => {
+    (fixture.nativeElement.querySelector('[data-piece="cache"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const cache = center('cache-1');
+    const backend = center('backend');
+    pointer($('[data-node="backend"] .appc-handle')!, 'pointerdown', backend.x + 64, backend.y);
+    pointer(svg(), 'pointermove', cache.x, cache.y);
+    pointer(svg(), 'pointerup', cache.x, cache.y);
+
+    expect($('[data-testid="appc-notice"]')!.textContent).toContain('Aplica: RESP.');
+    expect($('[data-testid="appc-notice"]')!.getAttribute('role')).toBe('status');
+  });
+
+  it('arranges every piece without overlaps, and shows the journey and the lesson', () => {
+    for (const piece of ['microservice', 'microservice', 'queue', 'cache']) {
+      (fixture.nativeElement.querySelector(`[data-piece="${piece}"]`) as HTMLButtonElement).click();
+      fixture.detectChanges();
+    }
+    ($('[data-testid="appc-arrange"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const positions = all('[data-node]').map((node) => node.getAttribute('transform')!.match(/-?[\d.]+/g)!.map(Number));
+    const overlapping = positions.some(([ax, ay], i) => positions.slice(i + 1).some(([bx, by]) => Math.abs(ax - bx) < 128 && Math.abs(ay - by) < 72));
+    expect(overlapping).toBeFalse();
+
+    all('[role="tab"]').find((tab) => tab.textContent!.includes('Recorrido'))!.click();
+    fixture.detectChanges();
+    expect(all('li.appc-hop[data-hop]').map((hop) => hop.dataset['hop'])).toEqual(['client', 'entry', 'backend', 'database']);
+
+    $('[data-node="database"]')!.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    svg().dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    all('[role="tab"]').find((tab) => tab.textContent!.includes('Aprende'))!.click();
+    fixture.detectChanges();
+    expect($('.appc-lesson')!.textContent).toContain('transacciones ACID');
   });
 
   it('adds a box from the menu', () => {

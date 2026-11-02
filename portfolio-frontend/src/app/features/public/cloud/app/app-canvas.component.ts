@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, input, signal, viewChild } from '@angular/core';
 import { CANVAS_HEIGHT, CANVAS_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '../cloud-topology.data';
-import { FULL_VIEW, View, panView, resolveCollision, zoomView } from '../studio-physics';
+import { FULL_VIEW, View, panView, zoomView } from '../studio-physics';
 import { contentBounds } from '../zone-layout';
 import { SystemDesign } from '../system/system-design';
 import { assignPorts, labelPoint, nodeRect, roundedPath, routeWire } from '../wire-router';
@@ -10,6 +10,11 @@ import {
   removeBox, removeLink, removeNode, resizeBox, sanitizeGraph, updateNode,
 } from './app-graph';
 import { Protocol, connectionVerdict } from './app-protocols';
+import { Finding, InfraTarget, applyFix, reviewGraph } from './app-advisor';
+import { drawnJourney } from './app-journey';
+import { autoArrange, settle } from './app-layout';
+import { PIECE_LESSONS, PROTOCOL_LESSONS } from './app-learn.data';
+import { AppAssistantComponent, levelName } from './app-assistant.component';
 
 const STORAGE_KEY = 'studio-app-canvas';
 const PIECE_MIME = 'application/x-app-piece';
@@ -32,6 +37,7 @@ interface NodeView {
  */
 @Component({
   selector: 'app-app-canvas',
+  imports: [AppAssistantComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -52,6 +58,7 @@ interface NodeView {
               </ul>
             }
           </div>
+          <button type="button" class="ui-btn-secondary" (click)="arrange()" data-testid="appc-arrange" title="Coloca las piezas por profundidad de la petición y ajusta las cajas">Ordenar</button>
           <button type="button" class="ui-btn-ghost" [disabled]="!history().length" (click)="undo()" aria-label="Deshacer">Deshacer</button>
           <button type="button" class="ui-btn-ghost" (click)="fromDesign()" data-testid="appc-from-design">Desde las decisiones</button>
           <div class="appc-zoom" role="group" aria-label="Zoom del lienzo">
@@ -124,6 +131,8 @@ interface NodeView {
                 [class.appc-selected]="selected() === item.node.id"
                 [class.appc-target-ok]="targets()?.get(item.node.id) === true"
                 [class.appc-target-no]="targets()?.get(item.node.id) === false"
+                [class.appc-hl]="highlight()?.has(item.node.id)"
+                [class.appc-dim]="highlight() && !highlight()!.has(item.node.id)"
                 [style.--layer]="item.color" [attr.data-node]="item.node.id" [attr.aria-label]="item.name + ', ' + item.tech"
                 [attr.transform]="'translate(' + (item.node.x - w / 2) + ' ' + (item.node.y - h / 2) + ')'"
                 (pointerdown)="startNode($event, item.node)" (focus)="selected.set(item.node.id)">
@@ -136,6 +145,12 @@ interface NodeView {
                 <text x="44" y="21" class="appc-node-layer">{{ clip(item.layer, 13) }}</text>
                 <text x="44" y="36" class="appc-node-name">{{ clip(item.name, 13) }}</text>
                 <text x="12" y="59" class="appc-node-tech">{{ clip(item.tech, 18) }}</text>
+                @if (review().marks.get(item.node.id); as level) {
+                  <circle class="appc-mark" [attr.data-level]="level" [attr.cx]="w - 10" cy="10" r="5"><title>{{ markTitle(level) }}</title></circle>
+                }
+                @if (item.node.runsOn) {
+                  <text [attr.x]="w - 10" y="59" text-anchor="end" class="appc-node-runs">{{ clip(infraName(item.node.runsOn), 10) }}</text>
+                }
                 <g class="appc-handle" (pointerdown)="startConnect($event, item.node)" [attr.transform]="'translate(' + w + ' ' + h / 2 + ')'">
                   <circle r="11" class="appc-handle-hit" />
                   <circle r="6" class="appc-handle-dot" />
@@ -145,7 +160,7 @@ interface NodeView {
           </svg>
 
           @if (notice(); as message) {
-            <div class="appc-notice" role="alert" data-testid="appc-notice">
+            <div class="appc-notice" [class.appc-notice-ok]="message.ok" [attr.role]="message.ok ? 'status' : 'alert'" data-testid="appc-notice">
               <span><strong class="font-semibold text-ink-1">{{ message.title }}</strong> {{ message.reason }} <span class="text-ink-1">{{ message.suggestion }}</span></span>
               <button type="button" class="ui-btn-ghost" (click)="notice.set(null)">Entendido</button>
             </div>
@@ -154,6 +169,10 @@ interface NodeView {
             <p class="appc-empty">Arrastra aquí una pieza del catálogo, o pulsa «Desde las decisiones».</p>
           }
         </div>
+
+        <app-app-assistant class="appc-assistant-slot" [review]="review()" [journey]="journey()" [hasNodes]="graph().nodes.length > 0"
+          [node]="selectedNode()" [link]="selectedLink()" [linkNames]="linkNames()" [alternatives]="alternatives()"
+          (fixed)="fix($event)" (highlighted)="highlightIds.set($event)" />
       </div>
 
       @if (selectedNode(); as item) {
@@ -161,7 +180,21 @@ interface NodeView {
           <span class="appc-chip" aria-hidden="true"><svg viewBox="0 0 24 24"><path [attr.d]="item.piece.icon" /></svg></span>
           <label>Nombre <input type="text" maxlength="40" [placeholder]="item.piece.name" [value]="item.node.name ?? ''" (change)="rename(item.node.id, $any($event.target).value)" /></label>
           <label>Tecnología <input type="text" maxlength="40" [placeholder]="item.piece.tech" [value]="item.node.tech ?? ''" (change)="retech(item.node.id, $any($event.target).value)" /></label>
-          <span class="flex-1 text-xs text-ink-3">{{ item.piece.summary }}</span>
+          @if (targetsFor(item.node.type); as options) {
+            @if (options.length) {
+              <label>Corre en
+                <select (change)="runOn(item.node.id, $any($event.target).value)" data-testid="appc-runs-on">
+                  <option value="" [selected]="!item.node.runsOn">Sin desplegar</option>
+                  @for (target of options; track target.id) {
+                    <option [value]="target.id" [selected]="item.node.runsOn === target.id">{{ target.name }}</option>
+                  }
+                </select>
+              </label>
+            } @else if ((lessonOf(item.node.type)?.runsOn ?? []).length) {
+              <span class="text-xs text-ink-3">Añade en Infraestructura dónde correr esta pieza.</span>
+            }
+          }
+          <span class="flex-1"></span>
           <button type="button" class="ui-btn-ghost" (click)="deleteSelected()">Quitar</button>
         </div>
       } @else if (selectedLink(); as link) {
@@ -190,7 +223,15 @@ interface NodeView {
     .appc-zoom button:hover:not(:disabled) { background: var(--bg-surface-3); color: var(--text-1); }
     .appc-zoom button:disabled { opacity: 0.35; }
 
-    .appc-body { display: grid; grid-template-columns: 15rem minmax(0, 1fr); min-height: 0; }
+    /* El lienzo manda: el asistente va al costado solo en pantallas muy anchas; si no, debajo. */
+    .appc-body { display: grid; grid-template-columns: 14rem minmax(0, 1fr); min-height: 0; }
+    .appc-assistant-slot { grid-column: 1 / -1; display: flex; min-height: 0; border-top: 1px solid var(--border-subtle); max-height: 30rem; }
+    
+    @media (min-width: 1600px) {
+      .appc-body { grid-template-columns: 14rem minmax(0, 1fr) 20rem; }
+      .appc-assistant-slot { grid-column: auto; border-top: 0; border-left: 1px solid var(--border-subtle); max-height: 44rem; }
+      .appc-assistant-slot { --assistant-columns: minmax(0, 1fr); }
+    }
     @media (max-width: 900px) { .appc-body { grid-template-columns: minmax(0, 1fr); } .appc-catalog { max-height: 14rem; border-right: 0; border-bottom: 1px solid var(--border-subtle); } }
     .appc-catalog { display: flex; flex-direction: column; min-height: 0; max-height: 44rem; border-right: 1px solid var(--border-subtle); }
     .appc-search { margin: 0.6rem; padding: 0.45rem 0.6rem; border-radius: var(--radius-control); border: 1px solid var(--border-strong); background: var(--bg-surface-2); color: var(--text-1); font-size: 0.8125rem; }
@@ -255,6 +296,16 @@ interface NodeView {
       transform: translateX(-50%); padding: 0.6rem 0.8rem; border-radius: var(--radius-panel); border: 1px solid rgb(var(--c-status-warn) / 0.35); background: var(--bg-surface-2); box-shadow: var(--shadow-floating); font-size: 0.8125rem; color: var(--text-2); }
     .appc-notice > span { flex: 1 1 18rem; }
 
+    .appc-mark { stroke: var(--bg-surface-2); stroke-width: 2; }
+    .appc-mark[data-level='risk'] { fill: var(--status-danger); }
+    .appc-mark[data-level='warn'] { fill: var(--status-warn); }
+    .appc-mark[data-level='tip'] { fill: var(--accent-text); }
+    .appc-node-runs { fill: var(--text-3); font-size: 12px; }
+    .appc-hl .appc-node-card { stroke: var(--layer); stroke-width: 2; }
+    .appc-dim { opacity: 0.3; }
+    .appc-notice-ok { border-color: rgb(var(--c-status-ok) / 0.35); }
+
+    .appc-inspector select { max-width: 13rem; padding: 0.3rem 0.5rem; border-radius: var(--radius-control); border: 1px solid var(--border-strong); background: var(--bg-surface-2); color: var(--text-1); font-size: 0.8125rem; }
     .appc-inspector { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; padding: 0.65rem 1rem; border-top: 1px solid var(--border-subtle); background: rgb(var(--c-surface-2) / 0.5); }
     .appc-inspector label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--text-3); }
     .appc-inspector input { width: 11rem; padding: 0.3rem 0.5rem; border-radius: var(--radius-control); border: 1px solid var(--border-strong); background: var(--bg-surface-2); color: var(--text-1); font-size: 0.8125rem; }
@@ -264,6 +315,8 @@ interface NodeView {
 })
 export class AppCanvasComponent implements OnInit {
   readonly design = input.required<SystemDesign>();
+  /** Piezas de la vista de Infraestructura en las que puede correr cada una de estas. */
+  readonly infra = input<InfraTarget[]>([]);
   private readonly svg = viewChild<ElementRef<SVGSVGElement>>('svg');
 
   readonly w = NODE_WIDTH;
@@ -274,7 +327,7 @@ export class AppCanvasComponent implements OnInit {
   readonly graph = signal<AppGraph>({ nodes: [], links: [], boxes: [] });
   readonly history = signal<AppGraph[]>([]);
   readonly selected = signal<string | null>(null);
-  readonly notice = signal<{ title: string; reason: string; suggestion: string } | null>(null);
+  readonly notice = signal<{ title: string; reason: string; suggestion: string; ok?: boolean } | null>(null);
   readonly boxMenu = signal(false);
   readonly query = signal('');
   readonly camera = signal<View>(FULL_VIEW);
@@ -371,6 +424,25 @@ export class AppCanvasComponent implements OnInit {
     };
   });
 
+  readonly review = computed(() => reviewGraph(this.graph(), this.infra()));
+  readonly journey = computed(() => drawnJourney(this.graph()));
+  /** Piezas resaltadas por un hallazgo o un salto bajo el cursor; las demás se atenúan. */
+  readonly highlightIds = signal<string[] | null>(null);
+  readonly highlight = computed(() => {
+    const ids = this.highlightIds();
+    return ids ? new Set(ids) : null;
+  });
+  /** Para el asistente: los nombres del cable elegido y los protocolos que admite. */
+  readonly linkNames = computed(() => {
+    const link = this.selectedLink();
+    return link ? `${this.nameOf(link.from)} → ${this.nameOf(link.to)}` : '';
+  });
+  readonly alternatives = computed(() => {
+    const link = this.selectedLink();
+    return link ? this.protocolsOf(link.from, link.to) : [];
+  });
+  private noticeTimer: ReturnType<typeof setTimeout> | undefined;
+
   readonly selectedNode = computed(() => this.views().find((item) => item.node.id === this.selected()) ?? null);
   readonly selectedLink = computed(() => this.graph().links.find((link) => linkKey(link) === this.selected()) ?? null);
 
@@ -394,7 +466,10 @@ export class AppCanvasComponent implements OnInit {
         // Sin almacenamiento (modo privado): el lienzo funciona igual, solo no se recuerda.
       }
     });
-    inject(DestroyRef).onDestroy(() => (this.gesture = null));
+    inject(DestroyRef).onDestroy(() => {
+      this.gesture = null;
+      clearTimeout(this.noticeTimer);
+    });
   }
 
   private restore(): AppGraph | null {
@@ -407,9 +482,50 @@ export class AppCanvasComponent implements OnInit {
   }
 
   // ---------- Edición ----------
-  private commit(next: AppGraph): void {
+  /** Cada cambio deja el lienzo sin choques; `anchor` es lo que el visitante acaba de tocar. */
+  private commit(next: AppGraph, anchor?: string): void {
     this.history.update((past) => [...past.slice(-HISTORY + 1), this.graph()]);
-    this.graph.set(next);
+    this.graph.set(settle(next, anchor));
+  }
+
+  arrange(): void {
+    this.commit(autoArrange(this.graph()));
+    this.autoFrame.set(true);
+  }
+
+  fix(finding: Finding): void {
+    this.history.update((past) => [...past.slice(-HISTORY + 1), this.graph()]);
+    this.graph.set(applyFix(this.graph(), finding));
+    this.highlightIds.set(null);
+    this.flash({ title: 'Hecho.', reason: finding.fix!.label + '.', suggestion: 'Puedes deshacerlo si no te convence.', ok: true });
+  }
+
+  runOn(id: string, target: string): void {
+    this.commit(updateNode(this.graph(), id, { runsOn: target || undefined }));
+  }
+
+  targetsFor(type: string): InfraTarget[] {
+    const kinds = PIECE_LESSONS[type]?.runsOn ?? [];
+    return this.infra().filter((target) => kinds.includes(target.type));
+  }
+
+  lessonOf(type: string) {
+    return PIECE_LESSONS[type];
+  }
+
+  infraName(id: string): string {
+    return this.infra().find((target) => target.id === id)?.name ?? id;
+  }
+
+  markTitle(level: string): string {
+    return `${levelName(level)}: mira la revisión del asistente`;
+  }
+
+  /** Aviso que se va solo (las explicaciones de lo que sí aplica). */
+  private flash(message: { title: string; reason: string; suggestion: string; ok?: boolean }): void {
+    clearTimeout(this.noticeTimer);
+    this.notice.set(message);
+    this.noticeTimer = setTimeout(() => this.notice.set(null), 5000);
   }
 
   undo(): void {
@@ -580,14 +696,13 @@ export class AppCanvasComponent implements OnInit {
         this.history.update((past) => past.slice(0, -1));
         return;
       }
-      // Sin montarse: si quedó encima de otra pieza, al hueco libre más cercano.
-      const node = this.graph().nodes.find((candidate) => candidate.id === gesture.id);
-      if (node) {
-        this.graph.set(moveNode(this.graph(), node.id, resolveCollision(node.id, node, this.graph().nodes, this.graph().boxes)));
-      }
+      // Sin montarse ni salirse de su caja: las demás se apartan, la caja crece.
+      this.graph.set(settle(this.graph(), gesture.id));
     } else if (gesture.kind === 'box') {
       if (!gesture.moved) {
         this.history.update((past) => past.slice(0, -1));
+      } else {
+        this.graph.set(settle(this.graph(), gesture.id));
       }
     } else {
       const target = event.type === 'pointerup' ? this.nodeAt(this.toCanvas(event)) : null;
@@ -603,6 +718,12 @@ export class AppCanvasComponent implements OnInit {
     if (result.ok) {
       this.commit(result.graph);
       this.selected.set(linkKey(result.link));
+      const lesson = PROTOCOL_LESSONS[result.link.protocol];
+      const others = this.protocolsOf(from, to).filter((protocol) => protocol !== result.link.protocol);
+      this.flash({
+        title: `Aplica: ${result.link.protocol}.`, reason: `${lesson.what} ${lesson.when}`,
+        suggestion: others.length ? `También vale ${others.join(', ')}: cámbialo en el inspector.` : '', ok: true,
+      });
     } else {
       this.notice.set({ title: 'Conexión no creada.', reason: result.reason, suggestion: result.suggestion });
     }

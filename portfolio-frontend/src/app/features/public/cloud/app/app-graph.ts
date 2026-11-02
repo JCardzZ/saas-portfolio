@@ -14,6 +14,8 @@ export interface AppNode {
   name?: string;
   /** Tecnología elegida («PostgreSQL 16»); vacía, la del catálogo. */
   tech?: string;
+  /** Pieza de Infraestructura en la que corre (id de su nodo). */
+  runsOn?: string;
 }
 
 export interface AppLink {
@@ -76,7 +78,7 @@ export function removeNode(graph: AppGraph, id: string): AppGraph {
   return { ...graph, nodes: graph.nodes.filter((node) => node.id !== id), links: graph.links.filter((link) => link.from !== id && link.to !== id) };
 }
 
-export function updateNode(graph: AppGraph, id: string, patch: Partial<Pick<AppNode, 'name' | 'tech'>>): AppGraph {
+export function updateNode(graph: AppGraph, id: string, patch: Partial<Pick<AppNode, 'name' | 'tech' | 'runsOn'>>): AppGraph {
   return { ...graph, nodes: graph.nodes.map((node) => (node.id === id ? { ...node, ...patch } : node)) };
 }
 
