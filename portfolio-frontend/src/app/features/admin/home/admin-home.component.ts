@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { SECTIONS } from '../layout/admin-layout.component';
+import { FlagService } from '../../../core/flags/flag.service';
+import { SECTIONS, SECTION_META } from '../layout/admin-layout.component';
 
 /** Inicio del panel: quién ha entrado, con qué rol, y las secciones que puede abrir. */
 @Component({
@@ -18,7 +19,25 @@ import { SECTIONS } from '../layout/admin-layout.component';
         }
       </header>
 
-      @if (sections().length) {
+      @if (redesign() && sections().length) {
+        <!-- Panel rediseñado: cada sección con su icono y para qué sirve. -->
+        <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          @for (section of sections(); track section.path) {
+            <li>
+              <a class="admin-tile" [routerLink]="section.path">
+                <span class="admin-tile-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="meta[section.path]?.icon" /></svg>
+                </span>
+                <span class="min-w-0">
+                  <span class="block font-semibold text-[var(--a-text-1)]">{{ section.label }}</span>
+                  <span class="mt-0.5 block text-sm text-[var(--a-text-3)]">{{ meta[section.path]?.hint }}</span>
+                </span>
+                <span class="admin-tile-go" aria-hidden="true">→</span>
+              </a>
+            </li>
+          }
+        </ul>
+      } @else if (sections().length) {
         <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           @for (section of sections(); track section.path) {
             <li><a class="card block font-medium text-indigo-700 hover:bg-slate-50" [routerLink]="section.path">{{ section.label }}</a></li>
@@ -43,8 +62,11 @@ import { SECTIONS } from '../layout/admin-layout.component';
 })
 export class AdminHomeComponent {
   private readonly auth = inject(AuthService);
+  private readonly flags = inject(FlagService);
 
   readonly who = this.auth.who;
   readonly sections = computed(() => SECTIONS.filter((section) => section.permissions.some((permission) => this.auth.can(permission))));
   readonly permissions = computed(() => this.auth.profile()?.permissions ?? []);
+  readonly redesign = computed(() => this.flags.isEnabled('admin.redesign'));
+  readonly meta = SECTION_META;
 }

@@ -1,32 +1,111 @@
-<header class="border-b border-slate-200 bg-white">
-  <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
-    <div class="flex flex-wrap items-center gap-x-8 gap-y-2">
-      <span class="text-lg font-semibold">Portfolio CMS</span>
-      <nav class="flex flex-wrap gap-1" aria-label="Secciones del panel">
-        @for (section of sections(); track section.path) {
-          <a
-            [routerLink]="section.path"
-            routerLinkActive="bg-indigo-50 text-indigo-700"
-            class="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
-          >
-            {{ section.label }}
-          </a>
-        }
-      </nav>
-    </div>
-    <div class="flex items-center gap-3">
-      @if (who(); as current) {
-        <span class="text-right text-sm leading-tight" data-testid="session-who">
-          <span class="block font-medium text-slate-900">{{ current.name }}</span>
-          <span class="block text-xs text-slate-500">{{ current.role }}</span>
-        </span>
+@if (redesign()) {
+  <!-- Panel rediseñado (admin.redesign): barra de iconos, columna de secciones con la sesión abajo y el contenido. -->
+  <div class="admin-shell" [class.admin-drawer-open]="drawerOpen()">
+    <nav class="admin-rail" aria-label="Accesos rápidos">
+      <a routerLink="/admin" class="admin-rail-item admin-rail-home" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="admin-rail-active" aria-label="Inicio del panel" (mouseenter)="showTip($event, 'Inicio del panel')" (focus)="showTip($event, 'Inicio del panel')" (mouseleave)="tip.set(null)" (blur)="tip.set(null)">
+        <span aria-hidden="true">MC</span>
+      </a>
+      <span class="admin-rail-sep" aria-hidden="true"></span>
+      @for (section of sections(); track section.path) {
+        <a [routerLink]="section.path" routerLinkActive="admin-rail-active" class="admin-rail-item" [attr.aria-label]="section.label" (mouseenter)="showTip($event, section.label)" (focus)="showTip($event, section.label)" (mouseleave)="tip.set(null)" (blur)="tip.set(null)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path [attr.d]="meta[section.path]?.icon" /></svg>
+        </a>
       }
-      <a routerLink="/" class="text-sm font-medium text-slate-600 hover:text-slate-900">Ver sitio público</a>
-      <button type="button" class="btn-secondary" (click)="logout()">Cerrar sesión</button>
+      <span class="admin-rail-sep" aria-hidden="true"></span>
+      <a routerLink="/" class="admin-rail-item admin-rail-out" aria-label="Ver sitio público" (mouseenter)="showTip($event, 'Ver sitio público')" (focus)="showTip($event, 'Ver sitio público')" (mouseleave)="tip.set(null)" (blur)="tip.set(null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6" /></svg>
+      </a>
+    </nav>
+    @if (tip(); as current) {
+      <span class="admin-tip" role="tooltip" [style.left.px]="current.x" [style.top.px]="current.y">{{ current.label }}</span>
+    }
+
+    <aside class="admin-side" id="admin-side" aria-label="Secciones del panel">
+      <div class="admin-side-head">
+        <span class="admin-brand">Portfolio CMS</span>
+        <span class="admin-badge">admin</span>
+      </div>
+      <div class="admin-side-scroll">
+        <a routerLink="/admin" class="admin-link" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="admin-link-active" (click)="drawerOpen.set(false)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 4l9 7v9H3zM9 20v-6h6v6" /></svg>
+          Inicio
+        </a>
+        @for (group of groups(); track group.name) {
+          <p class="admin-group">{{ group.name }}</p>
+          @for (section of group.sections; track section.path) {
+            <a [routerLink]="section.path" routerLinkActive="admin-link-active" class="admin-link" (click)="drawerOpen.set(false)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path [attr.d]="meta[section.path]?.icon" /></svg>
+              {{ section.label }}
+            </a>
+          }
+        }
+      </div>
+      @if (who(); as current) {
+        <div class="admin-me" data-testid="session-who">
+          <span class="admin-avatar" aria-hidden="true">{{ initials() }}<span class="admin-status"></span></span>
+          <span class="min-w-0 flex-1 leading-tight">
+            <span class="block truncate text-sm font-semibold text-[var(--a-text-1)]">{{ current.name }}</span>
+            <span class="block truncate text-xs text-[var(--a-text-3)]">{{ current.role }}</span>
+          </span>
+          <button type="button" class="admin-icon-btn" aria-label="Cerrar sesión" title="Cerrar sesión" (click)="logout()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" /></svg>
+          </button>
+        </div>
+      }
+    </aside>
+
+    <button type="button" class="admin-scrim" aria-label="Cerrar menú" tabindex="-1" (click)="drawerOpen.set(false)"></button>
+
+    <div class="admin-main">
+      <header class="admin-top">
+        <button type="button" class="admin-icon-btn admin-menu-btn" aria-label="Abrir menú" aria-controls="admin-side" [attr.aria-expanded]="drawerOpen()" (click)="drawerOpen.set(!drawerOpen())">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+        </button>
+        @if (current(); as section) {
+          <svg class="h-5 w-5 shrink-0 text-[var(--a-text-3)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path [attr.d]="meta[section.path]?.icon" /></svg>
+          <span class="font-semibold text-[var(--a-text-1)]">{{ section.label }}</span>
+          <span class="admin-top-sep hidden sm:block" aria-hidden="true"></span>
+          <span class="hidden truncate text-sm text-[var(--a-text-3)] sm:block">{{ meta[section.path]?.hint }}</span>
+        } @else {
+          <span class="font-semibold text-[var(--a-text-1)]">Inicio</span>
+        }
+      </header>
+      <main class="admin-content admin-dark">
+        <router-outlet />
+      </main>
     </div>
   </div>
-</header>
+} @else {
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
+      <div class="flex flex-wrap items-center gap-x-8 gap-y-2">
+        <span class="text-lg font-semibold">Portfolio CMS</span>
+        <nav class="flex flex-wrap gap-1" aria-label="Secciones del panel">
+          @for (section of sections(); track section.path) {
+            <a
+              [routerLink]="section.path"
+              routerLinkActive="bg-indigo-50 text-indigo-700"
+              class="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            >
+              {{ section.label }}
+            </a>
+          }
+        </nav>
+      </div>
+      <div class="flex items-center gap-3">
+        @if (who(); as current) {
+          <span class="text-right text-sm leading-tight" data-testid="session-who">
+            <span class="block font-medium text-slate-900">{{ current.name }}</span>
+            <span class="block text-xs text-slate-500">{{ current.role }}</span>
+          </span>
+        }
+        <a routerLink="/" class="text-sm font-medium text-slate-600 hover:text-slate-900">Ver sitio público</a>
+        <button type="button" class="btn-secondary" (click)="logout()">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
 
-<main class="mx-auto max-w-6xl px-6 py-8">
-  <router-outlet />
-</main>
+  <main class="mx-auto max-w-6xl px-6 py-8">
+    <router-outlet />
+  </main>
+}

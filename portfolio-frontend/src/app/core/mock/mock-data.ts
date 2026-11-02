@@ -284,4 +284,5 @@ export const MOCK_FLAG_DESCRIPTIONS: Record<FeatureFlagKey, string> = {
   'site.release-version': 'Versión desplegada y novedades en el pie de página',
   'site.refresh': 'Rediseño de la portada: hero con pruebas en vivo, fondo limpio y menos cajas',
   'site.adr': 'Página de decisiones de arquitectura (ADR) y su enlace en la portada',
+  'admin.redesign': 'Panel de administración rediseñado: barra lateral, tema oscuro e interruptores',
 };

@@ -6,7 +6,11 @@
     </p>
   </div>
 
-  @if (demo) {
+  @if (demo && switches()) {
+    <p class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="note">
+      Modo demo, sin servidor: el cambio se aplica al momento pero se guarda solo en este navegador. En producción cada cambio se guarda en la base de datos (PostgreSQL) y queda en la auditoría.
+    </p>
+  } @else if (demo) {
     <p class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="note">
       Modo demo: no hay servidor que guarde el cambio. Lo que enciendas aquí vale solo en este navegador y se aplica al recargar la página.
     </p>
@@ -16,53 +20,142 @@
     <app-alert [message]="message" />
   }
 
-  <div class="card overflow-x-auto p-0">
-    <table class="min-w-full divide-y divide-slate-200">
-      <thead class="bg-slate-50">
-        <tr>
-          <th scope="col" class="table-header">Flag</th>
-          <th scope="col" class="table-header">Qué enciende</th>
-          <th scope="col" class="table-header">Último cambio</th>
-          <th scope="col" class="table-header">Estado</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-100">
-        @for (flag of flags(); track flag.key) {
-          <tr>
-            <td class="table-cell font-mono text-xs text-slate-900">{{ flag.key }}</td>
-            <td class="table-cell">{{ flag.description }}</td>
-            <td class="table-cell">
-              @if (flag.updatedAt) {
-                {{ flag.updatedAt | date: 'd MMM y, HH:mm' }} · {{ flag.updatedBy }}
-              } @else {
-                <span class="text-slate-500">Sin cambios</span>
-              }
-            </td>
-            <td class="table-cell">
+  @if (switches()) {
+    <!-- Interruptores por área (admin.redesign): se lee qué hace cada flag antes que su clave. -->
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-sm text-slate-600" data-testid="flag-summary">
+        <span class="text-2xl font-semibold tabular-nums text-slate-900">{{ onCount() }}</span>
+        <span class="text-slate-500"> de {{ flags().length }}</span> encendidas
+      </p>
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <label class="sr-only" for="flag-search">Buscar una flag</label>
+        <input id="flag-search" type="search" class="input sm:w-64" placeholder="Buscar: studio, portada…" [value]="query()" (input)="query.set($any($event.target).value)" />
+        <div class="inline-flex rounded-md border border-slate-300 bg-slate-50 p-0.5" role="group" aria-label="Mostrar">
+          @for (option of filterOptions; track option.id) {
+            <button
+              type="button"
+              class="rounded px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              [class]="filter() === option.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+              [attr.aria-pressed]="filter() === option.id"
+              (click)="filter.set(option.id)"
+            >{{ option.label }}</button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmación de cada cambio: dónde quedó guardado. También la oyen los lectores de pantalla. -->
+    <p class="flag-toast" [class.flag-toast-show]="announcement()" aria-live="polite" data-testid="flag-toast">
+      @if (announcement(); as message) {
+        <span class="flag-toast-check" aria-hidden="true">✓</span>
+        <span><strong class="font-semibold">{{ message }}</strong> · {{ demo ? 'guardado en este navegador' : 'guardado en la base de datos' }}</span>
+      }
+    </p>
+
+    @for (group of groups(); track group.prefix) {
+      <section class="card p-0" [attr.aria-labelledby]="'flag-group-' + group.prefix" data-testid="flag-group">
+        <header class="flex items-baseline justify-between gap-3 border-b border-slate-100 px-5 py-3">
+          <div>
+            <h2 [id]="'flag-group-' + group.prefix" class="text-sm font-semibold text-slate-900">{{ group.name }}</h2>
+            <p class="text-xs text-slate-500">{{ group.hint }}</p>
+          </div>
+          <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium tabular-nums text-slate-600">{{ group.on }} {{ group.on === 1 ? 'encendida' : 'encendidas' }}</span>
+        </header>
+        <ul class="divide-y divide-slate-100">
+          @for (flag of group.flags; track flag.key) {
+            @let busy = saving() === flag.key;
+            <li class="flag-row flex items-center gap-4 px-5 py-4" [class.flag-row-on]="flag.enabled">
+              <div class="min-w-0 flex-1">
+                <p [id]="'flag-name-' + flag.key" class="text-sm font-medium text-slate-900">{{ flag.description }}</p>
+                <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                  <code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-700">{{ flag.key }}</code>
+                  <span [id]="'flag-meta-' + flag.key">
+                    @if (flag.updatedAt) {
+                      {{ flag.updatedAt | date: 'd MMM y, HH:mm' }} · {{ flag.updatedBy }}
+                    } @else {
+                      Nunca cambiada
+                    }
+                  </span>
+                </p>
+              </div>
+              <span class="hidden w-20 text-right text-xs font-medium sm:block" [class]="flag.enabled ? 'text-emerald-700' : 'text-slate-500'" aria-hidden="true">
+                {{ busy ? 'Guardando…' : flag.enabled ? 'Encendida' : 'Apagada' }}
+              </span>
               <button
                 type="button"
                 role="switch"
-                class="inline-flex min-w-[7.5rem] items-center justify-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium"
-                [class]="flag.enabled ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-300 bg-white text-slate-700'"
+                class="flag-switch"
+                [class.flag-switch-on]="flag.enabled"
+                [class.flag-switch-busy]="busy"
                 [attr.aria-checked]="flag.enabled"
-                [attr.aria-label]="flag.key"
-                [disabled]="saving() === flag.key || !canWrite"
+                [attr.aria-labelledby]="'flag-name-' + flag.key"
+                [attr.aria-describedby]="'flag-meta-' + flag.key"
+                [attr.aria-busy]="busy || null"
+                [attr.data-flag]="flag.key"
+                [disabled]="busy || !canWrite"
                 [attr.title]="canWrite ? null : 'Tu rol puede ver las flags, pero no cambiarlas'"
                 (click)="toggle(flag)"
               >
-                <span class="h-2 w-2 rounded-full" [class]="flag.enabled ? 'bg-emerald-600' : 'bg-slate-400'" aria-hidden="true"></span>
-                {{ flag.enabled ? 'Encendida' : 'Apagada' }}
+                <span class="flag-switch-knob" aria-hidden="true"></span>
               </button>
-            </td>
-          </tr>
-        } @empty {
+            </li>
+          }
+        </ul>
+      </section>
+    } @empty {
+      <p class="card text-center text-sm text-slate-500">
+        {{ loading() ? 'Cargando…' : flags().length ? 'Ninguna flag coincide con la búsqueda.' : 'No hay flags.' }}
+      </p>
+    }
+  } @else {
+    <div class="card overflow-x-auto p-0">
+      <table class="min-w-full divide-y divide-slate-200">
+        <thead class="bg-slate-50">
           <tr>
-            <td class="table-cell text-center text-slate-500" colspan="4">{{ loading() ? 'Cargando…' : 'No hay flags.' }}</td>
+            <th scope="col" class="table-header">Flag</th>
+            <th scope="col" class="table-header">Qué enciende</th>
+            <th scope="col" class="table-header">Último cambio</th>
+            <th scope="col" class="table-header">Estado</th>
           </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          @for (flag of flags(); track flag.key) {
+            <tr>
+              <td class="table-cell font-mono text-xs text-slate-900">{{ flag.key }}</td>
+              <td class="table-cell">{{ flag.description }}</td>
+              <td class="table-cell">
+                @if (flag.updatedAt) {
+                  {{ flag.updatedAt | date: 'd MMM y, HH:mm' }} · {{ flag.updatedBy }}
+                } @else {
+                  <span class="text-slate-500">Sin cambios</span>
+                }
+              </td>
+              <td class="table-cell">
+                <button
+                  type="button"
+                  role="switch"
+                  class="inline-flex min-w-[7.5rem] items-center justify-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium"
+                  [class]="flag.enabled ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-300 bg-white text-slate-700'"
+                  [attr.aria-checked]="flag.enabled"
+                  [attr.aria-label]="flag.key"
+                  [disabled]="saving() === flag.key || !canWrite"
+                  [attr.title]="canWrite ? null : 'Tu rol puede ver las flags, pero no cambiarlas'"
+                  (click)="toggle(flag)"
+                >
+                  <span class="h-2 w-2 rounded-full" [class]="flag.enabled ? 'bg-emerald-600' : 'bg-slate-400'" aria-hidden="true"></span>
+                  {{ flag.enabled ? 'Encendida' : 'Apagada' }}
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td class="table-cell text-center text-slate-500" colspan="4">{{ loading() ? 'Cargando…' : 'No hay flags.' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 
   <section class="space-y-3" aria-labelledby="flag-audit-title">
     <h2 id="flag-audit-title" class="text-base font-semibold">Auditoría</h2>
