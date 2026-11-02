@@ -1,6 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { OpenFeature } from '@openfeature/web-sdk';
+import { PlatformFlagsProvider } from '../../../../core/flags/feature-flags';
 import { of, throwError } from 'rxjs';
 import { SystemDesignBundle, SystemDesignRequest, SystemDesignService as SystemDesignApi } from '../../../../core/api';
 import { CLOUD_LINKS, CLOUD_NODES, CloudNode } from '../cloud-topology.data';
@@ -358,4 +360,76 @@ describe('SystemDesignComponent', () => {
       expect(dialog()).toBeNull();
     });
   });
+});
+
+describe('SystemDesignComponent with studio.app-e2e on', () => {
+  beforeEach(async () => {
+    await OpenFeature.setProviderAndWait(new PlatformFlagsProvider(() => Promise.resolve({ 'studio.app-e2e': true })));
+    TestBed.configureTestingModule({
+      providers: [{ provide: SystemDesignApi, useValue: { publicArchitectureSystemDesignGeneratePost: () => of({ files: [], findings: [] }) } }],
+    });
+  });
+
+  afterEach(async () => {
+    await OpenFeature.clearProviders();
+  });
+
+  function create() {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+    return { fixture, element: fixture.nativeElement as HTMLElement, host: fixture.componentInstance };
+  }
+
+  it('lays the decisions out as rows: options as tiles, the chosen one with its trade-off and where it runs', () => {
+    const { fixture, element, host } = create();
+    const rows = element.querySelectorAll('[data-testid="system-decisions"] fieldset[data-category]');
+    expect(rows.length).toBe(9);
+
+    const database = element.querySelector('fieldset[data-category="database"]')!;
+    expect(database.querySelector('.decision-option-on')!.textContent).toContain('PostgreSQL');
+    expect(database.querySelector('.decision-why')!.textContent).toContain('Transacciones');
+
+    const redis = element.querySelector<HTMLInputElement>('fieldset[data-category="cache"] input[value="redis"]')!;
+    redis.checked = true;
+    redis.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(host.design().choices.cache).toBe('redis');
+    expect(element.querySelector('fieldset[data-category="cache"] .decision-option-on')!.textContent).toContain('Redis');
+    expect(element.querySelector('#deploy-cache')).not.toBeNull();
+  });
+
+  it('walks a request end to end and opens what happens if a hop fails', () => {
+    const { fixture, element } = create();
+    const journey = element.querySelector('[data-testid="request-journey"]')!;
+    const heads = Array.from(journey.querySelectorAll<HTMLButtonElement>('.journey-head'));
+    expect(heads.map((head) => head.querySelector('.text-sm')!.textContent!.trim())).toContain('PostgreSQL');
+
+    const database = heads.find((head) => head.textContent!.includes('PostgreSQL'))!;
+    database.click();
+    fixture.detectChanges();
+    expect(database.getAttribute('aria-expanded')).toBe('true');
+    expect(journey.querySelector('[data-testid="journey-detail"]')!.textContent).toContain('Mitigación');
+    // La pieza del salto abierto se resalta en el diagrama.
+    expect(element.querySelector('app-system-diagram')).not.toBeNull();
+    expect(journey.querySelector('[data-testid="journey-total"]')!.textContent).toContain('ms');
+  });
+
+  it('plays the request hop by hop and stops at the response', fakeAsync(() => {
+    const { fixture, element } = create();
+    const play = element.querySelector<HTMLButtonElement>('[data-testid="journey-play"]')!;
+
+    play.click();
+    fixture.detectChanges();
+    expect(play.getAttribute('aria-pressed')).toBe('true');
+    expect(element.querySelector('.journey-row-on')!.getAttribute('data-step')).toBe('0');
+
+    tick(750);
+    fixture.detectChanges();
+    expect(element.querySelector('.journey-row-on')!.getAttribute('data-step')).toBe('1');
+
+    tick(750 * 10);
+    fixture.detectChanges();
+    expect(play.getAttribute('aria-pressed')).toBe('false');
+    expect(element.querySelector('.journey-row-on')).toBeNull();
+  }));
 });

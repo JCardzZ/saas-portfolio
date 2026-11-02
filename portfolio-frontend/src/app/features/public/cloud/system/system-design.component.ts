@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output, signal } from '@angular/core';
+import { FlagService } from '../../../../core/flags/flag.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { finalize } from 'rxjs';
 import { SystemDesignFile, SystemDesignService as SystemDesignApi } from '../../../../core/api';
@@ -10,6 +11,7 @@ import { Advice, assessSystem } from './system-advisor';
 import { AdvisorOrbComponent, SystemAdvisorComponent } from './system-advisor.component';
 import { SystemDesign, SystemFinding, chosen, deployTargets, evaluateSystem, withChoice } from './system-design';
 import { SystemDiagramComponent } from './system-diagram.component';
+import { RequestJourneyComponent } from './request-journey.component';
 import { BrandLogo, OPTION_LOGOS, REQUIRED_ATTRIBUTIONS, TRADEMARK_NOTICE } from './system-icons';
 
 /** Una pieza de la vista de Aplicación ya resuelta: lo elegido y dónde se despliega. */
@@ -30,7 +32,7 @@ interface Piece {
  */
 @Component({
     selector: 'app-system-design',
-    imports: [TranslatePipe, AdvisorOrbComponent, SystemAdvisorComponent, SystemDiagramComponent],
+    imports: [TranslatePipe, AdvisorOrbComponent, SystemAdvisorComponent, SystemDiagramComponent, RequestJourneyComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block' },
     template: `
@@ -66,7 +68,7 @@ interface Piece {
 
       <!-- El sistema, dibujado: cambia con cada elección. -->
       <div class="ui-card-inset">
-        <app-system-diagram [design]="design()" [nodes]="nodes()" [provider]="provider()" [active]="focused()" (picked)="goTo($event)" />
+        <app-system-diagram [design]="design()" [nodes]="nodes()" [provider]="provider()" [active]="journeyFocus() ?? focused()" (picked)="goTo($event)" />
         <p class="mt-2 text-xs leading-snug text-ink-3" data-testid="trademark-notice">
           {{ trademarkNotice }}
           @for (line of attributions(); track line) { <span class="block">{{ line }}</span> }
@@ -84,6 +86,11 @@ interface Piece {
           </div>
         }
       </div>
+
+      @if (e2e()) {
+        <!-- De punta a punta: una petición recorre el sistema y cada salto dice qué pasa si cae. -->
+        <app-request-journey [design]="design()" (highlight)="journeyFocus.set($event)" />
+      }
 
       @if (advisorOpen()) {
         <app-system-advisor [assessment]="assessment()" [readonly]="readonly()" (closed)="advisorOpen.set(false)" (applied)="apply($event)" />
@@ -116,55 +123,113 @@ interface Piece {
         }
       </div>
 
-      <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        @for (category of catalog; track category.id) {
-          <fieldset class="ui-card-inset min-w-0 scroll-mt-28" [class.category-focused]="focused() === category.id" [attr.data-category]="category.id" [disabled]="readonly()" (focusin)="focused.set(category.id)">
-            <legend class="float-left mb-1 w-full text-xs font-medium uppercase tracking-wider text-ink-3">{{ category.name }}</legend>
-            <p class="clear-both text-sm text-ink-2">{{ category.question }}</p>
-            <div class="mt-2 space-y-1">
-              @for (option of category.options; track option.id) {
-                <label class="flex cursor-pointer items-start gap-2 rounded-control px-1 py-1.5 hover:bg-surface-3">
-                  <input type="radio" class="mt-1 accent-current" [name]="'system-' + category.id" [value]="option.id" [checked]="design().choices[category.id] === option.id" (change)="choose(category.id, option.id)" />
-                  <span class="min-w-0">
-                    <span class="flex flex-wrap items-center gap-1.5 text-sm font-medium text-ink-1">
+      @if (e2e()) {
+        <!-- Las decisiones como un documento de diseño: una fila por pregunta, la opción elegida y su porqué. -->
+        <div class="decisions" data-testid="system-decisions">
+          @for (category of catalog; track category.id) {
+            <fieldset class="decision scroll-mt-28" [class.decision-focused]="focused() === category.id" [attr.data-category]="category.id" [disabled]="readonly()" (focusin)="focused.set(category.id)">
+              <legend class="decision-legend">
+                <span class="decision-name">{{ category.name }}</span>
+                <span class="decision-question">{{ category.question }}</span>
+              </legend>
+              <div class="decision-body">
+                <div class="decision-options">
+                  @for (option of category.options; track option.id) {
+                    <label class="decision-option" [class.decision-option-on]="design().choices[category.id] === option.id" [title]="option.summary">
+                      <input type="radio" class="sr-only" [name]="'system-' + category.id" [value]="option.id" [checked]="design().choices[category.id] === option.id" (change)="choose(category.id, option.id)" />
                       @for (logo of logosOf(option.id); track logo.title) {
                         <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true" [attr.data-logo]="logo.title"><path [attr.d]="logo.path" [attr.fill]="logo.color" /></svg>
                       }
-                      {{ option.name }}
-                    </span>
-                    <span class="block text-xs leading-snug text-ink-2">{{ option.summary }}</span>
-                  </span>
-                </label>
-              }
-              @if (category.optional) {
-                <label class="flex cursor-pointer items-start gap-2 rounded-control px-1 py-1.5 hover:bg-surface-3">
-                  <input type="radio" class="mt-1 accent-current" [name]="'system-' + category.id" value="" [checked]="!design().choices[category.id]" (change)="choose(category.id, null)" />
-                  <span class="text-sm font-medium text-ink-1">{{ none(category) }}</span>
-                </label>
-              }
-            </div>
-
-            @if (optionOf(category.id); as option) {
-              @if (option.deploysOn.length) {
-                <label class="mt-3 block text-xs font-medium text-ink-2" [attr.for]="'deploy-' + category.id">{{ 'Se despliega en' | t }}</label>
-                <select [id]="'deploy-' + category.id" class="focus-ring mt-1 w-full rounded-control border border-line-strong bg-surface-2 px-2 py-1.5 text-sm text-ink-1" (change)="deploy(category.id, $any($event.target).value)">
-                  <option value="" [selected]="!design().deployments[category.id]">{{ 'Sin desplegar' | t }}</option>
-                  @for (target of targetsOf(option); track target.id) {
-                    <option [value]="target.id" [selected]="design().deployments[category.id] === target.id">{{ nameOf(target) }}</option>
+                      <span>{{ option.name }}</span>
+                    </label>
                   }
-                </select>
-              } @else {
-                <p class="mt-3 text-xs leading-snug text-ink-3">{{ option.notDeployed }}</p>
+                  @if (category.optional) {
+                    <label class="decision-option decision-option-none" [class.decision-option-on]="!design().choices[category.id]">
+                      <input type="radio" class="sr-only" [name]="'system-' + category.id" value="" [checked]="!design().choices[category.id]" (change)="choose(category.id, null)" />
+                      <span>{{ none(category) }}</span>
+                    </label>
+                  }
+                </div>
+                @if (optionOf(category.id); as option) {
+                  <div class="decision-foot">
+                    <p class="decision-why">{{ option.summary }}</p>
+                    @if (option.deploysOn.length) {
+                      <label class="decision-where">
+                        <span>{{ 'Corre en' | t }}</span>
+                        <select [id]="'deploy-' + category.id" (change)="deploy(category.id, $any($event.target).value)">
+                          <option value="" [selected]="!design().deployments[category.id]">{{ 'Sin desplegar' | t }}</option>
+                          @for (target of targetsOf(option); track target.id) {
+                            <option [value]="target.id" [selected]="design().deployments[category.id] === target.id">{{ nameOf(target) }}</option>
+                          }
+                        </select>
+                      </label>
+                    } @else {
+                      <span class="decision-where decision-where-static">{{ option.notDeployed }}</span>
+                    }
+                  </div>
+                } @else {
+                  <p class="decision-why decision-why-none">{{ 'Sin esta pieza: una dependencia menos que operar.' | t }}</p>
+                }
+                @for (finding of findingsOf(category.id); track finding.rule) {
+                  <p class="mt-2 rounded-control border px-2 py-1.5 text-xs leading-snug" [class]="tone(finding)" role="status" [attr.data-rule]="finding.rule">
+                    {{ finding.message }} @if (finding.suggestion) { <strong class="font-semibold">{{ finding.suggestion }}</strong> }
+                  </p>
+                }
+              </div>
+            </fieldset>
+          }
+        </div>
+      } @else {
+        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          @for (category of catalog; track category.id) {
+            <fieldset class="ui-card-inset min-w-0 scroll-mt-28" [class.category-focused]="focused() === category.id" [attr.data-category]="category.id" [disabled]="readonly()" (focusin)="focused.set(category.id)">
+              <legend class="float-left mb-1 w-full text-xs font-medium uppercase tracking-wider text-ink-3">{{ category.name }}</legend>
+              <p class="clear-both text-sm text-ink-2">{{ category.question }}</p>
+              <div class="mt-2 space-y-1">
+                @for (option of category.options; track option.id) {
+                  <label class="flex cursor-pointer items-start gap-2 rounded-control px-1 py-1.5 hover:bg-surface-3">
+                    <input type="radio" class="mt-1 accent-current" [name]="'system-' + category.id" [value]="option.id" [checked]="design().choices[category.id] === option.id" (change)="choose(category.id, option.id)" />
+                    <span class="min-w-0">
+                      <span class="flex flex-wrap items-center gap-1.5 text-sm font-medium text-ink-1">
+                        @for (logo of logosOf(option.id); track logo.title) {
+                          <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true" [attr.data-logo]="logo.title"><path [attr.d]="logo.path" [attr.fill]="logo.color" /></svg>
+                        }
+                        {{ option.name }}
+                      </span>
+                      <span class="block text-xs leading-snug text-ink-2">{{ option.summary }}</span>
+                    </span>
+                  </label>
+                }
+                @if (category.optional) {
+                  <label class="flex cursor-pointer items-start gap-2 rounded-control px-1 py-1.5 hover:bg-surface-3">
+                    <input type="radio" class="mt-1 accent-current" [name]="'system-' + category.id" value="" [checked]="!design().choices[category.id]" (change)="choose(category.id, null)" />
+                    <span class="text-sm font-medium text-ink-1">{{ none(category) }}</span>
+                  </label>
+                }
+              </div>
+
+              @if (optionOf(category.id); as option) {
+                @if (option.deploysOn.length) {
+                  <label class="mt-3 block text-xs font-medium text-ink-2" [attr.for]="'deploy-' + category.id">{{ 'Se despliega en' | t }}</label>
+                  <select [id]="'deploy-' + category.id" class="focus-ring mt-1 w-full rounded-control border border-line-strong bg-surface-2 px-2 py-1.5 text-sm text-ink-1" (change)="deploy(category.id, $any($event.target).value)">
+                    <option value="" [selected]="!design().deployments[category.id]">{{ 'Sin desplegar' | t }}</option>
+                    @for (target of targetsOf(option); track target.id) {
+                      <option [value]="target.id" [selected]="design().deployments[category.id] === target.id">{{ nameOf(target) }}</option>
+                    }
+                  </select>
+                } @else {
+                  <p class="mt-3 text-xs leading-snug text-ink-3">{{ option.notDeployed }}</p>
+                }
               }
-            }
-            @for (finding of findingsOf(category.id); track finding.rule) {
-              <p class="mt-2 rounded-control border px-2 py-1.5 text-xs leading-snug" [class]="tone(finding)" role="status" [attr.data-rule]="finding.rule">
-                {{ finding.message }} @if (finding.suggestion) { <strong class="font-semibold">{{ finding.suggestion }}</strong> }
-              </p>
-            }
-          </fieldset>
-        }
-      </div>
+              @for (finding of findingsOf(category.id); track finding.rule) {
+                <p class="mt-2 rounded-control border px-2 py-1.5 text-xs leading-snug" [class]="tone(finding)" role="status" [attr.data-rule]="finding.rule">
+                  {{ finding.message }} @if (finding.suggestion) { <strong class="font-semibold">{{ finding.suggestion }}</strong> }
+                </p>
+              }
+            </fieldset>
+          }
+        </div>
+      }
 
       <fieldset class="ui-card-inset" [disabled]="readonly()" data-testid="system-nfr">
         <legend class="float-left mb-1 w-full text-xs font-medium uppercase tracking-wider text-ink-3">{{ 'Requisitos no funcionales' | t }}</legend>
@@ -259,6 +324,41 @@ interface Piece {
       padding: 0.5rem 0.75rem;
     }
     fieldset:disabled label { cursor: default; }
+
+    /* Decisiones (studio.app-e2e): filas de un documento de diseño, separadas por una línea. */
+    .decisions { border-radius: var(--radius-panel); border: 1px solid var(--border-subtle); background: rgb(var(--c-surface-1) / 0.6); }
+    .decision { min-width: 0; margin: 0; padding: 1rem 1.1rem; border: 0; border-top: 1px solid var(--border-subtle); transition: background var(--duration-fast) var(--ease-standard); }
+    .decision:first-child { border-top: 0; }
+    .decision-focused { background: rgb(var(--c-accent-solid) / 0.05); box-shadow: inset 2px 0 0 var(--accent-text); }
+    .decision-legend { float: left; width: 100%; padding: 0; margin-bottom: 0.6rem; }
+    .decision-name { display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-1); }
+    .decision-question { display: block; font-size: 0.8125rem; color: var(--text-3); }
+    .decision-body { clear: both; min-width: 0; }
+    .decision-options { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .decision-option {
+      display: inline-flex; align-items: center; gap: 0.45rem; min-height: 2.25rem; padding: 0.35rem 0.75rem; cursor: pointer;
+      border-radius: 0.6rem; border: 1px solid var(--border-subtle); background: var(--bg-surface-2);
+      font-size: 0.8125rem; font-weight: 500; color: var(--text-2);
+      transition: border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast), background var(--duration-fast);
+    }
+    .decision-option:hover { border-color: var(--border-strong); color: var(--text-1); }
+    .decision-option:has(input:focus-visible) { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+    .decision-option-on, .decision-option-on:hover { border-color: var(--accent-text); color: var(--text-1); background: rgb(var(--c-accent-solid) / 0.1); }
+    .decision-option-none { border-style: dashed; background: transparent; }
+    .decision-option-none.decision-option-on { border-style: solid; }
+    .decision-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; margin-top: 0.6rem; }
+    .decision-why { flex: 1 1 18rem; min-width: 0; margin: 0; font-size: 0.8125rem; line-height: 1.5; color: var(--text-2); }
+    .decision-where { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--text-3); }
+    .decision-where select { max-width: 14rem; padding: 0.25rem 0.5rem; border-radius: 0.45rem; border: 1px solid var(--border-strong); background: var(--bg-surface-2); color: var(--text-1); font-size: 0.8125rem; }
+    .decision-where select:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
+    .decision-where-static { font-style: italic; }
+    .decision-why-none { margin-top: 0.6rem; color: var(--text-3); }
+    @media (min-width: 1024px) {
+      .decision { display: block; padding: 1.1rem 1.25rem; }
+      .decision-legend { width: 15rem; margin: 0; padding-right: 1.5rem; }
+      .decision-body { clear: none; margin-left: 15rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { .decision, .decision-option { transition: none; } }
   `]
 })
 export class SystemDesignComponent {
@@ -274,6 +374,11 @@ export class SystemDesignComponent {
   readonly changed = output<SystemDesign>();
 
   readonly catalog = SYSTEM_CATALOG;
+  /** Recorrido de punta a punta y decisiones como filas (flag `studio.app-e2e`). */
+  readonly e2e = computed(() => this.flags.isEnabled('studio.app-e2e'));
+  private readonly flags = inject(FlagService);
+  /** Pieza que resalta el recorrido de una petición; manda sobre la categoría enfocada. */
+  readonly journeyFocus = signal<SystemCategoryId | null>(null);
   readonly inputs = NFR_INPUTS;
   readonly compliance = COMPLIANCE_OPTIONS;
   /** En pantallas estrechas la vista no se edita. */
