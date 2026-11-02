@@ -2,22 +2,22 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-11-02T20:55:21.892Z",
+  "updatedAt": "2026-11-02T21:00:27.468Z",
   "workflows": {
     "ci": {
-      "runId": 41522865698,
-      "runNumber": 277,
-      "sha": "ea54f0f5145a407476d3c61b3edeffe95a5c736e",
+      "runId": 41522929539,
+      "runNumber": 278,
+      "sha": "40cda016503caed6788f7b2d49583cf8c627e6d2",
       "event": "push",
-      "startedAt": "2026-11-02T20:50:26Z",
-      "finishedAt": "2026-11-02T20:55:21.892Z",
-      "durationSeconds": 296,
-      "conclusion": "failure",
+      "startedAt": "2026-11-02T20:50:53Z",
+      "finishedAt": "2026-11-02T21:00:27.468Z",
+      "durationSeconds": 574,
+      "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 9,
+          "durationSeconds": 8,
           "runs": 1
         },
         {
@@ -47,16 +47,16 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 30,
+          "durationSeconds": 22,
           "runs": 1
         },
         {
           "id": "backend-unit",
           "status": "success",
-          "durationSeconds": 111,
+          "durationSeconds": 100,
           "runs": 1,
           "metrics": {
-            "tests": 375,
+            "tests": 376,
             "failed": 0,
             "skipped": 2,
             "coverage": 89.2
@@ -65,7 +65,7 @@
         {
           "id": "backend-integration",
           "status": "success",
-          "durationSeconds": 141,
+          "durationSeconds": 117,
           "runs": 1,
           "metrics": {
             "tests": 8,
@@ -76,7 +76,7 @@
         {
           "id": "backend-arch",
           "status": "success",
-          "durationSeconds": 78,
+          "durationSeconds": 54,
           "runs": 1,
           "metrics": {
             "tests": 15,
@@ -86,18 +86,22 @@
         },
         {
           "id": "frontend-test",
-          "status": "failure",
-          "durationSeconds": 68,
+          "status": "success",
+          "durationSeconds": 69,
           "runs": 3,
           "metrics": {
-            "tests": 454
+            "tests": 817
           }
         },
         {
           "id": "frontend-build",
-          "status": "skipped",
-          "durationSeconds": null,
-          "runs": 1
+          "status": "success",
+          "durationSeconds": 47,
+          "runs": 1,
+          "metrics": {
+            "bundleKb": 310.3,
+            "bundleGzipKb": 73.2
+          }
         },
         {
           "id": "lighthouse",
@@ -120,7 +124,7 @@
         {
           "id": "docker",
           "status": "success",
-          "durationSeconds": 155,
+          "durationSeconds": 154,
           "runs": 1,
           "metrics": {
             "vulnerabilities": 0
@@ -129,23 +133,23 @@
         {
           "id": "publish-image",
           "status": "success",
-          "durationSeconds": 77,
+          "durationSeconds": 88,
           "runs": 1,
           "metrics": {
-            "digest": "sha256:c572e4ac361b5aaaa7973c140152a68d69ff8de033839bf1375438fc38f2ec61",
+            "digest": "sha256:d269294adf51fcb95fc79701d273f2191ff6ff4ed16d7ea834d58be774243dad",
             "sbomPackages": 217
           }
         },
         {
           "id": "coverage-badge",
           "status": "success",
-          "durationSeconds": 5,
+          "durationSeconds": 6,
           "runs": 1
         },
         {
           "id": "gate",
-          "status": "failure",
-          "durationSeconds": 5,
+          "status": "success",
+          "durationSeconds": 3,
           "runs": 1
         }
       ]
