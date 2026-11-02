@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Signal, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Signal, computed, effect, inject, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { EMPTY, Observable } from 'rxjs';
 
@@ -9,7 +9,8 @@ import {
 } from '../../../core/api';
 import { AuthService } from '../../../core/auth/auth.service';
 import { describeHttpError } from '../../../core/errors/http-error';
-import { SECTION_META } from '../layout/admin-layout.component';
+import { SECTION_META } from '../layout/admin-sections';
+import { CREATE_KINDS, QuickCreateService, createKind } from '../layout/quick-create';
 
 /** Estado de un panel que carga su propio endpoint: cada uno falla o llega por su cuenta. */
 export interface Widget<T> {
@@ -50,7 +51,12 @@ function widget<T>(source: () => Observable<T>): Widget<T> {
   imports: [DatePipe, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="dash" data-testid="admin-dashboard">
+    <div class="dash" data-testid="admin-dashboard"
+      [class.dash-drop-ready]="create.dragging()"
+      (dragover)="create.over($event)" (drop)="create.drop($event)">
+      @if (create.dragging(); as kind) {
+        <div class="dash-drop" aria-hidden="true"><span>Suelta para crear: {{ dropLabel(kind) }}</span></div>
+      }
       <header class="dash-head">
         <div class="min-w-0">
           <h1 class="dash-title">{{ greeting() }}{{ firstName() ? ', ' + firstName() : '' }}</h1>
@@ -63,13 +69,15 @@ function widget<T>(source: () => Observable<T>): Widget<T> {
         }
       </header>
 
-      @if (actions().length) {
-        <nav class="dash-actions" aria-label="Accesos rápidos">
-          @for (action of actions(); track action.path) {
-            <a class="dash-action" [routerLink]="action.path" [style.--sec]="meta[action.path]?.color">
-              <span class="admin-link-chip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="meta[action.path]?.icon" /></svg></span>
-              {{ action.label }}
-            </a>
+      @if (creatable().length) {
+        <!-- Crear: un clic abre el panel lateral; también se arrastran a su sección o aquí. -->
+        <nav class="dash-actions" aria-label="Crear">
+          @for (item of creatable(); track item.kind) {
+            <button type="button" class="dash-action" draggable="true" [style.--sec]="meta[item.path]?.color" [attr.data-create]="item.kind"
+              (click)="create.open.set(item.kind)" (dragstart)="create.start($event, item.kind)" (dragend)="create.end()">
+              <span class="admin-link-chip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="meta[item.path]?.icon" /></svg></span>
+              {{ item.title }}
+            </button>
           }
         </nav>
       }
@@ -303,13 +311,26 @@ export class AdminDashboardComponent {
     ] : []),
   ]);
 
-  readonly actions = computed(() => [
-    { path: 'projects', label: 'Nuevo proyecto', allowed: this.canCms },
-    { path: 'articles', label: 'Publicar artículo', allowed: this.canCms },
-    { path: 'features', label: 'Encender una flag', allowed: this.canFlags },
-    { path: 'assistant', label: 'Reindexar la IA', allowed: this.auth.can('ai:reindex') },
-    { path: 'users', label: 'Invitar a alguien', allowed: this.canUsers },
-  ].filter((action) => action.allowed));
+  readonly create = inject(QuickCreateService);
+  readonly creatable = computed(() => CREATE_KINDS.filter((info) => this.auth.can(info.permission)));
+
+  dropLabel(kind: string): string {
+    return createKind(kind as never).label.toLowerCase();
+  }
+
+  constructor() {
+    // Algo se creó desde la paleta: se vuelven a pedir los paneles que lo cuentan.
+    effect(() => {
+      const created = this.create.created();
+      if (!created) {
+        return;
+      }
+      untracked(() => {
+        const reload = { project: this.projects, article: this.articles, technology: this.technologies, user: this.users }[created.kind];
+        reload.reload();
+      });
+    });
+  }
 
 }
 

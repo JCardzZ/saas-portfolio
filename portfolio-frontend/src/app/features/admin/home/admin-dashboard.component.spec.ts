@@ -63,7 +63,8 @@ describe('AdminDashboardComponent', () => {
     expect(all('[data-kpi]').map((kpi) => kpi.dataset['kpi'])).toEqual(['projects', 'technologies', 'articles']);
     expect($('#dash-flags')).toBeNull();
     expect($('#dash-activity')).toBeNull();
-    expect(all('.dash-action').map((action) => action.textContent!.trim())).toEqual(['Nuevo proyecto', 'Publicar artículo']);
+    // Solo lee: no se le ofrece crear nada.
+    expect(all('.dash-action').length).toBe(0);
   }));
 
   it('says when a panel could not load and retries it on its own', fakeAsync(() => {

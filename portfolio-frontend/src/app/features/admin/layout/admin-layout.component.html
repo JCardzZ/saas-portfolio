@@ -33,13 +33,34 @@
         @for (group of groups(); track group.name) {
           <p class="admin-group">{{ group.name }}</p>
           @for (section of group.sections; track section.path) {
-            <a [routerLink]="section.path" routerLinkActive="admin-link-active" class="admin-link" [style.--sec]="meta[section.path]?.color" (click)="drawerOpen.set(false)">
+            @let accepts = kindOf(section.path);
+            <a [routerLink]="section.path" routerLinkActive="admin-link-active" class="admin-link" [style.--sec]="meta[section.path]?.color"
+              [class.admin-drop-ready]="accepts && create.dragging() === accepts"
+              [attr.data-drop]="accepts"
+              (click)="drawerOpen.set(false)"
+              (dragover)="create.over($event, accepts ?? undefined)"
+              (drop)="create.drop($event, accepts ?? undefined)">
               <span class="admin-link-chip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="meta[section.path]?.icon" /></svg></span>
               {{ section.label }}
             </a>
           }
         }
       </div>
+      @if (creatable().length) {
+        <!-- Paleta: arrastra un recurso a su sección (o al inicio) o púlsalo para crearlo. -->
+        <div class="admin-palette" role="group" aria-labelledby="admin-palette-title" data-testid="create-palette">
+          <p id="admin-palette-title" class="admin-group">Crear <span class="admin-palette-hint">arrastra o pulsa</span></p>
+          <div class="admin-palette-items">
+            @for (item of creatable(); track item.kind) {
+              <button type="button" class="admin-create" draggable="true" [style.--sec]="meta[item.path]?.color" [attr.data-create]="item.kind"
+                [attr.aria-label]="item.title"
+                (click)="create.open.set(item.kind)" (dragstart)="create.start($event, item.kind)" (dragend)="create.end()">
+                <span class="admin-create-plus" aria-hidden="true">+</span>{{ item.label }}
+              </button>
+            }
+          </div>
+        </div>
+      }
       @if (who(); as current) {
         <div class="admin-me" data-testid="session-who">
           <span class="admin-avatar" aria-hidden="true">{{ initials() }}<span class="admin-status"></span></span>
@@ -74,6 +95,9 @@
         <router-outlet />
       </main>
     </div>
+    @if (create.open(); as kind) {
+      <app-quick-create-drawer [kind]="kind" />
+    }
   </div>
 } @else {
   <header class="border-b border-slate-200 bg-white">
