@@ -1,4 +1,8 @@
-import { CloudLink, CloudNode, NODE_HEIGHT, NODE_WIDTH } from './cloud-topology.data';
+import { NODE_HEIGHT, NODE_WIDTH } from './cloud-topology.data';
+
+/** Lo único que el enrutado necesita de un nodo y de una conexión: sirve al lienzo de Cloud y al de Aplicación. */
+export interface Placed { id: string; x: number; y: number }
+export interface Linked { from: string; to: string }
 
 /**
  * Cables del lienzo inteligente (flag `studio.smart-rules`):
@@ -18,7 +22,7 @@ const PORT_SPAN = 0.6;
 const ARROW_GAP = 3;
 
 /** Por qué lados sale y entra la conexión: el que mira al otro nodo. */
-export function sidesFor(from: CloudNode, to: CloudNode): [Side, Side] {
+export function sidesFor(from: Placed, to: Placed): [Side, Side] {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   if (Math.abs(dx) * NODE_HEIGHT >= Math.abs(dy) * NODE_WIDTH * 0.5) {
@@ -33,8 +37,8 @@ const normal: Record<Side, Pt> = { left: [-1, 0], right: [1, 0], top: [0, -1], b
  * Puntos de anclaje repartidos: si varias conexiones usan el mismo lado de un nodo, cada una tiene el
  * suyo, ordenados según dónde está el otro extremo (así no se cruzan al salir).
  */
-export function assignPorts(links: CloudLink[], nodes: Map<string, CloudNode>): Map<string, { from: Pt; to: Pt; sides: [Side, Side] }> {
-  type End = { key: string; end: 'from' | 'to'; node: CloudNode; side: Side; other: CloudNode };
+export function assignPorts(links: Linked[], nodes: Map<string, Placed>): Map<string, { from: Pt; to: Pt; sides: [Side, Side] }> {
+  type End = { key: string; end: 'from' | 'to'; node: Placed; side: Side; other: Placed };
   const ends: End[] = [];
   const sides = new Map<string, [Side, Side]>();
   for (const link of links) {
@@ -170,5 +174,5 @@ export function labelPoint(points: Pt[]): [number, number] {
 const round = (value: number) => Math.round(value * 10) / 10;
 
 /** Rectángulo de un nodo, para usarlo como obstáculo. */
-export const nodeRect = (node: CloudNode, pad = 6): Rect =>
+export const nodeRect = (node: Placed, pad = 6): Rect =>
   ({ x: node.x - NODE_WIDTH / 2 - pad, y: node.y - NODE_HEIGHT / 2 - pad, w: NODE_WIDTH + pad * 2, h: NODE_HEIGHT + pad * 2 });

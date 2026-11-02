@@ -1,4 +1,4 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH, CloudNode, NODE_HEIGHT, NODE_WIDTH, ZoneId } from './cloud-topology.data';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, NODE_HEIGHT, NODE_WIDTH, ZoneId } from './cloud-topology.data';
 import { GRAPH_RULES, GraphRules, endpointOf } from './graph-rules';
 import { StudioZone, zoneAt } from './studio-project';
 
@@ -33,7 +33,7 @@ function insideCanvas(point: Point): boolean {
  * sigue dentro del mismo recuadro (así no cambia de zona de red sin querer). Si no pisa a nadie,
  * `drop` tal cual; si el recuadro está lleno, también (mejor encima que en otra zona).
  */
-export function resolveCollision(id: string, drop: Point, nodes: CloudNode[], zones: StudioZone[]): Point {
+export function resolveCollision(id: string, drop: Point, nodes: (Point & { id: string })[], zones: Pick<StudioZone, 'id' | 'x' | 'y' | 'w' | 'h'>[]): Point {
   const others = nodes.filter((node) => node.id !== id);
   // Solo si de verdad se monta encima: los diseños de partida tienen nodos más juntos que la separación.
   if (!others.some((node) => overlaps(drop, node, 0))) {
