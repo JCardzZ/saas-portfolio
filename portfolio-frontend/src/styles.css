@@ -867,16 +867,6 @@ svg .pulse.pulse-boost { stroke: var(--status-ok); }
   .flag-switch-busy .flag-switch-knob, .admin-tip { animation: none; }
 }
 
-/* Inicio del panel rediseñado: una tarjeta por sección. */
-.admin-tile { display: flex; align-items: center; gap: 0.9rem; height: 100%; padding: 1rem 1.1rem; border-radius: 0.75rem; border: 1px solid var(--a-line); background: var(--a-raised); transition: border-color 0.15s, background 0.15s, transform 0.15s; }
-.admin-tile:hover { border-color: rgb(99 102 241 / 0.5); background: #30333b; transform: translateY(-1px); }
-.admin-tile:focus-visible { outline: 2px solid var(--a-accent); outline-offset: 2px; }
-.admin-tile-icon { display: grid; place-items: center; flex: none; width: 2.6rem; height: 2.6rem; border-radius: 0.8rem; background: var(--a-accent-soft); color: #a5a8ff; }
-.admin-tile-icon svg { width: 1.3rem; height: 1.3rem; }
-.admin-tile-go { margin-left: auto; color: var(--a-text-3); transition: transform 0.15s, color 0.15s; }
-.admin-tile:hover .admin-tile-go { color: var(--a-text-1); transform: translateX(3px); }
-@media (prefers-reduced-motion: reduce) { .admin-tile, .admin-tile-go { transition: none; } .admin-tile:hover { transform: none; } }
-
 /* Fila de una flag: la encendida lleva una línea verde a la izquierda, sin teñir la fila. */
 .flag-row { transition: background 0.15s, box-shadow 0.15s; }
 .flag-row:hover { background: rgb(255 255 255 / 0.02); }
@@ -899,9 +889,7 @@ body:has(.admin-shell) [data-testid="demo-notice-fallback"] { left: auto !import
 .admin-rail-item { transition: border-radius 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.2s, color 0.2s, box-shadow 0.25s, transform 0.12s; }
 .admin-rail-item svg { color: var(--sec, currentColor); transition: color 0.2s, transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1); }
 .admin-rail-item:hover svg, .admin-rail-active svg { color: #fff; transform: scale(1.08); }
-.admin-rail-home { background: linear-gradient(135deg, #6366f1, #a855f7 55%, #ec4899); color: #fff; background-size: 200% 200%; animation: admin-gradient 8s ease infinite; }
-.admin-rail-home:hover, .admin-rail-home.admin-rail-active { background: linear-gradient(135deg, #6366f1, #a855f7 55%, #ec4899); background-size: 200% 200%; }
-@keyframes admin-gradient { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+.admin-rail-home { color: var(--a-text-1); }
 
 /* Ficha del icono: cuadrado redondeado teñido con el color de su sección. */
 .admin-link-chip { display: grid; place-items: center; flex: none; width: 1.6rem; height: 1.6rem; border-radius: 0.45rem; background: color-mix(in srgb, var(--sec, var(--a-accent)) 18%, transparent); color: var(--sec, var(--a-accent)); transition: background 0.15s, color 0.15s, transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1); }
@@ -921,23 +909,6 @@ body:has(.admin-shell) [data-testid="demo-notice-fallback"] { left: auto !import
 @keyframes admin-page-in { from { opacity: 0; transform: translateY(8px); } }
 .admin-rise { animation: admin-page-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(var(--i, 0) * 55ms); }
 
-/* Banner de bienvenida del inicio. */
-.admin-banner { position: relative; overflow: hidden; margin-bottom: 1.5rem; padding: 1.75rem 1.75rem 1.6rem; border-radius: 1rem; color: #fff;
-  background: linear-gradient(120deg, #4338ca, #7c3aed 45%, #db2777); background-size: 200% 200%; animation: admin-gradient 12s ease infinite; box-shadow: 0 18px 40px -18px rgb(124 58 237 / 0.7); }
-.admin-banner-orb { position: absolute; border-radius: 9999px; filter: blur(30px); opacity: 0.55; pointer-events: none; }
-.admin-banner-orb-a { width: 14rem; height: 14rem; right: -3rem; top: -5rem; background: #22d3ee; animation: admin-float 9s ease-in-out infinite; }
-.admin-banner-orb-b { width: 10rem; height: 10rem; right: 9rem; bottom: -6rem; background: #f472b6; animation: admin-float 11s ease-in-out infinite reverse; }
-@keyframes admin-float { 50% { transform: translate(-1.5rem, 1rem) scale(1.1); } }
-.admin-banner-kicker { position: relative; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.8; }
-.admin-banner-title { position: relative; margin-top: 0.25rem; font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em; }
-.admin-banner-sub { position: relative; margin-top: 0.25rem; font-size: 0.9rem; opacity: 0.85; }
-
-/* Tarjetas del inicio con el color de su sección. */
-.admin-tile .admin-tile-icon { background: color-mix(in srgb, var(--sec, var(--a-accent)) 18%, transparent); color: var(--sec, #a5a8ff); transition: transform 0.3s cubic-bezier(0.3, 1.6, 0.5, 1), background 0.2s, color 0.2s; }
-.admin-tile:hover { border-color: color-mix(in srgb, var(--sec, var(--a-accent)) 60%, transparent); box-shadow: 0 14px 30px -16px var(--sec, var(--a-accent)); transform: translateY(-3px); }
-.admin-tile:hover .admin-tile-icon { background: var(--sec, var(--a-accent)); color: #fff; transform: scale(1.08) rotate(-6deg); }
-.admin-tile:hover .admin-tile-go { color: var(--sec, var(--a-text-1)); }
-
 /* Interruptor con ✓ y ✕ en el pomo, y un pequeño rebote al cambiar. */
 .flag-switch { background: #80848e; }
 .flag-switch-on { background: var(--a-ok, #23a55a); box-shadow: 0 0 0 0 rgb(35 165 90 / 0.5); animation: flag-glow 0.6s ease-out; }
@@ -953,7 +924,102 @@ body:has(.admin-shell) [data-testid="demo-notice-fallback"] { left: auto !import
 .flag-toast-show { transition: opacity 0.2s, transform 0.4s cubic-bezier(0.3, 1.5, 0.5, 1); }
 
 @media (prefers-reduced-motion: reduce) {
-  .admin-rail-home, .admin-banner, .admin-banner-orb, .admin-status::after, .admin-content > :not(router-outlet), .admin-rise, .flag-switch-on { animation: none; }
-  .admin-link-chip, .admin-tile .admin-tile-icon, .flag-switch-knob svg { transition: none; }
-  .admin-tile:hover, .admin-tile:hover .admin-tile-icon, .admin-link:hover .admin-link-chip { transform: none; }
+  .admin-status::after, .admin-content > :not(router-outlet), .admin-rise, .flag-switch-on { animation: none; }
+  .admin-link-chip, .flag-switch-knob svg { transition: none; }
+  .admin-link:hover .admin-link-chip { transform: none; }
+}
+
+/* ── Dashboard del inicio (admin.redesign): superficies planas, datos en primer plano y el color
+   solo en las fichas de icono y en los estados. ── */
+.dash { display: grid; gap: 1.25rem; }
+.dash-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.75rem; }
+.dash-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.015em; color: var(--a-text-1); }
+.dash-sub { margin-top: 0.15rem; font-size: 0.875rem; color: var(--a-text-3); }
+.dash-sub::first-letter { text-transform: uppercase; }
+.dash-status { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.75rem; border-radius: 9999px; border: 1px solid var(--a-line); background: var(--a-raised); font-size: 0.8125rem; color: var(--a-text-2); font-variant-numeric: tabular-nums; }
+.dash-dot { position: relative; flex: none; width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--a-ok); box-shadow: 0 0 0 3px rgb(35 165 90 / 0.18); }
+.dash-dot[data-level='down'] { background: var(--a-danger); box-shadow: 0 0 0 3px rgb(242 63 67 / 0.18); }
+.dash-dot[data-level='warn'] { background: var(--a-warn); box-shadow: 0 0 0 3px rgb(240 178 50 / 0.18); }
+.dash-dot[data-level='demo'] { background: #80848e; box-shadow: 0 0 0 3px rgb(128 132 142 / 0.18); }
+
+.dash-kpis { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); }
+.dash-kpi { display: grid; grid-template-columns: auto 1fr; grid-template-areas: 'chip label' 'value value' 'note note'; align-items: center; column-gap: 0.6rem; row-gap: 0.35rem;
+  padding: 1rem 1.1rem; border-radius: 0.75rem; border: 1px solid var(--a-line); background: var(--a-raised); transition: border-color 0.15s, background 0.15s; }
+.dash-kpi:hover { border-color: color-mix(in srgb, var(--sec, var(--a-accent)) 45%, transparent); background: #2f323a; }
+.dash-kpi:focus-visible { outline: 2px solid var(--a-accent); outline-offset: 2px; }
+.dash-kpi .admin-link-chip { grid-area: chip; }
+.dash-kpi-label { grid-area: label; font-size: 0.8125rem; font-weight: 500; color: var(--a-text-3); }
+.dash-kpi-value, .dash-kpi-error, .dash-skeleton-num { grid-area: value; }
+.dash-kpi-value { margin-top: 0.25rem; font-size: 1.85rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; color: var(--a-text-1); font-variant-numeric: tabular-nums; }
+.dash-kpi-error { margin-top: 0.25rem; font-size: 1.85rem; color: var(--a-text-3); }
+.dash-kpi-note { grid-area: note; font-size: 0.75rem; color: var(--a-text-3); }
+
+.dash-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.dash-span-2 { grid-column: span 2; }
+@media (max-width: 1100px) { .dash-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 680px) { .dash-grid { grid-template-columns: minmax(0, 1fr); } .dash-span-2 { grid-column: auto; } }
+.dash-card { min-width: 0; padding: 1rem 1.1rem 1.1rem; border-radius: 0.75rem; border: 1px solid var(--a-line); background: var(--a-raised); }
+.dash-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.85rem; }
+.dash-card-head h2 { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--a-text-3) !important; }
+.dash-link { font-size: 0.8125rem; color: var(--a-text-3); transition: color 0.12s; }
+.dash-link:hover { color: var(--a-text-1); }
+.dash-empty { font-size: 0.8125rem; color: var(--a-text-3); }
+.dash-error { font-size: 0.8125rem; color: #ff8a8d; }
+.dash-retry { margin-left: 0.35rem; text-decoration: underline; text-underline-offset: 2px; color: var(--a-text-1); }
+
+.dash-timeline { display: grid; gap: 0.1rem; }
+.dash-timeline li { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.45rem 0.35rem; border-radius: 0.5rem; transition: background 0.12s; }
+.dash-timeline li:hover { background: rgb(255 255 255 / 0.03); }
+.dash-timeline-dot { flex: none; margin-top: 0.4rem; width: 0.55rem; height: 0.55rem; border-radius: 9999px; background: #80848e; }
+.dash-timeline-on { background: var(--a-ok); }
+.dash-code { font-family: var(--font-mono); font-size: 0.78rem; padding: 0.05rem 0.35rem; border-radius: 0.3rem; background: rgb(255 255 255 / 0.06); color: var(--a-text-1); }
+
+.dash-health { display: grid; gap: 0.15rem; font-size: 0.875rem; color: var(--a-text-2); }
+.dash-health li { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0; border-bottom: 1px solid var(--a-line); }
+.dash-health li:last-child { border-bottom: 0; }
+.dash-health-state { font-family: var(--font-mono); font-size: 0.75rem; color: #57d68d; }
+.dash-health-state[data-level='down'] { color: #ff8a8d; }
+.dash-health-state[data-level='warn'] { color: #f5cf7a; }
+.dash-health-state[data-level='demo'] { color: var(--a-text-3); }
+
+.dash-ring-wrap { display: flex; align-items: center; gap: 1rem; }
+.dash-ring { width: 5.5rem; height: 5.5rem; transform: rotate(-90deg); }
+.dash-ring circle { fill: none; stroke-width: 4.5; }
+.dash-ring-track { stroke: rgb(255 255 255 / 0.07); }
+.dash-ring-value { stroke: var(--a-ok); stroke-linecap: round; transition: stroke-dasharray 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); transform: rotate(90deg); transform-origin: center; }
+.dash-ring-num { font-size: 1.85rem; font-weight: 700; line-height: 1; color: var(--a-text-1); font-variant-numeric: tabular-nums; }
+.dash-ring-num span { font-size: 1rem; font-weight: 500; color: var(--a-text-3); }
+
+.dash-bars { display: grid; gap: 0.55rem; }
+.dash-bars li { display: grid; grid-template-columns: minmax(0, 7rem) 1fr 2rem; align-items: center; gap: 0.6rem; font-size: 0.8125rem; }
+.dash-bars-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--a-text-2); }
+.dash-bars-track { height: 0.45rem; border-radius: 9999px; background: rgb(255 255 255 / 0.06); overflow: hidden; }
+.dash-bars-fill { display: block; height: 100%; border-radius: inherit; background: #4f8cff; animation: dash-grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-origin: left; }
+@keyframes dash-grow { from { transform: scaleX(0); } }
+.dash-bars-num { text-align: right; font-variant-numeric: tabular-nums; color: var(--a-text-3); }
+
+.dash-list { display: grid; }
+.dash-list li { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--a-line); font-size: 0.875rem; color: var(--a-text-1); }
+.dash-list li:last-child { border-bottom: 0; }
+.dash-list-meta { flex: none; font-size: 0.75rem; color: var(--a-text-3); font-variant-numeric: tabular-nums; }
+
+.dash-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.dash-action { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.75rem 0.35rem 0.4rem; border-radius: 9999px; border: 1px solid var(--a-line); background: var(--a-raised); font-size: 0.8125rem; font-weight: 500; color: var(--a-text-2); transition: background 0.12s, color 0.12s, border-color 0.12s; }
+.dash-action .admin-link-chip { width: 1.4rem; height: 1.4rem; border-radius: 9999px; }
+.dash-action .admin-link-chip svg { width: 0.85rem; height: 0.85rem; }
+.dash-action:hover { background: var(--a-hover); color: var(--a-text-1); border-color: color-mix(in srgb, var(--sec, var(--a-accent)) 45%, transparent); }
+.dash-action:focus-visible { outline: 2px solid var(--a-accent); outline-offset: -2px; }
+
+/* Esqueletos mientras llega cada panel. */
+.dash-skeleton, .dash-skeleton-list span { display: block; border-radius: 0.4rem; background: linear-gradient(90deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.09), rgb(255 255 255 / 0.04)); background-size: 200% 100%; animation: dash-shimmer 1.4s ease-in-out infinite; }
+.dash-skeleton-num { width: 3.5rem; height: 2rem; margin-top: 0.25rem; }
+.dash-skeleton-ring { width: 5.5rem; height: 5.5rem; border-radius: 9999px; }
+.dash-skeleton-list { display: grid; gap: 0.6rem; }
+.dash-skeleton-list span { height: 0.9rem; }
+.dash-skeleton-list span:nth-child(2) { width: 80%; }
+.dash-skeleton-list span:nth-child(3) { width: 60%; }
+@keyframes dash-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .dash-bars-fill, .dash-skeleton, .dash-skeleton-list span { animation: none; }
+  .dash-ring-value, .dash-kpi { transition: none; }
 }

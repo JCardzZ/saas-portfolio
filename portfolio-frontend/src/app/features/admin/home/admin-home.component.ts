@@ -3,25 +3,22 @@ import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { FlagService } from '../../../core/flags/flag.service';
-import { SECTIONS, SECTION_META } from '../layout/admin-layout.component';
+import { SECTIONS } from '../layout/admin-layout.component';
+import { AdminDashboardComponent } from './admin-dashboard.component';
 
-/** Inicio del panel: quién ha entrado, con qué rol, y las secciones que puede abrir. */
+/**
+ * Inicio del panel: quién ha entrado, con qué rol, y las secciones que puede abrir. Con el panel
+ * rediseñado (`admin.redesign`) es un dashboard con datos reales de la API.
+ */
 @Component({
     selector: 'app-admin-home',
-    imports: [RouterLink],
+    imports: [RouterLink, AdminDashboardComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
+    @if (redesign()) {
+      <app-admin-dashboard />
+    } @else {
     <section class="space-y-6">
-      @if (redesign()) {
-        <!-- Banner de bienvenida: degradado vivo, saludo y el rol de quien ha entrado. -->
-        <div class="admin-banner" data-testid="admin-banner">
-          <span class="admin-banner-orb admin-banner-orb-a" aria-hidden="true"></span>
-          <span class="admin-banner-orb admin-banner-orb-b" aria-hidden="true"></span>
-          <p class="admin-banner-kicker">Portfolio CMS</p>
-          <p class="admin-banner-title">Hola{{ who() ? ', ' + firstName() : '' }}</p>
-          <p class="admin-banner-sub">{{ sections().length }} secciones a tu alcance · rol {{ who()?.role }}</p>
-        </div>
-      }
       <header>
         <h1 class="text-2xl font-semibold">Panel de administración</h1>
         @if (who(); as current) {
@@ -29,25 +26,7 @@ import { SECTIONS, SECTION_META } from '../layout/admin-layout.component';
         }
       </header>
 
-      @if (redesign() && sections().length) {
-        <!-- Panel rediseñado: cada sección con su icono, su color y para qué sirve. -->
-        <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          @for (section of sections(); track section.path; let i = $index) {
-            <li class="admin-rise" [style.--i]="i">
-              <a class="admin-tile" [routerLink]="section.path" [style.--sec]="meta[section.path]?.color">
-                <span class="admin-tile-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="meta[section.path]?.icon" /></svg>
-                </span>
-                <span class="min-w-0">
-                  <span class="block font-semibold text-[var(--a-text-1)]">{{ section.label }}</span>
-                  <span class="mt-0.5 block text-sm text-[var(--a-text-3)]">{{ meta[section.path]?.hint }}</span>
-                </span>
-                <span class="admin-tile-go" aria-hidden="true">→</span>
-              </a>
-            </li>
-          }
-        </ul>
-      } @else if (sections().length) {
+      @if (sections().length) {
         <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           @for (section of sections(); track section.path) {
             <li><a class="card block font-medium text-indigo-700 hover:bg-slate-50" [routerLink]="section.path">{{ section.label }}</a></li>
@@ -68,6 +47,7 @@ import { SECTIONS, SECTION_META } from '../layout/admin-layout.component';
         </div>
       }
     </section>
+    }
   `
 })
 export class AdminHomeComponent {
@@ -78,6 +58,4 @@ export class AdminHomeComponent {
   readonly sections = computed(() => SECTIONS.filter((section) => section.permissions.some((permission) => this.auth.can(permission))));
   readonly permissions = computed(() => this.auth.profile()?.permissions ?? []);
   readonly redesign = computed(() => this.flags.isEnabled('admin.redesign'));
-  readonly meta = SECTION_META;
-  readonly firstName = computed(() => (this.who()?.name ?? '').split(/\s+/)[0]);
 }

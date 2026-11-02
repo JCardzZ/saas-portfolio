@@ -68,12 +68,10 @@ describe('AdminLayoutComponent with admin.redesign on', () => {
     expect(element.querySelector('[role="tooltip"]')).toBeNull();
   });
 
-  it('shows each section on the home page as a tile that says what it is for', () => {
+  it('opens the home page as a dashboard', () => {
     const fixture = TestBed.createComponent(AdminHomeComponent);
     fixture.detectChanges();
-    const tiles = Array.from(fixture.nativeElement.querySelectorAll('.admin-tile')) as HTMLElement[];
 
-    expect(tiles.length).toBe(4);
-    expect(tiles[3].textContent).toContain('Encender y apagar funcionalidades sin desplegar');
+    expect(fixture.nativeElement.querySelector('[data-testid="admin-dashboard"]')).not.toBeNull();
   });
 });
