@@ -188,7 +188,10 @@
     }
   </div>
 
-  @if (modified()) {
+  @if (smartRules()) {
+    <!-- Con su sitio reservado: si apareciera con el primer cambio, empujaría el lienzo a mitad de un gesto. -->
+    <p class="min-h-5 w-full text-caption font-normal text-ink-3" role="status">@if (modified()) { {{ 'Guardado en este navegador' | t }} }</p>
+  } @else if (modified()) {
     <p class="w-full text-caption font-normal text-ink-3" role="status">{{ 'Guardado en este navegador' | t }}</p>
   }
   @if (cloudNotice(); as notice) {
@@ -395,7 +398,9 @@
         }
       }
       @if (hasCloudZone()) {
-        <text class="zone-sub" x="935" y="170" text-anchor="middle">{{ 'Servicios gestionados' | t }}</text>
+        @if (managedLabel(); as label) {
+          <text class="zone-sub" [attr.x]="label.x" [attr.y]="label.y" text-anchor="middle">{{ 'Servicios gestionados' | t }}</text>
+        }
       }
 
       @if (smartRules()) {

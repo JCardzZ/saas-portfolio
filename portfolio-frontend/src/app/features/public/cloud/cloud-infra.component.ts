@@ -25,7 +25,7 @@ import { ArchitectureCopilotComponent } from './architecture-copilot.component';
 import { AuditCardComponent } from './audit-card.component';
 import { autoLayout } from './auto-layout';
 import { contentBounds, directNodes, reflow, resizeToContent } from './zone-layout';
-import { settleZones, zoneParents } from './zone-solver';
+import { hasConflict, settleZones, zoneParents } from './zone-solver';
 import { assignPorts, labelPoint, nodeRect, roundedPath, routeWire } from './wire-router';
 import { FULL_VIEW, Point, View, panView, placementVerdict, resolveCollision, withFriction, zoomView } from './studio-physics';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
@@ -180,6 +180,22 @@ export class CloudInfraComponent {
     return `${x} ${y} ${w} ${h}`;
   });
 
+  /**
+   * Rótulo de los servicios gestionados: encima de sus piezas, para que no se quede atrás (ni dentro de
+   * la red) cuando el diseño cambia. Sin reglas inteligentes, en su sitio de siempre.
+   */
+  readonly managedLabel = computed(() => {
+    if (!this.smartRules()) {
+      return { x: 935, y: 170 };
+    }
+    const managed = this.nodes().filter((node) => node.zone === 'managed');
+    if (!managed.length) {
+      return null;
+    }
+    const xs = managed.map((node) => node.x);
+    return { x: Math.round((Math.min(...xs) + Math.max(...xs)) / 2), y: Math.min(...managed.map((node) => node.y)) - NODE_HEIGHT / 2 - 12 };
+  });
+
   readonly selectedId = signal<CloudProviderId>('aws');
   readonly selected = computed(() => CLOUD_PROVIDERS.find((provider) => provider.id === this.selectedId())!);
   readonly providerColor = computed(() => TECH_ICONS[this.selectedId()].color);
@@ -188,7 +204,17 @@ export class CloudInfraComponent {
   private readonly links = signal<CloudLink[]>(structuredClone(CLOUD_LINKS));
   /** Recuadros del lienzo (nube, red, subredes...), de mayor a menor para que los pequeños queden encima. */
   readonly zones = signal<StudioZone[]>(structuredClone(BASE_ZONES));
-  readonly zonesByArea = computed(() => [...this.zones()].sort((a, b) => b.w * b.h - a.w * a.h));
+  /**
+   * Orden de pintado durante un gesto. Si un recuadro creciera por encima de otro mientras se arrastra,
+   * reordenarlo movería su elemento en el DOM y el navegador soltaría el puntero a mitad de gesto.
+   */
+  private readonly paintOrder = signal<string[] | null>(null);
+  readonly zonesByArea = computed(() => {
+    const order = this.paintOrder();
+    return order
+      ? [...this.zones()].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+      : [...this.zones()].sort((a, b) => b.w * b.h - a.w * a.h);
+  });
   readonly hasCloudZone = computed(() => this.zones().some((zone) => zone.id === 'cloud'));
   readonly editing = signal(false);
   readonly catalogDocked = signal(true);
@@ -399,6 +425,8 @@ export class CloudInfraComponent {
     id: string; mode: 'move' | ZoneCorner; x: number; y: number; origin: StudioZone; nodes: CloudNode[]; zones: StudioZone[]; recorded: boolean;
     /** Recuadros elásticos: el lienzo antes del gesto y su árbol de recuadros. */
     before?: { zones: StudioZone[]; nodes: CloudNode[]; parents: Map<string, string | null> };
+    /** Último desplazamiento que cupo. */
+    last?: [number, number];
   } | null = null;
   readonly corners: ZoneCorner[] = ['nw', 'ne', 'sw', 'se'];
   /** Recuadro sobre el que está el nodo que se arrastra: es el que lo adoptará al soltarlo. */
@@ -1810,6 +1838,7 @@ export class CloudInfraComponent {
         ? { zones: this.zones().map((z) => ({ ...z })), nodes: this.nodes().map((n) => ({ ...n })), parents: zoneParents(this.zones()) }
         : undefined,
     };
+    this.paintOrder.set(this.zonesByArea().map((candidate) => candidate.id));
     capturePointer(event.currentTarget, event.pointerId);
     this.activeZoneId.set(zone.id);
   }
@@ -1824,9 +1853,27 @@ export class CloudInfraComponent {
       drag.recorded = true;
     }
     const point = this.toCanvas(event.clientX, event.clientY);
-    this.transformZone(drag, point.x - drag.x, point.y - drag.y);
-    if (drag.before) {
-      this.settleAround(drag.id, drag.before, new Set([drag.id, ...drag.zones.map((zone) => zone.id)]), new Set(drag.nodes.map((node) => node.id)));
+    const [dx, dy] = [point.x - drag.x, point.y - drag.y];
+    const before = drag.before;
+    if (!before) {
+      this.transformZone(drag, dx, dy);
+      return;
+    }
+    // El último estado bueno: si un paso no cabe, se prueba cada eje por separado (el recuadro desliza
+    // por el que tiene sitio) y, si tampoco, se queda aquí en vez de romper el diseño.
+    const [lastZones, lastNodes] = [this.zones(), this.nodes()];
+    const [lastX, lastY] = drag.last ?? [0, 0];
+    const fits = ([x, y]: [number, number]) => {
+      this.transformZone(drag, x, y);
+      this.settleAround(drag.id, before, new Set([drag.id, ...drag.zones.map((zone) => zone.id)]), new Set(drag.nodes.map((node) => node.id)));
+      return !hasConflict(this.zones(), this.nodes(), drag.id, before.parents, before);
+    };
+    const step = ([[dx, dy], [dx, lastY], [lastX, dy]] as [number, number][]).find(fits);
+    if (step) {
+      drag.last = step;
+    } else {
+      this.zones.set(lastZones);
+      this.nodes.set(lastNodes);
     }
   }
 
@@ -1850,6 +1897,7 @@ export class CloudInfraComponent {
       this.reassignZones();
     }
     this.zoneDrag = null;
+    this.paintOrder.set(null);
     this.refit();
   }
 
@@ -1881,11 +1929,14 @@ export class CloudInfraComponent {
   private transformZone(drag: { id: string; mode: 'move' | ZoneCorner; origin: StudioZone; nodes: CloudNode[]; zones: StudioZone[] }, dx: number, dy: number): void {
     const { origin } = drag;
     if (drag.mode !== 'move' && this.smartRules()) {
-      // El recuadro no baja del tamaño de su contenido y sus nodos se reacomodan dentro. Se
-      // parte siempre de como estaban al empezar a tirar: al volver atrás, vuelven a su sitio.
-      const { x, y, w, h } = resizeToContent(origin, drag.mode, dx, dy, drag.nodes.length, drag.zones);
+      // El recuadro no baja del tamaño de su contenido. Uno sencillo reacomoda sus nodos dentro; el
+      // que contiene otros recuadros (la nube, la red) no toca nada: solo se mueve su borde. Se parte
+      // siempre de como estaban al empezar a tirar: al volver atrás, vuelven a su sitio.
+      const container = drag.zones.length > 0;
+      const held = drag.nodes.map((node) => ({ x: node.x - NODE_WIDTH / 2, y: node.y - NODE_HEIGHT / 2, w: NODE_WIDTH, h: NODE_HEIGHT }));
+      const { x, y, w, h } = resizeToContent(origin, drag.mode, dx, dy, container ? 0 : drag.nodes.length, container ? [...drag.zones, ...held] : drag.zones);
       this.zones.update((zones) => zones.map((zone) => (zone.id === drag.id ? { ...zone, x, y, w, h } : zone)));
-      const placed = new Map(reflow(drag.nodes, { x, y, w, h }).map((node) => [node.id, node]));
+      const placed = new Map((container ? drag.nodes : reflow(drag.nodes, { x, y, w, h })).map((node) => [node.id, node]));
       this.nodes.update((nodes) => nodes.map((node) => {
         const next = placed.get(node.id);
         return next ? { ...node, x: next.x, y: next.y } : node;
