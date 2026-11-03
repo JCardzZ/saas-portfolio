@@ -25,13 +25,17 @@ import { ArchitectureCopilotComponent } from './architecture-copilot.component';
 import { AuditCardComponent } from './audit-card.component';
 import { autoLayout } from './auto-layout';
 import { contentBounds, directNodes, reflow, resizeToContent } from './zone-layout';
+import { settleZones, zoneParents } from './zone-solver';
+import { assignPorts, labelPoint, nodeRect, roundedPath, routeWire } from './wire-router';
+import { FULL_VIEW, Point, View, panView, placementVerdict, resolveCollision, withFriction, zoomView } from './studio-physics';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
 import { CatalogItem } from './cloud-catalog.data';
 import { estimateCost, formatUsd } from './cloud-costs.data';
 import { telemetryFor } from './component-telemetry';
 import { CopilotAddition, catalogItem } from './copilot';
 import { CostBadgeComponent } from './cost-badge.component';
-import { ConnectionVerdict, RuleViolation, advisories, anchorFor, checkGraph, connectionVerdict, endpointOf, inferKind } from './graph-rules';
+import { ConnectionVerdict, InstanceVerdict, RuleViolation, advisories, anchorFor, checkGraph, connectionVerdict, endpointOf, inferKind, instanceVerdict } from './graph-rules';
+import { INSTANCE_LIMITS } from './instance-policy';
 import { BlueprintLoad, mergeBlueprint } from './data-blueprints';
 import { downloadBlob, rasterize, serializeDiagram } from './diagram-export';
 import {
@@ -95,10 +99,14 @@ interface Wire extends CloudLink {
  * que quepa casi a tamaño real: reducido, ni se lee ni se acierta a tocar.
  */
 const MIN_CANVAS_WIDTH = { mouse: 720, touch: 1088 };
+/** Con las reglas inteligentes el lienzo se ciñe al diagrama y hace zoom: con ratón basta menos ancho. */
+const MIN_SMART_CANVAS_WIDTH = 600;
+/** Margen del encuadre automático al editar, para tener dónde soltar piezas nuevas. */
+const FRAME_EDIT_PAD = 48;
 
-function minCanvasWidth(): number {
+function minCanvasWidth(smart = false): number {
   const touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
-  return touch ? MIN_CANVAS_WIDTH.touch : MIN_CANVAS_WIDTH.mouse;
+  return touch ? MIN_CANVAS_WIDTH.touch : smart ? MIN_SMART_CANVAS_WIDTH : MIN_CANVAS_WIDTH.mouse;
 }
 
 /** Espera antes de mostrar el aviso de un nodo: lo justo para que no salte al cruzar el lienzo. */
@@ -147,8 +155,25 @@ export class CloudInfraComponent {
   readonly smartRules = computed(() => this.flags.isEnabled('studio.smart-rules'));
   /** «Ajustar a pantalla»: la vista se ciñe al diagrama y se ve entero, sin desplazar el marco. */
   readonly fitted = signal(false);
+  /** Zoom y desplazamiento del lienzo (reglas inteligentes): rueda con Ctrl/⌘ o pellizco, y botones. */
+  readonly camera = signal<View>(FULL_VIEW);
+  /**
+   * Encuadre automático (reglas inteligentes): la vista se ciñe al diagrama, con margen para soltar
+   * piezas al editar. Se congela durante un arrastre para que el lienzo no se mueva bajo el cursor.
+   */
+  readonly frame = signal<View>(FULL_VIEW);
+  /** La vista sigue el encuadre automático hasta que el visitante hace zoom o se desplaza. */
+  readonly autoFrame = signal(true);
+  /** Lo que se ve ahora con las reglas inteligentes: el encuadre o la cámara del visitante. */
+  private readonly shown = computed(() => (this.autoFrame() ? this.frame() : this.camera()));
+  /** Zoom respecto al encuadre del diagrama: 100 % es «se ve entero». */
+  readonly zoom = computed(() => Math.round((this.frame().w / this.shown().w) * 100));
   readonly viewBox = computed(() => {
     if (!this.fitted()) {
+      if (this.smartRules()) {
+        const { x, y, w, h } = this.shown();
+        return `${Math.round(x)} ${Math.round(y)} ${Math.round(w)} ${Math.round(h)}`;
+      }
       return `0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`;
     }
     const { x, y, w, h } = contentBounds(this.nodes(), this.zones());
@@ -178,6 +203,18 @@ export class CloudInfraComponent {
   /** Conexiones con su trazado bezier, recalculado cada vez que un nodo se mueve. */
   readonly wires = computed<Wire[]>(() => {
     const byId = new Map(this.nodes().map((node) => [node.id, node]));
+    // Reglas inteligentes: cables en ángulo recto que esquivan nodos, con puntos de salida repartidos.
+    const smart = this.smartRules();
+    const ports = smart ? assignPorts(this.links(), byId) : null;
+    const routed = (from: CloudNode, to: CloudNode, key: string) => {
+      const port = ports?.get(key);
+      if (!port) {
+        return connect(from, to);
+      }
+      const obstacles = this.nodes().filter((node) => node.id !== from.id && node.id !== to.id).map((node) => nodeRect(node));
+      const points = routeWire(port.from, port.to, port.sides, obstacles);
+      return { path: roundedPath(points), labelAt: labelPoint(points) };
+    };
     return this.links().flatMap((link) => {
       const from = byId.get(link.from);
       const to = byId.get(link.to);
@@ -190,7 +227,7 @@ export class CloudInfraComponent {
       const chaos: ChaosLevel | null = faults[from.id] === 'down' || faults[to.id] === 'down' ? 'down'
         : faults[to.id] === 'cpu' ? 'warn'
         : (this.chaosPhase()?.wires[`${link.from}>${link.to}`] ?? null);
-      return [{ ...link, ...connect(from, to), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
+      return [{ ...link, ...(smart ? routed(from, to, `${link.from}>${link.to}`) : connect(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
     });
   });
 
@@ -327,7 +364,20 @@ export class CloudInfraComponent {
   private readonly canvas = viewChild<ElementRef<SVGSVGElement>>('canvas');
   private readonly stageBox = viewChild(ContainerWidthDirective);
   /** Sin ancho para el lienzo de trabajo, el diagrama se muestra de arriba abajo y de solo lectura. */
-  readonly compact = computed(() => this.stageBox()?.narrowerThan(minCanvasWidth()) ?? false);
+  readonly compact = computed(() => this.stageBox()?.narrowerThan(minCanvasWidth(this.smartRules())) ?? false);
+  /** Métricas y FinOps debajo del lienzo, nunca encima de un nodo: siempre con las reglas inteligentes. */
+  readonly panelsBelow = computed(() => this.fitted() || this.compact() || this.smartRules());
+  /** Cupo de cada servicio del catálogo en el lienzo actual (reglas inteligentes). */
+  readonly catalogLimits = computed<Map<string, InstanceVerdict> | null>(() => {
+    if (!this.smartRules()) {
+      return null;
+    }
+    const nodes = this.nodes();
+    return new Map(this.catalog().flatMap((category) => category.items)
+      .map((item) => [item.type, instanceVerdict(item.type, nodes, forProvider(item.service, this.selectedId()))]));
+  });
+  /** Tipos de conexión presentes en el lienzo, para la leyenda (reglas inteligentes). */
+  readonly wireKinds = computed(() => LINK_KINDS.filter((kind) => this.links().some((link) => link.kind === kind.kind)));
   /** Las piezas del proyecto para la vista estrecha: nombre, papel, zona de red y coste. */
   readonly mobileRows = computed<MobileRow[]>(() => this.nodes().map((node) => {
     const zone = zoneAt(this.zones(), node.x, node.y);
@@ -340,8 +390,16 @@ export class CloudInfraComponent {
   }));
   readonly mobileLinks = computed(() => this.links().map((link): [string, string] => [link.from, link.to]));
   private nextCustomId = 1;
-  private dragging: { id: string; dx: number; dy: number; recorded: boolean } | null = null;
-  private zoneDrag: { id: string; mode: 'move' | ZoneCorner; x: number; y: number; origin: StudioZone; nodes: CloudNode[]; zones: StudioZone[]; recorded: boolean } | null = null;
+  private dragging: { id: string; dx: number; dy: number; recorded: boolean; lastAllowed: Point; origin: Point } | null = null;
+  /** Mientras se arrastra un nodo a una zona que no lo admite (reglas inteligentes): cuál y por qué. */
+  readonly placementRefusal = signal<{ zoneId: string | null; reason: string; suggestion: string } | null>(null);
+  /** Aviso tras soltar un nodo donde no podía quedarse: volvió a su sitio. */
+  readonly placementNotice = signal<{ reason: string; suggestion: string; title?: string } | null>(null);
+  private zoneDrag: {
+    id: string; mode: 'move' | ZoneCorner; x: number; y: number; origin: StudioZone; nodes: CloudNode[]; zones: StudioZone[]; recorded: boolean;
+    /** Recuadros elásticos: el lienzo antes del gesto y su árbol de recuadros. */
+    before?: { zones: StudioZone[]; nodes: CloudNode[]; parents: Map<string, string | null> };
+  } | null = null;
   readonly corners: ZoneCorner[] = ['nw', 'ne', 'sw', 'se'];
   /** Recuadro sobre el que está el nodo que se arrastra: es el que lo adoptará al soltarlo. */
   readonly dropZoneId = signal<string | null>(null);
@@ -395,6 +453,13 @@ export class CloudInfraComponent {
     });
     this.restore();
     this.studio.load();
+    // Encuadre automático: sigue al diagrama cuando cambian sus piezas, sus recuadros o el modo edición.
+    effect(() => {
+      this.nodes();
+      this.zones();
+      this.editing();
+      untracked(() => this.refit());
+    });
     // Al estrecharse (girar el móvil, acoplar el inspector) se sale de la edición: no hay lienzo donde editar.
     effect(() => {
       if (this.compact() && untracked(this.editing)) {
@@ -663,7 +728,7 @@ export class CloudInfraComponent {
     this.tooltipTarget = byPointer ? target : null;
     this.tooltipTimer = setTimeout(() => {
       const stage = this.host.querySelector<HTMLElement>('[data-stage]');
-      if (!stage || !target.isConnected) {
+      if (!stage || !target.isConnected || this.dragging?.recorded) {
         return;
       }
       const frame = stage.getBoundingClientRect();
@@ -1005,9 +1070,31 @@ export class CloudInfraComponent {
    * Coloca un servicio del catálogo: en el punto indicado (si se soltó sobre el lienzo) o en
    * el primer hueco libre de su zona, y lo conecta con el nodo del que recibe el tráfico.
    */
+  /** Un servicio del catálogo que ya no cabe: se explica por qué y qué hacer en su lugar. */
+  explainLimit(item: CatalogItem): void {
+    const verdict = instanceVerdict(item.type, this.nodes(), forProvider(item.service, this.selectedId()));
+    if (!verdict.allowed) {
+      this.placementNotice.set({ title: 'No cabe otra instancia.', reason: verdict.reason, suggestion: verdict.suggestion });
+    }
+  }
+
   add(item: CatalogItem, at?: { x: number; y: number }): void {
+    const serviceName = forProvider(item.service, this.selectedId());
+    let siblings: CloudNode[] = [];
+    if (this.smartRules()) {
+      // Antes de añadir nada: ¿cabe otra instancia de este servicio?
+      const verdict = instanceVerdict(item.type, this.nodes(), serviceName);
+      if (!verdict.allowed) {
+        this.placementNotice.set({ title: 'No cabe otra instancia.', reason: verdict.reason, suggestion: verdict.suggestion });
+        return;
+      }
+      this.placementNotice.set(null);
+      siblings = this.nodes().filter((candidate) => candidate.type === item.type);
+    }
     this.record();
-    const position = clamp(at ?? this.freeSlot(item.zone));
+    // Una copia va junto a la primera instancia (debajo, en su misma subred), no a un hueco cualquiera.
+    const beside = !at && siblings.length ? resolveCollision('', { x: siblings[0].x, y: siblings[0].y + NODE_HEIGHT + 18 }, this.nodes(), this.zones()) : null;
+    const position = clamp(at ?? beside ?? this.freeSlot(item.zone));
     // Soltado en un punto concreto, su zona de red es la del recuadro donde cae.
     const zone = at ? roleAt(this.zones(), position.x, position.y, item.zone) : item.zone;
     let id = `${item.type}-${this.nextCustomId++}`;
@@ -1017,6 +1104,8 @@ export class CloudInfraComponent {
     const node: CloudNode = {
       id, type: item.type, ...position, zone, role: item.capability, service: item.service, icon: item.icon,
       terraform: item.terraform, why: item.why, custom: true,
+      // Cómputo duplicado: cada copia es otro servicio y lleva su propio nombre (se puede cambiar).
+      ...(siblings.length && INSTANCE_LIMITS[item.type]?.kind === 'compute' ? { name: `${serviceName} · ${this.language.lang() === 'en' ? 'service' : 'servicio'} ${siblings.length + 1}` } : {}),
     };
 
     // Origen del tráfico según el tipo de servicio; si ya no está en el lienzo, el nodo más cercano.
@@ -1031,6 +1120,10 @@ export class CloudInfraComponent {
     }
     this.activeId.set(id);
     this.modified.set(true);
+    if (siblings.length && INSTANCE_LIMITS[item.type]?.kind === 'compute') {
+      // Abre sus propiedades con el nombre listo para cambiar: «pagos», «notificaciones»…
+      this.openProperties(node);
+    }
 
     const name = this.serviceOf(node);
     const resource = item.terraform ? forProvider(item.terraform, this.selectedId()) : null;
@@ -1096,7 +1189,8 @@ export class CloudInfraComponent {
       return;
     }
     event.preventDefault();
-    this.add(item, this.toCanvas(event.clientX, event.clientY));
+    const point = this.toCanvas(event.clientX, event.clientY);
+    this.add(item, this.smartRules() ? resolveCollision('', point, this.nodes(), this.zones()) : point);
   }
 
   // Mover un nodo arrastrándolo (ratón o dedo).
@@ -1105,9 +1199,10 @@ export class CloudInfraComponent {
       return;
     }
     const point = this.toCanvas(event.clientX, event.clientY);
-    this.dragging = { id: node.id, dx: node.x - point.x, dy: node.y - point.y, recorded: false };
+    this.dragging = { id: node.id, dx: node.x - point.x, dy: node.y - point.y, recorded: false, lastAllowed: { x: node.x, y: node.y }, origin: { x: node.x, y: node.y } };
     capturePointer(event.currentTarget, event.pointerId);
     this.activeId.set(node.id);
+    this.placementNotice.set(null);
   }
 
   onNodePointerMove(event: PointerEvent): void {
@@ -1117,16 +1212,115 @@ export class CloudInfraComponent {
     if (!this.dragging.recorded) {
       this.record();
       this.dragging.recorded = true;
+      // Arrastrando, la ficha del nodo estorba: se oculta (y no vuelve a salir hasta soltar).
+      this.hideTooltip();
     }
     const point = this.toCanvas(event.clientX, event.clientY);
-    this.moveTo(this.dragging.id, point.x + this.dragging.dx, point.y + this.dragging.dy);
+    const target = { x: point.x + this.dragging.dx, y: point.y + this.dragging.dy };
+    if (this.smartRules()) {
+      // Fricción: en una zona que no admite la pieza, el nodo solo sigue al puntero en parte y se dice por qué.
+      const node = this.nodes().find((candidate) => candidate.id === this.dragging!.id)!;
+      const role = roleAt(this.zones(), target.x, target.y, node.zone);
+      const verdict = placementVerdict(node.type, this.serviceOf(node), role);
+      if (verdict.allowed) {
+        this.dragging.lastAllowed = target;
+        this.placementRefusal.set(null);
+        this.moveTo(this.dragging.id, target.x, target.y);
+      } else {
+        this.placementRefusal.set({ zoneId: zoneAt(this.zones(), target.x, target.y)?.id ?? null, reason: verdict.reason!, suggestion: verdict.suggestion! });
+        const resisted = withFriction(this.dragging.lastAllowed, target);
+        this.moveTo(this.dragging.id, resisted.x, resisted.y);
+      }
+    } else {
+      this.moveTo(this.dragging.id, target.x, target.y);
+    }
     const moved = this.nodes().find((node) => node.id === this.dragging!.id);
     this.dropZoneId.set(moved ? (zoneAt(this.zones(), moved.x, moved.y)?.id ?? null) : null);
   }
 
   onNodePointerUp(): void {
+    const drag = this.dragging;
     this.dragging = null;
     this.dropZoneId.set(null);
+    if (!drag || !drag.recorded || !this.smartRules()) {
+      return;
+    }
+    // Soltado donde no podía quedarse: vuelve a donde estaba al empezar y se explica.
+    const refusal = this.placementRefusal();
+    if (refusal) {
+      this.moveTo(drag.id, drag.origin.x, drag.origin.y);
+      this.placementRefusal.set(null);
+      this.placementNotice.set({ reason: refusal.reason, suggestion: refusal.suggestion });
+    }
+    // Sin montarse: si pisa a otro nodo, al hueco libre más cercano de su mismo recuadro.
+    this.settleNode(drag.id);
+    this.refit();
+  }
+
+  /** Lleva un nodo al hueco libre más cercano si ha quedado encima de otro (reglas inteligentes). */
+  private settleNode(id: string): void {
+    const node = this.nodes().find((candidate) => candidate.id === id);
+    if (!node) {
+      return;
+    }
+    const free = resolveCollision(id, node, this.nodes(), this.zones());
+    if (free.x !== node.x || free.y !== node.y) {
+      this.moveTo(id, free.x, free.y);
+    }
+  }
+
+  // ── Zoom y desplazamiento del lienzo (reglas inteligentes) ──
+  onCanvasWheel(event: WheelEvent): void {
+    if (!this.smartRules() || this.fitted()) {
+      return;
+    }
+    if (event.ctrlKey || event.metaKey) {
+      // Ctrl/⌘ + rueda, o pellizco en el trackpad (llega como rueda con Ctrl): zoom alrededor del cursor.
+      event.preventDefault();
+      this.setCamera(zoomView(this.shown(), Math.exp(-event.deltaY * 0.0025), this.toCanvas(event.clientX, event.clientY), this.frame().w));
+    } else if (this.zoom() > 100) {
+      // Acercado, la rueda recorre el lienzo; a tamaño normal deja desplazar la página.
+      event.preventDefault();
+      const scale = this.shown().w / Math.max(1, this.canvas()?.nativeElement.clientWidth ?? CANVAS_WIDTH);
+      this.setCamera(panView(this.shown(), event.deltaX * scale, event.deltaY * scale));
+    }
+  }
+
+  zoomBy(factor: number): void {
+    const { x, y, w, h } = this.shown();
+    this.setCamera(zoomView(this.shown(), factor, { x: x + w / 2, y: y + h / 2 }, this.frame().w));
+  }
+
+  /** Vuelve al encuadre automático: el diagrama entero, ajustado al marco. */
+  resetView(): void {
+    this.autoFrame.set(true);
+  }
+
+  private setCamera(view: View): void {
+    this.camera.set(view);
+    this.autoFrame.set(false);
+  }
+
+  /**
+   * Recalcula el encuadre automático: el diagrama y, al editar, un margen alrededor para soltar
+   * piezas. No se mueve mientras se arrastra un nodo o un recuadro.
+   */
+  private refit(): void {
+    if (this.dragging || this.zoneDrag) {
+      return;
+    }
+    const bounds = contentBounds(this.nodes(), this.zones());
+    const pad = this.editing() ? FRAME_EDIT_PAD : 0;
+    const x = Math.max(0, bounds.x - pad), y = Math.max(0, bounds.y - pad);
+    const next = {
+      x, y,
+      w: Math.min(CANVAS_WIDTH, bounds.x + bounds.w + pad) - x,
+      h: Math.min(CANVAS_HEIGHT, bounds.y + bounds.h + pad) - y,
+    };
+    const current = this.frame();
+    if (next.x !== current.x || next.y !== current.y || next.w !== current.w || next.h !== current.h) {
+      this.frame.set(next);
+    }
   }
 
   // Con teclado: las flechas mueven el nodo enfocado y Supr o Retroceso lo quitan.
@@ -1612,6 +1806,9 @@ export class CloudInfraComponent {
       id: zone.id, mode, x: point.x, y: point.y, origin: { ...zone }, recorded: false,
       nodes: mode === 'move' ? this.nodes().filter(inside).map((node) => ({ ...node })) : this.resizeContent(zone).nodes,
       zones: mode === 'move' ? zonesInside(this.zones(), zone).map((inner) => ({ ...inner })) : this.resizeContent(zone).zones,
+      before: this.smartRules()
+        ? { zones: this.zones().map((z) => ({ ...z })), nodes: this.nodes().map((n) => ({ ...n })), parents: zoneParents(this.zones()) }
+        : undefined,
     };
     capturePointer(event.currentTarget, event.pointerId);
     this.activeZoneId.set(zone.id);
@@ -1628,6 +1825,24 @@ export class CloudInfraComponent {
     }
     const point = this.toCanvas(event.clientX, event.clientY);
     this.transformZone(drag, point.x - drag.x, point.y - drag.y);
+    if (drag.before) {
+      this.settleAround(drag.id, drag.before, new Set([drag.id, ...drag.zones.map((zone) => zone.id)]), new Set(drag.nodes.map((node) => node.id)));
+    }
+  }
+
+  /**
+   * Recuadros elásticos: lo que el gesto ha cambiado (el recuadro, lo que lleva dentro) se queda como
+   * está; el resto parte del estado de antes del gesto y el solver lo aparta o lo hace crecer. Así, al
+   * deshacer el gesto a medio camino, cada recuadro vuelve a su sitio.
+   */
+  private settleAround(anchorId: string, before: { zones: StudioZone[]; nodes: CloudNode[]; parents: Map<string, string | null> }, zoneIds: Set<string>, nodeIds: Set<string>): void {
+    const nowZones = new Map(this.zones().map((zone) => [zone.id, zone]));
+    const nowNodes = new Map(this.nodes().map((node) => [node.id, node]));
+    const zones = before.zones.map((zone) => (zoneIds.has(zone.id) ? nowZones.get(zone.id) ?? zone : zone));
+    const nodes = before.nodes.map((node) => (nodeIds.has(node.id) ? nowNodes.get(node.id) ?? node : node));
+    const settled = settleZones(zones, nodes, anchorId, before.parents, before);
+    this.zones.set(settled.zones);
+    this.nodes.set(settled.nodes);
   }
 
   onZonePointerUp(): void {
@@ -1635,6 +1850,7 @@ export class CloudInfraComponent {
       this.reassignZones();
     }
     this.zoneDrag = null;
+    this.refit();
   }
 
   // Con teclado: flechas para mover, Mayús+flechas para redimensionar y Supr para quitar.

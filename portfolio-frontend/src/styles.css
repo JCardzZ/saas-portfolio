@@ -590,6 +590,8 @@ svg .zone.zone-selected { stroke: var(--accent-text) !important; stroke-width: 1
 .zone-corner { fill: rgb(var(--c-ink-1) / 0.45); cursor: nwse-resize; touch-action: none; }
 .zone-corner:hover { fill: var(--text-1); }
 svg .zone.zone-target { stroke: var(--accent-text); stroke-width: 1.5; stroke-dasharray: none; fill: rgb(var(--c-accent-text) / 0.08); }
+/* Reglas inteligentes: la zona a la que se arrastra una pieza que no admite se pone en rojo. */
+svg .zone.zone-refused { stroke: var(--status-danger); stroke-width: 2; stroke-dasharray: none; fill: rgb(var(--c-status-danger) / 0.1); transition: fill 120ms ease; }
 .connect { cursor: crosshair; outline: none; touch-action: none; }
 .connect circle { fill: var(--accent-solid); transition: fill 0.2s; }
 .connect:hover circle, .connect:focus-visible circle, .connect[aria-pressed='true'] circle { fill: var(--accent-text); }
@@ -726,7 +728,7 @@ svg .pulse.pulse-boost { stroke: var(--status-ok); }
 
 /* ───────────── Panel de administración rediseñado (flag admin.redesign) ─────────────
    Tres columnas: barra de iconos, secciones con la sesión abajo y contenido. Oscuro y con capas
-   de superficie (de la más honda a la más alta); el acento es el índigo de la administración. */
+   de superficie (de la más honda a la más alta); el acento es el lima del sitio. */
 .admin-shell {
   --a-rail: #16171b; --a-side: #1d1f24; --a-main: #24262c; --a-raised: #2c2f36; --a-hover: #34373f;
   --a-line: rgb(255 255 255 / 0.07); --a-line-strong: rgb(255 255 255 / 0.13);
@@ -1091,3 +1093,14 @@ body:has(.qc-drawer) [data-testid="demo-notice-fallback"] { display: none; }
   .admin-drop-ready, .dash-drop, .qc-scrim, .qc-drawer { animation: none; }
   .dash-kpi:hover, .admin-create:hover { transform: none; }
 }
+/* Esqueleto de las secciones que se cargan al llegar a ellas: se ve que algo viene, no un hueco. */
+.section-skeleton { position: relative; display: flex; flex-direction: column; gap: 0.875rem; overflow: hidden; }
+.skeleton-bar, .skeleton-block { display: block; border-radius: 0.5rem; background: rgb(var(--c-ink-1) / 0.06); }
+.skeleton-bar { height: 0.875rem; }
+.skeleton-block { flex: 1; min-height: 12rem; border-radius: var(--radius-panel); }
+.section-skeleton::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgb(var(--c-ink-1) / 0.05), transparent); animation: skeleton-sweep 1.4s ease-in-out infinite; }
+.skeleton-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 0.625rem; font-size: 0.875rem; color: var(--text-2); }
+.skeleton-spinner { width: 1rem; height: 1rem; border-radius: 999px; border: 2px solid rgb(var(--c-accent-solid) / 0.25); border-top-color: var(--accent-solid); animation: skeleton-spin 0.8s linear infinite; }
+@keyframes skeleton-sweep { to { transform: translateX(100%); } }
+@keyframes skeleton-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .section-skeleton::after, .skeleton-spinner { animation: none; } }

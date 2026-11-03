@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import type { InstanceVerdict } from './graph-rules';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
 import { TechIconComponent } from '../../../shared/ui/tech-icon.component';
@@ -27,6 +28,13 @@ export class ServiceCatalogComponent {
   readonly fromServer = input(false);
   /** El visitante ha elegido un servicio para colocarlo en el lienzo. */
   readonly picked = output<CatalogItem>();
+  /**
+   * Cupo de cada servicio en el lienzo (reglas inteligentes): cuántos hay, el máximo y, si ya no
+   * caben más, por qué. Sin él, el catálogo no limita nada.
+   */
+  readonly limits = input<Map<string, InstanceVerdict> | null>(null);
+  /** Se pulsó un servicio que ya no cabe: el lienzo explica por qué. */
+  readonly blocked = output<CatalogItem>();
 
   readonly search = signal('');
   readonly providerName = computed(() => CLOUD_PROVIDERS.find((candidate) => candidate.id === this.provider())!.name);

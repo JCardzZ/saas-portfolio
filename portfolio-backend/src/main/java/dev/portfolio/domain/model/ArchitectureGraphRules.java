@@ -17,6 +17,8 @@ import java.util.Map;
  * @param incoming     de qué papeles puede recibir una conexión cada papel
  * @param kinds        extremos válidos de cada tipo de conexión
  * @param maxInstances máximo de nodos de un mismo tipo
+ * @param instanceGroups servicios distintos con el mismo papel (dos almacenes de secretos, dos
+ *                     herramientas de BI) que, entre todos, no pasan de un máximo
  * @param advice       por qué cada papel no recibe de cualquiera y qué hacer en su lugar
  * @param placement    piezas que no deberían estar en ciertas zonas de red; avisan, no impiden guardar
  * @param exposure     conexiones directas desde una zona que conviene pasar por una pieza intermedia; avisan
@@ -26,6 +28,7 @@ public record ArchitectureGraphRules(
         Map<String, List<String>> incoming,
         Map<String, LinkKind> kinds,
         Map<String, Integer> maxInstances,
+        List<InstanceGroup> instanceGroups,
         Map<String, Advice> advice,
         List<PlacementRule> placement,
         List<ExposureRule> exposure) {
@@ -37,6 +40,13 @@ public record ArchitectureGraphRules(
         public LinkKind {
             from = from == null ? List.of() : List.copyOf(from);
             to = to == null ? List.of() : List.copyOf(to);
+        }
+    }
+
+    public record InstanceGroup(String id, List<String> types, int max, String why, String suggestion) {
+
+        public InstanceGroup {
+            types = types == null ? List.of() : List.copyOf(types);
         }
     }
 
@@ -64,6 +74,7 @@ public record ArchitectureGraphRules(
         incoming = incoming == null ? Map.of() : Map.copyOf(incoming);
         kinds = kinds == null ? Map.of() : Map.copyOf(kinds);
         maxInstances = maxInstances == null ? Map.of() : Map.copyOf(maxInstances);
+        instanceGroups = instanceGroups == null ? List.of() : List.copyOf(instanceGroups);
         advice = advice == null ? Map.of() : Map.copyOf(advice);
         placement = placement == null ? List.of() : List.copyOf(placement);
         exposure = exposure == null ? List.of() : List.copyOf(exposure);
@@ -111,6 +122,15 @@ public record ArchitectureGraphRules(
                 violations.add("Demasiadas instancias de «%s»: %d de %d como máximo".formatted(type, count, max));
             }
         });
+        for (InstanceGroup group : instanceGroups) {
+            int count = group.types().stream().mapToInt(type -> countByType.getOrDefault(type, 0)).sum();
+            // Si ya sobra un tipo del grupo por su propio límite, no se repite el aviso.
+            boolean alreadyOver = group.types().stream()
+                    .anyMatch(type -> maxInstances.containsKey(type) && countByType.getOrDefault(type, 0) > maxInstances.get(type));
+            if (count > group.max() && !alreadyOver) {
+                violations.add("Demasiadas piezas con el papel «%s»: %d de %d como máximo".formatted(group.id(), count, group.max()));
+            }
+        }
         return violations;
     }
 
@@ -173,6 +193,20 @@ public record ArchitectureGraphRules(
                 }
             }
         });
+        // Un nodo que ya sobra por su tipo no se diagnostica otra vez por su grupo.
+        java.util.Set<String> flagged = new java.util.HashSet<>();
+        found.stream().filter(diagnostic -> "max-instances".equals(diagnostic.rule())).forEach(diagnostic -> flagged.add(diagnostic.nodeId()));
+        for (InstanceGroup group : instanceGroups) {
+            List<String> members = byId.entrySet().stream()
+                    .filter(entry -> group.types().contains(entry.getValue().get("type")))
+                    .map(Map.Entry::getKey).toList();
+            for (String extra : members.subList(Math.min(group.max(), members.size()), members.size())) {
+                if (flagged.add(extra)) {
+                    found.add(new GraphDiagnosticDomain(extra, "max-instances", GraphDiagnosticDomain.Severity.ERROR,
+                            "%s: %s".formatted(nameOf(byId.get(extra), provider), group.why()), group.suggestion(), null, null));
+                }
+            }
+        }
         byId.forEach((id, node) -> {
             String endpoint = endpointOf((String) node.get("type"));
             for (PlacementRule rule : placement) {

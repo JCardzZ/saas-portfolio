@@ -124,7 +124,7 @@ describe('FeaturesPageComponent with admin.redesign on', () => {
     expect(all('[data-testid="flag-group"] h2').map((title) => title.textContent!.trim()))
       .toEqual(['Sitio público', 'Estudio de arquitectura', 'Nubes', 'MCP', 'Administración']);
     expect(all('button[role="switch"]').length).toBe(FEATURE_FLAGS.length);
-    expect($('[data-testid="flag-summary"]')!.textContent!.replace(/\s+/g, ' ')).toContain('1 de 9 encendidas');
+    expect($('[data-testid="flag-summary"]')!.textContent!.replace(/\s+/g, ' ')).toContain(`1 de ${FEATURE_FLAGS.length} encendidas`);
     const studio = toggle('studio.smart-rules');
     expect(fixture.nativeElement.querySelector(`#${studio.getAttribute('aria-labelledby')!.replace('.', '\\.')}`).textContent)
       .toContain('Lienzo responsivo');

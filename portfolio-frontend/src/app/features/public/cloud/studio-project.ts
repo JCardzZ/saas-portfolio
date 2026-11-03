@@ -57,12 +57,12 @@ export function zoneLabel(zone: StudioZone, provider: CloudProviderId): string {
   }
 }
 
-function contains(zone: StudioZone, x: number, y: number): boolean {
+function contains(zone: Pick<StudioZone, 'x' | 'y' | 'w' | 'h'>, x: number, y: number): boolean {
   return x >= zone.x && x <= zone.x + zone.w && y >= zone.y && y <= zone.y + zone.h;
 }
 
 /** El recuadro más pequeño que contiene el punto. */
-export function zoneAt(zones: StudioZone[], x: number, y: number): StudioZone | null {
+export function zoneAt<Z extends Pick<StudioZone, 'x' | 'y' | 'w' | 'h'>>(zones: Z[], x: number, y: number): Z | null {
   return zones.filter((zone) => contains(zone, x, y)).sort((a, b) => a.w * a.h - b.w * b.h)[0] ?? null;
 }
 
