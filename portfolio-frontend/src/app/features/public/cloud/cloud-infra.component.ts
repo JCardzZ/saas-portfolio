@@ -25,7 +25,8 @@ import { ArchitectureCopilotComponent } from './architecture-copilot.component';
 import { AuditCardComponent } from './audit-card.component';
 import { autoLayout } from './auto-layout';
 import { contentBounds, directNodes, reflow, resizeToContent } from './zone-layout';
-import { hasConflict, settleZones, zoneParents } from './zone-solver';
+import { ZONE_PADDING, hasConflict, settleZones, zoneParents } from './zone-solver';
+import { breathe } from './zone-breathe';
 import { assignPorts, labelPoint, nodeRect, roundedPath, routeWire } from './wire-router';
 import { FULL_VIEW, Point, View, panView, placementVerdict, resolveCollision, withFriction, zoomView } from './studio-physics';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
@@ -481,6 +482,16 @@ export class CloudInfraComponent {
     });
     this.restore();
     this.studio.load();
+    // Las flags llegan después de cargar el diseño: al encenderse, el que ya está en pantalla recibe su aire.
+    effect(() => {
+      if (this.smartRules()) {
+        untracked(() => {
+          const layout = breathe(this.zones(), this.nodes());
+          this.zones.set(layout.zones);
+          this.nodes.set(layout.nodes);
+        });
+      }
+    });
     // Encuadre automático: sigue al diagrama cuando cambian sus piezas, sus recuadros o el modo edición.
     effect(() => {
       this.nodes();
@@ -1524,7 +1535,7 @@ export class CloudInfraComponent {
   undo(): void {
     const previous = this.history.undo(this.project());
     if (previous) {
-      this.apply(previous);
+      this.apply(previous, true);
       this.modified.set(true);
     }
     this.syncHistory();
@@ -1533,7 +1544,7 @@ export class CloudInfraComponent {
   redo(): void {
     const next = this.history.redo(this.project());
     if (next) {
-      this.apply(next);
+      this.apply(next, true);
       this.modified.set(true);
     }
     this.syncHistory();
@@ -1934,7 +1945,12 @@ export class CloudInfraComponent {
       // siempre de como estaban al empezar a tirar: al volver atrás, vuelven a su sitio.
       const container = drag.zones.length > 0;
       const held = drag.nodes.map((node) => ({ x: node.x - NODE_WIDTH / 2, y: node.y - NODE_HEIGHT / 2, w: NODE_WIDTH, h: NODE_HEIGHT }));
-      const { x, y, w, h } = resizeToContent(origin, drag.mode, dx, dy, container ? 0 : drag.nodes.length, container ? [...drag.zones, ...held] : drag.zones);
+      // Con su margen: lo de dentro no se queda pegado al borde del recuadro.
+      const content = [...drag.zones, ...held].map((box) => ({
+        x: box.x - ZONE_PADDING.side, y: box.y - ZONE_PADDING.top,
+        w: box.w + ZONE_PADDING.side * 2, h: box.h + ZONE_PADDING.top + ZONE_PADDING.bottom,
+      }));
+      const { x, y, w, h } = resizeToContent(origin, drag.mode, dx, dy, container ? 0 : drag.nodes.length, container ? content : drag.zones);
       this.zones.update((zones) => zones.map((zone) => (zone.id === drag.id ? { ...zone, x, y, w, h } : zone)));
       const placed = new Map((container ? drag.nodes : reflow(drag.nodes, { x, y, w, h })).map((node) => [node.id, node]));
       this.nodes.update((nodes) => nodes.map((node) => {
@@ -1992,14 +2008,17 @@ export class CloudInfraComponent {
     this.canRedo.set(this.history.canRedo);
   }
 
-  private apply(project: StudioProject): void {
+  private apply(project: StudioProject, exact = false): void {
     this.iconPop.release();
     this.stopChaos();
     this.clearFaults();
     this.selectedId.set(project.provider);
-    this.nodes.set(structuredClone(project.nodes));
+    // Con reglas inteligentes el diseño se carga con aire entre columnas; deshacer y rehacer (`exact`)
+    // vuelven exactamente a lo que había.
+    const layout = this.smartRules() && !exact ? breathe(project.zones, project.nodes) : project;
+    this.nodes.set(structuredClone(layout.nodes));
     this.links.set(structuredClone(project.links));
-    this.zones.set(structuredClone(project.zones));
+    this.zones.set(structuredClone(layout.zones));
     this.system.set(project.system ? structuredClone(project.system) : null);
     this.activeId.set(project.nodes.some((node) => node.id === 'api') ? 'api' : (project.nodes[0]?.id ?? ''));
     this.propertiesId.set(null);
