@@ -95,6 +95,9 @@ interface Wire extends CloudLink {
 const PULSE_SPEED = 80;
 /** Largo del destello de una partícula, en unidades del lienzo. */
 const PULSE_DASH = 10;
+/** Destello de una flecha del lienzo inteligente: su largo y su velocidad, moderada, en unidades por segundo. */
+const STREAK_LENGTH = 40;
+const STREAK_SPEED = 45;
 
 /** Piezas de apoyo: todo el sistema las usa, pero una petición no pasa por ellas. */
 const SUPPORT_TYPES = new Set(['secrets', 'vault', 'native-monitoring', 'prometheus', 'datadog', 'opentelemetry', 'registry', 'cicd']);
@@ -411,6 +414,18 @@ export class CloudInfraComponent {
   /** Índices de las partículas de cada conexión con el tráfico actual. */
   readonly particles = computed(() => Array.from({ length: particlesPerWire(this.trafficMode(), this.wires().length) }, (_, index) => index));
   readonly boostParticles = [10, 11];
+
+  /**
+   * El destello que recorre una flecha del lienzo inteligente: sólido, de largo fijo y a velocidad
+   * moderada en píxeles, sea cual sea el largo del cable. Hay un solo destello por cable: el hueco
+   * cubre el cable entero. `pathLength` es 100, así que todo se pasa a esa escala.
+   */
+  streakFlow(wire: Wire): { dash: string; seconds: number } {
+    const length = Math.max(wire.length, 40);
+    const dash = Math.min(45, (STREAK_LENGTH / length) * 100);
+    const seconds = Math.max(1.2, (length + STREAK_LENGTH) / STREAK_SPEED) / (wire.chaos === 'warn' ? 1.6 : 1);
+    return { dash: `${dash.toFixed(2)} 100`, seconds };
+  }
 
   /**
    * Cómo se mueven las partículas de un cable: el mismo destello corto y la misma velocidad en
