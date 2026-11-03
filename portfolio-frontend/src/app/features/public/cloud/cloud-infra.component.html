@@ -419,7 +419,11 @@
           [attr.marker-end]="smartRules() ? 'url(#wire-arrow-' + (wire.chaos === 'down' ? 'down' : wire.chaos === 'warn' ? 'warn' : isWireActive(wire) || wire.glow ? 'active' : wire.support ? 'support' : 'base') + ')' : null"
           [class.wire-active]="isWireActive(wire)" [class.wire-glow]="wire.glow" [class.wire-warn]="wire.chaos === 'warn'" [class.wire-down]="wire.chaos === 'down'" [style.--glow]="wire.glow" [style.--flow]="isWireActive(wire) ? activeColor() : null" [attr.data-kind]="wire.kind ?? null" [attr.d]="wire.path" />
         @if (smartRules()) {
-          <!-- Lienzo inteligente: flechas quietas, como un diagrama de arquitectura; el estado lo dice el color. -->
+          <!-- Lienzo inteligente: flechas como un diagrama de arquitectura. Sobre el camino de la petición, un
+               flujo suave en el sentido de la flecha; lo de apoyo y los cables caídos se quedan quietos. -->
+          @if (!wire.support && wire.chaos !== 'down') {
+            <path class="wire-flow" [class.wire-flow-active]="isWireActive(wire)" [class.wire-flow-warn]="wire.chaos === 'warn'" [attr.d]="wire.path" aria-hidden="true" />
+          }
         } @else if (wire.chaos === 'down') {
           <path class="pulse pulse-off" [attr.d]="wire.path" pathLength="100" />
         } @else {

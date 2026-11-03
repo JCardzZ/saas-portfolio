@@ -132,6 +132,12 @@
 .wire-arrow { stroke: none; }
 .wire-arrow-base { fill: var(--text-2); }
 .wire-arrow-support { fill: var(--text-3); opacity: 0.55; }
+/* Flujo moderado sobre la flecha: trazos cortos que avanzan despacio (unos 20 px/s) en su sentido. */
+.wire-flow { fill: none; stroke: var(--accent-text); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 4 16; opacity: 0.5; pointer-events: none; animation: wire-flow 1s linear infinite; }
+.wire-flow-active { opacity: 0.9; }
+.wire-flow-warn { stroke: var(--status-warn); animation-duration: 0.6s; }
+@keyframes wire-flow { from { stroke-dashoffset: 20; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .wire-flow { animation: none; opacity: 0; } }
 .wire-arrow-active { fill: var(--accent-text); }
 .wire-arrow-warn { fill: var(--status-warn); }
 .wire-arrow-down { fill: var(--status-danger); }
