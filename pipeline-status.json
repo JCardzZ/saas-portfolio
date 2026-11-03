@@ -2,22 +2,22 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-11-03T00:39:27.689Z",
+  "updatedAt": "2026-11-03T03:33:23.571Z",
   "workflows": {
     "ci": {
-      "runId": 41553618244,
-      "runNumber": 282,
-      "sha": "fa7c9643efa4c4e8832a1decaedb7a284abaa958",
+      "runId": 41572469838,
+      "runNumber": 285,
+      "sha": "cafabae2bb10d675948e81c8c83fc95b55d707c2",
       "event": "push",
-      "startedAt": "2026-11-03T00:32:44Z",
-      "finishedAt": "2026-11-03T00:37:15.982Z",
-      "durationSeconds": 272,
+      "startedAt": "2026-11-03T03:29:08Z",
+      "finishedAt": "2026-11-03T03:33:23.571Z",
+      "durationSeconds": 256,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 6,
+          "durationSeconds": 8,
           "runs": 1
         },
         {
@@ -29,7 +29,7 @@
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 149,
+          "durationSeconds": 140,
           "runs": 2
         },
         {
@@ -47,13 +47,13 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 26,
+          "durationSeconds": 20,
           "runs": 1
         },
         {
           "id": "backend-unit",
           "status": "success",
-          "durationSeconds": 71,
+          "durationSeconds": 82,
           "runs": 1,
           "metrics": {
             "tests": 376,
@@ -65,7 +65,7 @@
         {
           "id": "backend-integration",
           "status": "success",
-          "durationSeconds": 141,
+          "durationSeconds": 134,
           "runs": 1,
           "metrics": {
             "tests": 8,
@@ -76,7 +76,7 @@
         {
           "id": "backend-arch",
           "status": "success",
-          "durationSeconds": 40,
+          "durationSeconds": 59,
           "runs": 1,
           "metrics": {
             "tests": 15,
@@ -87,20 +87,20 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 56,
+          "durationSeconds": 61,
           "runs": 3,
           "metrics": {
-            "tests": 863
+            "tests": 886
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 42,
+          "durationSeconds": 44,
           "runs": 1,
           "metrics": {
-            "bundleKb": 338.4,
-            "bundleGzipKb": 78.7
+            "bundleKb": 338.6,
+            "bundleGzipKb": 78.8
           }
         },
         {
@@ -124,7 +124,7 @@
         {
           "id": "docker",
           "status": "success",
-          "durationSeconds": 148,
+          "durationSeconds": 90,
           "runs": 1,
           "metrics": {
             "vulnerabilities": 0
@@ -133,23 +133,23 @@
         {
           "id": "publish-image",
           "status": "success",
-          "durationSeconds": 69,
+          "durationSeconds": 70,
           "runs": 1,
           "metrics": {
-            "digest": "sha256:917722f597ce8dd922f443b77eb021762cb9b8cb45f45f639f15966d7d020939",
+            "digest": "sha256:52e67e7b9ec927d28b10b59c73720d290c7c761462045c7c6da2f928135423bf",
             "sbomPackages": 217
           }
         },
         {
           "id": "coverage-badge",
           "status": "success",
-          "durationSeconds": 7,
+          "durationSeconds": 5,
           "runs": 1
         },
         {
           "id": "gate",
           "status": "success",
-          "durationSeconds": 3,
+          "durationSeconds": 4,
           "runs": 1
         }
       ]
@@ -514,6 +514,113 @@
     ]
   },
   "merges": [
+    {
+      "number": 117,
+      "title": "feat(frontend): stable, spacious studio with uncrossed wires, synced application canvas and technology logos",
+      "branch": "fix/app-studio-sync",
+      "author": "JCardzZ",
+      "mergedAt": "2026-11-03T03:29:06Z",
+      "sha": "cafabae2bb10d675948e81c8c83fc95b55d707c2",
+      "additions": 1129,
+      "deletions": 112,
+      "changedFiles": 19,
+      "ci": {
+        "runId": 41572469838,
+        "runNumber": 285,
+        "conclusion": "success",
+        "durationSeconds": 256,
+        "jobs": [
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "skipped"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "success"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "success"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "success"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "success"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
     {
       "number": 114,
       "title": "feat(admin): sidebar panel, dark theme and flag switches behind admin.redesign",
@@ -1516,116 +1623,91 @@
           }
         ]
       }
-    },
-    {
-      "number": 105,
-      "title": "feat: version every deploy and show it in the footer behind site.release-version",
-      "branch": "feat/deploy-version",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-29T00:15:56Z",
-      "sha": "4be3a9a266c473964834d57be43d0cc9e62a8efe",
-      "additions": 817,
-      "deletions": 31,
-      "changedFiles": 23,
-      "ci": {
-        "runId": 40792915084,
-        "runNumber": 251,
-        "conclusion": "failure",
-        "durationSeconds": 203,
-        "jobs": [
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "success"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "failure"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "failure"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "failure"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }}/2)",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "cafabae2bb10d675948e81c8c83fc95b55d707c2",
+      "parents": [
+        "fa7c9643efa4c4e8832a1decaedb7a284abaa958",
+        "0adf396a35938e0789b27a94fd02b6bc0a6785e9"
+      ],
+      "subject": "Merge pull request #117 from JCardzZ/fix/app-studio-sync",
+      "author": "JCardzZ",
+      "date": "2026-11-03T03:29:05Z"
+    },
+    {
+      "sha": "0adf396a35938e0789b27a94fd02b6bc0a6785e9",
+      "parents": [
+        "5a4a94b46834dacda700fab152d30fd9a484838a"
+      ],
+      "subject": "fix(frontend): keep studio wires and labels clear of nodes and zone titles",
+      "author": "JCardzZ",
+      "date": "2026-11-03T03:06:08Z"
+    },
+    {
+      "sha": "5a4a94b46834dacda700fab152d30fd9a484838a",
+      "parents": [
+        "9b3f1b6dc5a231ca14481abec0d7660a26edd812"
+      ],
+      "subject": "feat(frontend): visual hierarchy for studio wires, selection on demand and zones fitted to their content",
+      "author": "JCardzZ",
+      "date": "2026-11-03T02:06:17Z"
+    },
+    {
+      "sha": "9b3f1b6dc5a231ca14481abec0d7660a26edd812",
+      "parents": [
+        "22a4595924c3dd14a0f41019ba27061a60c181fe"
+      ],
+      "subject": "fix(frontend): keep the application canvas legible and stop wire labels colliding",
+      "author": "JCardzZ",
+      "date": "2026-11-03T01:55:29Z"
+    },
+    {
+      "sha": "22a4595924c3dd14a0f41019ba27061a60c181fe",
+      "parents": [
+        "da0698407c6517cba89b46255d25fa080c1a73fa"
+      ],
+      "subject": "feat(frontend): route studio wires together so they avoid crossing each other",
+      "author": "JCardzZ",
+      "date": "2026-11-03T01:51:13Z"
+    },
+    {
+      "sha": "da0698407c6517cba89b46255d25fa080c1a73fa",
+      "parents": [
+        "3c21464bafa4856207d1b40c02c1d47273d3b76e"
+      ],
+      "subject": "feat(frontend): give studio designs room on load and keep a margin when shrinking zones",
+      "author": "JCardzZ",
+      "date": "2026-11-03T01:41:01Z"
+    },
+    {
+      "sha": "3c21464bafa4856207d1b40c02c1d47273d3b76e",
+      "parents": [
+        "023142bd2b752f39426546b68eb64e81f335eb2d"
+      ],
+      "subject": "feat(frontend): original technology logos with trademark notice in the application studio",
+      "author": "JCardzZ",
+      "date": "2026-11-03T01:31:36Z"
+    },
+    {
+      "sha": "023142bd2b752f39426546b68eb64e81f335eb2d",
+      "parents": [
+        "4ae62bce97ec555e64f2b0471566bbd5651cde85"
+      ],
+      "subject": "fix(frontend): keep the design stable while adjusting studio zones",
+      "author": "JCardzZ",
+      "date": "2026-11-03T01:31:36Z"
+    },
+    {
+      "sha": "4ae62bce97ec555e64f2b0471566bbd5651cde85",
+      "parents": [
+        "fa7c9643efa4c4e8832a1decaedb7a284abaa958"
+      ],
+      "subject": "fix(frontend): redraw the application canvas when the decisions change and give wire arrows room",
+      "author": "JCardzZ",
+      "date": "2026-11-03T00:50:49Z"
+    },
     {
       "sha": "fa7c9643efa4c4e8832a1decaedb7a284abaa958",
       "parents": [
@@ -2103,91 +2185,6 @@
       "subject": "Merge remote-tracking branch 'origin/main' into feat/article-page-publication",
       "author": "JCardzZ",
       "date": "2026-10-23T03:29:35Z"
-    },
-    {
-      "sha": "10dea57b7ffa50c22a059fc26d6d81f9b73ea760",
-      "parents": [
-        "1dc009962585e7cf1d9c976a5d6223212543e9b9",
-        "780ef9b1f6b4fdee7b6570399d17ccc2877d89ad"
-      ],
-      "subject": "Merge remote-tracking branch 'origin/main' into feat/cv-featured-project",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:28:48Z"
-    },
-    {
-      "sha": "382eaf09f9cd3e64a07cfec2ae1c18371bd56f1d",
-      "parents": [
-        "fc0f71eb12b9babb7fa9b5dbf605f1fddf0ebd8c"
-      ],
-      "subject": "feat(frontend): add a credentials line to the hero and close the robot gap when there is no robot",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:28:32Z"
-    },
-    {
-      "sha": "fc0f71eb12b9babb7fa9b5dbf605f1fddf0ebd8c",
-      "parents": [
-        "780ef9b1f6b4fdee7b6570399d17ccc2877d89ad"
-      ],
-      "subject": "fix(frontend): set the hero greeting in semibold",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:28:32Z"
-    },
-    {
-      "sha": "780ef9b1f6b4fdee7b6570399d17ccc2877d89ad",
-      "parents": [
-        "c88db076100ed80305f700cc0de6f69333d33a12",
-        "99d089ec48a5c3b2a5407dcf804e9713751c3951"
-      ],
-      "subject": "Merge pull request #98 from JCardzZ/fix/career-no-client-infrastructure",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:21:07Z"
-    },
-    {
-      "sha": "c88db076100ed80305f700cc0de6f69333d33a12",
-      "parents": [
-        "490d6bd74be821bfc7925cc6518b2c2285763633",
-        "9056c947b80d6301b89a8d86d888f0359a7ae06e"
-      ],
-      "subject": "Merge pull request #101 from JCardzZ/feat/back-to-top",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:19:00Z"
-    },
-    {
-      "sha": "490d6bd74be821bfc7925cc6518b2c2285763633",
-      "parents": [
-        "673bb7f883f4a4446876d0880c90d17bf39129ec",
-        "604b4963ca48e249123ca152d8961946fe2ef1c4"
-      ],
-      "subject": "Merge pull request #102 from JCardzZ/fix/hero-greeting-size",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:18:38Z"
-    },
-    {
-      "sha": "1dc009962585e7cf1d9c976a5d6223212543e9b9",
-      "parents": [
-        "26f1bc419d0cf506b099d85f137373f178a94f0f"
-      ],
-      "subject": "feat(career): describe each role in full without exposing client infrastructure",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:14:19Z"
-    },
-    {
-      "sha": "604b4963ca48e249123ca152d8961946fe2ef1c4",
-      "parents": [
-        "673bb7f883f4a4446876d0880c90d17bf39129ec"
-      ],
-      "subject": "fix(frontend): enlarge the hero greeting and break the role only between words",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:12:47Z"
-    },
-    {
-      "sha": "9056c947b80d6301b89a8d86d888f0359a7ae06e",
-      "parents": [
-        "673bb7f883f4a4446876d0880c90d17bf39129ec"
-      ],
-      "subject": "feat(frontend): add a minimal back-to-top button with a reading-progress ring",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:08:42Z"
     }
   ]
 }
