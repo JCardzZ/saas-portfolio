@@ -2,14 +2,22 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { FlagService } from '../../../core/flags/flag.service';
 import { SECTIONS } from '../layout/admin-layout.component';
+import { AdminDashboardComponent } from './admin-dashboard.component';
 
-/** Inicio del panel: quién ha entrado, con qué rol, y las secciones que puede abrir. */
+/**
+ * Inicio del panel: quién ha entrado, con qué rol, y las secciones que puede abrir. Con el panel
+ * rediseñado (`admin.redesign`) es un dashboard con datos reales de la API.
+ */
 @Component({
     selector: 'app-admin-home',
-    imports: [RouterLink],
+    imports: [RouterLink, AdminDashboardComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
+    @if (redesign()) {
+      <app-admin-dashboard />
+    } @else {
     <section class="space-y-6">
       <header>
         <h1 class="text-2xl font-semibold">Panel de administración</h1>
@@ -39,12 +47,15 @@ import { SECTIONS } from '../layout/admin-layout.component';
         </div>
       }
     </section>
+    }
   `
 })
 export class AdminHomeComponent {
   private readonly auth = inject(AuthService);
+  private readonly flags = inject(FlagService);
 
   readonly who = this.auth.who;
   readonly sections = computed(() => SECTIONS.filter((section) => section.permissions.some((permission) => this.auth.can(permission))));
   readonly permissions = computed(() => this.auth.profile()?.permissions ?? []);
+  readonly redesign = computed(() => this.flags.isEnabled('admin.redesign'));
 }

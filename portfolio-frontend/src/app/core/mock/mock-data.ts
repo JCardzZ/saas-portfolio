@@ -286,4 +286,5 @@ export const MOCK_FLAG_DESCRIPTIONS: Record<FeatureFlagKey, string> = {
   'site.adr': 'Página de decisiones de arquitectura (ADR) y su enlace en la portada',
   'studio.app-e2e': 'Vista de Aplicación de punta a punta: recorrido de una petición y decisiones como filas',
   'studio.app-canvas': 'Estudio de Aplicación: lienzo libre con piezas por capas y conexiones con protocolo',
+  'admin.redesign': 'Panel de administración rediseñado: barra lateral, tema oscuro e interruptores',
 };
