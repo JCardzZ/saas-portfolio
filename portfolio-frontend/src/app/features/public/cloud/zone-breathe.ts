@@ -17,6 +17,9 @@ export const ROW_AIR = 44;
 /** Sitio que deja arriba un recuadro contenedor para su rótulo y el de las piezas sueltas. */
 const LABEL_ROOM = 66;
 const EDGE = 20;
+/** Lo que sobresale la etiqueta del coste por debajo de una pieza. */
+const COST_ROOM = 10;
+const MIN_HEIGHT = 120;
 
 type Box = { x: number; y: number; w: number; h: number };
 
@@ -28,7 +31,40 @@ const smallest = <T extends Box>(boxes: T[]) => [...boxes].sort((a, b) => a.w * 
 
 export function breathe(zones: StudioZone[], nodes: CloudNode[]): { zones: StudioZone[]; nodes: CloudNode[] } {
   const spread = spreadColumns(zones, nodes);
-  return { zones: spread.zones, nodes: spreadRows(spread.zones, spread.nodes) };
+  const placed = spreadRows(spread.zones, spread.nodes);
+  return { zones: fitHeights(spread.zones, placed), nodes: placed };
+}
+
+/**
+ * Quita el vacío de abajo: las subredes de una misma fila toman la altura de la más llena (así sus
+ * bordes siguen alineados) y cada contenedor se ciñe a lo que tiene. Un recuadro vacío no cambia.
+ */
+function fitHeights(zones: StudioZone[], nodes: CloudNode[]): StudioZone[] {
+  const isContainer = (zone: StudioZone) => zones.some((other) => other.id !== zone.id && contains(zone, other));
+  const parentOf = (zone: StudioZone) => smallest(zones.filter((other) => other.id !== zone.id && contains(other, zone)))?.id ?? null;
+  const ownNodes = (zone: StudioZone) => nodes.filter((node) => smallest(zones.filter((candidate) => holds(candidate, node)))?.id === zone.id);
+  const lowest = (zone: StudioZone) => Math.max(...ownNodes(zone).map((node) => node.y + NODE_HEIGHT / 2 + COST_ROOM + ZONE_PADDING.bottom), zone.y + MIN_HEIGHT);
+
+  const fitted = new Map(zones.map((zone) => [zone.id, { ...zone }]));
+  const rows = new Map<string, StudioZone[]>();
+  for (const zone of zones.filter((candidate) => !isContainer(candidate) && ownNodes(candidate).length)) {
+    const key = `${parentOf(zone) ?? ''}|${zone.y}`;
+    rows.set(key, [...(rows.get(key) ?? []), zone]);
+  }
+  for (const row of rows.values()) {
+    const end = Math.max(...row.map(lowest));
+    for (const zone of row) {
+      // Solo encoge: si ya era más baja, se queda como estaba.
+      fitted.get(zone.id)!.h = Math.min(zone.h, end - zone.y);
+    }
+  }
+  // De los contenedores pequeños a los grandes: cada uno se ciñe a sus hijos ya ajustados.
+  for (const zone of zones.filter(isContainer).sort((a, b) => a.w * a.h - b.w * b.h)) {
+    const children = zones.filter((other) => other.id !== zone.id && contains(zone, other)).map((other) => fitted.get(other.id)!);
+    const end = Math.max(...children.map((child) => bottom(child) + ZONE_PADDING.bottom), ...ownNodes(zone).map((node) => node.y + NODE_HEIGHT / 2 + COST_ROOM + ZONE_PADDING.bottom));
+    fitted.get(zone.id)!.h = Math.min(zone.h, Math.max(end - zone.y, MIN_HEIGHT));
+  }
+  return zones.map((zone) => fitted.get(zone.id)!);
 }
 
 /** Costuras verticales entre columnas de recuadros hermanos. */

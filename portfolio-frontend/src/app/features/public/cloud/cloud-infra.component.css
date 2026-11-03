@@ -18,8 +18,10 @@
 @keyframes wire-in { from { opacity: 0; } }
 /* Con un halo del color del fondo: un cable que pase por detrás no tacha el texto. */
 .wire-label { fill: var(--text-3); font-size: 12px; paint-order: stroke; stroke: var(--bg-canvas); stroke-width: 4px; stroke-linejoin: round; }
-/* Lienzo inteligente: la línea base se ve; si no, el pulso animado parece un cable roto. */
-.canvas-smart .wire { stroke: var(--text-3); }
+/* Lienzo inteligente: el camino de la petición se lee primero; lo de apoyo queda en segundo plano y quieto. */
+.canvas-smart .wire-main { stroke: var(--text-2); stroke-width: 1.6; }
+.canvas-smart .wire-support { stroke: var(--text-3); stroke-width: 1; opacity: 0.55; }
+.pulse-quiet { display: none; }
 
 /* Conexiones de datos: mismo trazo fino, distinto patrón según lo que llevan. */
 .wire[data-kind='CDC_STREAM'] { stroke-dasharray: 1.5 4; stroke-linecap: round; }

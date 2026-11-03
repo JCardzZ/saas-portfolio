@@ -85,7 +85,12 @@ interface Wire extends CloudLink {
   chaos: ChaosLevel | null;
   /** Recibe el tráfico de una instancia caída: lleva más partículas. */
   boost: boolean;
+  /** Fuera del camino de la petición (secretos, monitorización…): va en segundo plano. */
+  support: boolean;
 }
+
+/** Piezas de apoyo: todo el sistema las usa, pero una petición no pasa por ellas. */
+const SUPPORT_TYPES = new Set(['secrets', 'vault', 'native-monitoring', 'prometheus', 'datadog', 'opentelemetry', 'registry', 'cicd']);
 
 /**
  * Estudio de arquitectura multi-cloud: el diagrama de referencia de la plataforma, que el
@@ -225,6 +230,10 @@ export class CloudInfraComponent {
   readonly modified = signal(false);
 
   readonly activeId = signal('api');
+  /** La pieza activa la ha puesto la carga del diseño, no el visitante. */
+  private readonly autoActive = signal(true);
+  /** Con reglas inteligentes solo se resalta lo que el visitante elige: el diseño recién cargado se ve entero. */
+  readonly emphasis = computed(() => !this.smartRules() || !this.autoActive());
   readonly active = computed(() => this.nodes().find((node) => node.id === this.activeId()) ?? null);
 
   /** Se está arrastrando algo: los cables se trazan en su versión rápida hasta soltar. */
@@ -235,6 +244,19 @@ export class CloudInfraComponent {
     // Reglas inteligentes: cables en ángulo recto que esquivan nodos, con puntos de salida repartidos.
     const smart = this.smartRules();
     const routes = smart ? routeAll(this.links(), byId, undefined, this.moving()) : null;
+    // Camino de la petición: lo que se alcanza desde los visitantes sin pasar por una pieza de apoyo
+    // ni por un flujo asíncrono. Lo demás va en segundo plano para que el ojo sepa por dónde empezar.
+    const onPath = new Set(this.nodes().filter((node) => node.type === 'users').map((node) => node.id));
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const link of this.links()) {
+        const target = byId.get(link.to);
+        if (onPath.has(link.from) && target && !onPath.has(link.to) && !link.kind && !SUPPORT_TYPES.has(target.type)) {
+          onPath.add(link.to);
+          grew = true;
+        }
+      }
+    }
     // Lo que un rótulo no debe pisar: las piezas, los rótulos de las zonas y los otros rótulos.
     const taken = smart ? [...this.nodes().map((node) => nodeRect(node, 0)), ...this.zones().map((zone) => ({ x: zone.x, y: zone.y, w: zone.w, h: 30 }))] : [];
     const routed = (from: CloudNode, to: CloudNode, key: string, labelled: boolean) => {
@@ -254,13 +276,14 @@ export class CloudInfraComponent {
       if (!from || !to) {
         return [];
       }
-      const custom = to.custom ? to : from.custom ? from : null;
+      // Con reglas inteligentes no brilla: las plantillas marcan casi todo como añadido y taparía la jerarquía.
+      const custom = smart ? null : to.custom ? to : from.custom ? from : null;
       const faults = this.faults();
       // Un fallo inyectado a mano manda sobre el escenario de caos: por un nodo caído no pasa tráfico.
       const chaos: ChaosLevel | null = faults[from.id] === 'down' || faults[to.id] === 'down' ? 'down'
         : faults[to.id] === 'cpu' ? 'warn'
         : (this.chaosPhase()?.wires[`${link.from}>${link.to}`] ?? null);
-      return [{ ...link, ...(smart ? routed(from, to, `${link.from}>${link.to}`, !!link.label) : connect(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
+      return [{ ...link, support: smart && !(onPath.has(from.id) && onPath.has(to.id) && !link.kind), ...(smart ? routed(from, to, `${link.from}>${link.to}`, !!link.label) : connect(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
     });
   });
 
@@ -604,7 +627,7 @@ export class CloudInfraComponent {
   }
 
   isWireActive(wire: CloudLink): boolean {
-    return wire.from === this.activeId() || wire.to === this.activeId();
+    return this.emphasis() && (wire.from === this.activeId() || wire.to === this.activeId());
   }
 
   /** Cambia de nube: todos los nodos, también los añadidos, pasan a su servicio equivalente. */
@@ -846,6 +869,7 @@ export class CloudInfraComponent {
       return;
     }
     this.activeId.set(node.id);
+    this.autoActive.set(false);
     if (event.type === 'click') {
       this.hideTooltip();
     } else if (event.currentTarget instanceof Element) {
@@ -1247,6 +1271,7 @@ export class CloudInfraComponent {
     this.dragging = { id: node.id, dx: node.x - point.x, dy: node.y - point.y, recorded: false, lastAllowed: { x: node.x, y: node.y }, origin: { x: node.x, y: node.y } };
     capturePointer(event.currentTarget, event.pointerId);
     this.activeId.set(node.id);
+    this.autoActive.set(false);
     this.placementNotice.set(null);
   }
 
@@ -2031,6 +2056,7 @@ export class CloudInfraComponent {
     this.zones.set(structuredClone(layout.zones));
     this.system.set(project.system ? structuredClone(project.system) : null);
     this.activeId.set(project.nodes.some((node) => node.id === 'api') ? 'api' : (project.nodes[0]?.id ?? ''));
+    this.autoActive.set(true);
     this.propertiesId.set(null);
     this.activeZoneId.set(null);
     this.cancelConnection();

@@ -36,6 +36,24 @@ describe('zone breathe', () => {
     expect(Math.min(...gaps)).toBeGreaterThanOrEqual(ROW_AIR - 1);
   });
 
+  it('fits the boxes to what they hold, keeping the subnets of a row aligned', () => {
+    const before = project.zones.find((candidate) => candidate.id === 'subnet-public')!;
+    expect(zone('subnet-public').h).toBeLessThan(before.h);
+    expect(zone('subnet-public').h).toBe(zone('subnet-app').h);
+    expect(zone('subnet-app').h).toBe(zone('subnet-data').h);
+    // Las piezas siguen dentro, y los contenedores siguen conteniendo.
+    for (const node of nodes.filter((candidate) => candidate.zone === 'data')) {
+      expect(node.y + NODE_HEIGHT / 2).toBeLessThanOrEqual(zone('subnet-data').y + zone('subnet-data').h);
+    }
+    expect(zone('network').y + zone('network').h).toBeGreaterThanOrEqual(zone('subnet-app').y + zone('subnet-app').h);
+    expect(zone('cloud').y + zone('cloud').h).toBeGreaterThanOrEqual(zone('network').y + zone('network').h);
+  });
+
+  it('leaves empty boxes alone', () => {
+    const result = breathe(project.zones, []);
+    expect(result.zones.find((candidate) => candidate.id === 'subnet-public')!.h).toBe(project.zones.find((candidate) => candidate.id === 'subnet-public')!.h);
+  });
+
   it('changes nothing the second time', () => {
     const again = breathe(zones, nodes);
     expect(again.zones).toEqual(zones);
