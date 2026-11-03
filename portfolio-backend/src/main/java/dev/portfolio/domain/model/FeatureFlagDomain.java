@@ -17,7 +17,8 @@ public enum FeatureFlagDomain {
     SITE_RELEASE_VERSION("site.release-version", "Versión desplegada y novedades en el pie de página"),
     SITE_REFRESH("site.refresh", "Rediseño de la portada: hero con pruebas en vivo, fondo limpio y menos cajas"),
     SITE_ADR("site.adr", "Página de decisiones de arquitectura (ADR) y su enlace en la portada"),
-    STUDIO_APP_E2E("studio.app-e2e", "Vista de Aplicación de punta a punta: recorrido de una petición y decisiones como filas");
+    STUDIO_APP_E2E("studio.app-e2e", "Vista de Aplicación de punta a punta: recorrido de una petición y decisiones como filas"),
+    STUDIO_APP_CANVAS("studio.app-canvas", "Estudio de Aplicación: lienzo libre con piezas por capas y conexiones con protocolo");
 
     private final String key;
     private final String description;

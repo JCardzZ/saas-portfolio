@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output, signal } from '@angular/core';
+import { AppCanvasComponent } from '../app/app-canvas.component';
 import { FlagService } from '../../../../core/flags/flag.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { finalize } from 'rxjs';
@@ -32,7 +33,7 @@ interface Piece {
  */
 @Component({
     selector: 'app-system-design',
-    imports: [TranslatePipe, AdvisorOrbComponent, SystemAdvisorComponent, SystemDiagramComponent, RequestJourneyComponent],
+    imports: [TranslatePipe, AdvisorOrbComponent, SystemAdvisorComponent, SystemDiagramComponent, RequestJourneyComponent, AppCanvasComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block' },
     template: `
@@ -66,8 +67,12 @@ interface Piece {
         </button>
       </header>
 
+      @if (canvas()) {
+        <!-- Estudio de Aplicación: un lienzo para dibujar cualquier arquitectura de software. -->
+        <app-app-canvas [design]="design()" [infra]="infraTargets()" />
+      }
       <!-- El sistema, dibujado: cambia con cada elección. -->
-      <div class="ui-card-inset">
+      <div class="ui-card-inset" [hidden]="canvas()">
         <app-system-diagram [design]="design()" [nodes]="nodes()" [provider]="provider()" [active]="journeyFocus() ?? focused()" (picked)="goTo($event)" />
         <p class="mt-2 text-xs leading-snug text-ink-3" data-testid="trademark-notice">
           {{ trademarkNotice }}
@@ -377,6 +382,10 @@ export class SystemDesignComponent {
   /** Recorrido de punta a punta y decisiones como filas (flag `studio.app-e2e`). */
   readonly e2e = computed(() => this.flags.isEnabled('studio.app-e2e'));
   private readonly flags = inject(FlagService);
+  /** Lienzo libre de Aplicación (flag `studio.app-canvas`). */
+  readonly canvas = computed(() => this.flags.isEnabled('studio.app-canvas'));
+  /** Piezas de Infraestructura con su nombre en la nube activa: dónde puede correr cada pieza del lienzo. */
+  readonly infraTargets = computed(() => this.nodes().map((node) => ({ id: node.id, type: node.type, name: this.nameOf(node) })));
   /** Pieza que resalta el recorrido de una petición; manda sobre la categoría enfocada. */
   readonly journeyFocus = signal<SystemCategoryId | null>(null);
   readonly inputs = NFR_INPUTS;
