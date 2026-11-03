@@ -59,8 +59,7 @@ export function settle(graph: AppGraph, anchor?: string, owners?: Map<string, st
     for (const node of order) {
       const others = nodes.filter((other) => other.id !== node.id);
       if (node.id !== anchor && others.some((other) => overlaps(node, other, 6))) {
-        const free = clampPoint(resolveCollision(node.id, node, nodes, boxes));
-        Object.assign(node, free);
+        Object.assign(node, freeSpot(node, nodes, boxes));
       }
     }
 
@@ -143,6 +142,19 @@ export function settle(graph: AppGraph, anchor?: string, owners?: Map<string, st
   }
   nodes = nodes.map((node) => ({ ...node, ...clampPoint(node) }));
   return { ...graph, nodes, boxes };
+}
+
+/**
+ * Hueco libre más cercano para una pieza: dentro de su caja si cabe; si la caja está llena, el más
+ * cercano fuera de ella (la caja crecerá después para volver a contenerla).
+ */
+export function freeSpot(node: AppNode, nodes: AppNode[], boxes: AppBox[]): { x: number; y: number } {
+  const others = nodes.filter((other) => other.id !== node.id);
+  const inBox = clampPoint(resolveCollision(node.id, node, nodes, boxes));
+  if (!others.some((other) => overlaps(inBox, other, 0))) {
+    return inBox;
+  }
+  return clampPoint(resolveCollision(node.id, node, nodes, []));
 }
 
 /** Mueve una caja con sus piezas y sus cajas hijas. */

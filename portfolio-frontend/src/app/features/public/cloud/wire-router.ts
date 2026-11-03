@@ -19,7 +19,8 @@ type Rect = { x: number; y: number; w: number; h: number };
 const STUB = 18;
 const RADIUS = 8;
 const PORT_SPAN = 0.6;
-const ARROW_GAP = 3;
+/** Distancia entre la punta de flecha y el borde del nodo: lo justo para que la punta se lea. */
+const ARROW_GAP = 8;
 
 /** Por qué lados sale y entra la conexión: el que mira al otro nodo. */
 export function sidesFor(from: Placed, to: Placed): [Side, Side] {
@@ -104,13 +105,15 @@ function simplify(points: Pt[]): Pt[] {
 /**
  * Ruta ortogonal de `start` a `end` (en el borde de sus nodos) que evita `obstacles` (los demás nodos):
  * prueba la ruta en «Z» con el codo en varias posiciones y los rodeos por encima, por debajo o por los
- * lados, y se queda con la más corta que no atraviesa ninguno.
+ * lados, y se queda con la más corta que no atraviesa ninguno. `gap` separa el cable del borde al
+ * salir y al llegar (la punta de flecha necesita aire para leerse).
  */
-export function routeWire(start: Pt, end: Pt, sides: [Side, Side], obstacles: Rect[]): Pt[] {
+export function routeWire(start: Pt, end: Pt, sides: [Side, Side], obstacles: Rect[], gap: { from: number; to: number } = { from: 3, to: ARROW_GAP }): Pt[] {
   const [n0, n1] = [normal[sides[0]], normal[sides[1]]];
+  start = [start[0] + n0[0] * gap.from, start[1] + n0[1] * gap.from];
   const a: Pt = [start[0] + n0[0] * STUB, start[1] + n0[1] * STUB];
   const b: Pt = [end[0] + n1[0] * STUB, end[1] + n1[1] * STUB];
-  const tip: Pt = [end[0] + n1[0] * ARROW_GAP, end[1] + n1[1] * ARROW_GAP];
+  const tip: Pt = [end[0] + n1[0] * gap.to, end[1] + n1[1] * gap.to];
   const horizontal = sides[0] === 'left' || sides[0] === 'right';
   const candidates: Pt[][] = [];
   const offsets = [0, -24, 24, -48, 48, -80, 80, -120, 120];

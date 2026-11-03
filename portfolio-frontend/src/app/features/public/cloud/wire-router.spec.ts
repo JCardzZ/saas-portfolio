@@ -30,7 +30,8 @@ describe('wire router', () => {
     const from = node('a', 100, 200), to = node('b', 700, 200), blocker = node('x', 400, 200);
     const points = routeWire([from.x + NODE_WIDTH / 2, from.y], [to.x - NODE_WIDTH / 2, to.y], ['right', 'left'], [nodeRect(blocker)]);
     expect(crosses(points, nodeRect(blocker, 0))).toBeFalse();
-    expect(points[0]).toEqual([from.x + NODE_WIDTH / 2, from.y]);
+    // El cable nace con un poco de aire respecto al borde del nodo.
+    expect(points[0]).toEqual([from.x + NODE_WIDTH / 2 + 3, from.y]);
   });
 
   it('draws rounded corners and places the label on the longest stretch', () => {

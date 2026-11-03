@@ -50,7 +50,7 @@ describe('AppCanvasComponent', () => {
 
     expect($('[data-node="cache-1"]')).not.toBeNull();
     expect(($('[data-testid="appc-inspector"] input') as HTMLInputElement).placeholder).toBe('Caché');
-    expect(JSON.parse(localStorage.getItem('studio-app-canvas')!).nodes.length).toBe(5);
+    expect(JSON.parse(localStorage.getItem('studio-app-canvas')!).graph.nodes.length).toBe(5);
   });
 
   it('filters the catalog as you type', () => {
@@ -146,6 +146,39 @@ describe('AppCanvasComponent', () => {
     all('[role="tab"]').find((tab) => tab.textContent!.includes('Aprende'))!.click();
     fixture.detectChanges();
     expect($('.appc-lesson')!.textContent).toContain('transacciones ACID');
+  });
+
+  it('follows the decisions (another template) while the canvas is untouched', () => {
+    const host = fixture.componentInstance;
+    host.design.set({ ...host.design(), choices: { ...host.design().choices, database: 'document', api: 'graphql' } });
+    fixture.detectChanges();
+
+    const database = $('[data-node="database"]')!;
+    expect(database.getAttribute('aria-label')).toContain('MongoDB');
+    expect($('[data-link="entry>backend"] text')!.textContent).toBe('GraphQL');
+    expect($('[data-testid="appc-stale"]')).toBeNull();
+  });
+
+  it('keeps an edited canvas when the decisions change, and lets you redraw or keep it', () => {
+    (fixture.nativeElement.querySelector('[data-piece="cache"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const host = fixture.componentInstance;
+    host.design.set({ ...host.design(), choices: { ...host.design().choices, database: 'document' } });
+    fixture.detectChanges();
+
+    expect($('[data-node="cache-1"]')).not.toBeNull();
+    expect($('[data-testid="appc-stale"]')!.textContent).toContain('Las decisiones han cambiado');
+    (all('[data-testid="appc-stale"] button').find((button) => button.textContent!.includes('Mantener')) as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect($('[data-testid="appc-stale"]')).toBeNull();
+    expect($('[data-node="cache-1"]')).not.toBeNull();
+
+    host.design.set({ ...host.design(), choices: { ...host.design().choices, database: 'postgresql' } });
+    fixture.detectChanges();
+    (all('[data-testid="appc-stale"] button').find((button) => button.textContent!.includes('Redibujar')) as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect($('[data-node="cache-1"]')).toBeNull();
+    expect($('[data-testid="appc-stale"]')).toBeNull();
   });
 
   it('adds a box from the menu', () => {
