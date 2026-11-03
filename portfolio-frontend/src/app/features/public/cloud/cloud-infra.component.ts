@@ -27,7 +27,7 @@ import { autoLayout } from './auto-layout';
 import { contentBounds, directNodes, reflow, resizeToContent } from './zone-layout';
 import { ZONE_PADDING, hasConflict, settleZones, zoneParents } from './zone-solver';
 import { breathe } from './zone-breathe';
-import { assignPorts, labelPoint, nodeRect, roundedPath, routeWire } from './wire-router';
+import { labelPoint, roundedPath, routeAll } from './wire-router';
 import { FULL_VIEW, Point, View, panView, placementVerdict, resolveCollision, withFriction, zoomView } from './studio-physics';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
 import { CatalogItem } from './cloud-catalog.data';
@@ -227,20 +227,17 @@ export class CloudInfraComponent {
   readonly activeId = signal('api');
   readonly active = computed(() => this.nodes().find((node) => node.id === this.activeId()) ?? null);
 
+  /** Se está arrastrando algo: los cables se trazan en su versión rápida hasta soltar. */
+  private readonly moving = signal(false);
   /** Conexiones con su trazado bezier, recalculado cada vez que un nodo se mueve. */
   readonly wires = computed<Wire[]>(() => {
     const byId = new Map(this.nodes().map((node) => [node.id, node]));
     // Reglas inteligentes: cables en ángulo recto que esquivan nodos, con puntos de salida repartidos.
     const smart = this.smartRules();
-    const ports = smart ? assignPorts(this.links(), byId) : null;
+    const routes = smart ? routeAll(this.links(), byId, undefined, this.moving()) : null;
     const routed = (from: CloudNode, to: CloudNode, key: string) => {
-      const port = ports?.get(key);
-      if (!port) {
-        return connect(from, to);
-      }
-      const obstacles = this.nodes().filter((node) => node.id !== from.id && node.id !== to.id).map((node) => nodeRect(node));
-      const points = routeWire(port.from, port.to, port.sides, obstacles);
-      return { path: roundedPath(points), labelAt: labelPoint(points) };
+      const points = routes?.get(key);
+      return points ? { path: roundedPath(points), labelAt: labelPoint(points) } : connect(from, to);
     };
     return this.links().flatMap((link) => {
       const from = byId.get(link.from);
@@ -1251,6 +1248,7 @@ export class CloudInfraComponent {
     if (!this.dragging.recorded) {
       this.record();
       this.dragging.recorded = true;
+      this.moving.set(true);
       // Arrastrando, la ficha del nodo estorba: se oculta (y no vuelve a salir hasta soltar).
       this.hideTooltip();
     }
@@ -1280,6 +1278,7 @@ export class CloudInfraComponent {
   onNodePointerUp(): void {
     const drag = this.dragging;
     this.dragging = null;
+    this.moving.set(false);
     this.dropZoneId.set(null);
     if (!drag || !drag.recorded || !this.smartRules()) {
       return;
@@ -1862,6 +1861,7 @@ export class CloudInfraComponent {
     if (!drag.recorded) {
       this.record();
       drag.recorded = true;
+      this.moving.set(true);
     }
     const point = this.toCanvas(event.clientX, event.clientY);
     const [dx, dy] = [point.x - drag.x, point.y - drag.y];
@@ -1908,6 +1908,7 @@ export class CloudInfraComponent {
       this.reassignZones();
     }
     this.zoneDrag = null;
+    this.moving.set(false);
     this.paintOrder.set(null);
     this.refit();
   }

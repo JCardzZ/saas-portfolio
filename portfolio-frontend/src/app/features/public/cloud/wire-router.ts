@@ -14,6 +14,8 @@ export interface Linked { from: string; to: string }
 
 export type Side = 'left' | 'right' | 'top' | 'bottom';
 type Pt = [number, number];
+/** Separación del cable respecto al borde del nodo, al salir y al llegar. */
+export interface WireGap { from: number; to: number }
 type Rect = { x: number; y: number; w: number; h: number };
 
 const STUB = 18;
@@ -21,6 +23,11 @@ const RADIUS = 8;
 const PORT_SPAN = 0.6;
 /** Distancia entre la punta de flecha y el borde del nodo: lo justo para que la punta se lea. */
 const ARROW_GAP = 8;
+/** Separación mínima entre dos cables paralelos. */
+const LANE = 8;
+/** Lo que cuesta cruzar otro cable o ir encima de él, frente a una unidad de largo. */
+const CROSSING = 2000;
+const OVERLAP = 2500;
 
 /** Por qué lados sale y entra la conexión: el que mira al otro nodo. */
 export function sidesFor(from: Placed, to: Placed): [Side, Side] {
@@ -32,6 +39,7 @@ export function sidesFor(from: Placed, to: Placed): [Side, Side] {
   return dy >= 0 ? ['bottom', 'top'] : ['top', 'bottom'];
 }
 
+const DEFAULT_GAP: WireGap = { from: 3, to: ARROW_GAP };
 const normal: Record<Side, Pt> = { left: [-1, 0], right: [1, 0], top: [0, -1], bottom: [0, 1] };
 
 /**
@@ -82,14 +90,51 @@ const segmentHits = (a: Pt, b: Pt, r: Rect) => {
   return x2 > r.x && x1 < r.x + r.w && y2 > r.y && y1 < r.y + r.h;
 };
 
-function cost(points: Pt[], obstacles: Rect[]): number {
+type Segment = [Pt, Pt];
+
+const segmentsOf = (points: Pt[]): Segment[] => points.slice(1).map((point, i) => [points[i], point]);
+const isVertical = ([a, b]: Segment) => a[0] === b[0];
+
+/** ¿Se cruzan un tramo vertical y uno horizontal, en el interior de ambos? */
+function crossesAt(a: Segment, b: Segment): boolean {
+  if (isVertical(a) === isVertical(b)) return false;
+  const [v, h] = isVertical(a) ? [a, b] : [b, a];
+  const x = v[0][0];
+  const y = h[0][1];
+  return x > Math.min(h[0][0], h[1][0]) && x < Math.max(h[0][0], h[1][0]) && y > Math.min(v[0][1], v[1][1]) && y < Math.max(v[0][1], v[1][1]);
+}
+
+/** Largo que comparten dos tramos paralelos separados menos de `LANE`: se leerían como uno solo. */
+function sharedLength(a: Segment, b: Segment): number {
+  if (isVertical(a) !== isVertical(b)) return 0;
+  const axis = isVertical(a) ? 1 : 0;
+  if (Math.abs(a[0][1 - axis] - b[0][1 - axis]) >= LANE) return 0;
+  const from = Math.max(Math.min(a[0][axis], a[1][axis]), Math.min(b[0][axis], b[1][axis]));
+  const to = Math.min(Math.max(a[0][axis], a[1][axis]), Math.max(b[0][axis], b[1][axis]));
+  return Math.max(0, to - from);
+}
+
+/** Lo que estorba un cable a los ya colocados: cada cruce y cada tramo que va encima de otro. */
+function clashes(points: Pt[], placed: Segment[]): number {
+  let total = 0;
+  for (const segment of segmentsOf(points)) {
+    for (const other of placed) {
+      if (crossesAt(segment, other)) total += CROSSING;
+      const shared = sharedLength(segment, other);
+      if (shared > 0) total += OVERLAP + shared * 4;
+    }
+  }
+  return total;
+}
+
+function cost(points: Pt[], obstacles: Rect[], placed: Segment[] = []): number {
   let hits = 0;
   let length = 0;
   for (let i = 1; i < points.length; i++) {
     length += Math.abs(points[i][0] - points[i - 1][0]) + Math.abs(points[i][1] - points[i - 1][1]);
     hits += obstacles.filter((rect) => segmentHits(points[i - 1], points[i], rect)).length;
   }
-  return hits * 10_000 + length + (points.length - 2) * 24;
+  return hits * 10_000 + clashes(points, placed) + length + (points.length - 2) * 24;
 }
 
 /** Quita puntos repetidos y los que están en línea con sus vecinos. */
@@ -108,7 +153,25 @@ function simplify(points: Pt[]): Pt[] {
  * lados, y se queda con la más corta que no atraviesa ninguno. `gap` separa el cable del borde al
  * salir y al llegar (la punta de flecha necesita aire para leerse).
  */
-export function routeWire(start: Pt, end: Pt, sides: [Side, Side], obstacles: Rect[], gap: { from: number; to: number } = { from: 3, to: ARROW_GAP }): Pt[] {
+export function routeWire(start: Pt, end: Pt, sides: [Side, Side], obstacles: Rect[], gap: WireGap = DEFAULT_GAP): Pt[] {
+  return candidateRoutes(start, end, sides, obstacles, gap).sort((p, q) => cost(p, obstacles) - cost(q, obstacles))[0];
+}
+
+/** Alturas libres entre filas de nodos en un tramo del lienzo: los pasillos por donde cruzar. */
+function rowLanes(obstacles: Rect[], from: number, to: number): number[] {
+  const inRange = obstacles.filter((rect) => rect.x < to && rect.x + rect.w > from).sort((a, b) => a.y - b.y);
+  if (!inRange.length) return [];
+  const lanes = [inRange[0].y - 12];
+  let reach = inRange[0].y + inRange[0].h;
+  for (const rect of inRange.slice(1)) {
+    if (rect.y - reach >= LANE * 2) lanes.push(Math.round((rect.y + reach) / 2));
+    reach = Math.max(reach, rect.y + rect.h);
+  }
+  return [...lanes, reach + 12];
+}
+
+/** Todas las rutas posibles de un cable: el codo en cada carril y los rodeos. */
+function candidateRoutes(start: Pt, end: Pt, sides: [Side, Side], obstacles: Rect[], gap: WireGap): Pt[][] {
   const [n0, n1] = [normal[sides[0]], normal[sides[1]]];
   start = [start[0] + n0[0] * gap.from, start[1] + n0[1] * gap.from];
   const a: Pt = [start[0] + n0[0] * STUB, start[1] + n0[1] * STUB];
@@ -116,11 +179,23 @@ export function routeWire(start: Pt, end: Pt, sides: [Side, Side], obstacles: Re
   const tip: Pt = [end[0] + n1[0] * gap.to, end[1] + n1[1] * gap.to];
   const horizontal = sides[0] === 'left' || sides[0] === 'right';
   const candidates: Pt[][] = [];
-  const offsets = [0, -24, 24, -48, 48, -80, 80, -120, 120];
+  // Carriles finos cerca del centro, para que los cables de un mismo pasillo vayan en paralelo.
+  const offsets = [0, ...[10, 20, 30, 40, 50, 60, 80, 100, 120, 160].flatMap((step) => [-step, step])];
   if (horizontal) {
     for (const off of offsets) {
       const mx = (a[0] + b[0]) / 2 + off;
       candidates.push([start, a, [mx, a[1]], [mx, b[1]], b, tip]);
+    }
+    // Doble codo: sube a un pasillo libre entre filas, lo recorre y baja al otro lado. Es lo que deja
+    // saltar una columna entera sin cruzar los cables que van por ella.
+    for (const lane of rowLanes(obstacles, Math.min(a[0], b[0]), Math.max(a[0], b[0]))) {
+      for (const near of [0, 12, 24]) {
+        for (const far of [0, 12, 24]) {
+          const x1 = a[0] + n0[0] * near;
+          const x2 = b[0] + n1[0] * far;
+          candidates.push([start, a, [x1, a[1]], [x1, lane], [x2, lane], [x2, b[1]], b, tip]);
+        }
+      }
     }
   } else {
     for (const off of offsets) {
@@ -136,11 +211,88 @@ export function routeWire(start: Pt, end: Pt, sides: [Side, Side], obstacles: Re
     const bottom = Math.max(...between.map((r) => r.y + r.h)) + 16;
     const left = Math.min(...between.map((r) => r.x)) - 16;
     const right = Math.max(...between.map((r) => r.x + r.w)) + 16;
-    for (const lane of [top, bottom]) candidates.push([start, a, [a[0], lane], [b[0], lane], b, tip]);
-    for (const lane of [left, right]) candidates.push([start, a, [lane, a[1]], [lane, b[1]], b, tip]);
+    for (const shift of [0, 10, 20, 30]) {
+      for (const lane of [top - shift, bottom + shift]) candidates.push([start, a, [a[0], lane], [b[0], lane], b, tip]);
+      for (const lane of [left - shift, right + shift]) candidates.push([start, a, [lane, a[1]], [lane, b[1]], b, tip]);
+    }
   }
-  const best = candidates.map(simplify).sort((p, q) => cost(p, obstacles) - cost(q, obstacles))[0];
+  return candidates.map(simplify);
+}
+
+/**
+ * Traza todos los cables a la vez: cada uno ve a los demás y evita cruzarlos o ir encima de ellos.
+ * Prueba varios órdenes (el primero en colocarse elige mejor) y luego recoloca cada cable con los
+ * demás fijos, hasta que nada mejora. Un grafo muy conectado puede no admitir cero cruces: se minimizan.
+ * `quick` es para mientras se arrastra: un solo orden y una sola pasada, para que el gesto siga fluido.
+ */
+export function routeAll(links: Linked[], nodes: Map<string, Placed>, gap: WireGap = DEFAULT_GAP, quick = false): Map<string, Pt[]> {
+  const ports = assignPorts(links, nodes);
+  const wires = [...ports].flatMap(([key, port]) => {
+    const [fromId, toId] = key.split('>');
+    const obstacles = [...nodes.values()].filter((node) => node.id !== fromId && node.id !== toId).map((node) => nodeRect(node));
+    const routes = candidateRoutes(port.from, port.to, port.sides, obstacles, gap);
+    const reach = Math.abs(port.from[0] - port.to[0]) + Math.abs(port.from[1] - port.to[1]);
+    return [{ key, obstacles, routes, reach }];
+  });
+  const place = (order: typeof wires) => {
+    const chosen = new Map<string, Pt[]>();
+    for (const wire of order) {
+      const placed = [...chosen.values()].flatMap(segmentsOf);
+      chosen.set(wire.key, cheapest(wire.routes, wire.obstacles, placed));
+    }
+    // Recolocar cada cable viendo ya a todos: un cable colocado pronto no sabía lo que venía después.
+    for (let pass = 0; pass < (quick ? 1 : 3); pass++) {
+      let improved = false;
+      for (const wire of wires) {
+        const placed = [...chosen].filter(([key]) => key !== wire.key).flatMap(([, points]) => segmentsOf(points));
+        const better = cheapest(wire.routes, wire.obstacles, placed);
+        if (cost(better, wire.obstacles, placed) < cost(chosen.get(wire.key)!, wire.obstacles, placed)) {
+          chosen.set(wire.key, better);
+          improved = true;
+        }
+      }
+      if (!improved) break;
+    }
+    return chosen;
+  };
+  const shortFirst = [...wires].sort((a, b) => a.reach - b.reach);
+  if (quick) {
+    return place(shortFirst);
+  }
+  const attempts = [place(shortFirst), place([...shortFirst].reverse())];
+  return attempts.sort((a, b) => tangle(a) - tangle(b))[0];
+}
+
+function cheapest(routes: Pt[][], obstacles: Rect[], placed: Segment[]): Pt[] {
+  let best = routes[0];
+  let bestCost = Infinity;
+  for (const route of routes) {
+    const value = cost(route, obstacles, placed);
+    if (value < bestCost) {
+      best = route;
+      bestCost = value;
+    }
+  }
   return best;
+}
+
+/** Cuánto se enredan unos cables: cruces y tramos encima de otro, más su largo como desempate. */
+function tangle(routes: Map<string, Pt[]>): number {
+  const all = [...routes.values()];
+  return all.reduce((sum, points, index) => sum + clashes(points, all.slice(index + 1).flatMap(segmentsOf)), 0);
+}
+
+/** Cruces entre cables, para medir el resultado. */
+export function countCrossings(routes: Pt[][]): number {
+  let total = 0;
+  routes.forEach((points, index) => {
+    for (const segment of segmentsOf(points)) {
+      for (const other of routes.slice(index + 1).flatMap(segmentsOf)) {
+        if (crossesAt(segment, other)) total++;
+      }
+    }
+  });
+  return total;
 }
 
 /** Polilínea → `d` de SVG con las esquinas redondeadas. */

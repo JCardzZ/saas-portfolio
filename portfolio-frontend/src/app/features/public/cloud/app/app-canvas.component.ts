@@ -3,7 +3,7 @@ import { CANVAS_HEIGHT, CANVAS_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '../cloud-t
 import { FULL_VIEW, View, panView, zoomView } from '../studio-physics';
 import { contentBounds } from '../zone-layout';
 import { SystemDesign } from '../system/system-design';
-import { assignPorts, labelPoint, nodeRect, roundedPath, routeWire } from '../wire-router';
+import { labelPoint, roundedPath, routeAll } from '../wire-router';
 import { APP_BOXES, APP_LAYERS, APP_PIECES, AppBoxKind, AppPiece, layerOf, pieceOf } from './app-catalog.data';
 import {
   AppBox, AppGraph, AppNode, addBox, addNode, clampPoint, connect, cycleProtocol, graphFromDesign, isAsync, linkKey, moveBox, moveNode,
@@ -439,16 +439,15 @@ export class AppCanvasComponent implements OnInit {
   readonly wires = computed(() => {
     const { nodes, links } = this.graph();
     const byId = new Map(nodes.map((node) => [node.id, node]));
-    const ports = assignPorts(links, byId);
+    // Todos a la vez, para que no se crucen; con aire en los dos extremos: el cable no nace pegado a la
+    // pieza y la punta no toca el borde.
+    const routes = routeAll(links, byId, WIRE_GAP, this.frozen() !== null);
     const selected = this.selected();
     return links.flatMap((link) => {
-      const port = ports.get(linkKey(link));
-      if (!port) {
+      const points = routes.get(linkKey(link));
+      if (!points) {
         return [];
       }
-      const obstacles = nodes.filter((node) => node.id !== link.from && node.id !== link.to).map((node) => nodeRect(node));
-      // Con aire en los dos extremos: el cable no nace pegado a la pieza y la punta no toca el borde.
-      const points = routeWire(port.from, port.to, port.sides, obstacles, WIRE_GAP);
       const key = linkKey(link);
       return [{
         key, protocol: link.protocol, async: isAsync(link.protocol), path: roundedPath(points), label: labelPoint(points),
