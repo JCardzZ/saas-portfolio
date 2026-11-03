@@ -2,7 +2,7 @@ import { CloudLink, CloudNode, NODE_HEIGHT, NODE_WIDTH } from './cloud-topology.
 import { STUDIO_PRESETS } from './studio-project';
 import { SYSTEM_TEMPLATES } from './system/system-templates';
 import { breathe } from './zone-breathe';
-import { assignPorts, countCrossings, labelPoint, nodeRect, roundedPath, routeAll, routeWire, sidesFor } from './wire-router';
+import { assignPorts, countCrossings, labelBox, labelPoint, nodeRect, roundedPath, routeAll, routeWire, sidesFor } from './wire-router';
 
 const node = (id: string, x: number, y: number): CloudNode => ({ id, type: 'compute', x, y, zone: 'data' } as unknown as CloudNode);
 const link = (from: string, to: string): CloudLink => ({ from, to } as CloudLink);
@@ -78,10 +78,37 @@ describe('wire router', () => {
     expect(together).toBeLessThan(alone / 2);
   });
 
+  it('never runs a wire through a node, in every design the studio ships', () => {
+    const through: string[] = [];
+    for (const project of [...STUDIO_PRESETS.map((preset) => preset.build()), ...SYSTEM_TEMPLATES.map((template) => template.build())]) {
+      const { nodes } = breathe(project.zones, project.nodes);
+      const byId = new Map(nodes.map((candidate) => [candidate.id, candidate]));
+      const links = project.links.filter((candidate) => byId.has(candidate.from) && byId.has(candidate.to));
+      for (const [key, points] of routeAll(links, byId)) {
+        const [from, to] = key.split('>');
+        for (const node of nodes.filter((candidate) => candidate.id !== from && candidate.id !== to)) {
+          const box = nodeRect(node, 0);
+          const hit = points.slice(1).some(([x2, y2], i) => {
+            const [x1, y1] = points[i];
+            return Math.max(x1, x2) > box.x && Math.min(x1, x2) < box.x + box.w && Math.max(y1, y2) > box.y && Math.min(y1, y2) < box.y + box.h;
+          });
+          if (hit) through.push(`${key} → ${node.id}`);
+        }
+      }
+    }
+    expect(through).toEqual([]);
+  });
+
   it('draws rounded corners and places the label on the longest stretch', () => {
     const d = roundedPath([[0, 0], [100, 0], [100, 100]]);
     expect(d).toContain('Q100 0');
-    expect(labelPoint([[0, 0], [10, 0], [10, 200]])).toEqual([10, 93]);
+    // En un tramo vertical el rótulo va al lado de la línea, no encima.
+    expect(labelPoint([[0, 0], [10, 0], [10, 200]])).toEqual([50, 104]);
+    // Si ese sitio lo ocupa algo, busca otro libre.
+    const busy = { x: 14, y: 90, w: 80, h: 20 };
+    const moved = labelPoint([[0, 0], [10, 0], [10, 200]], [busy]);
+    expect(moved).not.toEqual([50, 104]);
+    expect(labelBox(moved).x + labelBox(moved).w <= busy.x || labelBox(moved).y >= busy.y + busy.h || labelBox(moved).y + 18 <= busy.y).toBeTrue();
     expect(NODE_HEIGHT).toBeGreaterThan(0);
   });
 });

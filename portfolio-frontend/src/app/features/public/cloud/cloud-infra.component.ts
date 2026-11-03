@@ -27,7 +27,7 @@ import { autoLayout } from './auto-layout';
 import { contentBounds, directNodes, reflow, resizeToContent } from './zone-layout';
 import { ZONE_PADDING, hasConflict, settleZones, zoneParents } from './zone-solver';
 import { breathe } from './zone-breathe';
-import { labelBox, labelPoint, nodeRect, roundedPath, routeAll } from './wire-router';
+import { Rect as WireRect, labelBox, labelPoint, labelWidth, nodeRect, roundedPath, routeAll } from './wire-router';
 import { FULL_VIEW, Point, View, panView, placementVerdict, resolveCollision, withFriction, zoomView } from './studio-physics';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
 import { CatalogItem } from './cloud-catalog.data';
@@ -236,6 +236,28 @@ export class CloudInfraComponent {
   readonly emphasis = computed(() => !this.smartRules() || !this.autoActive());
   readonly active = computed(() => this.nodes().find((node) => node.id === this.activeId()) ?? null);
 
+  /**
+   * Textos fijos del lienzo (rótulos de las zonas y de los servicios gestionados), como cajas: ni los
+   * cables los atraviesan ni los rótulos de los cables se les montan encima.
+   */
+  private readonly fixedTexts = computed<WireRect[]>(() => {
+    const box = (x: number, baseline: number, text: string, centered: boolean): WireRect => {
+      const w = labelWidth(text);
+      return { x: centered ? x - w / 2 : x - 6, y: baseline - 15, w, h: 20 };
+    };
+    const zones = this.zones().map((zone) => zone.kind === 'public' || zone.kind === 'private'
+      ? box(zone.x + zone.w / 2, zone.y + 16, this.painted(this.zoneLabelOf(zone)), true)
+      : box(zone.x + 16, zone.y + 20, this.painted(this.zoneLabelOf(zone)), false));
+    const managed = this.managedLabel();
+    return managed ? [...zones, box(managed.x, managed.y, this.painted('Servicios gestionados'), true)] : zones;
+  });
+
+  /** Un texto como se pinta: traducido si la página está en inglés (lo mismo que la pipe `t`). */
+  private painted(es: string): string {
+    const dictionary = this.language.dictionary();
+    return this.language.lang() === 'en' && dictionary ? (dictionary[es] ?? es) : es;
+  }
+
   /** Se está arrastrando algo: los cables se trazan en su versión rápida hasta soltar. */
   private readonly moving = signal(false);
   /** Conexiones con su trazado bezier, recalculado cada vez que un nodo se mueve. */
@@ -243,7 +265,8 @@ export class CloudInfraComponent {
     const byId = new Map(this.nodes().map((node) => [node.id, node]));
     // Reglas inteligentes: cables en ángulo recto que esquivan nodos, con puntos de salida repartidos.
     const smart = this.smartRules();
-    const routes = smart ? routeAll(this.links(), byId, undefined, this.moving()) : null;
+    const texts = smart ? this.fixedTexts() : [];
+    const routes = smart ? routeAll(this.links(), byId, undefined, this.moving(), texts) : null;
     // Camino de la petición: lo que se alcanza desde los visitantes sin pasar por una pieza de apoyo
     // ni por un flujo asíncrono. Lo demás va en segundo plano para que el ojo sepa por dónde empezar.
     const onPath = new Set(this.nodes().filter((node) => node.type === 'users').map((node) => node.id));
@@ -258,15 +281,16 @@ export class CloudInfraComponent {
       }
     }
     // Lo que un rótulo no debe pisar: las piezas, los rótulos de las zonas y los otros rótulos.
-    const taken = smart ? [...this.nodes().map((node) => nodeRect(node, 0)), ...this.zones().map((zone) => ({ x: zone.x, y: zone.y, w: zone.w, h: 30 }))] : [];
-    const routed = (from: CloudNode, to: CloudNode, key: string, labelled: boolean) => {
+    const taken: WireRect[] = smart ? [...this.nodes().map((node) => nodeRect(node, 2)), ...texts] : [];
+    const routed = (from: CloudNode, to: CloudNode, key: string, label: string | null) => {
       const points = routes?.get(key);
       if (!points) {
         return connect(from, to);
       }
-      const labelAt = labelPoint(points, taken);
-      if (labelled) {
-        taken.push(labelBox(labelAt));
+      const width = label ? labelWidth(this.painted(label)) : undefined;
+      const labelAt = labelPoint(points, taken, width);
+      if (label) {
+        taken.push(labelBox(labelAt, width));
       }
       return { path: roundedPath(points), labelAt };
     };
@@ -283,7 +307,7 @@ export class CloudInfraComponent {
       const chaos: ChaosLevel | null = faults[from.id] === 'down' || faults[to.id] === 'down' ? 'down'
         : faults[to.id] === 'cpu' ? 'warn'
         : (this.chaosPhase()?.wires[`${link.from}>${link.to}`] ?? null);
-      return [{ ...link, support: smart && !(onPath.has(from.id) && onPath.has(to.id) && !link.kind), ...(smart ? routed(from, to, `${link.from}>${link.to}`, !!link.label) : connect(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
+      return [{ ...link, support: smart && !(onPath.has(from.id) && onPath.has(to.id) && !link.kind), ...(smart ? routed(from, to, `${link.from}>${link.to}`, link.label ?? (link.kind ? KIND_LABELS[link.kind] : null)) : connect(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
     });
   });
 

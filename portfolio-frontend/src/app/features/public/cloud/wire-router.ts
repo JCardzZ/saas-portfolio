@@ -16,7 +16,7 @@ export type Side = 'left' | 'right' | 'top' | 'bottom';
 type Pt = [number, number];
 /** Separación del cable respecto al borde del nodo, al salir y al llegar. */
 export interface WireGap { from: number; to: number }
-type Rect = { x: number; y: number; w: number; h: number };
+export type Rect = { x: number; y: number; w: number; h: number };
 
 const STUB = 18;
 const RADIUS = 8;
@@ -28,6 +28,8 @@ const LANE = 8;
 /** Lo que cuesta cruzar otro cable o ir encima de él, frente a una unidad de largo. */
 const CROSSING = 2000;
 const OVERLAP = 2500;
+/** Pasar por encima de un rótulo: se evita, pero menos que atravesar una pieza. */
+const TEXT_HIT = 3000;
 
 /** Por qué lados sale y entra la conexión: el que mira al otro nodo. */
 export function sidesFor(from: Placed, to: Placed): [Side, Side] {
@@ -127,14 +129,16 @@ function clashes(points: Pt[], placed: Segment[]): number {
   return total;
 }
 
-function cost(points: Pt[], obstacles: Rect[], placed: Segment[] = []): number {
+function cost(points: Pt[], obstacles: Rect[], placed: Segment[] = [], texts: Rect[] = []): number {
   let hits = 0;
+  let overText = 0;
   let length = 0;
   for (let i = 1; i < points.length; i++) {
     length += Math.abs(points[i][0] - points[i - 1][0]) + Math.abs(points[i][1] - points[i - 1][1]);
     hits += obstacles.filter((rect) => segmentHits(points[i - 1], points[i], rect)).length;
+    overText += texts.filter((rect) => segmentHits(points[i - 1], points[i], rect)).length;
   }
-  return hits * 10_000 + clashes(points, placed) + length + (points.length - 2) * 24;
+  return hits * 10_000 + overText * TEXT_HIT + clashes(points, placed) + length + (points.length - 2) * 24;
 }
 
 /** Quita puntos repetidos y los que están en línea con sus vecinos. */
@@ -225,28 +229,44 @@ function candidateRoutes(start: Pt, end: Pt, sides: [Side, Side], obstacles: Rec
  * demás fijos, hasta que nada mejora. Un grafo muy conectado puede no admitir cero cruces: se minimizan.
  * `quick` es para mientras se arrastra: un solo orden y una sola pasada, para que el gesto siga fluido.
  */
-export function routeAll(links: Linked[], nodes: Map<string, Placed>, gap: WireGap = DEFAULT_GAP, quick = false): Map<string, Pt[]> {
+export function routeAll(links: Linked[], nodes: Map<string, Placed>, gap: WireGap = DEFAULT_GAP, quick = false, texts: Rect[] = []): Map<string, Pt[]> {
   const ports = assignPorts(links, nodes);
   const wires = [...ports].flatMap(([key, port]) => {
     const [fromId, toId] = key.split('>');
+    // Las piezas que no son las suyas y los textos fijos del lienzo (rótulos de zona): no se atraviesan.
     const obstacles = [...nodes.values()].filter((node) => node.id !== fromId && node.id !== toId).map((node) => nodeRect(node));
-    const routes = candidateRoutes(port.from, port.to, port.sides, obstacles, gap);
+    // Los rodeos también tienen en cuenta los rótulos, para poder salir por encima o por debajo de ellos.
+    const routes = candidateRoutes(port.from, port.to, port.sides, [...obstacles, ...texts], gap);
+    // Si lo mejor desde los lados que se miran atraviesa una pieza (otra justo encima, una columna
+    // llena al lado), se prueba a salir y entrar por los otros lados, como haría una persona. Se
+    // calculan solo la primera vez que hacen falta.
+    const from = nodes.get(fromId);
+    const to = nodes.get(toId);
+    let spare: Pt[][] | undefined;
+    const others = () => spare ??= from && to
+      ? SIDES.flatMap((exit) => SIDES.filter((entry) => exit !== port.sides[0] || entry !== port.sides[1])
+        .flatMap((entry) => candidateRoutes(sidePoint(from, exit), sidePoint(to, entry), [exit, entry], [...obstacles, ...texts], gap)))
+      : [];
     const reach = Math.abs(port.from[0] - port.to[0]) + Math.abs(port.from[1] - port.to[1]);
-    return [{ key, obstacles, routes, reach }];
+    return [{ key, obstacles, routes, others, reach }];
   });
+  const pick = (wire: (typeof wires)[number], placed: Segment[]) => {
+    const best = cheapest(wire.routes, wire.obstacles, placed, texts);
+    return hitsAny(best, wire.obstacles) ? cheapest([best, ...wire.others()], wire.obstacles, placed, texts) : best;
+  };
   const place = (order: typeof wires) => {
     const chosen = new Map<string, Pt[]>();
     for (const wire of order) {
       const placed = [...chosen.values()].flatMap(segmentsOf);
-      chosen.set(wire.key, cheapest(wire.routes, wire.obstacles, placed));
+      chosen.set(wire.key, pick(wire, placed));
     }
     // Recolocar cada cable viendo ya a todos: un cable colocado pronto no sabía lo que venía después.
     for (let pass = 0; pass < (quick ? 1 : 3); pass++) {
       let improved = false;
       for (const wire of wires) {
         const placed = [...chosen].filter(([key]) => key !== wire.key).flatMap(([, points]) => segmentsOf(points));
-        const better = cheapest(wire.routes, wire.obstacles, placed);
-        if (cost(better, wire.obstacles, placed) < cost(chosen.get(wire.key)!, wire.obstacles, placed)) {
+        const better = pick(wire, placed);
+        if (cost(better, wire.obstacles, placed, texts) < cost(chosen.get(wire.key)!, wire.obstacles, placed, texts)) {
           chosen.set(wire.key, better);
           improved = true;
         }
@@ -263,11 +283,19 @@ export function routeAll(links: Linked[], nodes: Map<string, Placed>, gap: WireG
   return attempts.sort((a, b) => tangle(a) - tangle(b))[0];
 }
 
-function cheapest(routes: Pt[][], obstacles: Rect[], placed: Segment[]): Pt[] {
+const SIDES: Side[] = ['top', 'right', 'bottom', 'left'];
+
+/** Centro del lado de un nodo. */
+const sidePoint = (node: Placed, side: Side): Pt => [node.x + normal[side][0] * NODE_WIDTH / 2, node.y + normal[side][1] * NODE_HEIGHT / 2];
+
+/** ¿Atraviesa la ruta alguno de estos rectángulos? */
+const hitsAny = (points: Pt[], rects: Rect[]) => points.some((point, i) => i > 0 && rects.some((rect) => segmentHits(points[i - 1], point, rect)));
+
+function cheapest(routes: Pt[][], obstacles: Rect[], placed: Segment[], texts: Rect[] = []): Pt[] {
   let best = routes[0];
   let bestCost = Infinity;
   for (const route of routes) {
-    const value = cost(route, obstacles, placed);
+    const value = cost(route, obstacles, placed, texts);
     if (value < bestCost) {
       best = route;
       bestCost = value;
@@ -313,22 +341,42 @@ export function roundedPath(points: Pt[], radius = RADIUS): string {
 }
 
 /**
- * Dónde poner el rótulo: el centro del tramo más largo, un poco por encima. Si ahí pisaría algo de
- * `avoid` (una pieza, el rótulo de una zona, otro rótulo), el siguiente tramo que quede libre.
+ * Dónde poner el rótulo (de ancho `width`): lo más cerca posible del centro del tramo más largo
+ * sin pisar nada de `avoid` (piezas, rótulos de zona, otros rótulos). Se prueba a lo largo de cada
+ * tramo: encima de uno horizontal, a un lado de uno vertical. Sin sitio libre en ningún tramo, el
+ * centro del más largo.
  */
-export function labelPoint(points: Pt[], avoid: Rect[] = []): [number, number] {
-  const spots = points.slice(1)
-    .map((point, i) => ({
-      length: Math.abs(point[0] - points[i][0]) + Math.abs(point[1] - points[i][1]),
-      at: [(point[0] + points[i][0]) / 2, (point[1] + points[i][1]) / 2 - 7] as Pt,
-    }))
-    .sort((a, b) => b.length - a.length);
-  const free = spots.find(({ at }) => !avoid.some((rect) => overlapsBox(labelBox(at), rect)));
-  return (free ?? spots[0])?.at ?? points[0];
+export function labelPoint(points: Pt[], avoid: Rect[] = [], width = LABEL_WIDTH): [number, number] {
+  const segments = points.slice(1)
+    .map((point, i) => ({ a: points[i], b: point, length: Math.abs(point[0] - points[i][0]) + Math.abs(point[1] - points[i][1]) }))
+    .filter((segment) => segment.length > 0)
+    .sort((x, y) => y.length - x.length);
+  if (!segments.length) return [points[0][0], points[0][1] - 7];
+  const fallback: Pt = [(segments[0].a[0] + segments[0].b[0]) / 2, (segments[0].a[1] + segments[0].b[1]) / 2 - 7];
+  for (const { a, b } of segments) {
+    const vertical = a[0] === b[0];
+    // Del centro hacia los extremos, sin acercarse a los nodos de las puntas.
+    for (const t of [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8, 0.1, 0.9]) {
+      const x = a[0] + (b[0] - a[0]) * t;
+      const y = a[1] + (b[1] - a[1]) * t;
+      const spots: Pt[] = vertical
+        ? [[x + width / 2 + 6, y + 4], [x - width / 2 - 6, y + 4], [x + width / 2 + 20, y + 4], [x - width / 2 - 20, y + 4]]
+        : [[x, y - 7], [x, y + 17], [x, y - 22], [x, y + 32], [x, y - 48], [x, y + 58]];
+      const free = spots.find((at) => !avoid.some((rect) => overlapsBox(labelBox(at, width), rect)));
+      if (free) return [round(free[0]), round(free[1])];
+    }
+  }
+  return fallback;
 }
 
+/** Ancho por defecto de un rótulo; con texto, mejor `labelWidth(texto)`. */
+const LABEL_WIDTH = 68;
+
+/** Ancho que ocupa un rótulo de 12 px con ese texto, con su halo. */
+export const labelWidth = (text: string) => Math.ceil(text.length * 6.6 + 12);
+
 /** Caja que ocupa un rótulo centrado en `at`. */
-export const labelBox = (at: Pt): Rect => ({ x: at[0] - 34, y: at[1] - 12, w: 68, h: 18 });
+export const labelBox = (at: Pt, width = LABEL_WIDTH): Rect => ({ x: at[0] - width / 2, y: at[1] - 12, w: width, h: 18 });
 
 const overlapsBox = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
