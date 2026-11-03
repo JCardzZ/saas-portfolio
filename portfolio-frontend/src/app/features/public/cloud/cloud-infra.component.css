@@ -130,7 +130,8 @@
 .wire-smart { stroke-width: 1.4; stroke-linejoin: round; transition: stroke var(--duration-base) var(--ease-standard), opacity var(--duration-base) var(--ease-standard); }
 .wire-dim { opacity: 0.22; }
 .wire-arrow { stroke: none; }
-.wire-arrow-base { fill: var(--border-control); }
+.wire-arrow-base { fill: var(--text-2); }
+.wire-arrow-support { fill: var(--text-3); opacity: 0.55; }
 .wire-arrow-active { fill: var(--accent-text); }
 .wire-arrow-warn { fill: var(--status-warn); }
 .wire-arrow-down { fill: var(--status-danger); }
