@@ -1,6 +1,6 @@
 import { CloudNode } from './cloud-topology.data';
-import { StudioZone } from './studio-project';
-import { ZONE_GAP, settleZones, zoneParents } from './zone-solver';
+import { BASE_ZONES, StudioZone, referenceProject } from './studio-project';
+import { ZONE_GAP, hasConflict, settleZones, zoneParents } from './zone-solver';
 
 const zone = (id: string, x: number, y: number, w: number, h: number): StudioZone => ({ id, kind: 'private', role: 'data', x, y, w, h });
 const node = (id: string, x: number, y: number): CloudNode => ({ id, type: 'compute', x, y, zone: 'data' } as unknown as CloudNode);
@@ -53,6 +53,53 @@ describe('zone solver', () => {
     const m = zones.find((z) => z.id === 'middle')!;
     const n = nodes[0];
     expect(n.x - 64 >= m.x + m.w || n.x + 64 <= m.x || n.y - 36 >= m.y + m.h || n.y + 36 <= m.y).toBeTrue();
+  });
+
+  it('leaves an untouched design exactly as it was', () => {
+    const project = referenceProject();
+    for (const zone of BASE_ZONES) {
+      const settled = settleZones(project.zones, project.nodes, zone.id, zoneParents(project.zones));
+      expect(settled.zones).toEqual(project.zones);
+      expect(settled.nodes).toEqual(project.nodes);
+    }
+  });
+
+  it('widens a box: the neighbours slide along whole and the loose column moves together', () => {
+    const project = referenceProject();
+    const before = { zones: project.zones, nodes: project.nodes };
+    const grown = project.zones.map((candidate) => (candidate.id === 'subnet-app' ? { ...candidate, w: 200 } : candidate));
+    const { zones, nodes } = settleZones(grown, project.nodes, 'subnet-app', zoneParents(project.zones), before);
+    const of = (id: string) => zones.find((candidate) => candidate.id === id)!;
+    const start = (id: string) => project.zones.find((candidate) => candidate.id === id)!;
+
+    // La de datos se desplaza sin cambiar de tamaño; la pública ni se entera.
+    expect(of('subnet-data').w).toBe(start('subnet-data').w);
+    expect(of('subnet-public')).toEqual(start('subnet-public'));
+    // Los servicios gestionados se apartan juntos: misma x y misma altura que tenían.
+    const managed = nodes.filter((candidate) => candidate.zone === 'managed');
+    expect(new Set(managed.map((candidate) => candidate.x)).size).toBe(1);
+    expect(managed.map((candidate) => candidate.y)).toEqual(project.nodes.filter((candidate) => candidate.zone === 'managed').map((candidate) => candidate.y));
+    expect(hasConflict(zones, nodes, 'subnet-app', zoneParents(project.zones), before)).toBeFalse();
+  });
+
+  it('never throws a loose node to the far side of a box: without room it stays, and that is a conflict', () => {
+    const wall = zone('wall', 100, 100, 200, 200);
+    const stuck = node('stuck', 1040, 200);
+    const grown = { ...wall, w: 900 };
+    const parents = new Map<string, string | null>([['wall', null]]);
+    const before = { zones: [wall], nodes: [stuck] };
+    const { nodes } = settleZones([grown], [stuck], 'wall', parents, before);
+
+    expect(nodes[0].x).toBe(1040);
+    expect(hasConflict([grown], nodes, 'wall', parents, before)).toBeTrue();
+  });
+
+  it('reports when there is no room left, so the gesture can stop there', () => {
+    const before = { zones: [left, middle], nodes: [] as CloudNode[] };
+    expect(hasConflict([left, middle], [], 'left', new Map([['left', null], ['middle', null]]), before)).toBeFalse();
+    expect(hasConflict([{ ...left, w: 260 }, middle], [], 'left', new Map([['left', null], ['middle', null]]), before)).toBeTrue();
+    const loose = node('loose', 500, 250);
+    expect(hasConflict([{ ...middle, w: 300 }], [loose], 'middle', new Map([['middle', null]]), { zones: [middle], nodes: [loose] })).toBeTrue();
   });
 
   it('changes nothing when nothing overlaps', () => {

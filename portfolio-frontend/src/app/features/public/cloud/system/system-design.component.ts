@@ -69,7 +69,7 @@ interface Piece {
 
       @if (canvas()) {
         <!-- Estudio de Aplicación: un lienzo para dibujar cualquier arquitectura de software. -->
-        <app-app-canvas [design]="design()" [infra]="infraTargets()" />
+        <app-app-canvas [design]="design()" [infra]="infraTargets()" [provider]="provider()" />
       }
       <!-- El sistema, dibujado: cambia con cada elección. -->
       <div class="ui-card-inset" [hidden]="canvas()">

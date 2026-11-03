@@ -25,8 +25,9 @@ import { ArchitectureCopilotComponent } from './architecture-copilot.component';
 import { AuditCardComponent } from './audit-card.component';
 import { autoLayout } from './auto-layout';
 import { contentBounds, directNodes, reflow, resizeToContent } from './zone-layout';
-import { settleZones, zoneParents } from './zone-solver';
-import { assignPorts, labelPoint, nodeRect, roundedPath, routeWire } from './wire-router';
+import { ZONE_PADDING, hasConflict, settleZones, zoneParents } from './zone-solver';
+import { breathe } from './zone-breathe';
+import { Rect as WireRect, labelBox, labelPoint, labelWidth, nodeRect, roundedPath, routeAll } from './wire-router';
 import { FULL_VIEW, Point, View, panView, placementVerdict, resolveCollision, withFriction, zoomView } from './studio-physics';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
 import { CatalogItem } from './cloud-catalog.data';
@@ -84,7 +85,12 @@ interface Wire extends CloudLink {
   chaos: ChaosLevel | null;
   /** Recibe el tráfico de una instancia caída: lleva más partículas. */
   boost: boolean;
+  /** Fuera del camino de la petición (secretos, monitorización…): va en segundo plano. */
+  support: boolean;
 }
+
+/** Piezas de apoyo: todo el sistema las usa, pero una petición no pasa por ellas. */
+const SUPPORT_TYPES = new Set(['secrets', 'vault', 'native-monitoring', 'prometheus', 'datadog', 'opentelemetry', 'registry', 'cicd']);
 
 /**
  * Estudio de arquitectura multi-cloud: el diagrama de referencia de la plataforma, que el
@@ -180,6 +186,22 @@ export class CloudInfraComponent {
     return `${x} ${y} ${w} ${h}`;
   });
 
+  /**
+   * Rótulo de los servicios gestionados: encima de sus piezas, para que no se quede atrás (ni dentro de
+   * la red) cuando el diseño cambia. Sin reglas inteligentes, en su sitio de siempre.
+   */
+  readonly managedLabel = computed(() => {
+    if (!this.smartRules()) {
+      return { x: 935, y: 170 };
+    }
+    const managed = this.nodes().filter((node) => node.zone === 'managed');
+    if (!managed.length) {
+      return null;
+    }
+    const xs = managed.map((node) => node.x);
+    return { x: Math.round((Math.min(...xs) + Math.max(...xs)) / 2), y: Math.min(...managed.map((node) => node.y)) - NODE_HEIGHT / 2 - 12 };
+  });
+
   readonly selectedId = signal<CloudProviderId>('aws');
   readonly selected = computed(() => CLOUD_PROVIDERS.find((provider) => provider.id === this.selectedId())!);
   readonly providerColor = computed(() => TECH_ICONS[this.selectedId()].color);
@@ -188,7 +210,17 @@ export class CloudInfraComponent {
   private readonly links = signal<CloudLink[]>(structuredClone(CLOUD_LINKS));
   /** Recuadros del lienzo (nube, red, subredes...), de mayor a menor para que los pequeños queden encima. */
   readonly zones = signal<StudioZone[]>(structuredClone(BASE_ZONES));
-  readonly zonesByArea = computed(() => [...this.zones()].sort((a, b) => b.w * b.h - a.w * a.h));
+  /**
+   * Orden de pintado durante un gesto. Si un recuadro creciera por encima de otro mientras se arrastra,
+   * reordenarlo movería su elemento en el DOM y el navegador soltaría el puntero a mitad de gesto.
+   */
+  private readonly paintOrder = signal<string[] | null>(null);
+  readonly zonesByArea = computed(() => {
+    const order = this.paintOrder();
+    return order
+      ? [...this.zones()].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+      : [...this.zones()].sort((a, b) => b.w * b.h - a.w * a.h);
+  });
   readonly hasCloudZone = computed(() => this.zones().some((zone) => zone.id === 'cloud'));
   readonly editing = signal(false);
   readonly catalogDocked = signal(true);
@@ -198,22 +230,69 @@ export class CloudInfraComponent {
   readonly modified = signal(false);
 
   readonly activeId = signal('api');
+  /** La pieza activa la ha puesto la carga del diseño, no el visitante. */
+  private readonly autoActive = signal(true);
+  /** Con reglas inteligentes solo se resalta lo que el visitante elige: el diseño recién cargado se ve entero. */
+  readonly emphasis = computed(() => !this.smartRules() || !this.autoActive());
   readonly active = computed(() => this.nodes().find((node) => node.id === this.activeId()) ?? null);
 
+  /**
+   * Textos fijos del lienzo (rótulos de las zonas y de los servicios gestionados), como cajas: ni los
+   * cables los atraviesan ni los rótulos de los cables se les montan encima.
+   */
+  private readonly fixedTexts = computed<WireRect[]>(() => {
+    const box = (x: number, baseline: number, text: string, centered: boolean): WireRect => {
+      const w = labelWidth(text);
+      return { x: centered ? x - w / 2 : x - 6, y: baseline - 15, w, h: 20 };
+    };
+    const zones = this.zones().map((zone) => zone.kind === 'public' || zone.kind === 'private'
+      ? box(zone.x + zone.w / 2, zone.y + 16, this.painted(this.zoneLabelOf(zone)), true)
+      : box(zone.x + 16, zone.y + 20, this.painted(this.zoneLabelOf(zone)), false));
+    const managed = this.managedLabel();
+    return managed ? [...zones, box(managed.x, managed.y, this.painted('Servicios gestionados'), true)] : zones;
+  });
+
+  /** Un texto como se pinta: traducido si la página está en inglés (lo mismo que la pipe `t`). */
+  private painted(es: string): string {
+    const dictionary = this.language.dictionary();
+    return this.language.lang() === 'en' && dictionary ? (dictionary[es] ?? es) : es;
+  }
+
+  /** Se está arrastrando algo: los cables se trazan en su versión rápida hasta soltar. */
+  private readonly moving = signal(false);
   /** Conexiones con su trazado bezier, recalculado cada vez que un nodo se mueve. */
   readonly wires = computed<Wire[]>(() => {
     const byId = new Map(this.nodes().map((node) => [node.id, node]));
     // Reglas inteligentes: cables en ángulo recto que esquivan nodos, con puntos de salida repartidos.
     const smart = this.smartRules();
-    const ports = smart ? assignPorts(this.links(), byId) : null;
-    const routed = (from: CloudNode, to: CloudNode, key: string) => {
-      const port = ports?.get(key);
-      if (!port) {
+    const texts = smart ? this.fixedTexts() : [];
+    const routes = smart ? routeAll(this.links(), byId, undefined, this.moving(), texts) : null;
+    // Camino de la petición: lo que se alcanza desde los visitantes sin pasar por una pieza de apoyo
+    // ni por un flujo asíncrono. Lo demás va en segundo plano para que el ojo sepa por dónde empezar.
+    const onPath = new Set(this.nodes().filter((node) => node.type === 'users').map((node) => node.id));
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const link of this.links()) {
+        const target = byId.get(link.to);
+        if (onPath.has(link.from) && target && !onPath.has(link.to) && !link.kind && !SUPPORT_TYPES.has(target.type)) {
+          onPath.add(link.to);
+          grew = true;
+        }
+      }
+    }
+    // Lo que un rótulo no debe pisar: las piezas, los rótulos de las zonas y los otros rótulos.
+    const taken: WireRect[] = smart ? [...this.nodes().map((node) => nodeRect(node, 2)), ...texts] : [];
+    const routed = (from: CloudNode, to: CloudNode, key: string, label: string | null) => {
+      const points = routes?.get(key);
+      if (!points) {
         return connect(from, to);
       }
-      const obstacles = this.nodes().filter((node) => node.id !== from.id && node.id !== to.id).map((node) => nodeRect(node));
-      const points = routeWire(port.from, port.to, port.sides, obstacles);
-      return { path: roundedPath(points), labelAt: labelPoint(points) };
+      const width = label ? labelWidth(this.painted(label)) : undefined;
+      const labelAt = labelPoint(points, taken, width);
+      if (label) {
+        taken.push(labelBox(labelAt, width));
+      }
+      return { path: roundedPath(points), labelAt };
     };
     return this.links().flatMap((link) => {
       const from = byId.get(link.from);
@@ -221,13 +300,14 @@ export class CloudInfraComponent {
       if (!from || !to) {
         return [];
       }
-      const custom = to.custom ? to : from.custom ? from : null;
+      // Con reglas inteligentes no brilla: las plantillas marcan casi todo como añadido y taparía la jerarquía.
+      const custom = smart ? null : to.custom ? to : from.custom ? from : null;
       const faults = this.faults();
       // Un fallo inyectado a mano manda sobre el escenario de caos: por un nodo caído no pasa tráfico.
       const chaos: ChaosLevel | null = faults[from.id] === 'down' || faults[to.id] === 'down' ? 'down'
         : faults[to.id] === 'cpu' ? 'warn'
         : (this.chaosPhase()?.wires[`${link.from}>${link.to}`] ?? null);
-      return [{ ...link, ...(smart ? routed(from, to, `${link.from}>${link.to}`) : connect(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
+      return [{ ...link, support: smart && !(onPath.has(from.id) && onPath.has(to.id) && !link.kind), ...(smart ? routed(from, to, `${link.from}>${link.to}`, link.label ?? (link.kind ? KIND_LABELS[link.kind] : null)) : connect(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
     });
   });
 
@@ -399,6 +479,8 @@ export class CloudInfraComponent {
     id: string; mode: 'move' | ZoneCorner; x: number; y: number; origin: StudioZone; nodes: CloudNode[]; zones: StudioZone[]; recorded: boolean;
     /** Recuadros elásticos: el lienzo antes del gesto y su árbol de recuadros. */
     before?: { zones: StudioZone[]; nodes: CloudNode[]; parents: Map<string, string | null> };
+    /** Último desplazamiento que cupo. */
+    last?: [number, number];
   } | null = null;
   readonly corners: ZoneCorner[] = ['nw', 'ne', 'sw', 'se'];
   /** Recuadro sobre el que está el nodo que se arrastra: es el que lo adoptará al soltarlo. */
@@ -453,6 +535,16 @@ export class CloudInfraComponent {
     });
     this.restore();
     this.studio.load();
+    // Las flags llegan después de cargar el diseño: al encenderse, el que ya está en pantalla recibe su aire.
+    effect(() => {
+      if (this.smartRules()) {
+        untracked(() => {
+          const layout = breathe(this.zones(), this.nodes());
+          this.zones.set(layout.zones);
+          this.nodes.set(layout.nodes);
+        });
+      }
+    });
     // Encuadre automático: sigue al diagrama cuando cambian sus piezas, sus recuadros o el modo edición.
     effect(() => {
       this.nodes();
@@ -559,7 +651,7 @@ export class CloudInfraComponent {
   }
 
   isWireActive(wire: CloudLink): boolean {
-    return wire.from === this.activeId() || wire.to === this.activeId();
+    return this.emphasis() && (wire.from === this.activeId() || wire.to === this.activeId());
   }
 
   /** Cambia de nube: todos los nodos, también los añadidos, pasan a su servicio equivalente. */
@@ -801,6 +893,7 @@ export class CloudInfraComponent {
       return;
     }
     this.activeId.set(node.id);
+    this.autoActive.set(false);
     if (event.type === 'click') {
       this.hideTooltip();
     } else if (event.currentTarget instanceof Element) {
@@ -1202,6 +1295,7 @@ export class CloudInfraComponent {
     this.dragging = { id: node.id, dx: node.x - point.x, dy: node.y - point.y, recorded: false, lastAllowed: { x: node.x, y: node.y }, origin: { x: node.x, y: node.y } };
     capturePointer(event.currentTarget, event.pointerId);
     this.activeId.set(node.id);
+    this.autoActive.set(false);
     this.placementNotice.set(null);
   }
 
@@ -1212,6 +1306,7 @@ export class CloudInfraComponent {
     if (!this.dragging.recorded) {
       this.record();
       this.dragging.recorded = true;
+      this.moving.set(true);
       // Arrastrando, la ficha del nodo estorba: se oculta (y no vuelve a salir hasta soltar).
       this.hideTooltip();
     }
@@ -1241,6 +1336,7 @@ export class CloudInfraComponent {
   onNodePointerUp(): void {
     const drag = this.dragging;
     this.dragging = null;
+    this.moving.set(false);
     this.dropZoneId.set(null);
     if (!drag || !drag.recorded || !this.smartRules()) {
       return;
@@ -1496,7 +1592,7 @@ export class CloudInfraComponent {
   undo(): void {
     const previous = this.history.undo(this.project());
     if (previous) {
-      this.apply(previous);
+      this.apply(previous, true);
       this.modified.set(true);
     }
     this.syncHistory();
@@ -1505,7 +1601,7 @@ export class CloudInfraComponent {
   redo(): void {
     const next = this.history.redo(this.project());
     if (next) {
-      this.apply(next);
+      this.apply(next, true);
       this.modified.set(true);
     }
     this.syncHistory();
@@ -1810,6 +1906,7 @@ export class CloudInfraComponent {
         ? { zones: this.zones().map((z) => ({ ...z })), nodes: this.nodes().map((n) => ({ ...n })), parents: zoneParents(this.zones()) }
         : undefined,
     };
+    this.paintOrder.set(this.zonesByArea().map((candidate) => candidate.id));
     capturePointer(event.currentTarget, event.pointerId);
     this.activeZoneId.set(zone.id);
   }
@@ -1822,11 +1919,30 @@ export class CloudInfraComponent {
     if (!drag.recorded) {
       this.record();
       drag.recorded = true;
+      this.moving.set(true);
     }
     const point = this.toCanvas(event.clientX, event.clientY);
-    this.transformZone(drag, point.x - drag.x, point.y - drag.y);
-    if (drag.before) {
-      this.settleAround(drag.id, drag.before, new Set([drag.id, ...drag.zones.map((zone) => zone.id)]), new Set(drag.nodes.map((node) => node.id)));
+    const [dx, dy] = [point.x - drag.x, point.y - drag.y];
+    const before = drag.before;
+    if (!before) {
+      this.transformZone(drag, dx, dy);
+      return;
+    }
+    // El último estado bueno: si un paso no cabe, se prueba cada eje por separado (el recuadro desliza
+    // por el que tiene sitio) y, si tampoco, se queda aquí en vez de romper el diseño.
+    const [lastZones, lastNodes] = [this.zones(), this.nodes()];
+    const [lastX, lastY] = drag.last ?? [0, 0];
+    const fits = ([x, y]: [number, number]) => {
+      this.transformZone(drag, x, y);
+      this.settleAround(drag.id, before, new Set([drag.id, ...drag.zones.map((zone) => zone.id)]), new Set(drag.nodes.map((node) => node.id)));
+      return !hasConflict(this.zones(), this.nodes(), drag.id, before.parents, before);
+    };
+    const step = ([[dx, dy], [dx, lastY], [lastX, dy]] as [number, number][]).find(fits);
+    if (step) {
+      drag.last = step;
+    } else {
+      this.zones.set(lastZones);
+      this.nodes.set(lastNodes);
     }
   }
 
@@ -1850,6 +1966,8 @@ export class CloudInfraComponent {
       this.reassignZones();
     }
     this.zoneDrag = null;
+    this.moving.set(false);
+    this.paintOrder.set(null);
     this.refit();
   }
 
@@ -1881,11 +1999,19 @@ export class CloudInfraComponent {
   private transformZone(drag: { id: string; mode: 'move' | ZoneCorner; origin: StudioZone; nodes: CloudNode[]; zones: StudioZone[] }, dx: number, dy: number): void {
     const { origin } = drag;
     if (drag.mode !== 'move' && this.smartRules()) {
-      // El recuadro no baja del tamaño de su contenido y sus nodos se reacomodan dentro. Se
-      // parte siempre de como estaban al empezar a tirar: al volver atrás, vuelven a su sitio.
-      const { x, y, w, h } = resizeToContent(origin, drag.mode, dx, dy, drag.nodes.length, drag.zones);
+      // El recuadro no baja del tamaño de su contenido. Uno sencillo reacomoda sus nodos dentro; el
+      // que contiene otros recuadros (la nube, la red) no toca nada: solo se mueve su borde. Se parte
+      // siempre de como estaban al empezar a tirar: al volver atrás, vuelven a su sitio.
+      const container = drag.zones.length > 0;
+      const held = drag.nodes.map((node) => ({ x: node.x - NODE_WIDTH / 2, y: node.y - NODE_HEIGHT / 2, w: NODE_WIDTH, h: NODE_HEIGHT }));
+      // Con su margen: lo de dentro no se queda pegado al borde del recuadro.
+      const content = [...drag.zones, ...held].map((box) => ({
+        x: box.x - ZONE_PADDING.side, y: box.y - ZONE_PADDING.top,
+        w: box.w + ZONE_PADDING.side * 2, h: box.h + ZONE_PADDING.top + ZONE_PADDING.bottom,
+      }));
+      const { x, y, w, h } = resizeToContent(origin, drag.mode, dx, dy, container ? 0 : drag.nodes.length, container ? content : drag.zones);
       this.zones.update((zones) => zones.map((zone) => (zone.id === drag.id ? { ...zone, x, y, w, h } : zone)));
-      const placed = new Map(reflow(drag.nodes, { x, y, w, h }).map((node) => [node.id, node]));
+      const placed = new Map((container ? drag.nodes : reflow(drag.nodes, { x, y, w, h })).map((node) => [node.id, node]));
       this.nodes.update((nodes) => nodes.map((node) => {
         const next = placed.get(node.id);
         return next ? { ...node, x: next.x, y: next.y } : node;
@@ -1941,16 +2067,20 @@ export class CloudInfraComponent {
     this.canRedo.set(this.history.canRedo);
   }
 
-  private apply(project: StudioProject): void {
+  private apply(project: StudioProject, exact = false): void {
     this.iconPop.release();
     this.stopChaos();
     this.clearFaults();
     this.selectedId.set(project.provider);
-    this.nodes.set(structuredClone(project.nodes));
+    // Con reglas inteligentes el diseño se carga con aire entre columnas; deshacer y rehacer (`exact`)
+    // vuelven exactamente a lo que había.
+    const layout = this.smartRules() && !exact ? breathe(project.zones, project.nodes) : project;
+    this.nodes.set(structuredClone(layout.nodes));
     this.links.set(structuredClone(project.links));
-    this.zones.set(structuredClone(project.zones));
+    this.zones.set(structuredClone(layout.zones));
     this.system.set(project.system ? structuredClone(project.system) : null);
     this.activeId.set(project.nodes.some((node) => node.id === 'api') ? 'api' : (project.nodes[0]?.id ?? ''));
+    this.autoActive.set(true);
     this.propertiesId.set(null);
     this.activeZoneId.set(null);
     this.cancelConnection();

@@ -1,5 +1,5 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '../cloud-topology.data';
-import { resolveCollision } from '../studio-physics';
+import { overlaps, resolveCollision } from '../studio-physics';
 import { SystemDesign } from '../system/system-design';
 import { AppBoxKind, pieceOf } from './app-catalog.data';
 import { ASYNC_PROTOCOLS, Protocol, connectionVerdict } from './app-protocols';
@@ -64,7 +64,11 @@ function nextId(graph: AppGraph, type: string): string {
 export function addNode(graph: AppGraph, type: string, at?: { x: number; y: number }): { graph: AppGraph; id: string } {
   const id = nextId(graph, type);
   const start = clampPoint(at ?? { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 });
-  const free = clampPoint(resolveCollision(id, start, graph.nodes, graph.boxes));
+  let free = clampPoint(resolveCollision(id, start, graph.nodes, graph.boxes));
+  // Caja llena: el hueco más cercano aunque quede fuera (el ajuste hará crecer la caja).
+  if (graph.nodes.some((node) => overlaps(free, node, 0))) {
+    free = clampPoint(resolveCollision(id, start, graph.nodes, []));
+  }
   return { graph: { ...graph, nodes: [...graph.nodes, { id, type, ...free }] }, id };
 }
 

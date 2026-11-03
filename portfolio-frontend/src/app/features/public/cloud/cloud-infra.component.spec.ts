@@ -1901,9 +1901,11 @@ describe('CloudInfraComponent', () => {
           const pointer = pointerOn(fixture, element);
           select(fixture, element, 'Visitantes');
 
+          // El lienzo inteligente da aire a las columnas: el destino se busca donde esté.
+          const target = component.nodes().find((candidate) => candidate.id === 'postgres')!;
           pointer(handle(element), 'pointerdown', 128, 250);
           pointer(handle(element), 'pointermove', 600, 250);
-          pointer(handle(element), 'pointerup', 710, 250);
+          pointer(handle(element), 'pointerup', target.x, target.y);
 
           expect(wireKeys(component)).not.toContain('users>postgres');
           expect(component.canUndo()).toBeFalse();

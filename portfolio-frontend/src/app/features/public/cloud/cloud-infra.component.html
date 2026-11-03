@@ -188,7 +188,10 @@
     }
   </div>
 
-  @if (modified()) {
+  @if (smartRules()) {
+    <!-- Con su sitio reservado: si apareciera con el primer cambio, empujaría el lienzo a mitad de un gesto. -->
+    <p class="min-h-5 w-full text-caption font-normal text-ink-3" role="status">@if (modified()) { {{ 'Guardado en este navegador' | t }} }</p>
+  } @else if (modified()) {
     <p class="w-full text-caption font-normal text-ink-3" role="status">{{ 'Guardado en este navegador' | t }}</p>
   }
   @if (cloudNotice(); as notice) {
@@ -395,7 +398,9 @@
         }
       }
       @if (hasCloudZone()) {
-        <text class="zone-sub" x="935" y="170" text-anchor="middle">{{ 'Servicios gestionados' | t }}</text>
+        @if (managedLabel(); as label) {
+          <text class="zone-sub" [attr.x]="label.x" [attr.y]="label.y" text-anchor="middle">{{ 'Servicios gestionados' | t }}</text>
+        }
       }
 
       @if (smartRules()) {
@@ -409,7 +414,7 @@
         </defs>
       }
       @for (wire of wires(); track wire.from + '>' + wire.to) {
-        <path class="wire" [class.wire-smart]="smartRules()" [class.wire-dim]="smartRules() && !!activeId() && !isWireActive(wire)"
+        <path class="wire" [class.wire-smart]="smartRules()" [class.wire-support]="wire.support" [class.wire-main]="smartRules() && !wire.support" [class.wire-dim]="smartRules() && emphasis() && !!activeId() && !isWireActive(wire)"
           [attr.marker-end]="smartRules() ? 'url(#wire-arrow-' + (wire.chaos === 'down' ? 'down' : wire.chaos === 'warn' ? 'warn' : isWireActive(wire) || wire.glow ? 'active' : 'base') + ')' : null"
           [class.wire-active]="isWireActive(wire)" [class.wire-glow]="wire.glow" [class.wire-warn]="wire.chaos === 'warn'" [class.wire-down]="wire.chaos === 'down'" [style.--glow]="wire.glow" [style.--flow]="isWireActive(wire) ? activeColor() : null" [attr.data-kind]="wire.kind ?? null" [attr.d]="wire.path" />
         @if (wire.chaos === 'down') {
@@ -419,6 +424,7 @@
           @for (particle of particles(); track particle) {
             <path
               class="pulse"
+              [class.pulse-quiet]="wire.support && !isWireActive(wire)"
               [class.pulse-active]="isWireActive(wire)"
               [class.pulse-warn]="wire.chaos === 'warn'"
               [style.--flow]="activeColor()"
@@ -442,7 +448,7 @@
       @for (node of nodes(); track node.id) {
         <g
           class="node"
-          [class.node-active]="node.id === activeId()"
+          [class.node-active]="emphasis() && node.id === activeId()"
           [class.node-custom]="node.custom"
           [class.node-editing]="editing()"
           [class.node-chaos-down]="chaosOf(node)?.level === 'down'"

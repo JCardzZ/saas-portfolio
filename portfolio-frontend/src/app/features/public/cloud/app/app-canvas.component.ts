@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, input, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, input, signal, untracked, viewChild } from '@angular/core';
 import { CANVAS_HEIGHT, CANVAS_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '../cloud-topology.data';
 import { FULL_VIEW, View, panView, zoomView } from '../studio-physics';
 import { contentBounds } from '../zone-layout';
 import { SystemDesign } from '../system/system-design';
-import { assignPorts, labelPoint, nodeRect, roundedPath, routeWire } from '../wire-router';
+import { labelBox, labelPoint, nodeRect, roundedPath, routeAll } from '../wire-router';
 import { APP_BOXES, APP_LAYERS, APP_PIECES, AppBoxKind, AppPiece, layerOf, pieceOf } from './app-catalog.data';
 import {
   AppBox, AppGraph, AppNode, addBox, addNode, clampPoint, connect, cycleProtocol, graphFromDesign, isAsync, linkKey, moveBox, moveNode,
@@ -15,10 +15,21 @@ import { drawnJourney } from './app-journey';
 import { autoArrange, settle } from './app-layout';
 import { PIECE_LESSONS, PROTOCOL_LESSONS } from './app-learn.data';
 import { AppAssistantComponent, levelName } from './app-assistant.component';
+import { PieceLogo, attributionsFor, logoFor } from './app-brands';
+import { TRADEMARK_NOTICE } from '../system/system-icons';
+import { CloudProviderId } from '../cloud-topology.data';
 
 const STORAGE_KEY = 'studio-app-canvas';
 const PIECE_MIME = 'application/x-app-piece';
 const HISTORY = 40;
+
+/** Firma de las decisiones que dibujan el lienzo: si cambia, el lienzo de partida es otro. */
+function designSignature(design: SystemDesign): string {
+  const choices = design.choices as Record<string, string | undefined>;
+  return Object.keys(choices).sort().map((key) => `${key}=${choices[key] ?? ''}`).join('&');
+}
+const WIRE_GAP = { from: 4, to: 10 };
+const MIN_FRAME_RATIO = 0.6;
 
 /** Vista de una pieza ya resuelta: su ficha del catálogo, su capa y su color. */
 interface NodeView {
@@ -28,6 +39,8 @@ interface NodeView {
   layer: string;
   name: string;
   tech: string;
+  /** Logo de su tecnología, si tiene. */
+  logo: PieceLogo | null;
 }
 
 /**
@@ -69,6 +82,13 @@ interface NodeView {
         </div>
       </header>
 
+      @if (stale()) {
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-status-warn/30 bg-status-warn/10 px-4 py-2.5 text-sm text-ink-2" role="status" data-testid="appc-stale">
+          <span class="min-w-0 flex-[1_1_20rem]"><strong class="font-semibold text-ink-1">Las decisiones han cambiado</strong> (otra plantilla o tecnología) y tu dibujo ya no las refleja.</span>
+          <button type="button" class="ui-btn-secondary" (click)="fromDesign()">Redibujar desde las decisiones</button>
+          <button type="button" class="ui-btn-ghost" (click)="keepDrawing()">Mantener mi dibujo</button>
+        </div>
+      }
       <div class="appc-body">
         <aside class="appc-catalog" aria-label="Piezas">
           <label class="sr-only" for="appc-search">Buscar una pieza</label>
@@ -81,7 +101,17 @@ interface NodeView {
                   <li>
                     <button type="button" class="appc-piece" draggable="true" [style.--layer]="group.layer.color" [attr.data-piece]="piece.type" [title]="piece.summary"
                       (dragstart)="onPieceDrag($event, piece)" (click)="add(piece.type)">
-                      <span class="appc-chip" aria-hidden="true"><svg viewBox="0 0 24 24"><path [attr.d]="piece.icon" /></svg></span>
+                      <span class="appc-chip" aria-hidden="true">
+                        @if (logoOf(piece); as mark) {
+                          @if (mark.image) {
+                            <img [src]="mark.image" alt="" class="h-[1.125rem] w-[1.125rem]" />
+                          } @else {
+                            <svg viewBox="0 0 24 24" class="h-[1.125rem] w-[1.125rem]"><path [attr.d]="mark.path" [style.fill]="mark.color" style="stroke: none" /></svg>
+                          }
+                        } @else {
+                          <svg viewBox="0 0 24 24"><path [attr.d]="piece.icon" /></svg>
+                        }
+                      </span>
                       <span class="min-w-0"><span class="block truncate text-sm font-medium text-ink-1">{{ piece.name }}</span><span class="block truncate text-xs text-ink-3">{{ piece.tech }}</span></span>
                     </button>
                   </li>
@@ -140,16 +170,20 @@ interface NodeView {
                 <rect class="appc-node-bar" x="0" y="10" width="3" [attr.height]="h - 20" rx="1.5" />
                 <g transform="translate(12 12)">
                   <rect class="appc-node-chip" width="24" height="24" rx="7" />
-                  <g transform="translate(4 4) scale(0.6667)"><path class="appc-node-icon" [attr.d]="item.piece.icon" /></g>
+                  @if (item.logo?.image; as image) {
+                    <image [attr.href]="image" x="3" y="3" width="18" height="18" data-logo="image" />
+                  } @else if (item.logo?.path; as path) {
+                    <g transform="translate(3 3) scale(0.75)"><path [attr.d]="path" [attr.fill]="item.logo?.color" data-logo="path" /></g>
+                  } @else {
+                    <g transform="translate(4 4) scale(0.6667)"><path class="appc-node-icon" [attr.d]="item.piece.icon" /></g>
+                  }
                 </g>
-                <text x="44" y="21" class="appc-node-layer">{{ clip(item.layer, 13) }}</text>
+                <!-- Arriba, dónde corre (la capa ya la dice el color); si no corre en ninguna parte, la capa. -->
+                <text x="44" y="21" class="appc-node-layer" [class.appc-node-runs]="item.node.runsOn">{{ item.node.runsOn ? '▸ ' + clip(infraName(item.node.runsOn), 12) : clip(item.layer, 13) }}</text>
                 <text x="44" y="36" class="appc-node-name">{{ clip(item.name, 13) }}</text>
                 <text x="12" y="59" class="appc-node-tech">{{ clip(item.tech, 18) }}</text>
                 @if (review().marks.get(item.node.id); as level) {
                   <circle class="appc-mark" [attr.data-level]="level" [attr.cx]="w - 10" cy="10" r="5"><title>{{ markTitle(level) }}</title></circle>
-                }
-                @if (item.node.runsOn) {
-                  <text [attr.x]="w - 10" y="59" text-anchor="end" class="appc-node-runs">{{ clip(infraName(item.node.runsOn), 10) }}</text>
                 }
                 <g class="appc-handle" (pointerdown)="startConnect($event, item.node)" [attr.transform]="'translate(' + w + ' ' + h / 2 + ')'">
                   <circle r="11" class="appc-handle-hit" />
@@ -175,6 +209,11 @@ interface NodeView {
           (fixed)="fix($event)" (highlighted)="highlightIds.set($event)" />
       </div>
 
+      <!-- Los logos identifican cada tecnología; el aviso va siempre con ellos. -->
+      <p class="border-t border-line-subtle px-4 py-2 text-xs leading-snug text-ink-3" data-testid="appc-trademark">
+        {{ trademarkNotice }}
+        @for (line of attributions(); track line) { <span class="block">{{ line }}</span> }
+      </p>
       @if (selectedNode(); as item) {
         <div class="appc-inspector" [style.--layer]="item.color" data-testid="appc-inspector">
           <span class="appc-chip" aria-hidden="true"><svg viewBox="0 0 24 24"><path [attr.d]="item.piece.icon" /></svg></span>
@@ -212,7 +251,7 @@ interface NodeView {
     </section>
   `,
   styles: [`
-    .appc { border-radius: var(--radius-panel); border: 1px solid var(--border-subtle); background: rgb(var(--c-surface-1) / 0.6); overflow: hidden; }
+    .appc { container-type: inline-size; border-radius: var(--radius-panel); border: 1px solid var(--border-subtle); background: rgb(var(--c-surface-1) / 0.6); overflow: hidden; }
     .appc-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-subtle); }
     .appc-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
     .appc-menu { position: absolute; right: 0; top: calc(100% + 0.35rem); z-index: 20; width: 16rem; padding: 0.35rem; border-radius: var(--radius-panel); border: 1px solid var(--border-strong); background: var(--bg-surface-2); box-shadow: var(--shadow-floating); }
@@ -227,7 +266,7 @@ interface NodeView {
     .appc-body { display: grid; grid-template-columns: 14rem minmax(0, 1fr); min-height: 0; }
     .appc-assistant-slot { grid-column: 1 / -1; display: flex; min-height: 0; border-top: 1px solid var(--border-subtle); max-height: 30rem; }
     
-    @media (min-width: 1600px) {
+    @container (min-width: 88rem) {
       .appc-body { grid-template-columns: 14rem minmax(0, 1fr) 20rem; }
       .appc-assistant-slot { grid-column: auto; border-top: 0; border-left: 1px solid var(--border-subtle); max-height: 44rem; }
       .appc-assistant-slot { --assistant-columns: minmax(0, 1fr); }
@@ -300,7 +339,7 @@ interface NodeView {
     .appc-mark[data-level='risk'] { fill: var(--status-danger); }
     .appc-mark[data-level='warn'] { fill: var(--status-warn); }
     .appc-mark[data-level='tip'] { fill: var(--accent-text); }
-    .appc-node-runs { fill: var(--text-3); font-size: 12px; }
+    .appc-node-runs { fill: var(--accent-text); }
     .appc-hl .appc-node-card { stroke: var(--layer); stroke-width: 2; }
     .appc-dim { opacity: 0.3; }
     .appc-notice-ok { border-color: rgb(var(--c-status-ok) / 0.35); }
@@ -317,6 +356,8 @@ export class AppCanvasComponent implements OnInit {
   readonly design = input.required<SystemDesign>();
   /** Piezas de la vista de Infraestructura en las que puede correr cada una de estas. */
   readonly infra = input<InfraTarget[]>([]);
+  /** Nube activa: los iconos oficiales de una nube solo salen en un diseño de esa nube. */
+  readonly provider = input<CloudProviderId>('aws');
   private readonly svg = viewChild<ElementRef<SVGSVGElement>>('svg');
 
   readonly w = NODE_WIDTH;
@@ -343,8 +384,13 @@ export class AppCanvasComponent implements OnInit {
     const bounds = contentBounds(nodes, boxes, 640);
     const pad = 56;
     const x = Math.max(0, bounds.x - pad);
-    const y = Math.max(0, bounds.y - pad);
-    return { x, y, w: Math.min(CANVAS_WIDTH, bounds.x + bounds.w + pad) - x, h: Math.min(CANVAS_HEIGHT, bounds.y + bounds.h + pad) - y };
+    const w = Math.min(CANVAS_WIDTH, bounds.x + bounds.w + pad) - x;
+    // Proporción mínima: un diagrama muy apaisado no deja el lienzo bajito con un hueco debajo;
+    // se centra en vertical, al mismo tamaño, con sitio para soltar piezas.
+    const content = { y: Math.max(0, bounds.y - pad), h: Math.min(CANVAS_HEIGHT, bounds.y + bounds.h + pad) - Math.max(0, bounds.y - pad) };
+    const h = Math.min(CANVAS_HEIGHT, Math.max(content.h, w * MIN_FRAME_RATIO));
+    const y = Math.round(content.y - (h - content.h) / 2);
+    return { x, y, w, h };
   });
   readonly shown = computed<View>(() => (this.autoFrame() ? this.frozen() ?? this.frame() : this.camera()));
   readonly zoom = computed(() => Math.round((this.frame().w / this.shown().w) * 100));
@@ -376,7 +422,8 @@ export class AppCanvasComponent implements OnInit {
       return [];
     }
     const layer = layerOf(piece.layer);
-    return [{ node, piece, color: layer.color, layer: layer.name, name: node.name?.trim() || piece.name, tech: node.tech?.trim() || piece.tech }];
+    const tech = node.tech?.trim() || piece.tech;
+    return [{ node, piece, color: layer.color, layer: layer.name, name: node.name?.trim() || piece.name, tech, logo: logoFor(tech, this.provider()) }];
   }));
 
   /** Mientras se traza una conexión: qué piezas la admiten (verde) y cuáles no (atenuadas). */
@@ -392,18 +439,21 @@ export class AppCanvasComponent implements OnInit {
   readonly wires = computed(() => {
     const { nodes, links } = this.graph();
     const byId = new Map(nodes.map((node) => [node.id, node]));
-    const ports = assignPorts(links, byId);
+    // Todos a la vez, para que no se crucen; con aire en los dos extremos: el cable no nace pegado a la
+    // pieza y la punta no toca el borde.
+    const routes = routeAll(links, byId, WIRE_GAP, this.frozen() !== null);
     const selected = this.selected();
+    const taken = [...nodes.map((node) => nodeRect(node, 0)), ...this.graph().boxes.map((box) => ({ x: box.x, y: box.y, w: box.w, h: 30 }))];
     return links.flatMap((link) => {
-      const port = ports.get(linkKey(link));
-      if (!port) {
+      const points = routes.get(linkKey(link));
+      if (!points) {
         return [];
       }
-      const obstacles = nodes.filter((node) => node.id !== link.from && node.id !== link.to).map((node) => nodeRect(node));
-      const points = routeWire(port.from, port.to, port.sides, obstacles);
       const key = linkKey(link);
+      const label = labelPoint(points, taken);
+      taken.push(labelBox(label));
       return [{
-        key, protocol: link.protocol, async: isAsync(link.protocol), path: roundedPath(points), label: labelPoint(points),
+        key, protocol: link.protocol, async: isAsync(link.protocol), path: roundedPath(points), label,
         labelWidth: link.protocol.length * 7.4 + 16,
         active: selected === key || selected === link.from || selected === link.to,
       }];
@@ -443,27 +493,60 @@ export class AppCanvasComponent implements OnInit {
   });
   private noticeTimer: ReturnType<typeof setTimeout> | undefined;
 
+  readonly trademarkNotice = TRADEMARK_NOTICE;
+  /** Las frases que piden las marcas cuyo logo está ahora en pantalla (lienzo o catálogo). */
+  readonly attributions = computed(() => attributionsFor([
+    ...this.views().map((item) => item.logo),
+    ...this.catalog().flatMap((group) => group.pieces.map((piece) => this.logoOf(piece))),
+  ]));
+
+  logoOf(piece: AppPiece): PieceLogo | null {
+    return logoFor(piece.tech, this.provider());
+  }
+
   readonly selectedNode = computed(() => this.views().find((item) => item.node.id === this.selected()) ?? null);
   readonly selectedLink = computed(() => this.graph().links.find((link) => linkKey(link) === this.selected()) ?? null);
 
   /** Hasta cargar lo guardado no se guarda nada: si no, el lienzo vacío lo pisaría. */
-  private ready = false;
+  private readonly ready = signal(false);
+  /** Decisiones de las que salió el lienzo (su firma) y si el visitante lo ha tocado desde entonces. */
+  private readonly source = signal<string | null>(null);
+  readonly edited = signal(false);
+  /** Las decisiones (o la plantilla) cambiaron y el dibujo editado ya no las refleja. */
+  readonly stale = computed(() => this.ready() && this.edited() && this.source() !== designSignature(this.design()));
 
   ngOnInit(): void {
-    this.graph.set(this.restore() ?? graphFromDesign(this.design()));
-    this.ready = true;
+    const saved = this.restore();
+    const signature = designSignature(this.design());
+    // Lo guardado vale si salió de estas mismas decisiones o si el visitante lo editó (no se pisa su trabajo).
+    if (saved && (saved.source === signature || saved.edited)) {
+      this.graph.set(saved.graph);
+      this.source.set(saved.source);
+      this.edited.set(saved.edited);
+    } else {
+      this.regenerate(false);
+    }
+    this.ready.set(true);
   }
 
   constructor() {
     effect(() => {
-      const graph = this.graph();
-      if (!this.ready) {
+      const record = { graph: this.graph(), source: this.source(), edited: this.edited() };
+      if (!this.ready()) {
         return;
       }
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(graph));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
       } catch {
         // Sin almacenamiento (modo privado): el lienzo funciona igual, solo no se recuerda.
+      }
+    });
+    // Cambian las decisiones (otra plantilla, otra base de datos…): si el lienzo no se ha tocado,
+    // se redibuja solo; si se ha editado, se avisa y el visitante decide.
+    effect(() => {
+      const signature = designSignature(this.design());
+      if (untracked(this.ready) && !untracked(this.edited) && signature !== untracked(this.source)) {
+        untracked(() => this.regenerate(true));
       }
     });
     inject(DestroyRef).onDestroy(() => {
@@ -472,13 +555,45 @@ export class AppCanvasComponent implements OnInit {
     });
   }
 
-  private restore(): AppGraph | null {
+  /** Lo guardado: el lienzo, de qué decisiones salió y si se editó. Lo de versiones anteriores (solo el lienzo) cuenta como editado. */
+  private restore(): { graph: AppGraph; source: string | null; edited: boolean } | null {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? sanitizeGraph(JSON.parse(saved)) : null;
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as { graph?: unknown; source?: unknown; edited?: unknown } | null;
+      if (!saved) {
+        return null;
+      }
+      const legacy = !('graph' in saved);
+      const graph = sanitizeGraph(legacy ? saved : saved.graph);
+      return graph ? { graph, source: !legacy && typeof saved.source === 'string' ? saved.source : null, edited: legacy || saved.edited === true } : null;
     } catch {
       return null;
     }
+  }
+
+  /** Redibuja el lienzo desde las decisiones y lo ordena por capas. */
+  private regenerate(record: boolean): void {
+    if (record) {
+      this.history.update((past) => [...past.slice(-HISTORY + 1), this.graph()]);
+    }
+    // Cada pieza, unida a la primera de Infraestructura donde puede correr: es el mismo proyecto.
+    const drawn = graphFromDesign(this.design());
+    const placed = {
+      ...drawn,
+      nodes: drawn.nodes.map((node) => {
+        const target = this.targetsFor(node.type)[0];
+        return target ? { ...node, runsOn: target.id } : node;
+      }),
+    };
+    this.graph.set(autoArrange(placed));
+    this.source.set(designSignature(this.design()));
+    this.edited.set(false);
+    this.selected.set(null);
+    this.autoFrame.set(true);
+  }
+
+  /** Mantener el dibujo editado aunque las decisiones hayan cambiado. */
+  keepDrawing(): void {
+    this.source.set(designSignature(this.design()));
   }
 
   // ---------- Edición ----------
@@ -486,6 +601,7 @@ export class AppCanvasComponent implements OnInit {
   private commit(next: AppGraph, anchor?: string): void {
     this.history.update((past) => [...past.slice(-HISTORY + 1), this.graph()]);
     this.graph.set(settle(next, anchor));
+    this.edited.set(true);
   }
 
   arrange(): void {
@@ -496,6 +612,7 @@ export class AppCanvasComponent implements OnInit {
   fix(finding: Finding): void {
     this.history.update((past) => [...past.slice(-HISTORY + 1), this.graph()]);
     this.graph.set(applyFix(this.graph(), finding));
+    this.edited.set(true);
     this.highlightIds.set(null);
     this.flash({ title: 'Hecho.', reason: finding.fix!.label + '.', suggestion: 'Puedes deshacerlo si no te convence.', ok: true });
   }
@@ -504,9 +621,10 @@ export class AppCanvasComponent implements OnInit {
     this.commit(updateNode(this.graph(), id, { runsOn: target || undefined }));
   }
 
+  /** Piezas de Infraestructura donde puede correr, de la más indicada a la menos (orden de la lección). */
   targetsFor(type: string): InfraTarget[] {
     const kinds = PIECE_LESSONS[type]?.runsOn ?? [];
-    return this.infra().filter((target) => kinds.includes(target.type));
+    return this.infra().filter((target) => kinds.includes(target.type)).sort((a, b) => kinds.indexOf(a.type) - kinds.indexOf(b.type));
   }
 
   lessonOf(type: string) {
@@ -539,9 +657,7 @@ export class AppCanvasComponent implements OnInit {
   }
 
   fromDesign(): void {
-    this.commit(graphFromDesign(this.design()));
-    this.selected.set(null);
-    this.autoFrame.set(true);
+    this.regenerate(true);
   }
 
   add(type: string, at?: { x: number; y: number }): void {
@@ -698,11 +814,13 @@ export class AppCanvasComponent implements OnInit {
       }
       // Sin montarse ni salirse de su caja: las demás se apartan, la caja crece.
       this.graph.set(settle(this.graph(), gesture.id));
+      this.edited.set(true);
     } else if (gesture.kind === 'box') {
       if (!gesture.moved) {
         this.history.update((past) => past.slice(0, -1));
       } else {
         this.graph.set(settle(this.graph(), gesture.id));
+        this.edited.set(true);
       }
     } else {
       const target = event.type === 'pointerup' ? this.nodeAt(this.toCanvas(event)) : null;

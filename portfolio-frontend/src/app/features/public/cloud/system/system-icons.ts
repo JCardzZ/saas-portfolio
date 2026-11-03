@@ -24,10 +24,10 @@ const LIGHT = 'var(--text-1)';
 /** Una marca casi negra no se vería sobre el fondo oscuro: se pinta en blanco. */
 function readable(hex: string): string {
   const [r, g, b] = [0, 2, 4].map((at) => Number.parseInt(hex.slice(at, at + 2), 16));
-  return 0.299 * r + 0.587 * g + 0.114 * b < 70 ? LIGHT : `#${hex}`;
+  return 0.299 * r + 0.587 * g + 0.114 * b < 90 ? LIGHT : `#${hex}`;
 }
 
-const logo = (source: { title: string; hex: string; path: string }, title = source.title): BrandLogo =>
+export const logo = (source: { title: string; hex: string; path: string }, title = source.title): BrandLogo =>
   ({ title, path: source.path, color: readable(source.hex) });
 
 /** Logos de cada opción del catálogo (`SystemOption.id`). Una opción genérica no tiene ninguno. */
