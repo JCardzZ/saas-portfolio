@@ -13,6 +13,8 @@ import { AppBox, AppGraph, AppNode, clampPoint } from './app-graph';
 export const BOX_PAD = { top: 36, side: 18, bottom: 18 };
 const BOX_GAP = 16;
 const COLUMN_STEP = 190;
+/** Paso entre columnas cuando sobra ancho: deja sitio a la pastilla del protocolo entre dos piezas. */
+const ROOMY_COLUMN_STEP = 230;
 const FIRST_COLUMN = 90;
 const ROW_STEP = 104;
 const FIRST_ROW = 110;
@@ -226,6 +228,11 @@ export function autoArrange(graph: AppGraph): AppGraph {
     const index = column.get(node.id)!;
     columns.set(index, [...(columns.get(index) ?? []), node]);
   }
+  // El ancho del lienzo se reparte entre las columnas que se usan: con menos columnas, más aire entre ellas.
+  const lastColumn = Math.max(...column.values());
+  const columnStep = lastColumn
+    ? Math.max(COLUMN_STEP, Math.min(ROOMY_COLUMN_STEP, Math.floor((CANVAS_WIDTH - FIRST_COLUMN - NODE_WIDTH / 2 - BOX_GAP) / lastColumn)))
+    : COLUMN_STEP;
   const placed = new Map<string, { x: number; y: number }>();
   for (const index of [...columns.keys()].sort((a, b) => a - b)) {
     const members = columns.get(index)!;
@@ -237,7 +244,7 @@ export function autoArrange(graph: AppGraph): AppGraph {
     members.sort((a, b) => weight(a) - weight(b) || rankOf(a) - rankOf(b));
     const step = Math.min(ROW_STEP, (CANVAS_HEIGHT - FIRST_ROW - NODE_HEIGHT) / Math.max(1, members.length - 1));
     members.forEach((node, row) => {
-      placed.set(node.id, clampPoint({ x: FIRST_COLUMN + index * COLUMN_STEP, y: FIRST_ROW + row * step }));
+      placed.set(node.id, clampPoint({ x: FIRST_COLUMN + index * columnStep, y: FIRST_ROW + row * step }));
     });
   }
   const nodes = graph.nodes.map((node) => ({ ...node, ...placed.get(node.id)! }));

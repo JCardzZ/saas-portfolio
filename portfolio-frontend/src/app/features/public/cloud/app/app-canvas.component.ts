@@ -3,7 +3,7 @@ import { CANVAS_HEIGHT, CANVAS_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '../cloud-t
 import { FULL_VIEW, View, panView, zoomView } from '../studio-physics';
 import { contentBounds } from '../zone-layout';
 import { SystemDesign } from '../system/system-design';
-import { labelBox, labelPoint, nodeRect, roundedPath, routeAll } from '../wire-router';
+import { labelPoint, nodeRect, roundedPath, routeAll } from '../wire-router';
 import { APP_BOXES, APP_LAYERS, APP_PIECES, AppBoxKind, AppPiece, layerOf, pieceOf } from './app-catalog.data';
 import {
   AppBox, AppGraph, AppNode, addBox, addNode, clampPoint, connect, cycleProtocol, graphFromDesign, isAsync, linkKey, moveBox, moveNode,
@@ -440,21 +440,36 @@ export class AppCanvasComponent implements OnInit {
     const { nodes, links } = this.graph();
     const byId = new Map(nodes.map((node) => [node.id, node]));
     // Todos a la vez, para que no se crucen; con aire en los dos extremos: el cable no nace pegado a la
-    // pieza y la punta no toca el borde.
-    const routes = routeAll(links, byId, WIRE_GAP, this.frozen() !== null);
+    // pieza y la punta no toca el borde. Los títulos de las cajas son obstáculos: un cable no pasa por
+    // encima de «Red privada».
+    const titles = this.graph().boxes.map((box) => ({ x: box.x + 8, y: box.y + 4, w: (box.label || this.boxName(box.kind)).length * 7.6 + 16, h: 22 }));
+    const routes = routeAll(links, byId, WIRE_GAP, this.frozen() !== null, titles);
     const selected = this.selected();
-    const taken = [...nodes.map((node) => nodeRect(node, 0)), ...this.graph().boxes.map((box) => ({ x: box.x, y: box.y, w: box.w, h: 30 }))];
+    // La pastilla del protocolo se pinta 4 px más alta que la caja de `labelBox`: ese margen alrededor de cada pieza.
+    const taken = [...nodes.map((node) => nodeRect(node, 4)), ...this.graph().boxes.flatMap((box) => [
+      { x: box.x, y: box.y, w: box.w, h: 30 },
+      // Los otros tres bordes de la caja: una pastilla encima de la línea discontinua se lee mal.
+      { x: box.x - 2, y: box.y, w: 4, h: box.h }, { x: box.x + box.w - 2, y: box.y, w: 4, h: box.h }, { x: box.x, y: box.y + box.h - 2, w: box.w, h: 4 },
+    ])];
+    // Cada cable como una línea fina: la pastilla de un cable no tapa a los demás.
+    const lines = new Map([...routes].map(([key, points]) => [key, points.slice(1).map((point, i) => ({
+      x: Math.min(point[0], points[i][0]) - 2, y: Math.min(point[1], points[i][1]) - 2,
+      w: Math.abs(point[0] - points[i][0]) + 4, h: Math.abs(point[1] - points[i][1]) + 4,
+    }))]));
     return links.flatMap((link) => {
       const points = routes.get(linkKey(link));
       if (!points) {
         return [];
       }
       const key = linkKey(link);
-      const label = labelPoint(points, taken);
-      taken.push(labelBox(label));
+      const labelWidth = link.protocol.length * 7.4 + 16;
+      const others = [...lines].filter(([other]) => other !== key).flatMap(([, rects]) => rects);
+      const label = labelPoint(points, [...taken, ...others], labelWidth);
+      // Lo que ocupa la pastilla pintada (de -10 a +10), con el mismo margen que las piezas.
+      taken.push({ x: label[0] - labelWidth / 2 - 4, y: label[1] - 14, w: labelWidth + 8, h: 28 });
       return [{
         key, protocol: link.protocol, async: isAsync(link.protocol), path: roundedPath(points), label,
-        labelWidth: link.protocol.length * 7.4 + 16,
+        labelWidth,
         active: selected === key || selected === link.from || selected === link.to,
       }];
     });
