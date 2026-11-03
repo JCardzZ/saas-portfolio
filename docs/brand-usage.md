@@ -62,6 +62,15 @@ no se da nada por permitido de memoria. No es asesoría legal.
   a su símbolo genérico. Las opciones genéricas (CDN, cola, gateway) llevan un símbolo propio, y el
   servicio de nube donde se despliega cada pieza, su icono oficial de arquitectura.
 
+- **Lienzo de Aplicación del Estudio** (`cloud/app/app-brands.ts`, flag `studio.app-canvas`): **decisión del
+  autor del 2 de noviembre de 2026**, que amplía la anterior. Cada pieza lleva el logo de su tecnología
+  junto a su nombre, con el mismo aviso de marcas bajo el lienzo y las frases de Redis, Spring y PostgreSQL
+  cuando su logo está en pantalla. Se añaden marcas que no se han consultado (Next.js, Kong, Keycloak,
+  Grafana, OpenSearch, Stripe, Nginx, HashiCorp Vault, OpenTelemetry, BigQuery) y dos que la tabla de arriba deja
+  en texto (Apache Kafka y Cloudflare, cuya guía pide permiso escrito). **Un aviso no es un permiso**: el autor
+  asume ese riesgo y, si una marca pide retirarlo, se quita de `BRANDS` y la pieza vuelve a su símbolo
+  genérico. Los servicios de AWS usan su icono oficial de arquitectura y solo aparecen en un diseño de AWS.
+
 ## Pendiente de revisar
 
 El resto de logos del sitio (Angular, Spring, PostgreSQL, Redis, Docker, Kubernetes, Terraform,

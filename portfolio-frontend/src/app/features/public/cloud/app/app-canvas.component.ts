@@ -15,6 +15,9 @@ import { drawnJourney } from './app-journey';
 import { autoArrange, settle } from './app-layout';
 import { PIECE_LESSONS, PROTOCOL_LESSONS } from './app-learn.data';
 import { AppAssistantComponent, levelName } from './app-assistant.component';
+import { PieceLogo, attributionsFor, logoFor } from './app-brands';
+import { TRADEMARK_NOTICE } from '../system/system-icons';
+import { CloudProviderId } from '../cloud-topology.data';
 
 const STORAGE_KEY = 'studio-app-canvas';
 const PIECE_MIME = 'application/x-app-piece';
@@ -36,6 +39,8 @@ interface NodeView {
   layer: string;
   name: string;
   tech: string;
+  /** Logo de su tecnología, si tiene. */
+  logo: PieceLogo | null;
 }
 
 /**
@@ -96,7 +101,17 @@ interface NodeView {
                   <li>
                     <button type="button" class="appc-piece" draggable="true" [style.--layer]="group.layer.color" [attr.data-piece]="piece.type" [title]="piece.summary"
                       (dragstart)="onPieceDrag($event, piece)" (click)="add(piece.type)">
-                      <span class="appc-chip" aria-hidden="true"><svg viewBox="0 0 24 24"><path [attr.d]="piece.icon" /></svg></span>
+                      <span class="appc-chip" aria-hidden="true">
+                        @if (logoOf(piece); as mark) {
+                          @if (mark.image) {
+                            <img [src]="mark.image" alt="" class="h-[1.125rem] w-[1.125rem]" />
+                          } @else {
+                            <svg viewBox="0 0 24 24" class="h-[1.125rem] w-[1.125rem]"><path [attr.d]="mark.path" [style.fill]="mark.color" style="stroke: none" /></svg>
+                          }
+                        } @else {
+                          <svg viewBox="0 0 24 24"><path [attr.d]="piece.icon" /></svg>
+                        }
+                      </span>
                       <span class="min-w-0"><span class="block truncate text-sm font-medium text-ink-1">{{ piece.name }}</span><span class="block truncate text-xs text-ink-3">{{ piece.tech }}</span></span>
                     </button>
                   </li>
@@ -155,7 +170,13 @@ interface NodeView {
                 <rect class="appc-node-bar" x="0" y="10" width="3" [attr.height]="h - 20" rx="1.5" />
                 <g transform="translate(12 12)">
                   <rect class="appc-node-chip" width="24" height="24" rx="7" />
-                  <g transform="translate(4 4) scale(0.6667)"><path class="appc-node-icon" [attr.d]="item.piece.icon" /></g>
+                  @if (item.logo?.image; as image) {
+                    <image [attr.href]="image" x="3" y="3" width="18" height="18" data-logo="image" />
+                  } @else if (item.logo?.path; as path) {
+                    <g transform="translate(3 3) scale(0.75)"><path [attr.d]="path" [attr.fill]="item.logo?.color" data-logo="path" /></g>
+                  } @else {
+                    <g transform="translate(4 4) scale(0.6667)"><path class="appc-node-icon" [attr.d]="item.piece.icon" /></g>
+                  }
                 </g>
                 <!-- Arriba, dónde corre (la capa ya la dice el color); si no corre en ninguna parte, la capa. -->
                 <text x="44" y="21" class="appc-node-layer" [class.appc-node-runs]="item.node.runsOn">{{ item.node.runsOn ? '▸ ' + clip(infraName(item.node.runsOn), 12) : clip(item.layer, 13) }}</text>
@@ -188,6 +209,11 @@ interface NodeView {
           (fixed)="fix($event)" (highlighted)="highlightIds.set($event)" />
       </div>
 
+      <!-- Los logos identifican cada tecnología; el aviso va siempre con ellos. -->
+      <p class="border-t border-line-subtle px-4 py-2 text-xs leading-snug text-ink-3" data-testid="appc-trademark">
+        {{ trademarkNotice }}
+        @for (line of attributions(); track line) { <span class="block">{{ line }}</span> }
+      </p>
       @if (selectedNode(); as item) {
         <div class="appc-inspector" [style.--layer]="item.color" data-testid="appc-inspector">
           <span class="appc-chip" aria-hidden="true"><svg viewBox="0 0 24 24"><path [attr.d]="item.piece.icon" /></svg></span>
@@ -330,6 +356,8 @@ export class AppCanvasComponent implements OnInit {
   readonly design = input.required<SystemDesign>();
   /** Piezas de la vista de Infraestructura en las que puede correr cada una de estas. */
   readonly infra = input<InfraTarget[]>([]);
+  /** Nube activa: los iconos oficiales de una nube solo salen en un diseño de esa nube. */
+  readonly provider = input<CloudProviderId>('aws');
   private readonly svg = viewChild<ElementRef<SVGSVGElement>>('svg');
 
   readonly w = NODE_WIDTH;
@@ -394,7 +422,8 @@ export class AppCanvasComponent implements OnInit {
       return [];
     }
     const layer = layerOf(piece.layer);
-    return [{ node, piece, color: layer.color, layer: layer.name, name: node.name?.trim() || piece.name, tech: node.tech?.trim() || piece.tech }];
+    const tech = node.tech?.trim() || piece.tech;
+    return [{ node, piece, color: layer.color, layer: layer.name, name: node.name?.trim() || piece.name, tech, logo: logoFor(tech, this.provider()) }];
   }));
 
   /** Mientras se traza una conexión: qué piezas la admiten (verde) y cuáles no (atenuadas). */
@@ -461,6 +490,17 @@ export class AppCanvasComponent implements OnInit {
     return link ? this.protocolsOf(link.from, link.to) : [];
   });
   private noticeTimer: ReturnType<typeof setTimeout> | undefined;
+
+  readonly trademarkNotice = TRADEMARK_NOTICE;
+  /** Las frases que piden las marcas cuyo logo está ahora en pantalla (lienzo o catálogo). */
+  readonly attributions = computed(() => attributionsFor([
+    ...this.views().map((item) => item.logo),
+    ...this.catalog().flatMap((group) => group.pieces.map((piece) => this.logoOf(piece))),
+  ]));
+
+  logoOf(piece: AppPiece): PieceLogo | null {
+    return logoFor(piece.tech, this.provider());
+  }
 
   readonly selectedNode = computed(() => this.views().find((item) => item.node.id === this.selected()) ?? null);
   readonly selectedLink = computed(() => this.graph().links.find((link) => linkKey(link) === this.selected()) ?? null);

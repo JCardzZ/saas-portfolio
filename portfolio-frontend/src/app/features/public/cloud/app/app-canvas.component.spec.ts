@@ -181,6 +181,12 @@ describe('AppCanvasComponent', () => {
     expect($('[data-testid="appc-stale"]')).toBeNull();
   });
 
+  it('shows the original logo of each technology, with the trademark notice below the canvas', () => {
+    expect($('[data-node="database"] [data-logo="path"]')).not.toBeNull();
+    expect($('[data-testid="appc-trademark"]')!.textContent).toContain('marcas de sus respectivos dueños');
+    expect($('[data-testid="appc-trademark"]')!.textContent).toContain('Postgres, PostgreSQL and the Slonik Logo');
+  });
+
   it('adds a box from the menu', () => {
     (all('button').find((button) => button.textContent!.includes('Añadir caja')) as HTMLButtonElement).click();
     fixture.detectChanges();
