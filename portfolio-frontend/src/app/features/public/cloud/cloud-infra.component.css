@@ -133,7 +133,9 @@
 .wire-arrow-base { fill: var(--text-2); }
 .wire-arrow-support { fill: var(--text-3); opacity: 0.55; }
 /* Flujo moderado sobre la flecha: un destello sólido del color de acento que la recorre despacio, uno cada vez. */
-.wire-flow { fill: none; stroke: var(--accent-text); stroke-width: 2; stroke-linecap: round; pointer-events: none; animation: wire-flow 3s linear infinite; }
+.wire-flow { fill: none; stroke: var(--accent-text); stroke-linecap: round; pointer-events: none; animation: wire-flow 3s linear infinite; }
+.wire-flow-core { stroke-width: 2.2; }
+.wire-flow-glow { stroke-width: 7; opacity: 0.35; filter: blur(3px); }
 .wire-flow-warn { stroke: var(--status-warn); }
 /* De asomar por el origen a salir por la punta; el hueco de 100 deja un solo destello a la vista. */
 @keyframes wire-flow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }

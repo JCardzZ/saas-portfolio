@@ -96,8 +96,8 @@ const PULSE_SPEED = 80;
 /** Largo del destello de una partícula, en unidades del lienzo. */
 const PULSE_DASH = 10;
 /** Destello de una flecha del lienzo inteligente: su largo y su velocidad, moderada, en unidades por segundo. */
-const STREAK_LENGTH = 40;
-const STREAK_SPEED = 45;
+const STREAK_LENGTH = 36;
+const STREAK_SPEED = 110;
 
 /** Piezas de apoyo: todo el sistema las usa, pero una petición no pasa por ellas. */
 const SUPPORT_TYPES = new Set(['secrets', 'vault', 'native-monitoring', 'prometheus', 'datadog', 'opentelemetry', 'registry', 'cicd']);
@@ -423,7 +423,7 @@ export class CloudInfraComponent {
   streakFlow(wire: Wire): { dash: string; seconds: number } {
     const length = Math.max(wire.length, 40);
     const dash = Math.min(45, (STREAK_LENGTH / length) * 100);
-    const seconds = Math.max(1.2, (length + STREAK_LENGTH) / STREAK_SPEED) / (wire.chaos === 'warn' ? 1.6 : 1);
+    const seconds = Math.max(0.8, (length + STREAK_LENGTH) / STREAK_SPEED) / (wire.chaos === 'warn' ? 1.6 : 1);
     return { dash: `${dash.toFixed(2)} 100`, seconds };
   }
 

@@ -423,8 +423,11 @@
                flujo suave en el sentido de la flecha; lo de apoyo y los cables caídos se quedan quietos. -->
           @if (!wire.support && wire.chaos !== 'down') {
             @let streak = streakFlow(wire);
-            <path class="wire-flow" [class.wire-flow-active]="isWireActive(wire)" [class.wire-flow-warn]="wire.chaos === 'warn'" [attr.d]="wire.path" pathLength="100"
-              [style.stroke-dasharray]="streak.dash" [style.animation-duration.s]="streak.seconds" [style.animation-delay.s]="-streak.seconds * ($index % 5) / 5" aria-hidden="true" />
+            <!-- Un cometa: halo difuminado debajo y núcleo nítido encima, con el mismo paso. -->
+            @for (layer of ['wire-flow-glow', 'wire-flow-core']; track layer) {
+              <path [attr.class]="'wire-flow ' + layer" [class.wire-flow-warn]="wire.chaos === 'warn'" [attr.d]="wire.path" pathLength="100"
+                [style.stroke-dasharray]="streak.dash" [style.animation-duration.s]="streak.seconds" [style.animation-delay.s]="-streak.seconds * ($index % 5) / 5" aria-hidden="true" />
+            }
           }
         } @else if (wire.chaos === 'down') {
           <path class="pulse pulse-off" [attr.d]="wire.path" pathLength="100" />
