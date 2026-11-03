@@ -87,7 +87,14 @@ interface Wire extends CloudLink {
   boost: boolean;
   /** Fuera del camino de la petición (secretos, monitorización…): va en segundo plano. */
   support: boolean;
+  /** Largo aproximado del cable, para que las partículas vayan a la misma velocidad en todos. */
+  length: number;
 }
+
+/** Velocidad de una partícula con tráfico normal, en unidades del lienzo por segundo: se sigue con la vista. */
+const PULSE_SPEED = 80;
+/** Largo del destello de una partícula, en unidades del lienzo. */
+const PULSE_DASH = 10;
 
 /** Piezas de apoyo: todo el sistema las usa, pero una petición no pasa por ellas. */
 const SUPPORT_TYPES = new Set(['secrets', 'vault', 'native-monitoring', 'prometheus', 'datadog', 'opentelemetry', 'registry', 'cicd']);
@@ -285,15 +292,17 @@ export class CloudInfraComponent {
     const routed = (from: CloudNode, to: CloudNode, key: string, label: string | null) => {
       const points = routes?.get(key);
       if (!points) {
-        return connect(from, to);
+        return straight(from, to);
       }
       const width = label ? labelWidth(this.painted(label)) : undefined;
       const labelAt = labelPoint(points, taken, width);
       if (label) {
         taken.push(labelBox(labelAt, width));
       }
-      return { path: roundedPath(points), labelAt };
+      const length = points.slice(1).reduce((sum, point, i) => sum + Math.abs(point[0] - points[i][0]) + Math.abs(point[1] - points[i][1]), 0);
+      return { path: roundedPath(points), labelAt, length };
     };
+    const straight = (from: CloudNode, to: CloudNode) => ({ ...connect(from, to), length: Math.abs(to.x - from.x) + Math.abs(to.y - from.y) });
     return this.links().flatMap((link) => {
       const from = byId.get(link.from);
       const to = byId.get(link.to);
@@ -307,7 +316,7 @@ export class CloudInfraComponent {
       const chaos: ChaosLevel | null = faults[from.id] === 'down' || faults[to.id] === 'down' ? 'down'
         : faults[to.id] === 'cpu' ? 'warn'
         : (this.chaosPhase()?.wires[`${link.from}>${link.to}`] ?? null);
-      return [{ ...link, support: smart && !(onPath.has(from.id) && onPath.has(to.id) && !link.kind), ...(smart ? routed(from, to, `${link.from}>${link.to}`, link.label ?? (link.kind ? KIND_LABELS[link.kind] : null)) : connect(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
+      return [{ ...link, support: smart && !(onPath.has(from.id) && onPath.has(to.id) && !link.kind), ...(smart ? routed(from, to, `${link.from}>${link.to}`, link.label ?? (link.kind ? KIND_LABELS[link.kind] : null)) : straight(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
     });
   });
 
@@ -402,6 +411,18 @@ export class CloudInfraComponent {
   /** Índices de las partículas de cada conexión con el tráfico actual. */
   readonly particles = computed(() => Array.from({ length: particlesPerWire(this.trafficMode(), this.wires().length) }, (_, index) => index));
   readonly boostParticles = [10, 11];
+
+  /**
+   * Cómo se mueven las partículas de un cable: el mismo destello corto y la misma velocidad en
+   * píxeles en todos, sea cual sea su largo (con un tiempo fijo por vuelta, las de un cable largo
+   * corrían y se estiraban). `pathLength` es 100, así que el destello se pasa a esa escala.
+   */
+  pulseFlow(wire: Wire, index: number, factor = 1): { dash: string; seconds: number } {
+    const length = Math.max(wire.length, 40);
+    const dash = Math.min(20, (PULSE_DASH / length) * 100);
+    const seconds = Math.max(0.9, length / PULSE_SPEED) * (1 + (index % 4) * 0.08) / this.trafficSpeed() / factor;
+    return { dash: `${dash.toFixed(2)} ${(100 - dash).toFixed(2)}`, seconds };
+  }
   readonly activeFault = computed(() => (this.active() ? (this.faults()[this.active()!.id] ?? null) : null));
 
   // ---------- Auditoría y copiloto ----------

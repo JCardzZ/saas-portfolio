@@ -422,6 +422,7 @@
         } @else {
           <!-- Partículas de tráfico: cuántas y a qué velocidad lo decide el perfil; las de una conexión con problemas van en rojo y más deprisa. -->
           @for (particle of particles(); track particle) {
+            @let flow = pulseFlow(wire, $index, wire.chaos === 'warn' ? 1.6 : 1);
             <path
               class="pulse"
               [class.pulse-quiet]="wire.support && !isWireActive(wire)"
@@ -430,13 +431,15 @@
               [style.--flow]="activeColor()"
               [attr.d]="wire.path"
               pathLength="100"
-              [style.animation-duration.s]="(1.7 + ($index % 4) * 0.35) / trafficSpeed() / (wire.chaos === 'warn' ? 1.6 : 1)"
-              [style.animation-delay.s]="-particle * 0.55"
+              [style.stroke-dasharray]="flow.dash"
+              [style.animation-duration.s]="flow.seconds"
+              [style.animation-delay.s]="-particle * flow.seconds / particles().length"
             />
           }
           @if (wire.boost) {
             @for (particle of boostParticles; track particle) {
-              <path class="pulse pulse-boost" [attr.d]="wire.path" pathLength="100" [style.animation-duration.s]="1.1 / trafficSpeed()" [style.animation-delay.s]="-particle * 0.4" />
+              @let boost = pulseFlow(wire, 0, 1.6);
+              <path class="pulse pulse-boost" [attr.d]="wire.path" pathLength="100" [style.stroke-dasharray]="boost.dash" [style.animation-duration.s]="boost.seconds" [style.animation-delay.s]="-(particle - 10) * boost.seconds / 2" />
             }
           }
         }
