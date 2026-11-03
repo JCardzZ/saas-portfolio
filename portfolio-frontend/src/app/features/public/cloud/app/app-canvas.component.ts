@@ -3,7 +3,7 @@ import { CANVAS_HEIGHT, CANVAS_WIDTH, NODE_HEIGHT, NODE_WIDTH } from '../cloud-t
 import { FULL_VIEW, View, panView, zoomView } from '../studio-physics';
 import { contentBounds } from '../zone-layout';
 import { SystemDesign } from '../system/system-design';
-import { labelPoint, roundedPath, routeAll } from '../wire-router';
+import { labelBox, labelPoint, nodeRect, roundedPath, routeAll } from '../wire-router';
 import { APP_BOXES, APP_LAYERS, APP_PIECES, AppBoxKind, AppPiece, layerOf, pieceOf } from './app-catalog.data';
 import {
   AppBox, AppGraph, AppNode, addBox, addNode, clampPoint, connect, cycleProtocol, graphFromDesign, isAsync, linkKey, moveBox, moveNode,
@@ -251,7 +251,7 @@ interface NodeView {
     </section>
   `,
   styles: [`
-    .appc { border-radius: var(--radius-panel); border: 1px solid var(--border-subtle); background: rgb(var(--c-surface-1) / 0.6); overflow: hidden; }
+    .appc { container-type: inline-size; border-radius: var(--radius-panel); border: 1px solid var(--border-subtle); background: rgb(var(--c-surface-1) / 0.6); overflow: hidden; }
     .appc-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-subtle); }
     .appc-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
     .appc-menu { position: absolute; right: 0; top: calc(100% + 0.35rem); z-index: 20; width: 16rem; padding: 0.35rem; border-radius: var(--radius-panel); border: 1px solid var(--border-strong); background: var(--bg-surface-2); box-shadow: var(--shadow-floating); }
@@ -266,7 +266,7 @@ interface NodeView {
     .appc-body { display: grid; grid-template-columns: 14rem minmax(0, 1fr); min-height: 0; }
     .appc-assistant-slot { grid-column: 1 / -1; display: flex; min-height: 0; border-top: 1px solid var(--border-subtle); max-height: 30rem; }
     
-    @media (min-width: 1600px) {
+    @container (min-width: 88rem) {
       .appc-body { grid-template-columns: 14rem minmax(0, 1fr) 20rem; }
       .appc-assistant-slot { grid-column: auto; border-top: 0; border-left: 1px solid var(--border-subtle); max-height: 44rem; }
       .appc-assistant-slot { --assistant-columns: minmax(0, 1fr); }
@@ -443,14 +443,17 @@ export class AppCanvasComponent implements OnInit {
     // pieza y la punta no toca el borde.
     const routes = routeAll(links, byId, WIRE_GAP, this.frozen() !== null);
     const selected = this.selected();
+    const taken = [...nodes.map((node) => nodeRect(node, 0)), ...this.graph().boxes.map((box) => ({ x: box.x, y: box.y, w: box.w, h: 30 }))];
     return links.flatMap((link) => {
       const points = routes.get(linkKey(link));
       if (!points) {
         return [];
       }
       const key = linkKey(link);
+      const label = labelPoint(points, taken);
+      taken.push(labelBox(label));
       return [{
-        key, protocol: link.protocol, async: isAsync(link.protocol), path: roundedPath(points), label: labelPoint(points),
+        key, protocol: link.protocol, async: isAsync(link.protocol), path: roundedPath(points), label,
         labelWidth: link.protocol.length * 7.4 + 16,
         active: selected === key || selected === link.from || selected === link.to,
       }];

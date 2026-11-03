@@ -27,7 +27,7 @@ import { autoLayout } from './auto-layout';
 import { contentBounds, directNodes, reflow, resizeToContent } from './zone-layout';
 import { ZONE_PADDING, hasConflict, settleZones, zoneParents } from './zone-solver';
 import { breathe } from './zone-breathe';
-import { labelPoint, roundedPath, routeAll } from './wire-router';
+import { labelBox, labelPoint, nodeRect, roundedPath, routeAll } from './wire-router';
 import { FULL_VIEW, Point, View, panView, placementVerdict, resolveCollision, withFriction, zoomView } from './studio-physics';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
 import { CatalogItem } from './cloud-catalog.data';
@@ -235,9 +235,18 @@ export class CloudInfraComponent {
     // Reglas inteligentes: cables en ángulo recto que esquivan nodos, con puntos de salida repartidos.
     const smart = this.smartRules();
     const routes = smart ? routeAll(this.links(), byId, undefined, this.moving()) : null;
-    const routed = (from: CloudNode, to: CloudNode, key: string) => {
+    // Lo que un rótulo no debe pisar: las piezas, los rótulos de las zonas y los otros rótulos.
+    const taken = smart ? [...this.nodes().map((node) => nodeRect(node, 0)), ...this.zones().map((zone) => ({ x: zone.x, y: zone.y, w: zone.w, h: 30 }))] : [];
+    const routed = (from: CloudNode, to: CloudNode, key: string, labelled: boolean) => {
       const points = routes?.get(key);
-      return points ? { path: roundedPath(points), labelAt: labelPoint(points) } : connect(from, to);
+      if (!points) {
+        return connect(from, to);
+      }
+      const labelAt = labelPoint(points, taken);
+      if (labelled) {
+        taken.push(labelBox(labelAt));
+      }
+      return { path: roundedPath(points), labelAt };
     };
     return this.links().flatMap((link) => {
       const from = byId.get(link.from);
@@ -251,7 +260,7 @@ export class CloudInfraComponent {
       const chaos: ChaosLevel | null = faults[from.id] === 'down' || faults[to.id] === 'down' ? 'down'
         : faults[to.id] === 'cpu' ? 'warn'
         : (this.chaosPhase()?.wires[`${link.from}>${link.to}`] ?? null);
-      return [{ ...link, ...(smart ? routed(from, to, `${link.from}>${link.to}`) : connect(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
+      return [{ ...link, ...(smart ? routed(from, to, `${link.from}>${link.to}`, !!link.label) : connect(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
     });
   });
 

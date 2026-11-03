@@ -312,19 +312,25 @@ export function roundedPath(points: Pt[], radius = RADIUS): string {
   return `${d} L${last[0]} ${last[1]}`;
 }
 
-/** Dónde poner el rótulo: el centro del tramo más largo, un poco por encima. */
-export function labelPoint(points: Pt[]): [number, number] {
-  let best = 0;
-  let at: Pt = points[0];
-  for (let i = 1; i < points.length; i++) {
-    const length = Math.abs(points[i][0] - points[i - 1][0]) + Math.abs(points[i][1] - points[i - 1][1]);
-    if (length > best) {
-      best = length;
-      at = [(points[i][0] + points[i - 1][0]) / 2, (points[i][1] + points[i - 1][1]) / 2];
-    }
-  }
-  return [at[0], at[1] - 7];
+/**
+ * Dónde poner el rótulo: el centro del tramo más largo, un poco por encima. Si ahí pisaría algo de
+ * `avoid` (una pieza, el rótulo de una zona, otro rótulo), el siguiente tramo que quede libre.
+ */
+export function labelPoint(points: Pt[], avoid: Rect[] = []): [number, number] {
+  const spots = points.slice(1)
+    .map((point, i) => ({
+      length: Math.abs(point[0] - points[i][0]) + Math.abs(point[1] - points[i][1]),
+      at: [(point[0] + points[i][0]) / 2, (point[1] + points[i][1]) / 2 - 7] as Pt,
+    }))
+    .sort((a, b) => b.length - a.length);
+  const free = spots.find(({ at }) => !avoid.some((rect) => overlapsBox(labelBox(at), rect)));
+  return (free ?? spots[0])?.at ?? points[0];
 }
+
+/** Caja que ocupa un rótulo centrado en `at`. */
+export const labelBox = (at: Pt): Rect => ({ x: at[0] - 34, y: at[1] - 12, w: 68, h: 18 });
+
+const overlapsBox = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
 const round = (value: number) => Math.round(value * 10) / 10;
 

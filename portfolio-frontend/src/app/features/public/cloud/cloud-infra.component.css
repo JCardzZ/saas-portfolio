@@ -6,8 +6,8 @@
 .zone-cloud { stroke-dasharray: 10 6; }
 .zone-network { stroke-dasharray: none; }
 .zone-public, .zone-private { stroke: var(--border-subtle); stroke-dasharray: none; fill: rgb(var(--c-surface-2) / 0.55); }
-.zone-label { fill: var(--text-2); font-size: 12px; font-weight: 500; letter-spacing: 0.04em; }
-.zone-sub { fill: var(--text-3); font-size: 12px; }
+.zone-label { fill: var(--text-2); font-size: 12px; font-weight: 500; letter-spacing: 0.04em; paint-order: stroke; stroke: var(--bg-canvas); stroke-width: 4px; stroke-linejoin: round; }
+.zone-sub { fill: var(--text-3); font-size: 12px; paint-order: stroke; stroke: var(--bg-canvas); stroke-width: 4px; stroke-linejoin: round; }
 
 .wire { fill: none; stroke: var(--border-strong); stroke-width: 1; transition: stroke var(--duration-base) var(--ease-standard); }
 /* Conexiones que entran o salen del nodo activo. */
@@ -16,7 +16,10 @@
 /* El cable hacia un componente recién añadido. */
 .wire-glow { stroke: var(--accent-text) !important; animation: wire-in 0.6s var(--ease-emphasized) backwards; }
 @keyframes wire-in { from { opacity: 0; } }
-.wire-label { fill: var(--text-3); font-size: 12px; }
+/* Con un halo del color del fondo: un cable que pase por detrás no tacha el texto. */
+.wire-label { fill: var(--text-3); font-size: 12px; paint-order: stroke; stroke: var(--bg-canvas); stroke-width: 4px; stroke-linejoin: round; }
+/* Lienzo inteligente: la línea base se ve; si no, el pulso animado parece un cable roto. */
+.canvas-smart .wire { stroke: var(--text-3); }
 
 /* Conexiones de datos: mismo trazo fino, distinto patrón según lo que llevan. */
 .wire[data-kind='CDC_STREAM'] { stroke-dasharray: 1.5 4; stroke-linecap: round; }
