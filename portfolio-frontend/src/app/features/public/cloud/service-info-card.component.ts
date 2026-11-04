@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input
 import { capturePointer } from '../../../shared/ui/pointer-capture';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 
+import { TechIcon } from '../../../shared/ui/tech-icons';
 import { CloudProviderId } from './cloud-topology.data';
 import { CardSide, ServiceCard } from './service-card';
 
@@ -41,21 +42,50 @@ export const SHEET_DISMISS_PX = 80;
         >
           <span class="h-1 w-10 rounded-full bg-line-strong"></span>
         </div>
-      } @else {
+      } @else if (!docked()) {
         <span class="service-card-arrow" aria-hidden="true"></span>
       }
 
-      <header class="flex shrink-0 items-start gap-3 border-b border-line-subtle px-4 py-3">
-        <div class="min-w-0 flex-1">
-          <h3 [id]="titleId()" class="text-title-3 text-ink-1">{{ card().title }}</h3>
-          @if (card().officialName !== card().title) {
-            <p class="text-body-sm text-ink-2">{{ card().officialName }}</p>
-          }
-        </div>
-        <button type="button" class="ui-btn-ghost shrink-0" data-testid="card-close" (click)="closed.emit()">{{ 'Cerrar' | t }}</button>
-      </header>
+      @if (refined()) {
+        <!-- Cabecera: el icono de la pieza, su nombre y, debajo, el servicio y dónde está. -->
+        <header class="flex shrink-0 items-center gap-3 border-b border-line-subtle px-4 py-3">
+          <span class="grid h-9 w-9 shrink-0 place-items-center rounded-control border border-line-subtle bg-surface-1" aria-hidden="true" data-testid="card-icon">
+            @if (icon(); as mark) {
+              @if (mark.image) {
+                <img [src]="mark.image" alt="" class="h-5 w-5" />
+              } @else {
+                <svg viewBox="0 0 24 24" class="h-5 w-5"><path [attr.d]="mark.path" [attr.fill]="mark.color" /></svg>
+              }
+            } @else {
+              <span class="h-2 w-2 rounded-full bg-ink-3"></span>
+            }
+          </span>
+          <div class="min-w-0 flex-1">
+            <h3 [id]="titleId()" class="truncate text-title-3 text-ink-1">{{ card().title }}</h3>
+            <p class="truncate text-caption text-ink-3" data-testid="card-subtitle">{{ subtitle() }}</p>
+          </div>
+          <button type="button" class="focus-ring shrink-0 rounded-control px-2 text-lg leading-none text-ink-2 hover:text-ink-1" data-testid="card-close" [attr.aria-label]="'Cerrar' | t" (click)="closed.emit()">×</button>
+        </header>
+      } @else {
+        <header class="flex shrink-0 items-start gap-3 border-b border-line-subtle px-4 py-3">
+          <div class="min-w-0 flex-1">
+            <h3 [id]="titleId()" class="text-title-3 text-ink-1">{{ card().title }}</h3>
+            @if (card().officialName !== card().title) {
+              <p class="text-body-sm text-ink-2">{{ card().officialName }}</p>
+            }
+          </div>
+          <button type="button" class="ui-btn-ghost shrink-0" data-testid="card-close" (click)="closed.emit()">{{ 'Cerrar' | t }}</button>
+        </header>
+      }
 
       <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+        @if (refined()) {
+          <!-- Entradilla: qué es, sin encabezado. -->
+          <p class="text-body text-ink-1" data-testid="card-lead">{{ card().what }}</p>
+          @if (card().note; as note) {
+            <p class="-mt-2 text-body-sm text-ink-2">{{ note }}</p>
+          }
+        } @else {
         <div>
           <h4 class="text-overline uppercase text-ink-3">{{ 'Qué es' | t }}</h4>
           <p class="mt-1 text-body-sm text-ink-1">{{ card().what }}</p>
@@ -63,12 +93,13 @@ export const SHEET_DISMISS_PX = 80;
             <p class="mt-1 text-body-sm text-ink-2">{{ note }}</p>
           }
         </div>
+        }
 
         @if (card().uses.length) {
           <div>
             <h4 class="text-overline uppercase text-ink-3">{{ 'Para qué se usa' | t }}</h4>
             <ul class="mt-1 list-disc space-y-0.5 pl-5 text-body-sm text-ink-1">
-              @for (use of card().uses; track use) {
+              @for (use of refined() ? card().uses.slice(0, 2) : card().uses; track use) {
                 <li>{{ use }}</li>
               }
             </ul>
@@ -87,6 +118,33 @@ export const SHEET_DISMISS_PX = 80;
           @if (card().context.why; as why) {
             <p class="mt-1 text-body-sm text-ink-1" data-testid="card-why">{{ why }}</p>
           }
+          @if (refined()) {
+            <!-- Las conexiones, como chips: un clic lleva a esa pieza. Sin filas vacías. -->
+            <dl class="mt-2 space-y-2 text-body-sm">
+              @for (row of peerRows(); track row.label) {
+                <div class="flex gap-2">
+                  <dt class="w-20 shrink-0 pt-1 text-ink-3">{{ row.label | t }}</dt>
+                  <dd class="flex min-w-0 flex-wrap gap-1.5">
+                    @for (peer of row.peers; track peer.id) {
+                      <button type="button" class="ui-focus tap inline-flex max-w-full items-center rounded-full border border-line-strong px-2.5 py-0.5 text-body-sm text-ink-1 transition-colors duration-fast ease-standard hover:border-accent-text hover:text-accent-text"
+                        [attr.data-peer]="peer.id" [attr.aria-label]="('Ver ' | t) + peer.name" (click)="peerChosen.emit(peer.id)">
+                        <span class="truncate">{{ peer.name }}</span>
+                      </button>
+                    }
+                  </dd>
+                </div>
+              }
+              @if (card().cost.kind !== 'none') {
+                <div class="flex gap-2">
+                  <dt class="w-20 shrink-0 text-ink-3">{{ 'Coste' | t }}</dt>
+                  <dd class="flex min-w-0 flex-wrap items-center gap-2 text-ink-1">
+                    <span class="font-mono text-mono">{{ card().cost.label }}</span>
+                    <span [class]="card().cost.kind === 'live' ? 'ui-badge ui-badge-ok' : 'ui-badge'" data-testid="card-cost-tag">{{ card().cost.tag }}</span>
+                  </dd>
+                </div>
+              }
+            </dl>
+          } @else {
           <dl class="mt-1 space-y-1 text-body-sm">
             <div class="flex gap-2"><dt class="w-24 shrink-0 text-ink-3">{{ 'Recibe de' | t }}</dt><dd class="min-w-0 text-ink-1">{{ card().context.receivesFrom.join(', ') || 'Nadie' }}</dd></div>
             <div class="flex gap-2"><dt class="w-24 shrink-0 text-ink-3">{{ 'Envía a' | t }}</dt><dd class="min-w-0 text-ink-1">{{ card().context.sendsTo.join(', ') || 'Nadie' }}</dd></div>
@@ -101,6 +159,7 @@ export const SHEET_DISMISS_PX = 80;
               </dd>
             </div>
           </dl>
+          }
           @if (card().context.warnings.length) {
             <ul class="mt-2 space-y-1" data-testid="card-warnings">
               @for (warning of card().context.warnings; track warning) {
@@ -175,12 +234,34 @@ export class ServiceInfoCardComponent {
   /** Lado del nodo en el que está la tarjeta y posición de la flecha (`placeCard`). */
   readonly side = input<CardSide>('right');
   readonly arrow = input(24);
+  /**
+   * Versión del lienzo inteligente: cabecera con icono y una línea de contexto, la entradilla sin
+   * encabezado, las conexiones como chips y sin filas vacías.
+   */
+  readonly refined = input(false);
+  /** Acoplada a un lado del lienzo en vez de junto al nodo: sin flecha. */
+  readonly docked = input(false);
+  readonly icon = input<TechIcon | null>(null);
 
   readonly closed = output<void>();
+  /** El visitante quiere ver la tarjeta de una pieza conectada. */
+  readonly peerChosen = output<string>();
   /** El visitante quiere ver este mismo nodo en otra nube. */
   readonly providerChosen = output<CloudProviderId>();
 
   readonly titleId = computed(() => `service-card-title-${this.card().nodeId}`);
+
+  /** Bajo el nombre: el servicio, si se llama distinto, y dónde está. */
+  readonly subtitle = computed(() => {
+    const card = this.card();
+    return [card.officialName !== card.title ? card.officialName : null, card.context.zone].filter(Boolean).join(' · ');
+  });
+
+  /** Filas de conexiones con algo dentro. */
+  readonly peerRows = computed(() => [
+    { label: 'Recibe de', peers: this.card().peers.from },
+    { label: 'Envía a', peers: this.card().peers.to },
+  ].filter((row) => row.peers.length));
 
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private dragFrom: number | null = null;

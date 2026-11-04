@@ -25,6 +25,12 @@ export interface CardContext {
 
 export type CostKind = 'live' | 'rough' | 'none';
 
+/** Una pieza conectada a la de la tarjeta. */
+export interface CardPeer {
+  id: string;
+  name: string;
+}
+
 export interface ServiceCard {
   nodeId: string;
   type: string;
@@ -42,6 +48,8 @@ export interface ServiceCard {
   cloudAgnostic: boolean;
   /** `why` es lo que el propio diagrama dice de esta pieza: por qué está ahí. */
   context: { why: string | null; receivesFrom: string[]; sendsTo: string[]; zone: string; warnings: string[] };
+  /** Las mismas conexiones con el id de cada pieza, para poder saltar a ella desde la tarjeta. */
+  peers: { from: CardPeer[]; to: CardPeer[] };
   cost: { label: string; kind: CostKind; tag: string };
   equivalents: { provider: CloudProviderId; cloud: string; name: string; direct: boolean }[];
 }
@@ -84,7 +92,11 @@ export function buildServiceCard(node: CloudNode, context: CardContext): Service
   const info = SERVICE_INFO[node.type];
   const own = info?.providers?.[provider] ?? info?.product ?? null;
   const shown = (other: CloudNode) => nodeLabel(other, nodes, forProvider(other.service, provider));
-  const named = (ids: string[]) => ids.map((id) => nodes.find((candidate) => candidate.id === id)).filter((found): found is CloudNode => !!found).map(shown);
+  const found = (ids: string[]) => ids.map((id) => nodes.find((candidate) => candidate.id === id)).filter((other): other is CloudNode => !!other);
+  const named = (ids: string[]) => found(ids).map(shown);
+  const peers = (ids: string[]) => found(ids).map((other) => ({ id: other.id, name: shown(other) }));
+  const fromIds = links.filter((link) => link.to === node.id).map((link) => link.from);
+  const toIds = links.filter((link) => link.from === node.id).map((link) => link.to);
   // `x` e `y` son el centro del nodo.
   const zone = zoneAt(zones, node.x, node.y);
   const missing = gaps(node.type);
@@ -104,11 +116,12 @@ export function buildServiceCard(node: CloudNode, context: CardContext): Service
     cloudAgnostic: !info?.providers,
     context: {
       why: info && node.why ? node.why : null,
-      receivesFrom: named(links.filter((link) => link.to === node.id).map((link) => link.from)),
-      sendsTo: named(links.filter((link) => link.from === node.id).map((link) => link.to)),
+      receivesFrom: named(fromIds),
+      sendsTo: named(toIds),
       zone: zone ? zoneLabel(zone, provider) : OUTSIDE,
       warnings: context.warnings?.get(node.id) ?? [],
     },
+    peers: { from: peers(fromIds), to: peers(toIds) },
     cost: { label: kind === 'none' ? 'Sin estimación' : cost!.label, kind, tag: COST_TAGS[kind] },
     equivalents: info?.providers
       ? context.providers.filter((other) => other !== provider).map((other) => ({

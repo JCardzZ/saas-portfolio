@@ -709,6 +709,11 @@ export class CloudInfraComponent {
       providers: this.providers().map((provider) => provider.id), warnings: this.violationsByNode(), costs: this.nodeCosts(),
     }) : null;
   });
+  /** Icono de la pieza de la tarjeta abierta. */
+  readonly infoIcon = computed(() => {
+    const node = this.nodes().find((candidate) => candidate.id === this.infoId());
+    return node ? this.iconOf(node) : null;
+  });
   /** Posición de la tarjeta anclada, dentro del marco del lienzo; `null` mientras se mide. */
   readonly infoPlacement = signal<(CardPlacement & { maxHeight: number }) | null>(null);
   /** Aviso mínimo (nombre y una frase) que sale al posar el cursor o el foco sobre un nodo. */
@@ -746,6 +751,15 @@ export class CloudInfraComponent {
       // (la hoja inferior vive en <body>, fuera de este componente).
       (this.infoSheet() ? document : this.host).querySelector<HTMLElement>('[data-info-card] [role="dialog"]')?.focus({ preventScroll: true });
     });
+  }
+
+  /** Salta a la tarjeta de una pieza conectada (chips de la tarjeta). */
+  openPeer(id: string): void {
+    const node = this.nodes().find((candidate) => candidate.id === id);
+    if (node) {
+      this.autoActive.set(false);
+      this.openInfo(node);
+    }
   }
 
   closeInfo(restoreFocus = true): void {
@@ -805,6 +819,15 @@ export class CloudInfraComponent {
     const shown = this.visibleStage(frame);
     const visible = { x: shown.x / scale, y: shown.y / scale, width: shown.width / scale, height: shown.height / scale };
     const node = anchor.getBoundingClientRect();
+    if (this.smartRules()) {
+      // Acoplada al borde del lienzo más lejano a la pieza: así no tapa la pieza ni sus conexiones.
+      const margin = 12;
+      const center = (node.left + node.width / 2 - frame.left) / scale;
+      const right = center < visible.x + visible.width / 2;
+      const x = right ? visible.x + visible.width - card.offsetWidth - margin : visible.x + margin;
+      this.infoPlacement.set({ x, y: visible.y + margin, side: right ? 'left' : 'right', arrow: 0, maxHeight: Math.max(160, visible.height - margin * 2) });
+      return;
+    }
     const maxHeight = Math.max(160, visible.height - 16);
     const size = { width: card.offsetWidth, height: Math.min(card.scrollHeight, maxHeight) };
     const placement = placeCard(

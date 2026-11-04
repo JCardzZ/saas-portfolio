@@ -664,8 +664,11 @@
           class="info-sheet absolute inset-x-0 mx-auto max-w-xl"
           variant="sheet"
           [card]="card"
+          [refined]="smartRules()"
+          [icon]="infoIcon()"
           (closed)="closeInfo()"
           (providerChosen)="showInCloud($event)"
+          (peerChosen)="openPeer($event)"
         />
       </div>
     } @else {
@@ -679,8 +682,12 @@
         [card]="card"
         [side]="infoPlacement()?.side ?? 'right'"
         [arrow]="infoPlacement()?.arrow ?? 24"
+        [refined]="smartRules()"
+        [docked]="smartRules()"
+        [icon]="infoIcon()"
         (closed)="closeInfo()"
         (providerChosen)="showInCloud($event)"
+        (peerChosen)="openPeer($event)"
       />
     }
   }
