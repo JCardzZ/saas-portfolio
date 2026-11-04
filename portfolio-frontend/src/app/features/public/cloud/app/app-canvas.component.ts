@@ -29,6 +29,21 @@ function designSignature(design: SystemDesign): string {
   return Object.keys(choices).sort().map((key) => `${key}=${choices[key] ?? ''}`).join('&');
 }
 const WIRE_GAP = { from: 4, to: 10 };
+/** Preferencia del orden automático del lienzo de aplicación, guardada en este navegador. */
+const APP_AUTO_TIDY_KEY = 'studio.app-auto-tidy';
+
+/** Piezas y conexiones como texto ordenado: cambia solo si se añade o quita alguna. */
+function structureOf(graph: AppGraph): string {
+  return `${graph.nodes.map((node) => node.id).sort().join(',')}|${graph.links.map((link) => `${link.from}>${link.to}`).sort().join(',')}`;
+}
+
+function readAutoTidy(): boolean {
+  try {
+    return localStorage.getItem(APP_AUTO_TIDY_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
 const MIN_FRAME_RATIO = 0.6;
 
 /** Vista de una pieza ya resuelta: su ficha del catálogo, su capa y su color. */
@@ -72,6 +87,11 @@ interface NodeView {
             }
           </div>
           <button type="button" class="ui-btn-secondary" (click)="arrange()" data-testid="appc-arrange" title="Coloca las piezas por profundidad de la petición y ajusta las cajas">Ordenar</button>
+          <!-- Orden automático: al añadir o quitar piezas o conexiones, el lienzo se ordena solo. -->
+          <button type="button" class="ui-btn-ghost inline-flex items-center gap-2" [attr.aria-pressed]="autoTidy()" data-testid="appc-auto-tidy" (click)="toggleAutoTidy()"
+            title="Se reordena solo al añadir o quitar piezas y conexiones">
+            <span class="ui-switch-mini" [class.ui-switch-mini-on]="autoTidy()" aria-hidden="true"></span>Automático
+          </button>
           <button type="button" class="ui-btn-ghost" [disabled]="!history().length" (click)="undo()" aria-label="Deshacer">Deshacer</button>
           <button type="button" class="ui-btn-ghost" (click)="fromDesign()" data-testid="appc-from-design">Desde las decisiones</button>
           <div class="appc-zoom" role="group" aria-label="Zoom del lienzo">
@@ -614,9 +634,33 @@ export class AppCanvasComponent implements OnInit {
   // ---------- Edición ----------
   /** Cada cambio deja el lienzo sin choques; `anchor` es lo que el visitante acaba de tocar. */
   private commit(next: AppGraph, anchor?: string): void {
-    this.history.update((past) => [...past.slice(-HISTORY + 1), this.graph()]);
-    this.graph.set(settle(next, anchor));
+    const before = this.graph();
+    this.history.update((past) => [...past.slice(-HISTORY + 1), before]);
+    const settled = settle(next, anchor);
+    // Con el orden automático, un cambio de piezas o conexiones deja el lienzo ordenado en el mismo
+    // paso (un solo «Deshacer» lo revierte todo).
+    const restructured = this.autoTidy() && structureOf(settled) !== structureOf(before);
+    this.graph.set(restructured ? autoArrange(settled) : settled);
+    if (restructured) {
+      this.autoFrame.set(true);
+    }
     this.edited.set(true);
+  }
+
+  /** Orden automático: el lienzo se ordena solo al añadir o quitar piezas o conexiones. */
+  readonly autoTidy = signal(readAutoTidy());
+
+  toggleAutoTidy(): void {
+    const on = !this.autoTidy();
+    this.autoTidy.set(on);
+    try {
+      localStorage.setItem(APP_AUTO_TIDY_KEY, String(on));
+    } catch {
+      // Sin almacenamiento: la preferencia dura lo que la página.
+    }
+    if (on && this.graph().nodes.length) {
+      this.arrange();
+    }
   }
 
   arrange(): void {

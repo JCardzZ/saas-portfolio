@@ -99,6 +99,32 @@ const PULSE_DASH = 10;
 const STREAK_LENGTH = 36;
 const STREAK_SPEED = 110;
 
+/** Preferencia del orden automático, guardada en este navegador. */
+const AUTO_TIDY_KEY = 'studio.auto-tidy';
+
+/** Piezas y conexiones como texto ordenado: cambia solo si se añade o quita alguna. */
+function structureOf(nodes: { id: string }[], links: { from: string; to: string }[]): string {
+  return `${nodes.map((node) => node.id).sort().join(',')}|${links.map((link) => `${link.from}>${link.to}`).sort().join(',')}`;
+}
+
+/** Lee una preferencia booleana del navegador; si no se puede, la de por defecto. */
+function readFlag(key: string, fallback: boolean): boolean {
+  try {
+    const value = localStorage.getItem(key);
+    return value === null ? fallback : value === 'true';
+  } catch {
+    return fallback;
+  }
+}
+
+function writeFlag(key: string, value: boolean): void {
+  try {
+    localStorage.setItem(key, String(value));
+  } catch {
+    // Sin almacenamiento (modo privado estricto): la preferencia dura lo que la página.
+  }
+}
+
 /** Piezas de apoyo: todo el sistema las usa, pero una petición no pasa por ellas. */
 const SUPPORT_TYPES = new Set(['secrets', 'vault', 'native-monitoring', 'prometheus', 'datadog', 'opentelemetry', 'registry', 'cicd']);
 
@@ -585,6 +611,19 @@ export class CloudInfraComponent {
           this.zones.set(layout.zones);
           this.nodes.set(layout.nodes);
         });
+      }
+    });
+    // Orden automático: al añadir o quitar piezas o conexiones, el lienzo se reordena solo. Cargar un
+    // diseño, deshacer o rehacer no cuentan: respetan el diseño tal como está.
+    effect(() => {
+      const structure = this.structure();
+      if (this.tidyBaseline === null || !this.smartRules() || !this.autoTidy()) {
+        this.tidyBaseline = structure;
+        return;
+      }
+      if (structure !== this.tidyBaseline) {
+        this.tidyBaseline = structure;
+        untracked(() => this.tidy());
       }
     });
     // Encuadre automático: sigue al diagrama cuando cambian sus piezas, sus recuadros o el modo edición.
@@ -1782,6 +1821,23 @@ export class CloudInfraComponent {
 
   // ---------- Auto-ordenar y conexiones ----------
 
+  /** Orden automático (con reglas inteligentes): el lienzo se reordena solo al cambiar sus piezas o conexiones. */
+  readonly autoTidy = signal(readFlag(AUTO_TIDY_KEY, true));
+  /** Piezas y conexiones del lienzo, como texto: si cambia, ha cambiado la estructura. */
+  private readonly structure = computed(() => structureOf(this.nodes(), this.links()));
+  /** Estructura con la que se ordenó por última vez (o la del diseño cargado); `null` hasta el primer cálculo. */
+  private tidyBaseline: string | null = null;
+
+  /** Enciende o apaga el orden automático; al encenderlo, ordena ya. */
+  toggleAutoTidy(): void {
+    const on = !this.autoTidy();
+    this.autoTidy.set(on);
+    writeFlag(AUTO_TIDY_KEY, on);
+    if (on && this.nodes().length) {
+      this.autoArrange();
+    }
+  }
+
   /** Recoloca todos los nodos por capas, alineados a la rejilla de sus recuadros. */
   autoArrange(): void {
     if (this.nodes().length === 0) {
@@ -1789,9 +1845,24 @@ export class CloudInfraComponent {
     }
     this.record();
     this.iconPop.release();
-    this.nodes.set(autoLayout(this.nodes(), this.links(), this.zones()));
+    this.tidy();
     this.modified.set(true);
     this.events.emitFromUser([['info', 'Terraform', `lienzo auto-ordenado · ${this.nodes().length} nodos`]]);
+  }
+
+  /**
+   * Coloca las piezas por capas en la rejilla de sus recuadros y, con reglas inteligentes, ajusta
+   * además las zonas a su contenido con aire entre columnas: el mismo acabado que una plantilla.
+   */
+  private tidy(): void {
+    const nodes = autoLayout(this.nodes(), this.links(), this.zones());
+    if (!this.smartRules()) {
+      this.nodes.set(nodes);
+      return;
+    }
+    const layout = breathe(this.zones(), nodes);
+    this.nodes.set(layout.nodes);
+    this.zones.set(layout.zones);
   }
 
   /** Empieza a trazar una conexión desde un nodo: arrastrando hasta el destino o pulsándolo después. */
@@ -2147,6 +2218,8 @@ export class CloudInfraComponent {
     this.nodes.set(structuredClone(layout.nodes));
     this.links.set(structuredClone(project.links));
     this.zones.set(structuredClone(layout.zones));
+    // Un diseño cargado (o deshacer y rehacer) se respeta: el orden automático parte de aquí.
+    this.tidyBaseline = structureOf(project.nodes, project.links);
     this.system.set(project.system ? structuredClone(project.system) : null);
     this.activeId.set(project.nodes.some((node) => node.id === 'api') ? 'api' : (project.nodes[0]?.id ?? ''));
     this.autoActive.set(true);
