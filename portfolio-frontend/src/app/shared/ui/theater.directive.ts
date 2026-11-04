@@ -17,6 +17,10 @@ const TRANSITION_CLASS = 'theater-transition';
 /** En <html> mientras se cierra: las esquinas vuelven a redondearse en vez de enderezarse. */
 const COLLAPSING_CLASS = 'theater-collapsing';
 const SCRIM_CLASS = 'theater-scrim';
+/** En la tarjeta mientras sus listas entran en cascada (fila a fila) tras ampliar o cerrar. */
+const CASCADE_CLASS = 'theater-cascade';
+/** Lo que dura la cascada más larga: la transición y la última fila escalonada. */
+const CASCADE_MS = 1100;
 /** Cada tarjeta necesita su propio nombre de transición. */
 let nextTransitionName = 0;
 /** Tiempo que el cursor debe quedarse sobre la tarjeta para considerarlo intención y no un paso de largo. */
@@ -197,6 +201,9 @@ export class TheaterDirective implements OnDestroy {
     this.setFocused(false);
     this.transition?.skipTransition();
     this.scrim(false);
+    if (this.cascadeTimer !== null) {
+      clearTimeout(this.cascadeTimer);
+    }
     if (this.placeholder) {
       this.restore();
     }
@@ -258,6 +265,26 @@ export class TheaterDirective implements OnDestroy {
     }
     const visible = Array.from(found).filter((part) => part.getClientRects().length > 0);
     return visible.filter((part) => !visible.some((other) => other !== part && other.contains(part)));
+  }
+
+  private cascadeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Reinicia la cascada de las listas de la tarjeta (si las tiene) y la retira cuando acaba. */
+  private cascade(): void {
+    if (!this.host.querySelector('[data-theater-cascade]')) {
+      return;
+    }
+    if (this.cascadeTimer !== null) {
+      clearTimeout(this.cascadeTimer);
+    }
+    this.host.classList.remove(CASCADE_CLASS);
+    // Fuerza a reiniciar la animación si ya estaba puesta (ampliar y cerrar seguidos).
+    void this.host.offsetWidth;
+    this.host.classList.add(CASCADE_CLASS);
+    this.cascadeTimer = setTimeout(() => {
+      this.host.classList.remove(CASCADE_CLASS);
+      this.cascadeTimer = null;
+    }, CASCADE_MS);
   }
 
   private scrimElement: HTMLElement | null = null;
@@ -338,7 +365,13 @@ export class TheaterDirective implements OnDestroy {
     const looping = document.getAnimations().filter((animation) =>
       animation.playState === 'running' && animation.effect?.getTiming().iterations === Infinity);
     looping.forEach((animation) => animation.pause());
-    const transition = start.call(document, update);
+    // Las filas de las listas entran una tras otra. La imagen nueva de la transición es en vivo, así
+    // que la cascada se ve ya mientras el panel aterriza.
+    const cascading = () => {
+      update();
+      this.cascade();
+    };
+    const transition = start.call(document, cascading);
     this.transition = transition;
     // Si el navegador la salta (otra transición, la pestaña oculta…), el cambio se aplica igual sin animar:
     // no es un error.

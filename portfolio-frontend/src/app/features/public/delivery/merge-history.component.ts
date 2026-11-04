@@ -84,7 +84,7 @@ interface Row {
         <span class="col-meta">{{ 'Autor' | t }}</span><span class="col-meta">{{ 'Fecha' | t }}</span><span class="col-meta">Commit</span>
       </div>
       <!-- Sin semántica de lista: las opciones son hijas directas del listbox (ARIA). -->
-      <ol class="commit-log" role="none" [class.has-path]="!!path()" data-testid="commit-graph">
+      <ol class="commit-log" role="none" [class.has-path]="!!path()" data-testid="commit-graph" data-theater-cascade>
         @for (row of g.rows; track row.commit.sha; let first = $first; let r = $index) {
           <li class="commit-row" [id]="'c-' + row.commit.sha" (mouseenter)="hoverSha.set(row.commit.sha)" (mouseleave)="hoverSha.set(null)" role="option" [attr.aria-selected]="row.commit.sha === activeSha()"
             [class.active]="row.commit.sha === activeSha()" [class.is-merge]="row.merge" [class.dimmed]="filtering() && !matches(row.commit)" [style.height.px]="rowHeight()">
@@ -148,7 +148,7 @@ interface Row {
         <span>{{ 'Rama y mensaje' | t }}</span><span class="text-center">CI</span>
         <span class="col-meta">{{ 'Autor' | t }}</span><span class="col-meta">{{ 'Fecha' | t }}</span><span class="col-meta">Commit</span>
       </div>
-      <ol [attr.aria-label]="'Ramas fusionadas, de la más reciente a la más antigua' | t" data-testid="merge-list">
+      <ol [attr.aria-label]="'Ramas fusionadas, de la más reciente a la más antigua' | t" data-testid="merge-list" data-theater-cascade>
         @for (row of rows(); track row.merge.number; let first = $first; let last = $last; let i = $index) {
           <li class="log-row" [class.first]="first" [class.last]="last" [class.active]="row.merge.number === activeNumber()" [style.--lane]="laneColor(i)">
             <!-- main a la izquierda; la rama sube por su carril y se une a main en el commit de merge. -->
