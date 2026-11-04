@@ -419,9 +419,9 @@
           [attr.marker-end]="smartRules() ? 'url(#wire-arrow-' + (wire.chaos === 'down' ? 'down' : wire.chaos === 'warn' ? 'warn' : isWireActive(wire) || wire.glow ? 'active' : wire.support ? 'support' : 'base') + ')' : null"
           [class.wire-active]="isWireActive(wire)" [class.wire-glow]="wire.glow" [class.wire-warn]="wire.chaos === 'warn'" [class.wire-down]="wire.chaos === 'down'" [style.--glow]="wire.glow" [style.--flow]="isWireActive(wire) ? activeColor() : null" [attr.data-kind]="wire.kind ?? null" [attr.d]="wire.path" />
         @if (smartRules()) {
-          <!-- Lienzo inteligente: flechas como un diagrama de arquitectura. Sobre el camino de la petición, un
-               flujo suave en el sentido de la flecha; lo de apoyo y los cables caídos se quedan quietos. -->
-          @if (!wire.support && wire.chaos !== 'down') {
+          <!-- Lienzo inteligente: flechas quietas, como en los diagramas oficiales de AWS, Azure, Google Cloud
+               u Oracle Cloud. Solo las conexiones de la pieza que eliges llevan el cometa, en su sentido. -->
+          @if (isWireActive(wire) && wire.chaos !== 'down') {
             @let streak = streakFlow(wire);
             <!-- Un cometa: halo difuminado debajo y núcleo nítido encima, con el mismo paso. -->
             @for (layer of ['wire-flow-glow', 'wire-flow-core']; track layer) {
