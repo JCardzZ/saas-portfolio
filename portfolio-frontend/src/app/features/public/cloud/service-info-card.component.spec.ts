@@ -148,4 +148,40 @@ describe('ServiceInfoCardComponent', () => {
     drag(SHEET_DISMISS_PX + 10);
     expect(closed).toBe(1);
   });
+
+  describe('refined (smart canvas)', () => {
+    function refined(card: ServiceCard): void {
+      fixture = TestBed.createComponent(ServiceInfoCardComponent);
+      fixture.componentRef.setInput('card', card);
+      fixture.componentRef.setInput('refined', true);
+      fixture.componentRef.setInput('docked', true);
+      fixture.detectChanges();
+      element = fixture.nativeElement;
+    }
+
+    it('heads with the icon, a context line and a close cross, and leads with what it is', () => {
+      refined(cardFor('api', 'gcp'));
+      expect(element.querySelector('[data-testid="card-icon"]')).not.toBeNull();
+      expect(element.querySelector('[data-testid="card-subtitle"]')!.textContent).toContain('Subred privada · aplicación');
+      expect(element.querySelector('[data-testid="card-close"]')!.textContent!.trim()).toBe('×');
+      expect(element.querySelector('[data-testid="card-lead"]')!.textContent).toContain('Ejecuta contenedores');
+      expect(text()).not.toContain('Qué es');
+      expect(element.querySelectorAll('ul.list-disc li').length).toBeLessThanOrEqual(2);
+      // Acoplada al lienzo, sin flecha hacia el nodo.
+      expect(element.querySelector('.service-card-arrow')).toBeNull();
+    });
+
+    it('lists connections as chips that open that piece, and hides empty rows and a missing cost', () => {
+      refined(cardFor('users', 'aws'));
+      expect(text()).not.toContain('Recibe de');
+      expect(text()).not.toContain('Nadie');
+      expect(element.querySelector('[data-testid="card-cost-tag"]')).toBeNull();
+
+      const chosen: string[] = [];
+      fixture.componentInstance.peerChosen.subscribe((id) => chosen.push(id));
+      const chip = element.querySelector<HTMLButtonElement>('[data-peer]')!;
+      chip.click();
+      expect(chosen).toEqual([chip.getAttribute('data-peer')!]);
+    });
+  });
 });

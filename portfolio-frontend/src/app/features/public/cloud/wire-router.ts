@@ -347,12 +347,14 @@ export function roundedPath(points: Pt[], radius = RADIUS): string {
  * centro del más largo.
  */
 export function labelPoint(points: Pt[], avoid: Rect[] = [], width = LABEL_WIDTH): [number, number] {
-  const segments = points.slice(1)
-    .map((point, i) => ({ a: points[i], b: point, length: Math.abs(point[0] - points[i][0]) + Math.abs(point[1] - points[i][1]) }))
+  const segments = withoutJogs(points)
+    .map(([a, b]) => ({ a, b, length: Math.abs(b[0] - a[0]) + Math.abs(b[1] - a[1]) }))
     .filter((segment) => segment.length > 0)
     .sort((x, y) => y.length - x.length);
   if (!segments.length) return [points[0][0], points[0][1] - 7];
-  const fallback: Pt = [(segments[0].a[0] + segments[0].b[0]) / 2, (segments[0].a[1] + segments[0].b[1]) / 2 - 7];
+  // Si ningún sitio está libre del todo, el que menos tape lo que ya hay.
+  let fallback: Pt = [(segments[0].a[0] + segments[0].b[0]) / 2, (segments[0].a[1] + segments[0].b[1]) / 2 - 7];
+  let least = Infinity;
   for (const { a, b } of segments) {
     const vertical = a[0] === b[0];
     // Del centro hacia los extremos, sin acercarse a los nodos de las puntas.
@@ -360,13 +362,52 @@ export function labelPoint(points: Pt[], avoid: Rect[] = [], width = LABEL_WIDTH
       const x = a[0] + (b[0] - a[0]) * t;
       const y = a[1] + (b[1] - a[1]) * t;
       const spots: Pt[] = vertical
-        ? [[x + width / 2 + 6, y + 4], [x - width / 2 - 6, y + 4], [x + width / 2 + 20, y + 4], [x - width / 2 - 20, y + 4]]
-        : [[x, y - 7], [x, y + 17], [x, y - 22], [x, y + 32], [x, y - 48], [x, y + 58]];
-      const free = spots.find((at) => !avoid.some((rect) => overlapsBox(labelBox(at, width), rect)));
-      if (free) return [round(free[0]), round(free[1])];
+        ? [[x + width / 2 + 6, y + 4], [x - width / 2 - 6, y + 4], [x + width / 2 + 20, y + 4], [x - width / 2 - 20, y + 4], [x, y + 4]]
+        // Encima y debajo, cada vez más lejos; y si hace falta, un poco a un lado para no pisar un cable vecino.
+        : [0, 15, -15, 30, -30, 45, -45].flatMap((dx) => [[x + dx, y - 7], [x + dx, y + 17], [x + dx, y - 22], [x + dx, y + 32]] as Pt[])
+          .concat([0, 20, -20, 40, -40, 60, -60].flatMap((dx) => [[x + dx, y - 48], [x + dx, y + 58]] as Pt[]));
+      for (const at of spots) {
+        const covered = avoid.reduce((sum, rect) => sum + overlapArea(labelBox(at, width), rect), 0);
+        if (covered === 0) return [round(at[0]), round(at[1])];
+        if (covered < least) {
+          least = covered;
+          fallback = [round(at[0]), round(at[1])];
+        }
+      }
     }
   }
   return fallback;
+}
+
+/** Escalón que no corta un tramo: el rótulo puede ir encima de los dos lados como si fueran uno. */
+const JOG = 10;
+
+/**
+ * Tramos de un cable para colocar su rótulo. Un escalón pequeño entre dos tramos que siguen en la
+ * misma dirección (el que dejan los puertos repartidos) se aplana: así un cable corto con un escalón
+ * sigue teniendo sitio para su rótulo.
+ */
+function withoutJogs(points: Pt[]): [Pt, Pt][] {
+  const raw = points.slice(1).map((point, i): [Pt, Pt] => [points[i], point]);
+  const merged: [Pt, Pt][] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const [a, b] = raw[i];
+    const [, jogEnd] = raw[i + 1] ?? [];
+    const next = raw[i + 2];
+    const horizontal = a[1] === b[1];
+    const jog = jogEnd && (horizontal ? b[0] === jogEnd[0] && Math.abs(jogEnd[1] - b[1]) <= JOG : b[1] === jogEnd[1] && Math.abs(jogEnd[0] - b[0]) <= JOG);
+    const same = next && (horizontal
+      ? next[0][1] === next[1][1] && Math.sign(next[1][0] - next[0][0]) === Math.sign(b[0] - a[0])
+      : next[0][0] === next[1][0] && Math.sign(next[1][1] - next[0][1]) === Math.sign(b[1] - a[1]));
+    if (jog && same) {
+      const end = next[1];
+      merged.push(horizontal ? [[a[0], (a[1] + end[1]) / 2], [end[0], (a[1] + end[1]) / 2]] : [[(a[0] + end[0]) / 2, a[1]], [(a[0] + end[0]) / 2, end[1]]]);
+      i += 2;
+    } else {
+      merged.push(raw[i]);
+    }
+  }
+  return merged;
 }
 
 /** Ancho por defecto de un rótulo; con texto, mejor `labelWidth(texto)`. */
@@ -378,7 +419,8 @@ export const labelWidth = (text: string) => Math.ceil(text.length * 6.6 + 12);
 /** Caja que ocupa un rótulo centrado en `at`. */
 export const labelBox = (at: Pt, width = LABEL_WIDTH): Rect => ({ x: at[0] - width / 2, y: at[1] - 12, w: width, h: 18 });
 
-const overlapsBox = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const overlapArea = (a: Rect, b: Rect) =>
+  Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
 
 const round = (value: number) => Math.round(value * 10) / 10;
 

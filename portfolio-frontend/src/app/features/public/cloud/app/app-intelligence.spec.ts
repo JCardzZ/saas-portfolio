@@ -1,3 +1,4 @@
+import { CANVAS_WIDTH, NODE_WIDTH } from '../cloud-topology.data';
 import { defaultSystemDesign } from '../system/system-design';
 import { reviewGraph, applyFix } from './app-advisor';
 import { AppGraph, addBox, addNode, connect, graphFromDesign } from './app-graph';
@@ -71,6 +72,9 @@ describe('application studio layout', () => {
     expect(x('entry')).toBeLessThan(x('backend'));
     expect(x('backend')).toBeLessThan(x('database'));
     expect(x('idp')).toBeGreaterThan(x('database'));
+    // Con pocas columnas, el ancho sobrante va entre ellas: cabe la pastilla del protocolo entre dos piezas.
+    expect(x('entry') - x('client') - NODE_WIDTH).toBeGreaterThanOrEqual(90);
+    expect(Math.max(...arranged.nodes.map((node) => node.x)) + NODE_WIDTH / 2).toBeLessThanOrEqual(CANVAS_WIDTH);
   });
 });
 

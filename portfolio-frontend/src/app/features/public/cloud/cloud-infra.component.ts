@@ -87,7 +87,17 @@ interface Wire extends CloudLink {
   boost: boolean;
   /** Fuera del camino de la petición (secretos, monitorización…): va en segundo plano. */
   support: boolean;
+  /** Largo aproximado del cable, para que las partículas vayan a la misma velocidad en todos. */
+  length: number;
 }
+
+/** Velocidad de una partícula con tráfico normal, en unidades del lienzo por segundo: se sigue con la vista. */
+const PULSE_SPEED = 80;
+/** Largo del destello de una partícula, en unidades del lienzo. */
+const PULSE_DASH = 10;
+/** Destello de una flecha del lienzo inteligente: su largo y su velocidad, moderada, en unidades por segundo. */
+const STREAK_LENGTH = 36;
+const STREAK_SPEED = 110;
 
 /** Piezas de apoyo: todo el sistema las usa, pero una petición no pasa por ellas. */
 const SUPPORT_TYPES = new Set(['secrets', 'vault', 'native-monitoring', 'prometheus', 'datadog', 'opentelemetry', 'registry', 'cicd']);
@@ -282,18 +292,26 @@ export class CloudInfraComponent {
     }
     // Lo que un rótulo no debe pisar: las piezas, los rótulos de las zonas y los otros rótulos.
     const taken: WireRect[] = smart ? [...this.nodes().map((node) => nodeRect(node, 2)), ...texts] : [];
+    // Y los demás cables, como líneas finas: un rótulo encima de otra flecha se lee mal.
+    const lines = new Map([...(routes ?? [])].map(([key, points]) => [key, points.slice(1).map((point, i): WireRect => ({
+      x: Math.min(point[0], points[i][0]) - 3, y: Math.min(point[1], points[i][1]) - 3,
+      w: Math.abs(point[0] - points[i][0]) + 6, h: Math.abs(point[1] - points[i][1]) + 6,
+    }))]));
     const routed = (from: CloudNode, to: CloudNode, key: string, label: string | null) => {
       const points = routes?.get(key);
       if (!points) {
-        return connect(from, to);
+        return straight(from, to);
       }
       const width = label ? labelWidth(this.painted(label)) : undefined;
-      const labelAt = labelPoint(points, taken, width);
+      const others = [...lines].filter(([other]) => other !== key).flatMap(([, rects]) => rects);
+      const labelAt = labelPoint(points, [...taken, ...others], width);
       if (label) {
         taken.push(labelBox(labelAt, width));
       }
-      return { path: roundedPath(points), labelAt };
+      const length = points.slice(1).reduce((sum, point, i) => sum + Math.abs(point[0] - points[i][0]) + Math.abs(point[1] - points[i][1]), 0);
+      return { path: roundedPath(points), labelAt, length };
     };
+    const straight = (from: CloudNode, to: CloudNode) => ({ ...connect(from, to), length: Math.abs(to.x - from.x) + Math.abs(to.y - from.y) });
     return this.links().flatMap((link) => {
       const from = byId.get(link.from);
       const to = byId.get(link.to);
@@ -307,7 +325,7 @@ export class CloudInfraComponent {
       const chaos: ChaosLevel | null = faults[from.id] === 'down' || faults[to.id] === 'down' ? 'down'
         : faults[to.id] === 'cpu' ? 'warn'
         : (this.chaosPhase()?.wires[`${link.from}>${link.to}`] ?? null);
-      return [{ ...link, support: smart && !(onPath.has(from.id) && onPath.has(to.id) && !link.kind), ...(smart ? routed(from, to, `${link.from}>${link.to}`, link.label ?? (link.kind ? KIND_LABELS[link.kind] : null)) : connect(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
+      return [{ ...link, support: smart && !(onPath.has(from.id) && onPath.has(to.id) && !link.kind), ...(smart ? routed(from, to, `${link.from}>${link.to}`, link.label ?? (link.kind ? KIND_LABELS[link.kind] : null)) : straight(from, to)), glow: custom ? (this.iconOf(custom)?.color ?? null) : null, chaos, boost: this.takingOver().has(to.id) }];
     });
   });
 
@@ -402,6 +420,30 @@ export class CloudInfraComponent {
   /** Índices de las partículas de cada conexión con el tráfico actual. */
   readonly particles = computed(() => Array.from({ length: particlesPerWire(this.trafficMode(), this.wires().length) }, (_, index) => index));
   readonly boostParticles = [10, 11];
+
+  /**
+   * El destello que recorre una flecha del lienzo inteligente: sólido, de largo fijo y a velocidad
+   * moderada en píxeles, sea cual sea el largo del cable. Hay un solo destello por cable: el hueco
+   * cubre el cable entero. `pathLength` es 100, así que todo se pasa a esa escala.
+   */
+  streakFlow(wire: Wire): { dash: string; seconds: number } {
+    const length = Math.max(wire.length, 40);
+    const dash = Math.min(45, (STREAK_LENGTH / length) * 100);
+    const seconds = Math.max(0.8, (length + STREAK_LENGTH) / STREAK_SPEED) / (wire.chaos === 'warn' ? 1.6 : 1);
+    return { dash: `${dash.toFixed(2)} 100`, seconds };
+  }
+
+  /**
+   * Cómo se mueven las partículas de un cable: el mismo destello corto y la misma velocidad en
+   * píxeles en todos, sea cual sea su largo (con un tiempo fijo por vuelta, las de un cable largo
+   * corrían y se estiraban). `pathLength` es 100, así que el destello se pasa a esa escala.
+   */
+  pulseFlow(wire: Wire, index: number, factor = 1): { dash: string; seconds: number } {
+    const length = Math.max(wire.length, 40);
+    const dash = Math.min(20, (PULSE_DASH / length) * 100);
+    const seconds = Math.max(0.9, length / PULSE_SPEED) * (1 + (index % 4) * 0.08) / this.trafficSpeed() / factor;
+    return { dash: `${dash.toFixed(2)} ${(100 - dash).toFixed(2)}`, seconds };
+  }
   readonly activeFault = computed(() => (this.active() ? (this.faults()[this.active()!.id] ?? null) : null));
 
   // ---------- Auditoría y copiloto ----------
@@ -673,6 +715,11 @@ export class CloudInfraComponent {
       providers: this.providers().map((provider) => provider.id), warnings: this.violationsByNode(), costs: this.nodeCosts(),
     }) : null;
   });
+  /** Icono de la pieza de la tarjeta abierta. */
+  readonly infoIcon = computed(() => {
+    const node = this.nodes().find((candidate) => candidate.id === this.infoId());
+    return node ? this.iconOf(node) : null;
+  });
   /** Posición de la tarjeta anclada, dentro del marco del lienzo; `null` mientras se mide. */
   readonly infoPlacement = signal<(CardPlacement & { maxHeight: number }) | null>(null);
   /** Aviso mínimo (nombre y una frase) que sale al posar el cursor o el foco sobre un nodo. */
@@ -710,6 +757,15 @@ export class CloudInfraComponent {
       // (la hoja inferior vive en <body>, fuera de este componente).
       (this.infoSheet() ? document : this.host).querySelector<HTMLElement>('[data-info-card] [role="dialog"]')?.focus({ preventScroll: true });
     });
+  }
+
+  /** Salta a la tarjeta de una pieza conectada (chips de la tarjeta). */
+  openPeer(id: string): void {
+    const node = this.nodes().find((candidate) => candidate.id === id);
+    if (node) {
+      this.autoActive.set(false);
+      this.openInfo(node);
+    }
   }
 
   closeInfo(restoreFocus = true): void {
@@ -769,6 +825,19 @@ export class CloudInfraComponent {
     const shown = this.visibleStage(frame);
     const visible = { x: shown.x / scale, y: shown.y / scale, width: shown.width / scale, height: shown.height / scale };
     const node = anchor.getBoundingClientRect();
+    if (this.smartRules()) {
+      // Acoplada al borde del lienzo más lejano a la pieza: así no tapa la pieza ni sus conexiones.
+      const margin = 12;
+      const center = (node.left + node.width / 2 - frame.left) / scale;
+      const right = center < visible.x + visible.width / 2;
+      const x = right ? visible.x + visible.width - card.offsetWidth - margin : visible.x + margin;
+      // Dentro del alto del lienzo: no baja sobre las métricas ni los controles de debajo.
+      const canvas = this.host.querySelector<SVGSVGElement>('svg[data-work-canvas]')?.getBoundingClientRect();
+      const top = Math.max(visible.y, canvas ? (canvas.top - frame.top) / scale : visible.y) + margin;
+      const bottom = Math.min(visible.y + visible.height, canvas ? (canvas.bottom - frame.top) / scale : Infinity) - margin;
+      this.infoPlacement.set({ x, y: top, side: right ? 'left' : 'right', arrow: 0, maxHeight: Math.max(160, bottom - top) });
+      return;
+    }
     const maxHeight = Math.max(160, visible.height - 16);
     const size = { width: card.offsetWidth, height: Math.min(card.scrollHeight, maxHeight) };
     const placement = placeCard(

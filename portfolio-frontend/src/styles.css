@@ -272,9 +272,9 @@
   overscroll-behavior: contain;
   border-radius: 0;
   border-color: transparent;
-  background: rgb(var(--c-canvas) / 0.82);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
+  /* Opaco, sin desenfocar lo de detrás: ocupa toda la pantalla y un desenfoque de 40 px se rehace
+     en cada fotograma que se mueva algo dentro (cometas, métricas), lo que traba la vista ampliada. */
+  background: rgb(var(--c-canvas));
   box-shadow: none;
   /* Respeta el notch y la barra de gestos en móviles. */
   padding: max(1.25rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right))
@@ -283,6 +283,80 @@
   --tw-translate-y: 0 !important;
   --tw-scale-x: 1 !important;
   --tw-scale-y: 1 !important;
+}
+/* Transición del modo teatro (TheaterDirective.morph), al estilo de las páginas de Apple:
+   - Geometría emparejada: título, pestañas, selector de nube, lienzo y botón viajan cada uno de su sitio
+     en la celda a su sitio a pantalla completa (y al revés). El ojo no pierde el hilo en ningún momento.
+   - El panel los envuelve con sombra y esquinas que cambian durante el viaje; lo demás del panel se
+     funde a la vez, solapado, sin ningún instante vacío.
+   - Una sola curva larga y suave para todo, que se posa sin rebote.
+   - Solo se fotografía la tarjeta: la página de fondo sigue viva y el gesto arranca antes. */
+html.theater-transition {
+  view-transition-name: none;
+}
+html::view-transition-group(.theater),
+html::view-transition-group(.theater-part) {
+  animation-duration: 560ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+html::view-transition-image-pair(.theater) {
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: rgb(var(--c-canvas));
+  box-shadow: 0 30px 80px -20px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(var(--c-ink-1) / 0.06);
+  animation: theater-corners 560ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+html.theater-collapsing::view-transition-image-pair(.theater) {
+  animation-name: theater-corners-back;
+}
+/* Lo que no viaja (textos, menús, métricas) se funde solapado mientras el panel cambia de tamaño. */
+html::view-transition-old(.theater) {
+  animation: theater-fade-out 260ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+html::view-transition-new(.theater) {
+  animation: theater-fade-in 360ms 140ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+/* Cada pieza que viaja: su imagen de antes y la de después, del mismo contenido, se funden por el camino. */
+html::view-transition-old(.theater-part),
+html::view-transition-new(.theater-part) {
+  height: 100%;
+  object-fit: contain;
+  object-position: left top;
+}
+html::view-transition-old(.theater-part) {
+  animation: theater-fade-out 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+html::view-transition-new(.theater-part) {
+  animation: theater-fade-in 380ms 60ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+@keyframes theater-corners { from { border-radius: 1.5rem; } to { border-radius: 0; } }
+@keyframes theater-corners-back { from { border-radius: 0; } to { border-radius: 1.5rem; } }
+@keyframes theater-fade-out { to { opacity: 0; } }
+@keyframes theater-fade-in { from { opacity: 0; } }
+/* Velo de la página de fondo: aparece mientras la tarjeta crece y se va mientras vuelve. La página
+   sigue viva bajo la transición, así que el velo se pinta debajo de la tarjeta que viaja. */
+.theater-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 44; /* bajo la tarjeta ampliada (45) */
+  pointer-events: none;
+  background: rgb(0 0 0 / 0.42);
+  animation: theater-scrim-in 560ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.theater-scrim-out {
+  animation: theater-scrim-out 520ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+@keyframes theater-scrim-in { from { opacity: 0; } }
+@keyframes theater-scrim-out { to { opacity: 0; } }
+@keyframes theater-corners { from { border-radius: 1.5rem; } to { border-radius: 0; } }
+@keyframes theater-corners-back { from { border-radius: 0; } to { border-radius: 1.5rem; } }
+@keyframes theater-content-out { to { opacity: 0; } }
+@keyframes theater-content-in { from { opacity: 0; transform: scale(0.985); } }
+/* Sin la barra de scroll mientras está ampliada, pero con su hueco: la página no se desplaza de lado. */
+html:has(.theater-expanded) {
+  scrollbar-gutter: stable;
+  /* Al sacar la tarjeta del flujo, el navegador no debe desplazar la página siguiendo algo de dentro. */
+  overflow-anchor: none;
 }
 .theater-expanded .theater-stage {
   overflow: auto;

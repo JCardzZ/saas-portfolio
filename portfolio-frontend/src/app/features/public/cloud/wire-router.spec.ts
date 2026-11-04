@@ -109,6 +109,8 @@ describe('wire router', () => {
     const moved = labelPoint([[0, 0], [10, 0], [10, 200]], [busy]);
     expect(moved).not.toEqual([50, 104]);
     expect(labelBox(moved).x + labelBox(moved).w <= busy.x || labelBox(moved).y >= busy.y + busy.h || labelBox(moved).y + 18 <= busy.y).toBeTrue();
+    // Un escalón pequeño no parte el tramo: el rótulo va en medio del cable entero, no en una mitad.
+    expect(labelPoint([[0, 7], [44, 7], [44, 0], [88, 0]])).toEqual([44, -3.5]);
     expect(NODE_HEIGHT).toBeGreaterThan(0);
   });
 });
