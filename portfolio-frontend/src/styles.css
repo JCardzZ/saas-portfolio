@@ -272,9 +272,9 @@
   overscroll-behavior: contain;
   border-radius: 0;
   border-color: transparent;
-  background: rgb(var(--c-canvas) / 0.82);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
+  /* Opaco, sin desenfocar lo de detrás: ocupa toda la pantalla y un desenfoque de 40 px se rehace
+     en cada fotograma que se mueva algo dentro (cometas, métricas), lo que traba la vista ampliada. */
+  background: rgb(var(--c-canvas));
   box-shadow: none;
   /* Respeta el notch y la barra de gestos en móviles. */
   padding: max(1.25rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right))
@@ -284,26 +284,38 @@
   --tw-scale-x: 1 !important;
   --tw-scale-y: 1 !important;
 }
-/* Durante la animación de ampliar o cerrar: el fondo es opaco en vez de desenfocado, el elemento va en
-   su propia capa y lo que se mueve dentro queda quieto. Solo se anima una transformación: 60 fps. */
-.theater-animating {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  background: rgb(var(--c-canvas)) !important;
-  will-change: transform;
-  contain: layout paint;
+/* Transición del modo teatro (TheaterDirective.morph): la tarjeta se mueve y crece mientras se funden
+   la instantánea de antes y la de después. Cada una llena la caja sin deformarse (recorte desde arriba)
+   y la página de debajo cambia de golpe: solo se anima la tarjeta. */
+html.theater-transition::view-transition-old(root),
+html.theater-transition::view-transition-new(root) {
+  animation: none;
 }
-/* El velo de foco desenfoca toda la página: al ampliar o cerrar se va al instante, sin fundido que repintar. */
-html:has(.theater-animating) .theater-backdrop {
-  transition: none !important;
-  visibility: hidden;
-  opacity: 0;
+html::view-transition-group(.theater) {
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
-.theater-animating *,
-.theater-animating *::before,
-.theater-animating *::after {
-  animation-play-state: paused !important;
-  transition: none !important;
+/* Transformación de contenedor: un panel sólido viaja de la celda a la pantalla (o al revés). El
+   contenido de antes se va enseguida y el nuevo entra cuando el panel ya casi ha llegado: nunca se ven
+   las dos instantáneas superpuestas. Cada una conserva su proporción (ancho completo, desde arriba). */
+html::view-transition-image-pair(.theater) {
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: rgb(var(--c-canvas));
+}
+html::view-transition-old(.theater) {
+  animation: theater-content-out 120ms ease-in both;
+}
+html::view-transition-new(.theater) {
+  animation: theater-content-in 220ms 90ms ease-out both;
+}
+@keyframes theater-content-out { to { opacity: 0; } }
+@keyframes theater-content-in { from { opacity: 0; } }
+/* Sin la barra de scroll mientras está ampliada, pero con su hueco: la página no se desplaza de lado. */
+html:has(.theater-expanded) {
+  scrollbar-gutter: stable;
+  /* Al sacar la tarjeta del flujo, el navegador no debe desplazar la página siguiendo algo de dentro. */
+  overflow-anchor: none;
 }
 .theater-expanded .theater-stage {
   overflow: auto;

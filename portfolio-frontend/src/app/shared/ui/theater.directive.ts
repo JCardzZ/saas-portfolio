@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostListener, InjectionToken, OnDestroy, inject, signal } from '@angular/core';
+import { Directive, ElementRef, HostListener, InjectionToken, NgZone, OnDestroy, inject, signal } from '@angular/core';
 
 import { focusableWithin } from './focus-trap.directive';
 
@@ -12,14 +12,14 @@ const EXPANDED_CLASS = 'theater-expanded';
 const FOCUS_CLASS = 'theater-focus';
 const BACKDROP_CLASS = 'theater-backdrop';
 const BACKDROP_ON_CLASS = 'theater-backdrop-on';
-/** Mientras se anima: sin desenfoque de fondo ni animaciones internas, para que vaya a 60 fps. */
-const ANIMATING_CLASS = 'theater-animating';
+/** En <html> mientras dura la transición del modo teatro: sus estilos solo valen para ella. */
+const TRANSITION_CLASS = 'theater-transition';
+/** Cada tarjeta necesita su propio nombre de transición. */
+let nextTransitionName = 0;
 /** Tiempo que el cursor debe quedarse sobre la tarjeta para considerarlo intención y no un paso de largo. */
 export const HOVER_INTENT_MS = 300;
 /** Controles propios de la tarjeta: tocarlos hace su función, no amplía. */
 const INTERACTIVE = 'button, a, input, textarea, select, summary, [role="button"], [role="tab"], [role="switch"], [tabindex]';
-const DURATION_MS = 550;
-const SPRING = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
 /**
  * Dos niveles de protagonismo para una tarjeta de diagrama:
@@ -46,6 +46,7 @@ const SPRING = 'cubic-bezier(0.16, 1, 0.3, 1)';
 export class TheaterDirective implements OnDestroy {
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly animated = inject(THEATER_ANIMATIONS);
+  private readonly zone = inject(NgZone);
 
   readonly expanded = signal(false);
   /** Nombre del diagrama, anunciado como título del diálogo. */
@@ -54,7 +55,12 @@ export class TheaterDirective implements OnDestroy {
   /** Ocupa el hueco de la tarjeta en la rejilla mientras esta flota a pantalla completa. */
   private placeholder: HTMLElement | null = null;
   private previousBodyOverflow = '';
-  private animation: Animation | null = null;
+  /** Posición de la página al ampliar: se devuelve exacta al cerrar. */
+  private previousScroll = 0;
+  private transition: ViewTransition | null = null;
+  private readonly transitionName = `theater-${nextTransitionName++}`;
+  /** Recién cerrada bajo el cursor: no se adelanta hasta que el cursor salga y vuelva a entrar. */
+  private settling = false;
   private hoverTimer: ReturnType<typeof setTimeout> | null = null;
   private lastPointerType = '';
 
@@ -64,7 +70,7 @@ export class TheaterDirective implements OnDestroy {
   @HostListener('pointerenter', ['$event'])
   onPointerEnter(event: PointerEvent): void {
     // Solo ratón: en táctil "pointerenter" llega con el toque y dejaría el efecto pegado.
-    if (event.pointerType !== 'mouse' || !this.animated || this.expanded()) {
+    if (event.pointerType !== 'mouse' || !this.animated || this.expanded() || this.settling) {
       return;
     }
     // Durante el recorrido guiado la página se desplaza sola bajo un cursor quieto: no es intención.
@@ -111,25 +117,33 @@ export class TheaterDirective implements OnDestroy {
     if (this.expanded()) {
       return;
     }
-    this.animation?.cancel();
     this.cancelHoverIntent();
-    this.setFocused(false);
-    const from = this.host.getBoundingClientRect();
-
-    this.placeholder = document.createElement('div');
-    this.placeholder.setAttribute('aria-hidden', 'true');
-    this.placeholder.style.height = `${from.height}px`;
+    // La celda se mide antes de que cambie nada: el hueco que deja la tarjeta tiene su alto exacto, el de
+    // maquetación (sin la escala del foco por hover, que no ocupa sitio).
+    const height = this.host.offsetHeight;
     const style = getComputedStyle(this.host);
-    this.placeholder.style.gridColumnStart = style.gridColumnStart;
-    this.placeholder.style.gridColumnEnd = style.gridColumnEnd;
-    this.host.parentNode?.insertBefore(this.placeholder, this.host);
-
-    this.previousBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    this.host.classList.add(EXPANDED_CLASS);
+    // Se guarda ya: el navegador puede mover la página al sacar la tarjeta del flujo (scroll anchoring).
+    const scroll = window.scrollY;
     this.expanded.set(true);
-
-    this.animate(from, this.host.getBoundingClientRect(), 'in');
+    this.morph(() => {
+      this.setFocused(false);
+      this.placeholder = document.createElement('div');
+      this.placeholder.setAttribute('aria-hidden', 'true');
+      this.placeholder.style.height = `${height}px`;
+      this.placeholder.style.gridColumnStart = style.gridColumnStart;
+      this.placeholder.style.gridColumnEnd = style.gridColumnEnd;
+      this.host.parentNode?.insertBefore(this.placeholder, this.host);
+      this.previousScroll = scroll;
+      this.host.classList.add(EXPANDED_CLASS);
+      this.keepScroll();
+    }, () => {
+      // La página de fondo deja de desplazarse cuando la tarjeta ya ocupa la pantalla: si la barra de
+      // scroll desapareciera durante la transición, cambiaría el tamaño de la vista y el navegador la cancelaría.
+      // Solo si sigue ampliada de verdad: pudo cerrarse o destruirse mientras duraba la transición.
+      if (this.expanded() && this.placeholder) {
+        this.lockPage(true);
+      }
+    });
   }
 
   collapse(): void {
@@ -137,17 +151,10 @@ export class TheaterDirective implements OnDestroy {
       return;
     }
     this.expanded.set(false);
-    const target = this.placeholder?.getBoundingClientRect();
-    const finish = () => this.restore();
-
-    if (target) {
-      const animation = this.animate(target, this.host.getBoundingClientRect(), 'out');
-      if (animation) {
-        animation.onfinish = finish;
-        return;
-      }
-    }
-    finish();
+    // Vuelve bajo el cursor: que no se adelante sola nada más llegar.
+    this.settle(true);
+    this.lockPage(false);
+    this.morph(() => this.restore());
   }
 
   @HostListener('document:keydown.escape')
@@ -178,12 +185,32 @@ export class TheaterDirective implements OnDestroy {
 
   ngOnDestroy(): void {
     this.cancelHoverIntent();
+    this.settle(false);
     this.setFocused(false);
-    this.animation?.cancel();
+    this.transition?.skipTransition();
     if (this.placeholder) {
       this.restore();
     }
   }
+
+  /**
+   * Al encogerse bajo el cursor el navegador da salida y entrada sin que el ratón se mueva: solo un
+   * movimiento real fuera de la tarjeta vuelve a permitir el foco por hover. El oyente vive fuera de
+   * Angular y solo mientras hace falta, para no despertar la detección de cambios con cada movimiento.
+   */
+  private settle(on: boolean): void {
+    this.settling = on;
+    document.removeEventListener('pointermove', this.watchPointer);
+    if (on) {
+      this.zone.runOutsideAngular(() => document.addEventListener('pointermove', this.watchPointer, { passive: true }));
+    }
+  }
+
+  private readonly watchPointer = (event: PointerEvent): void => {
+    if (!this.host.contains(event.target as Node | null)) {
+      this.settle(false);
+    }
+  };
 
   private cancelHoverIntent(): void {
     if (this.hoverTimer !== null) {
@@ -205,40 +232,67 @@ export class TheaterDirective implements OnDestroy {
     this.host.classList.remove(EXPANDED_CLASS);
     this.placeholder?.remove();
     this.placeholder = null;
-    this.animation = null;
-    document.body.style.overflow = this.previousBodyOverflow;
+    this.lockPage(false);
+    this.keepScroll();
+  }
+
+  private pageLocked = false;
+
+  /** Mientras está ampliada, la página de fondo no se desplaza. */
+  private lockPage(on: boolean): void {
+    if (on === this.pageLocked) {
+      return;
+    }
+    this.pageLocked = on;
+    if (on) {
+      this.previousBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      this.keepScroll();
+    } else {
+      document.body.style.overflow = this.previousBodyOverflow;
+    }
+  }
+
+  /** La página de detrás no se mueve: ni al ampliar ni al volver. */
+  private keepScroll(): void {
+    if (Math.round(window.scrollY) !== Math.round(this.previousScroll)) {
+      window.scrollTo({ top: this.previousScroll, behavior: 'instant' });
+    }
   }
 
   /**
-   * Técnica FLIP: el elemento ya está en su posición final de pantalla completa y se anima
-   * la transformación que lo hace coincidir con el rectángulo de la celda.
+   * Cambia entre la celda y la pantalla completa con una transición de vista: el navegador toma una
+   * instantánea de antes y otra de después, y mueve y funde las dos en la GPU. El contenido nunca se
+   * deforma (cada instantánea conserva su proporción) y no se repinta nada mientras dura, así que es
+   * ligera y fluida. Sin soporte del navegador, o con "reducir movimiento", el cambio es directo.
    */
-  private animate(cell: DOMRect, full: DOMRect, direction: 'in' | 'out'): Animation | null {
-    if (!this.animated || full.width === 0 || full.height === 0) {
-      return null;
+  private morph(update: () => void, done: () => void = () => undefined): void {
+    this.transition?.skipTransition();
+    const start = (document as Document & { startViewTransition?: (callback: () => void) => ViewTransition }).startViewTransition;
+    if (!this.animated || typeof start !== 'function') {
+      update();
+      done();
+      return;
     }
-    const atCell = {
-      transformOrigin: 'top left',
-      transform: `translate(${cell.left - full.left}px, ${cell.top - full.top}px) scale(${cell.width / full.width}, ${cell.height / full.height})`,
-      borderRadius: '1.5rem',
-    };
-    const atFull = { transformOrigin: 'top left', transform: 'none', borderRadius: '0' };
-    // Lo caro de repintar en cada fotograma (el desenfoque de 40 px del fondo, los cometas y pulsos
-    // del diagrama) se aparta mientras dura el gesto y vuelve al terminar.
-    this.host.classList.add(ANIMATING_CLASS);
-    const animation = this.host.animate(direction === 'in' ? [atCell, atFull] : [atFull, atCell], {
-      duration: DURATION_MS,
-      easing: SPRING,
-    });
-    const settle = () => {
-      if (this.animation === animation) {
-        this.host.classList.remove(ANIMATING_CLASS);
+    const root = document.documentElement;
+    this.host.style.setProperty('view-transition-name', this.transitionName);
+    this.host.style.setProperty('view-transition-class', 'theater');
+    root.classList.add(TRANSITION_CLASS);
+    const transition = start.call(document, update);
+    this.transition = transition;
+    // Si el navegador la salta (otra transición, la pestaña oculta…), el cambio se aplica igual sin animar:
+    // no es un error.
+    transition.ready.catch(() => undefined);
+    transition.finished.catch(() => undefined).finally(() => {
+      if (this.transition !== transition) {
+        return;
       }
-    };
-    animation.addEventListener('finish', settle);
-    animation.addEventListener('cancel', settle);
-    this.animation = animation;
-    return animation;
+      this.transition = null;
+      this.host.style.removeProperty('view-transition-name');
+      this.host.style.removeProperty('view-transition-class');
+      root.classList.remove(TRANSITION_CLASS);
+      done();
+    });
   }
 }
 

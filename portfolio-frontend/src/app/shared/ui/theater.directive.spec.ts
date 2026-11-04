@@ -114,7 +114,18 @@ describe('TheaterDirective hover intent and touch', () => {
   let fixture: ComponentFixture<HostComponent>;
   let card: HTMLElement;
 
+  // La transición de vista real no se puede ejecutar dentro del iframe de Karma: un doble aplica el
+  // cambio en el acto y termina enseguida, como lo haría el navegador sin animar.
+  let transitions: string[];
+  const original = (document as unknown as { startViewTransition?: unknown }).startViewTransition;
+
   beforeEach(() => {
+    transitions = [];
+    (document as unknown as { startViewTransition?: unknown }).startViewTransition = (update: () => void) => {
+      transitions.push(card.style.getPropertyValue('view-transition-name'));
+      update();
+      return { finished: Promise.resolve(), ready: Promise.resolve(), updateCallbackDone: Promise.resolve(), skipTransition: () => undefined };
+    };
     TestBed.configureTestingModule({ providers: [{ provide: THEATER_ANIMATIONS, useValue: true }] });
     fixture = TestBed.createComponent(HostComponent);
     document.body.appendChild(fixture.nativeElement);
@@ -125,11 +136,14 @@ describe('TheaterDirective hover intent and touch', () => {
   afterEach(() => {
     fixture.destroy();
     fixture.nativeElement.remove();
+    (document as unknown as { startViewTransition?: unknown }).startViewTransition = original;
   });
 
   const pointer = (type: string, pointerType: string, target: Element = card) =>
     target.dispatchEvent(new PointerEvent(type, { pointerType, bubbles: type === 'pointerdown' }));
   const backdropOn = () => document.querySelector('.theater-backdrop')?.classList.contains('theater-backdrop-on') ?? false;
+  /** Deja que termine la transición (el doble la da por acabada en la siguiente vuelta). */
+  const settled = () => new Promise((resolve) => setTimeout(resolve));
 
   it('brings the card forward only after the cursor rests on it, and releases it on leave', fakeAsync(() => {
     pointer('pointerenter', 'mouse');
@@ -164,7 +178,7 @@ describe('TheaterDirective hover intent and touch', () => {
     expect(backdropOn()).toBeFalse();
   }));
 
-  it('expands with a single tap on the card but lets its own controls work', () => {
+  it('expands with a single tap on the card but lets its own controls work', async () => {
     const inner = card.querySelector<HTMLElement>('#inner')!;
     pointer('pointerdown', 'touch', inner);
     inner.click();
@@ -174,6 +188,35 @@ describe('TheaterDirective hover intent and touch', () => {
     card.click();
     expect(card.classList).toContain('theater-expanded');
   });
+
+  it('morphs without deforming: a view transition named for this card, removed when it ends', async () => {
+    pointer('pointerdown', 'touch');
+    card.click();
+    expect(transitions.length).toBe(1);
+    expect(transitions[0]).toMatch(/^theater-\d+$/);
+    expect(card.classList).toContain('theater-expanded');
+    await settled();
+    expect(card.style.getPropertyValue('view-transition-name')).toBe('');
+    expect(document.documentElement.classList).not.toContain('theater-transition');
+  });
+
+  it('does not bring the card forward on its own right after it shrinks back under the cursor', fakeAsync(() => {
+    const theater = fixture.debugElement.query((node) => node.nativeElement === card).injector.get(TheaterDirective);
+    theater.expanded.set(true);
+    theater.collapse();
+    // Salida y entrada que da el navegador al encogerse, sin mover el ratón.
+    pointer('pointerleave', 'mouse');
+    pointer('pointerenter', 'mouse');
+    tick(HOVER_INTENT_MS * 2);
+    expect(card.classList).not.toContain('theater-focus');
+
+    // Un movimiento real fuera de la tarjeta lo vuelve a permitir.
+    document.body.dispatchEvent(new PointerEvent('pointermove', { bubbles: true }));
+    pointer('pointerenter', 'mouse');
+    tick(HOVER_INTENT_MS);
+    expect(card.classList).toContain('theater-focus');
+    pointer('pointerleave', 'mouse');
+  }));
 
   it('does not expand on a mouse click outside the button', () => {
     pointer('pointerdown', 'mouse');
