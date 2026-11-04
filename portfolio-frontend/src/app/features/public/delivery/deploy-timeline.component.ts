@@ -64,7 +64,7 @@ const SIMULATION_MS = 900;
                 <p class="shrink-0 text-xs tabular-nums text-ink-3">{{ summary(deployments) }}</p>
               </div>
 
-              <ol class="mt-3">
+              <ol class="mt-3" data-theater-cascade>
                 @for (deployment of deployments; track deployment.runId + deployment.kind; let index = $index) {
                   <li class="entry" [hidden]="!showAll(lane.target) && index >= visible && index !== currentIndex(lane.target)"
                     [class.current]="index === currentIndex(lane.target)"

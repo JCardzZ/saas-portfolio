@@ -125,7 +125,7 @@ const PHASE_ICONS: Record<PhaseId, string> = {
 
     <!-- Marcador de calidad: cifras reales de esta ejecución. Cada una abre el job que la publicó. -->
     @if (score().length) {
-      <ul class="score" [attr.aria-label]="'Resultados de la ejecución' | t">
+      <ul class="score" [attr.aria-label]="'Resultados de la ejecución' | t" data-theater-cascade>
         @for (item of score(); track item.key) {
           <li>
             <button type="button" class="score-item focus-ring" [attr.data-score]="item.key" (click)="openJob(item.job)">
@@ -146,7 +146,7 @@ const PHASE_ICONS: Record<PhaseId, string> = {
     </div>
 
     @if (view() === 'phases') {
-      <ol class="rail" [attr.aria-label]="('Fases del workflow ' | t) + tabLabel()" data-testid="pipeline-phases">
+      <ol class="rail" [attr.aria-label]="('Fases del workflow ' | t) + tabLabel()" data-testid="pipeline-phases" data-theater-cascade>
         @for (phase of phases(); track phase.id; let i = $index) {
           <li class="rail-step">
             <button
