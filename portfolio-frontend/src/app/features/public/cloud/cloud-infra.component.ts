@@ -825,7 +825,11 @@ export class CloudInfraComponent {
       const center = (node.left + node.width / 2 - frame.left) / scale;
       const right = center < visible.x + visible.width / 2;
       const x = right ? visible.x + visible.width - card.offsetWidth - margin : visible.x + margin;
-      this.infoPlacement.set({ x, y: visible.y + margin, side: right ? 'left' : 'right', arrow: 0, maxHeight: Math.max(160, visible.height - margin * 2) });
+      // Dentro del alto del lienzo: no baja sobre las métricas ni los controles de debajo.
+      const canvas = this.host.querySelector<SVGSVGElement>('svg[data-work-canvas]')?.getBoundingClientRect();
+      const top = Math.max(visible.y, canvas ? (canvas.top - frame.top) / scale : visible.y) + margin;
+      const bottom = Math.min(visible.y + visible.height, canvas ? (canvas.bottom - frame.top) / scale : Infinity) - margin;
+      this.infoPlacement.set({ x, y: top, side: right ? 'left' : 'right', arrow: 0, maxHeight: Math.max(160, bottom - top) });
       return;
     }
     const maxHeight = Math.max(160, visible.height - 16);

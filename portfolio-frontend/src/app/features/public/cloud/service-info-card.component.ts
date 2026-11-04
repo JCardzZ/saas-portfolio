@@ -62,7 +62,7 @@ export const SHEET_DISMISS_PX = 80;
           </span>
           <div class="min-w-0 flex-1">
             <h3 [id]="titleId()" class="truncate text-title-3 text-ink-1">{{ card().title }}</h3>
-            <p class="truncate text-caption text-ink-3" data-testid="card-subtitle">{{ subtitle() }}</p>
+            <p class="line-clamp-2 text-caption text-ink-3" data-testid="card-subtitle">{{ subtitle() }}</p>
           </div>
           <button type="button" class="focus-ring shrink-0 rounded-control px-2 text-lg leading-none text-ink-2 hover:text-ink-1" data-testid="card-close" [attr.aria-label]="'Cerrar' | t" (click)="closed.emit()">×</button>
         </header>
