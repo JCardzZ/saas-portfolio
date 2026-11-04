@@ -85,6 +85,27 @@ describe('TheaterDirective', () => {
     expect(document.activeElement).toBe(toggle);
   });
 
+  it('starts on the mouse press, without undoing it on release, and still answers the keyboard', () => {
+    toggle.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'mouse', button: 0, bubbles: true }));
+    fixture.detectChanges();
+    expect(card.classList).toContain('theater-expanded');
+
+    // El clic que llega al soltar el ratón no lo repite.
+    toggle.dispatchEvent(new MouseEvent('click', { detail: 1, bubbles: true }));
+    fixture.detectChanges();
+    expect(card.classList).toContain('theater-expanded');
+
+    // Con teclado (detail 0) se cierra como siempre, aunque antes hubiera una pulsación sin clic.
+    toggle.dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'mouse', button: 0, bubbles: true }));
+    fixture.detectChanges();
+    toggle.dispatchEvent(new MouseEvent('click', { detail: 0, bubbles: true }));
+    fixture.detectChanges();
+    expect(card.classList).toContain('theater-expanded');
+    toggle.dispatchEvent(new MouseEvent('click', { detail: 0, bubbles: true }));
+    fixture.detectChanges();
+    expect(card.classList).not.toContain('theater-expanded');
+  });
+
   it('keeps Tab inside the card only while it is expanded', () => {
     const inner = card.querySelector<HTMLElement>('#inner')!;
 

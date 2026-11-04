@@ -26,7 +26,8 @@ import { TheaterDirective } from './theater.directive';
       [class]="theater.expanded() ? 'h-11 w-11' : 'h-8 w-8'"
       [attr.aria-label]="(theater.expanded() ? ('Minimizar ' | t) : ('Ampliar a pantalla completa ' | t)) + name()"
       [attr.aria-expanded]="theater.expanded()"
-      (click)="pressed.set(true); theater.toggle()"
+      (pointerdown)="press($event)"
+      (click)="click($event)"
     >
       <!-- Una vuelta corta al cambiar de icono: el botón responde al gesto. -->
       <svg viewBox="0 0 20 20" class="theater-icon h-4 w-4" [class.theater-icon-in]="pressed() && theater.expanded()" [class.theater-icon-out]="pressed() && !theater.expanded()" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -61,6 +62,33 @@ export class TheaterToggleComponent implements OnInit {
   readonly name = input.required<string>();
   /** El icono solo gira tras pulsar el botón, no al cargar la página. */
   readonly pressed = signal(false);
+
+  /** El gesto ya arrancó al pulsar: el clic que llega al soltar no debe repetirlo. */
+  private startedOnPress = false;
+
+  /**
+   * Con ratón, la transición arranca al pulsar y no al soltar: entre una cosa y otra pasan unos 100 ms
+   * en los que el navegador ya prepara la animación, así que al soltar ya está en marcha.
+   */
+  press(event: PointerEvent): void {
+    if (event.pointerType !== 'mouse' || event.button !== 0) {
+      return;
+    }
+    this.startedOnPress = true;
+    this.pressed.set(true);
+    this.theater.toggle();
+  }
+
+  /** Teclado, táctil o lápiz: el clic de siempre. El de teclado (`detail` 0) nunca se descarta. */
+  click(event: MouseEvent): void {
+    const fromPress = this.startedOnPress;
+    this.startedOnPress = false;
+    if (fromPress && event.detail > 0) {
+      return;
+    }
+    this.pressed.set(true);
+    this.theater.toggle();
+  }
 
   ngOnInit(): void {
     this.theater.label.set(this.name());
