@@ -315,6 +315,21 @@ html::view-transition-new(.theater) {
   transform-origin: top center;
   animation: theater-content-in 250ms 90ms cubic-bezier(0, 0, 0.2, 1) both;
 }
+/* Velo de la página de fondo: aparece mientras la tarjeta crece y se va mientras vuelve. La página
+   sigue viva bajo la transición, así que el velo se pinta debajo de la tarjeta que viaja. */
+.theater-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 44; /* bajo la tarjeta ampliada (45) */
+  pointer-events: none;
+  background: rgb(0 0 0 / 0.42);
+  animation: theater-scrim-in 340ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.theater-scrim-out {
+  animation: theater-scrim-out 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+@keyframes theater-scrim-in { from { opacity: 0; } }
+@keyframes theater-scrim-out { to { opacity: 0; } }
 @keyframes theater-corners { from { border-radius: 1.5rem; } to { border-radius: 0; } }
 @keyframes theater-corners-back { from { border-radius: 0; } to { border-radius: 1.5rem; } }
 @keyframes theater-content-out { to { opacity: 0; } }

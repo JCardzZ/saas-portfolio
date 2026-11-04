@@ -16,6 +16,7 @@ const BACKDROP_ON_CLASS = 'theater-backdrop-on';
 const TRANSITION_CLASS = 'theater-transition';
 /** En <html> mientras se cierra: las esquinas vuelven a redondearse en vez de enderezarse. */
 const COLLAPSING_CLASS = 'theater-collapsing';
+const SCRIM_CLASS = 'theater-scrim';
 /** Cada tarjeta necesita su propio nombre de transición. */
 let nextTransitionName = 0;
 /** Tiempo que el cursor debe quedarse sobre la tarjeta para considerarlo intención y no un paso de largo. */
@@ -129,6 +130,7 @@ export class TheaterDirective implements OnDestroy {
     this.expanded.set(true);
     this.morph(() => {
       this.setFocused(false);
+      this.scrim(true, false);
       this.placeholder = document.createElement('div');
       this.placeholder.setAttribute('aria-hidden', 'true');
       this.placeholder.style.height = `${height}px`;
@@ -145,6 +147,8 @@ export class TheaterDirective implements OnDestroy {
       if (this.expanded() && this.placeholder) {
         this.lockPage(true);
       }
+      // El velo solo hace falta mientras la tarjeta viaja: ya ampliada, la tarjeta es opaca.
+      this.scrim(false);
     });
   }
 
@@ -156,7 +160,9 @@ export class TheaterDirective implements OnDestroy {
     // Vuelve bajo el cursor: que no se adelante sola nada más llegar.
     this.settle(true);
     this.lockPage(false);
-    this.morph(() => this.restore(), undefined, true);
+    // La página de fondo se aclara mientras la tarjeta vuelve.
+    this.scrim(true, true);
+    this.morph(() => this.restore(), () => this.scrim(false), true);
   }
 
   @HostListener('document:keydown.escape')
@@ -190,6 +196,7 @@ export class TheaterDirective implements OnDestroy {
     this.settle(false);
     this.setFocused(false);
     this.transition?.skipTransition();
+    this.scrim(false);
     if (this.placeholder) {
       this.restore();
     }
@@ -236,6 +243,28 @@ export class TheaterDirective implements OnDestroy {
     this.placeholder = null;
     this.lockPage(false);
     this.keepScroll();
+  }
+
+  private scrimElement: HTMLElement | null = null;
+
+  /**
+   * Velo que oscurece la página de fondo mientras la tarjeta viaja (al ampliar aparece, al cerrar se va).
+   * La página sigue viva bajo la transición, así que es un elemento normal con su propio fundido.
+   */
+  private scrim(on: boolean, leaving = false): void {
+    if (!on) {
+      this.scrimElement?.remove();
+      this.scrimElement = null;
+      return;
+    }
+    if (!this.animated || this.scrimElement) {
+      return;
+    }
+    this.scrimElement = document.createElement('div');
+    this.scrimElement.className = leaving ? `${SCRIM_CLASS} ${SCRIM_CLASS}-out` : SCRIM_CLASS;
+    this.scrimElement.setAttribute('aria-hidden', 'true');
+    // Junto a la tarjeta, en su mismo contexto de apilamiento: así queda justo debajo de ella.
+    this.host.parentNode?.insertBefore(this.scrimElement, this.host);
   }
 
   private pageLocked = false;

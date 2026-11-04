@@ -417,6 +417,7 @@ export const EN: Readonly<Record<string, string>> = {
   'Lectura': 'Read',
   'Listo': 'Done',
   'Minimizar ': 'Minimise ',
+  'para salir': 'to exit',
   'Mostrar catálogo': 'Show catalog',
   'Nadie': 'Nobody',
   'No pasó la comprobación de salud': 'Failed the health check',
