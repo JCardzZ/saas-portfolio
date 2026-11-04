@@ -2,35 +2,29 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-11-03T03:35:41.897Z",
+  "updatedAt": "2026-11-04T16:29:20.950Z",
   "workflows": {
     "ci": {
-      "runId": 41572469838,
-      "runNumber": 285,
-      "sha": "cafabae2bb10d675948e81c8c83fc95b55d707c2",
+      "runId": 41867182918,
+      "runNumber": 291,
+      "sha": "efabf9868459d722c9a381ec93b07dfc2fd7295b",
       "event": "push",
-      "startedAt": "2026-11-03T03:29:08Z",
-      "finishedAt": "2026-11-03T03:33:23.571Z",
-      "durationSeconds": 256,
+      "startedAt": "2026-11-04T16:26:09Z",
+      "finishedAt": "2026-11-04T16:29:20.950Z",
+      "durationSeconds": 192,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 8,
+          "durationSeconds": 5,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 13,
+          "durationSeconds": 10,
           "runs": 1
-        },
-        {
-          "id": "codeql",
-          "status": "success",
-          "durationSeconds": 140,
-          "runs": 2
         },
         {
           "id": "spec-lint",
@@ -45,62 +39,30 @@
           "runs": 1
         },
         {
-          "id": "spec-codegen",
-          "status": "success",
-          "durationSeconds": 20,
+          "id": "backend-unit",
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
-          "id": "backend-unit",
-          "status": "success",
-          "durationSeconds": 82,
-          "runs": 1,
-          "metrics": {
-            "tests": 376,
-            "failed": 0,
-            "skipped": 2,
-            "coverage": 89.2
-          }
-        },
-        {
           "id": "backend-integration",
-          "status": "success",
-          "durationSeconds": 134,
-          "runs": 1,
-          "metrics": {
-            "tests": 8,
-            "failed": 0,
-            "skipped": 0
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "backend-arch",
-          "status": "success",
-          "durationSeconds": 59,
-          "runs": 1,
-          "metrics": {
-            "tests": 15,
-            "failed": 0,
-            "skipped": 0
-          }
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
         },
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 61,
+          "durationSeconds": 80,
           "runs": 3,
           "metrics": {
-            "tests": 886
-          }
-        },
-        {
-          "id": "frontend-build",
-          "status": "success",
-          "durationSeconds": 44,
-          "runs": 1,
-          "metrics": {
-            "bundleKb": 338.6,
-            "bundleGzipKb": 78.8
+            "tests": 891
           }
         },
         {
@@ -123,33 +85,20 @@
         },
         {
           "id": "docker",
-          "status": "success",
-          "durationSeconds": 90,
-          "runs": 1,
-          "metrics": {
-            "vulnerabilities": 0
-          }
-        },
-        {
-          "id": "publish-image",
-          "status": "success",
-          "durationSeconds": 70,
-          "runs": 1,
-          "metrics": {
-            "digest": "sha256:52e67e7b9ec927d28b10b59c73720d290c7c761462045c7c6da2f928135423bf",
-            "sbomPackages": 217
-          }
-        },
-        {
-          "id": "coverage-badge",
-          "status": "success",
-          "durationSeconds": 5,
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         },
         {
-          "id": "gate",
-          "status": "success",
-          "durationSeconds": 4,
+          "id": "publish-image",
+          "status": "skipped",
+          "durationSeconds": null,
+          "runs": 1
+        },
+        {
+          "id": "coverage-badge",
+          "status": "skipped",
+          "durationSeconds": null,
           "runs": 1
         }
       ]
@@ -524,6 +473,113 @@
     ]
   },
   "merges": [
+    {
+      "number": 118,
+      "title": "fix(frontend): collision-free studio canvases, still arrows, clearer service card and a smooth theater mode",
+      "branch": "fix/app-canvas-label-collisions",
+      "author": "JCardzZ",
+      "mergedAt": "2026-11-04T16:26:06Z",
+      "sha": "efabf9868459d722c9a381ec93b07dfc2fd7295b",
+      "additions": 735,
+      "deletions": 107,
+      "changedFiles": 16,
+      "ci": {
+        "runId": 41867182918,
+        "runNumber": 291,
+        "conclusion": "success",
+        "durationSeconds": 192,
+        "jobs": [
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "in_progress"
+          },
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "in_progress"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "in_progress"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "skipped"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "queued"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "in_progress"
+          },
+          {
+            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
     {
       "number": 117,
       "title": "feat(frontend): stable, spacious studio with uncrossed wires, synced application canvas and technology logos",
@@ -1522,120 +1578,172 @@
         "durationSeconds": 0,
         "jobs": []
       }
-    },
-    {
-      "number": 106,
-      "title": "test(backend): close the health assertion chain in TelemetryApiTest",
-      "branch": "fix/telemetry-test",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-29T02:20:30Z",
-      "sha": "bb37c7a0e49ec2a9f81d5eae7ec8919619360caf",
-      "additions": 14,
-      "deletions": 5,
-      "changedFiles": 4,
-      "ci": {
-        "runId": 40805767059,
-        "runNumber": 255,
-        "conclusion": "success",
-        "durationSeconds": 1292,
-        "jobs": [
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "success"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "success"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "success"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 2/2)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (chromium · 1/2)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "success"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "efabf9868459d722c9a381ec93b07dfc2fd7295b",
+      "parents": [
+        "cafabae2bb10d675948e81c8c83fc95b55d707c2",
+        "7778146dc38b8489341ea31d2796509096091324"
+      ],
+      "subject": "Merge pull request #118 from JCardzZ/fix/app-canvas-label-collisions",
+      "author": "JCardzZ",
+      "date": "2026-11-04T16:26:06Z"
+    },
+    {
+      "sha": "7778146dc38b8489341ea31d2796509096091324",
+      "parents": [
+        "042ae9dd613973506c54e524b8eedf98a2a45fc8"
+      ],
+      "subject": "feat(frontend): matched-geometry theater transition on every card",
+      "author": "JCardzZ",
+      "date": "2026-11-04T16:20:41Z"
+    },
+    {
+      "sha": "042ae9dd613973506c54e524b8eedf98a2a45fc8",
+      "parents": [
+        "4be1dee3fdefa56682ce4a19dbe9f8a5f8d7dfd6"
+      ],
+      "subject": "perf(frontend): no repaints during the theater transition and a start on press",
+      "author": "JCardzZ",
+      "date": "2026-11-04T16:00:29Z"
+    },
+    {
+      "sha": "4be1dee3fdefa56682ce4a19dbe9f8a5f8d7dfd6",
+      "parents": [
+        "8003cd741a4a7ed1a5e4929b7597a095130ac285"
+      ],
+      "subject": "feat(frontend): Apple-style matched-geometry theater transition",
+      "author": "JCardzZ",
+      "date": "2026-11-04T15:34:41Z"
+    },
+    {
+      "sha": "8003cd741a4a7ed1a5e4929b7597a095130ac285",
+      "parents": [
+        "13dcad08b27ec9b971698e773c1c1f2dced83646"
+      ],
+      "subject": "fix(frontend): keep studio wire labels off other wires",
+      "author": "JCardzZ",
+      "date": "2026-11-04T15:25:51Z"
+    },
+    {
+      "sha": "13dcad08b27ec9b971698e773c1c1f2dced83646",
+      "parents": [
+        "2be0ba7238165f0efd17d2bec2d2f44ec37b8cb6"
+      ],
+      "subject": "feat(frontend): theater mode dims the page, hints Esc and turns its icon",
+      "author": "JCardzZ",
+      "date": "2026-11-04T15:04:26Z"
+    },
+    {
+      "sha": "2be0ba7238165f0efd17d2bec2d2f44ec37b8cb6",
+      "parents": [
+        "59bdd3dbc85440c350a038b58c921ca184556af2"
+      ],
+      "subject": "perf(frontend): quicker, softer theater transition",
+      "author": "JCardzZ",
+      "date": "2026-11-04T14:53:13Z"
+    },
+    {
+      "sha": "59bdd3dbc85440c350a038b58c921ca184556af2",
+      "parents": [
+        "d6f7157311a32028679f38d6b4d324af8c4ead00"
+      ],
+      "subject": "perf(frontend): undistorted, feather-light theater transition",
+      "author": "JCardzZ",
+      "date": "2026-11-04T14:29:57Z"
+    },
+    {
+      "sha": "d6f7157311a32028679f38d6b4d324af8c4ead00",
+      "parents": [
+        "3a2c00f56dd4cd64700d34df416e0abe3030f15b"
+      ],
+      "subject": "fix(frontend): keep the docked service card within the canvas and its subtitle whole",
+      "author": "JCardzZ",
+      "date": "2026-11-04T13:54:16Z"
+    },
+    {
+      "sha": "3a2c00f56dd4cd64700d34df416e0abe3030f15b",
+      "parents": [
+        "a7ecbc2a7e1cd4d7b40f92a33313815b08d622d0"
+      ],
+      "subject": "perf(frontend): run the theater expand and collapse at 60 fps",
+      "author": "JCardzZ",
+      "date": "2026-11-04T13:54:16Z"
+    },
+    {
+      "sha": "a7ecbc2a7e1cd4d7b40f92a33313815b08d622d0",
+      "parents": [
+        "29e24bd8211b9f4dfbc246e0b768fa16a20526b5"
+      ],
+      "subject": "feat(frontend): clearer service card docked beside the smart canvas",
+      "author": "JCardzZ",
+      "date": "2026-11-04T13:36:55Z"
+    },
+    {
+      "sha": "29e24bd8211b9f4dfbc246e0b768fa16a20526b5",
+      "parents": [
+        "f518ac958cd837e72178b66a427852f4e64e4d33"
+      ],
+      "subject": "feat(frontend): still arrows by default, comet only on the chosen piece's wires",
+      "author": "JCardzZ",
+      "date": "2026-11-04T13:03:33Z"
+    },
+    {
+      "sha": "f518ac958cd837e72178b66a427852f4e64e4d33",
+      "parents": [
+        "5195b9011a9931b280321802f92cea69d56e2fdd"
+      ],
+      "subject": "feat(frontend): glowing comet along the main studio arrows",
+      "author": "JCardzZ",
+      "date": "2026-11-03T04:29:05Z"
+    },
+    {
+      "sha": "5195b9011a9931b280321802f92cea69d56e2fdd",
+      "parents": [
+        "9f3419f6de32bb921f75b4ddb01f42b15ec88284"
+      ],
+      "subject": "feat(frontend): one solid accent streak along each main studio arrow",
+      "author": "JCardzZ",
+      "date": "2026-11-03T04:25:11Z"
+    },
+    {
+      "sha": "9f3419f6de32bb921f75b4ddb01f42b15ec88284",
+      "parents": [
+        "ff39bfe384a425775fcba4f422d6871753ec4b1f"
+      ],
+      "subject": "feat(frontend): moderate flow along the main studio arrows",
+      "author": "JCardzZ",
+      "date": "2026-11-03T04:22:09Z"
+    },
+    {
+      "sha": "ff39bfe384a425775fcba4f422d6871753ec4b1f",
+      "parents": [
+        "16714700c2928c2723c499f4ed3fa1dc4aeb5303"
+      ],
+      "subject": "feat(frontend): draw studio wires as still arrows like cloud architecture diagrams",
+      "author": "JCardzZ",
+      "date": "2026-11-03T04:17:01Z"
+    },
+    {
+      "sha": "16714700c2928c2723c499f4ed3fa1dc4aeb5303",
+      "parents": [
+        "b8da4342b164cab5b45a633bff57f954a88f94cd"
+      ],
+      "subject": "fix(frontend): move traffic particles at one calm speed on every wire",
+      "author": "JCardzZ",
+      "date": "2026-11-03T04:14:44Z"
+    },
+    {
+      "sha": "b8da4342b164cab5b45a633bff57f954a88f94cd",
+      "parents": [
+        "cafabae2bb10d675948e81c8c83fc95b55d707c2"
+      ],
+      "subject": "fix(frontend): keep application canvas wires and protocol pills clear of everything",
+      "author": "JCardzZ",
+      "date": "2026-11-03T04:08:35Z"
+    },
     {
       "sha": "cafabae2bb10d675948e81c8c83fc95b55d707c2",
       "parents": [
@@ -2024,177 +2132,6 @@
       "subject": "feat(frontend): show the live API status with the version and the release in the delivery section",
       "author": "JCardzZ",
       "date": "2026-10-29T03:19:33Z"
-    },
-    {
-      "sha": "12026cf2dc6ac16537fea8869531067bc55da104",
-      "parents": [
-        "bb37c7a0e49ec2a9f81d5eae7ec8919619360caf",
-        "e8799b083d67d44bf52ebd3cc4b49cc5325f0511"
-      ],
-      "subject": "Merge pull request #107 from JCardzZ/ci/faster-pipeline",
-      "author": "JCardzZ",
-      "date": "2026-10-29T02:37:25Z"
-    },
-    {
-      "sha": "e8799b083d67d44bf52ebd3cc4b49cc5325f0511",
-      "parents": [
-        "b2ee252c226d00a8c979016c918baff7d6ec2a63"
-      ],
-      "subject": "ci: shorten the critical path so a merge reaches production in minutes",
-      "author": "JCardzZ",
-      "date": "2026-10-29T02:31:55Z"
-    },
-    {
-      "sha": "bb37c7a0e49ec2a9f81d5eae7ec8919619360caf",
-      "parents": [
-        "4be3a9a266c473964834d57be43d0cc9e62a8efe",
-        "485bacbba9635255f9fc9c2f6c5ee597154a9be3"
-      ],
-      "subject": "Merge pull request #106 from JCardzZ/fix/telemetry-test",
-      "author": "JCardzZ",
-      "date": "2026-10-29T02:20:30Z"
-    },
-    {
-      "sha": "b2ee252c226d00a8c979016c918baff7d6ec2a63",
-      "parents": [
-        "4be3a9a266c473964834d57be43d0cc9e62a8efe"
-      ],
-      "subject": "ci: make PRs mergeable in minutes and deploy the backend automatically",
-      "author": "JCardzZ",
-      "date": "2026-10-29T02:16:19Z"
-    },
-    {
-      "sha": "485bacbba9635255f9fc9c2f6c5ee597154a9be3",
-      "parents": [
-        "4fff70eafe9ac3c8fb7047d447d6a2b211a9d8d1"
-      ],
-      "subject": "fix(frontend): hide the back-to-top button for real while it is not shown",
-      "author": "JCardzZ",
-      "date": "2026-10-29T02:04:40Z"
-    },
-    {
-      "sha": "4fff70eafe9ac3c8fb7047d447d6a2b211a9d8d1",
-      "parents": [
-        "0607ffc705fc11390c035b26f30d47c52ab128ee"
-      ],
-      "subject": "fix(ci): refresh the image's system packages daily despite the layer cache",
-      "author": "JCardzZ",
-      "date": "2026-10-29T00:50:51Z"
-    },
-    {
-      "sha": "0607ffc705fc11390c035b26f30d47c52ab128ee",
-      "parents": [
-        "4be3a9a266c473964834d57be43d0cc9e62a8efe"
-      ],
-      "subject": "test(backend): close the health assertion chain in TelemetryApiTest",
-      "author": "JCardzZ",
-      "date": "2026-10-29T00:42:38Z"
-    },
-    {
-      "sha": "4be3a9a266c473964834d57be43d0cc9e62a8efe",
-      "parents": [
-        "548cae9b3ccfd115f5df8ab1fc51d757435d0aac",
-        "4cde058f0faf23ca6927d9e7541207c883d3f43d"
-      ],
-      "subject": "Merge pull request #105 from JCardzZ/feat/deploy-version",
-      "author": "JCardzZ",
-      "date": "2026-10-29T00:15:56Z"
-    },
-    {
-      "sha": "4cde058f0faf23ca6927d9e7541207c883d3f43d",
-      "parents": [
-        "09d3298b23835a0a7592558810a539b7a25b18f9"
-      ],
-      "subject": "feat(cd): version every deploy and publish it to the site, the API and GitHub releases",
-      "author": "JCardzZ",
-      "date": "2026-10-28T23:43:04Z"
-    },
-    {
-      "sha": "09d3298b23835a0a7592558810a539b7a25b18f9",
-      "parents": [
-        "a0272f7dc03d1d96cf516317ff30778c86399057"
-      ],
-      "subject": "feat(frontend): show the deployed version and its release notes in the footer behind site.release-version",
-      "author": "JCardzZ",
-      "date": "2026-10-28T23:42:57Z"
-    },
-    {
-      "sha": "a0272f7dc03d1d96cf516317ff30778c86399057",
-      "parents": [
-        "548cae9b3ccfd115f5df8ab1fc51d757435d0aac"
-      ],
-      "subject": "feat(backend): report the deployed release in /telemetry/health behind site.release-version",
-      "author": "JCardzZ",
-      "date": "2026-10-28T23:42:50Z"
-    },
-    {
-      "sha": "548cae9b3ccfd115f5df8ab1fc51d757435d0aac",
-      "parents": [
-        "d3bd375b25579083e324620ac2272d677cbbbd01",
-        "7a3963f657f8025ac09e0bbdae5bfd7c24184dcb"
-      ],
-      "subject": "Merge pull request #104 from JCardzZ/feat/hero-scroll-cue-and-polish",
-      "author": "JCardzZ",
-      "date": "2026-10-24T16:04:04Z"
-    },
-    {
-      "sha": "d3bd375b25579083e324620ac2272d677cbbbd01",
-      "parents": [
-        "cb519ca911a57be3522db6a361ab5bc25ae44cf0",
-        "8fbe2caffa063d1b1edd824b706e125285e0e31b"
-      ],
-      "subject": "Merge pull request #99 from JCardzZ/feat/cv-featured-project",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:46:36Z"
-    },
-    {
-      "sha": "8fbe2caffa063d1b1edd824b706e125285e0e31b",
-      "parents": [
-        "10dea57b7ffa50c22a059fc26d6d81f9b73ea760",
-        "cb519ca911a57be3522db6a361ab5bc25ae44cf0"
-      ],
-      "subject": "Merge remote-tracking branch 'origin/main' into feat/cv-featured-project",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:35:31Z"
-    },
-    {
-      "sha": "7a3963f657f8025ac09e0bbdae5bfd7c24184dcb",
-      "parents": [
-        "d6cd199cb040c249b69835a44d276e503ad492ab"
-      ],
-      "subject": "feat(frontend): add a scroll cue to the hero, show back-to-top on articles and quiet the demo notice",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:33:30Z"
-    },
-    {
-      "sha": "cb519ca911a57be3522db6a361ab5bc25ae44cf0",
-      "parents": [
-        "d6cd199cb040c249b69835a44d276e503ad492ab",
-        "72c923157c029be8162e0fe9366747c07c7e5a3d"
-      ],
-      "subject": "Merge pull request #100 from JCardzZ/feat/article-page-publication",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:32:33Z"
-    },
-    {
-      "sha": "d6cd199cb040c249b69835a44d276e503ad492ab",
-      "parents": [
-        "780ef9b1f6b4fdee7b6570399d17ccc2877d89ad",
-        "382eaf09f9cd3e64a07cfec2ae1c18371bd56f1d"
-      ],
-      "subject": "Merge pull request #103 from JCardzZ/feat/hero-credentials",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:30:20Z"
-    },
-    {
-      "sha": "72c923157c029be8162e0fe9366747c07c7e5a3d",
-      "parents": [
-        "f983b1752f1ea7511933a0f2b126878226789d7f",
-        "780ef9b1f6b4fdee7b6570399d17ccc2877d89ad"
-      ],
-      "subject": "Merge remote-tracking branch 'origin/main' into feat/article-page-publication",
-      "author": "JCardzZ",
-      "date": "2026-10-23T03:29:35Z"
     }
   ]
 }
