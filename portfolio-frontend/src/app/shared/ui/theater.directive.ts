@@ -12,6 +12,8 @@ const EXPANDED_CLASS = 'theater-expanded';
 const FOCUS_CLASS = 'theater-focus';
 const BACKDROP_CLASS = 'theater-backdrop';
 const BACKDROP_ON_CLASS = 'theater-backdrop-on';
+/** Mientras se anima: sin desenfoque de fondo ni animaciones internas, para que vaya a 60 fps. */
+const ANIMATING_CLASS = 'theater-animating';
 /** Tiempo que el cursor debe quedarse sobre la tarjeta para considerarlo intención y no un paso de largo. */
 export const HOVER_INTENT_MS = 300;
 /** Controles propios de la tarjeta: tocarlos hace su función, no amplía. */
@@ -221,11 +223,22 @@ export class TheaterDirective implements OnDestroy {
       borderRadius: '1.5rem',
     };
     const atFull = { transformOrigin: 'top left', transform: 'none', borderRadius: '0' };
-    this.animation = this.host.animate(direction === 'in' ? [atCell, atFull] : [atFull, atCell], {
+    // Lo caro de repintar en cada fotograma (el desenfoque de 40 px del fondo, los cometas y pulsos
+    // del diagrama) se aparta mientras dura el gesto y vuelve al terminar.
+    this.host.classList.add(ANIMATING_CLASS);
+    const animation = this.host.animate(direction === 'in' ? [atCell, atFull] : [atFull, atCell], {
       duration: DURATION_MS,
       easing: SPRING,
     });
-    return this.animation;
+    const settle = () => {
+      if (this.animation === animation) {
+        this.host.classList.remove(ANIMATING_CLASS);
+      }
+    };
+    animation.addEventListener('finish', settle);
+    animation.addEventListener('cancel', settle);
+    this.animation = animation;
+    return animation;
   }
 }
 
