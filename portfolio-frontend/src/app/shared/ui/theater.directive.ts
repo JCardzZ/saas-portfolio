@@ -14,6 +14,8 @@ const BACKDROP_CLASS = 'theater-backdrop';
 const BACKDROP_ON_CLASS = 'theater-backdrop-on';
 /** En <html> mientras dura la transición del modo teatro: sus estilos solo valen para ella. */
 const TRANSITION_CLASS = 'theater-transition';
+/** En <html> mientras se cierra: las esquinas vuelven a redondearse en vez de enderezarse. */
+const COLLAPSING_CLASS = 'theater-collapsing';
 /** Cada tarjeta necesita su propio nombre de transición. */
 let nextTransitionName = 0;
 /** Tiempo que el cursor debe quedarse sobre la tarjeta para considerarlo intención y no un paso de largo. */
@@ -154,7 +156,7 @@ export class TheaterDirective implements OnDestroy {
     // Vuelve bajo el cursor: que no se adelante sola nada más llegar.
     this.settle(true);
     this.lockPage(false);
-    this.morph(() => this.restore());
+    this.morph(() => this.restore(), undefined, true);
   }
 
   @HostListener('document:keydown.escape')
@@ -266,7 +268,7 @@ export class TheaterDirective implements OnDestroy {
    * deforma (cada instantánea conserva su proporción) y no se repinta nada mientras dura, así que es
    * ligera y fluida. Sin soporte del navegador, o con "reducir movimiento", el cambio es directo.
    */
-  private morph(update: () => void, done: () => void = () => undefined): void {
+  private morph(update: () => void, done: () => void = () => undefined, collapsing = false): void {
     this.transition?.skipTransition();
     const start = (document as Document & { startViewTransition?: (callback: () => void) => ViewTransition }).startViewTransition;
     if (!this.animated || typeof start !== 'function') {
@@ -278,6 +280,7 @@ export class TheaterDirective implements OnDestroy {
     this.host.style.setProperty('view-transition-name', this.transitionName);
     this.host.style.setProperty('view-transition-class', 'theater');
     root.classList.add(TRANSITION_CLASS);
+    root.classList.toggle(COLLAPSING_CLASS, collapsing);
     const transition = start.call(document, update);
     this.transition = transition;
     // Si el navegador la salta (otra transición, la pestaña oculta…), el cambio se aplica igual sin animar:
@@ -290,7 +293,7 @@ export class TheaterDirective implements OnDestroy {
       this.transition = null;
       this.host.style.removeProperty('view-transition-name');
       this.host.style.removeProperty('view-transition-class');
-      root.classList.remove(TRANSITION_CLASS);
+      root.classList.remove(TRANSITION_CLASS, COLLAPSING_CLASS);
       done();
     });
   }

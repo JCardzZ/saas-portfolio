@@ -284,33 +284,41 @@
   --tw-scale-x: 1 !important;
   --tw-scale-y: 1 !important;
 }
-/* Transición del modo teatro (TheaterDirective.morph): la tarjeta se mueve y crece mientras se funden
-   la instantánea de antes y la de después. Cada una llena la caja sin deformarse (recorte desde arriba)
-   y la página de debajo cambia de golpe: solo se anima la tarjeta. */
-html.theater-transition::view-transition-old(root),
-html.theater-transition::view-transition-new(root) {
-  animation: none;
+/* Transición del modo teatro (TheaterDirective.morph), una transformación de contenedor:
+   - Solo se fotografía la tarjeta: la página de fondo sigue viva (sin instantánea de toda la página,
+     el gesto arranca antes).
+   - Un panel sólido, con sombra, viaja entre la celda y la pantalla con la curva de iOS: sale decidido y
+     se posa muy suave. Las esquinas se enderezan (o se redondean) durante el viaje.
+   - El contenido de antes se va enseguida y el nuevo entra asentándose; nunca se ven los dos a la vez ni
+     se deforman (cada instantánea conserva su proporción, ancho completo desde arriba). */
+html.theater-transition {
+  view-transition-name: none;
 }
 html::view-transition-group(.theater) {
-  animation-duration: 420ms;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-duration: 340ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
-/* Transformación de contenedor: un panel sólido viaja de la celda a la pantalla (o al revés). El
-   contenido de antes se va enseguida y el nuevo entra cuando el panel ya casi ha llegado: nunca se ven
-   las dos instantáneas superpuestas. Cada una conserva su proporción (ancho completo, desde arriba). */
 html::view-transition-image-pair(.theater) {
   overflow: hidden;
   border-radius: 1.5rem;
   background: rgb(var(--c-canvas));
+  box-shadow: 0 24px 64px -16px rgb(0 0 0 / 0.45), 0 0 0 1px rgb(var(--c-ink-1, 255 255 255) / 0.06);
+  animation: theater-corners 340ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+html.theater-collapsing::view-transition-image-pair(.theater) {
+  animation-name: theater-corners-back;
 }
 html::view-transition-old(.theater) {
-  animation: theater-content-out 120ms ease-in both;
+  animation: theater-content-out 90ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 html::view-transition-new(.theater) {
-  animation: theater-content-in 220ms 90ms ease-out both;
+  transform-origin: top center;
+  animation: theater-content-in 250ms 90ms cubic-bezier(0, 0, 0.2, 1) both;
 }
+@keyframes theater-corners { from { border-radius: 1.5rem; } to { border-radius: 0; } }
+@keyframes theater-corners-back { from { border-radius: 0; } to { border-radius: 1.5rem; } }
 @keyframes theater-content-out { to { opacity: 0; } }
-@keyframes theater-content-in { from { opacity: 0; } }
+@keyframes theater-content-in { from { opacity: 0; transform: scale(0.985); } }
 /* Sin la barra de scroll mientras está ampliada, pero con su hueco: la página no se desplaza de lado. */
 html:has(.theater-expanded) {
   scrollbar-gutter: stable;
