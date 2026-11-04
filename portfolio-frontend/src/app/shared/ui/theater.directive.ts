@@ -245,6 +245,13 @@ export class TheaterDirective implements OnDestroy {
     this.keepScroll();
   }
 
+  /** Piezas de la tarjeta que viajan por su cuenta: visibles, y no dentro de otra pieza. */
+  private parts(): HTMLElement[] {
+    const marked = Array.from(this.host.querySelectorAll<HTMLElement>('[data-theater-part]'))
+      .filter((part) => part.getClientRects().length > 0);
+    return marked.filter((part) => !marked.some((other) => other !== part && other.contains(part)));
+  }
+
   private scrimElement: HTMLElement | null = null;
 
   /**
@@ -308,6 +315,13 @@ export class TheaterDirective implements OnDestroy {
     const root = document.documentElement;
     this.host.style.setProperty('view-transition-name', this.transitionName);
     this.host.style.setProperty('view-transition-class', 'theater');
+    // Geometría emparejada: cada pieza marcada (título, pestañas, lienzo, el propio botón) viaja de su
+    // sitio en la celda a su sitio a pantalla completa, en vez de fundirse con el resto del panel.
+    const parts = this.parts();
+    parts.forEach((part, index) => {
+      part.style.setProperty('view-transition-name', `${this.transitionName}-part-${index}`);
+      part.style.setProperty('view-transition-class', 'theater-part');
+    });
     root.classList.add(TRANSITION_CLASS);
     root.classList.toggle(COLLAPSING_CLASS, collapsing);
     const transition = start.call(document, update);
@@ -322,6 +336,10 @@ export class TheaterDirective implements OnDestroy {
       this.transition = null;
       this.host.style.removeProperty('view-transition-name');
       this.host.style.removeProperty('view-transition-class');
+      for (const part of parts) {
+        part.style.removeProperty('view-transition-name');
+        part.style.removeProperty('view-transition-class');
+      }
       root.classList.remove(TRANSITION_CLASS, COLLAPSING_CLASS);
       done();
     });

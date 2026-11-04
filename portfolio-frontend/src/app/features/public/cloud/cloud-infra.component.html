@@ -1,6 +1,6 @@
 <app-theater-toggle name="Estudio de arquitectura" />
 
-<h3 class="pr-10 text-title-2 text-ink-1">{{ 'Estudio de arquitectura' | t }}</h3>
+<h3 class="pr-10 text-title-2 text-ink-1" data-theater-part>{{ 'Estudio de arquitectura' | t }}</h3>
 
 <!-- Barra con jerarquía (docs/DESIGN.md §9.5): contexto a la izquierda, menús agrupados en el centro
      y, a la derecha, las dos acciones principales. Los menús están siempre en el DOM y se ocultan con
@@ -8,13 +8,13 @@
 @if (systemDesign()) {
   <!-- Las dos vistas del mismo proyecto: lo que se construye y dónde corre. Van en su propia fila,
        encima de la barra, para no desplazar los menús de esta. -->
-  <div class="mt-4 ui-segmented" role="tablist" [attr.aria-label]="'Vista del proyecto' | t">
+  <div class="mt-4 ui-segmented" role="tablist" [attr.aria-label]="'Vista del proyecto' | t" data-theater-part>
     <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'infra'" (click)="view.set('infra')">{{ 'Infraestructura' | t }}</button>
     <button type="button" role="tab" class="ui-segment" [attr.aria-selected]="view() === 'app'" (click)="view.set('app')">{{ 'Aplicación' | t }}</button>
   </div>
 }
 <div [class.mt-4]="!systemDesign()" [class.mt-2]="systemDesign()" class="flex flex-wrap items-center gap-2" role="toolbar" [attr.aria-label]="'Estudio de arquitectura' | t">
-  <div class="ui-segmented" role="radiogroup" [attr.aria-label]="'Proveedor de nube' | t">
+  <div class="ui-segmented" role="radiogroup" [attr.aria-label]="'Proveedor de nube' | t" data-theater-part>
     @for (provider of providers(); track provider.id) {
       <button type="button" role="radio" class="ui-segment gap-2" [attr.aria-checked]="provider.id === selectedId()" (click)="select(provider.id)">
         <app-tech-icon [icon]="icons[provider.id]" [size]="16" />
@@ -326,7 +326,7 @@
     <app-studio-mobile-canvas [rows]="mobileRows()" [links]="mobileLinks()" [activeId]="activeId()" (picked)="pickMobile($event)" />
   }
   <!-- El lienzo de trabajo sigue en el documento, oculto, para que exportar funcione igual. -->
-  <div class="theater-stage min-w-0" [class.hidden]="compact()">
+  <div class="theater-stage min-w-0" [class.hidden]="compact()" data-theater-part>
     <svg
       #canvas
       data-work-canvas

@@ -18,8 +18,10 @@ import { TheaterDirective } from './theater.directive';
         <kbd class="rounded border border-line-strong bg-surface-3 px-1.5 font-mono text-[0.6875rem] text-ink-1">Esc</kbd>{{ 'para salir' | t }}
       </span>
     }
+    <!-- El botón viaja por su cuenta en la transición: de la esquina de la tarjeta a la de la pantalla. -->
     <button
       type="button"
+      data-theater-part
       class="focus-ring flex items-center justify-center rounded-control border border-line-subtle bg-surface-3 text-ink-2 backdrop-blur-md transition duration-300 ease-spring hover:bg-surface-3 hover:text-ink-1 active:scale-90"
       [class]="theater.expanded() ? 'h-11 w-11' : 'h-8 w-8'"
       [attr.aria-label]="(theater.expanded() ? ('Minimizar ' | t) : ('Ampliar a pantalla completa ' | t)) + name()"
