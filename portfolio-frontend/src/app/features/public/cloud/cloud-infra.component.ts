@@ -292,13 +292,19 @@ export class CloudInfraComponent {
     }
     // Lo que un rótulo no debe pisar: las piezas, los rótulos de las zonas y los otros rótulos.
     const taken: WireRect[] = smart ? [...this.nodes().map((node) => nodeRect(node, 2)), ...texts] : [];
+    // Y los demás cables, como líneas finas: un rótulo encima de otra flecha se lee mal.
+    const lines = new Map([...(routes ?? [])].map(([key, points]) => [key, points.slice(1).map((point, i): WireRect => ({
+      x: Math.min(point[0], points[i][0]) - 3, y: Math.min(point[1], points[i][1]) - 3,
+      w: Math.abs(point[0] - points[i][0]) + 6, h: Math.abs(point[1] - points[i][1]) + 6,
+    }))]));
     const routed = (from: CloudNode, to: CloudNode, key: string, label: string | null) => {
       const points = routes?.get(key);
       if (!points) {
         return straight(from, to);
       }
       const width = label ? labelWidth(this.painted(label)) : undefined;
-      const labelAt = labelPoint(points, taken, width);
+      const others = [...lines].filter(([other]) => other !== key).flatMap(([, rects]) => rects);
+      const labelAt = labelPoint(points, [...taken, ...others], width);
       if (label) {
         taken.push(labelBox(labelAt, width));
       }
