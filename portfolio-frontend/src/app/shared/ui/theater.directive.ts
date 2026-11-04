@@ -245,11 +245,19 @@ export class TheaterDirective implements OnDestroy {
     this.keepScroll();
   }
 
-  /** Piezas de la tarjeta que viajan por su cuenta: visibles, y no dentro de otra pieza. */
+  /**
+   * Piezas de la tarjeta que viajan por su cuenta. En cualquier tarjeta: su título (el primer
+   * encabezado), el escenario del diagrama (`.theater-stage`) y el botón; además, lo que la tarjeta
+   * marque con `data-theater-part`. Solo las visibles, y ninguna dentro de otra.
+   */
   private parts(): HTMLElement[] {
-    const marked = Array.from(this.host.querySelectorAll<HTMLElement>('[data-theater-part]'))
-      .filter((part) => part.getClientRects().length > 0);
-    return marked.filter((part) => !marked.some((other) => other !== part && other.contains(part)));
+    const found = new Set<HTMLElement>(Array.from(this.host.querySelectorAll<HTMLElement>('[data-theater-part], .theater-stage')));
+    const title = this.host.querySelector<HTMLElement>('h2, h3');
+    if (title) {
+      found.add(title);
+    }
+    const visible = Array.from(found).filter((part) => part.getClientRects().length > 0);
+    return visible.filter((part) => !visible.some((other) => other !== part && other.contains(part)));
   }
 
   private scrimElement: HTMLElement | null = null;
@@ -324,12 +332,20 @@ export class TheaterDirective implements OnDestroy {
     });
     root.classList.add(TRANSITION_CLASS);
     root.classList.toggle(COLLAPSING_CLASS, collapsing);
+    // Durante el medio segundo de la transición no se repinta nada que no haga falta: lo que se anima
+    // en bucle (cometas, pulsos, relojes) se queda quieto y retoma al terminar. Las animaciones de
+    // entrada sí siguen: si no, lo que aparece al cambiar de tamaño se quedaría invisible.
+    const looping = document.getAnimations().filter((animation) =>
+      animation.playState === 'running' && animation.effect?.getTiming().iterations === Infinity);
+    looping.forEach((animation) => animation.pause());
     const transition = start.call(document, update);
     this.transition = transition;
     // Si el navegador la salta (otra transición, la pestaña oculta…), el cambio se aplica igual sin animar:
     // no es un error.
     transition.ready.catch(() => undefined);
     transition.finished.catch(() => undefined).finally(() => {
+      // Lo pausado se reanuda siempre, también si otra transición ha interrumpido esta.
+      looping.forEach((animation) => animation.play());
       if (this.transition !== transition) {
         return;
       }

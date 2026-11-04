@@ -294,14 +294,6 @@
 html.theater-transition {
   view-transition-name: none;
 }
-/* Durante el medio segundo de la transición no se repinta nada: lo que se anima en la página (cometas,
-   métricas en vivo, pulsos) se queda quieto y retoma al terminar. Solo se mueven capas ya pintadas, en
-   la GPU, también en pantallas de 120 Hz. El velo sí sigue: es parte de la transición. */
-html.theater-transition *:not(.theater-scrim),
-html.theater-transition *:not(.theater-scrim)::before,
-html.theater-transition *:not(.theater-scrim)::after {
-  animation-play-state: paused !important;
-}
 html::view-transition-group(.theater),
 html::view-transition-group(.theater-part) {
   animation-duration: 560ms;
