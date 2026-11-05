@@ -8,6 +8,9 @@
 .zone-public, .zone-private { stroke: var(--border-subtle); stroke-dasharray: none; fill: rgb(var(--c-surface-2) / 0.55); }
 .zone-label { fill: var(--text-2); font-size: 12px; font-weight: 500; letter-spacing: 0.04em; paint-order: stroke; stroke: var(--bg-canvas); stroke-width: 4px; stroke-linejoin: round; }
 .zone-sub { fill: var(--text-3); font-size: 12px; paint-order: stroke; stroke: var(--bg-canvas); stroke-width: 4px; stroke-linejoin: round; }
+.zone-tag rect { fill: var(--bg-surface-2); stroke: var(--border-subtle); }
+.zone-tag-icon, .zone-kind path { fill: none; stroke: var(--text-2); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.zone-kind-public path { stroke: var(--status-ok); }
 
 .wire { fill: none; stroke: var(--border-strong); stroke-width: 1; transition: stroke var(--duration-base) var(--ease-standard); }
 /* Conexiones que entran o salen del nodo activo. */
