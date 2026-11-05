@@ -2,7 +2,7 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-11-05T04:16:17.684Z",
+  "updatedAt": "2026-11-05T04:17:23.439Z",
   "workflows": {
     "ci": {
       "runId": 41966451088,
@@ -132,13 +132,13 @@
       ]
     },
     "cd": {
-      "runId": 41966331689,
-      "runNumber": 119,
-      "sha": "15a89294a87cb5e9eec9ab402a15a00eeabb2946",
+      "runId": 41966775350,
+      "runNumber": 120,
+      "sha": "67d07668e6f632105197c05485bce1f7d854ed87",
       "event": "workflow_run",
-      "startedAt": "2026-11-05T04:12:15Z",
-      "finishedAt": "2026-11-05T04:13:16.023Z",
-      "durationSeconds": 61,
+      "startedAt": "2026-11-05T04:16:26Z",
+      "finishedAt": "2026-11-05T04:17:23.439Z",
+      "durationSeconds": 57,
       "conclusion": "success",
       "jobs": [
         {
@@ -151,13 +151,13 @@
         {
           "id": "frontend-deploy",
           "status": "success",
-          "durationSeconds": 28,
+          "durationSeconds": 26,
           "runs": 1,
           "metrics": {
-            "deployedSha": "15a89294a87cb5e9eec9ab402a15a00eeabb2946",
+            "deployedSha": "67d07668e6f632105197c05485bce1f7d854ed87",
             "healthy": true,
-            "deploymentUrl": "https://2573f5ab.saas-portfolio-a6s.pages.dev",
-            "deploymentId": "2573f5ab-216d-44fd-bab8-db56c3e9b0d3"
+            "deploymentUrl": "https://9bf8d531.saas-portfolio-a6s.pages.dev",
+            "deploymentId": "9bf8d531-cbd2-4289-850e-8f2cd1cbb2bb"
           }
         },
         {
@@ -175,7 +175,7 @@
         {
           "id": "release",
           "status": "success",
-          "durationSeconds": 4,
+          "durationSeconds": 6,
           "runs": 1
         },
         {
@@ -189,6 +189,16 @@
   },
   "deployments": {
     "frontend": [
+      {
+        "kind": "deploy",
+        "at": "2026-11-05T04:17:23.439Z",
+        "by": "JCardzZ",
+        "runId": 41966775350,
+        "runNumber": 120,
+        "sha": "67d07668e6f632105197c05485bce1f7d854ed87",
+        "healthy": true,
+        "deploymentId": "9bf8d531-cbd2-4289-850e-8f2cd1cbb2bb"
+      },
       {
         "kind": "deploy",
         "at": "2026-11-05T04:13:16.023Z",
@@ -378,16 +388,6 @@
         "sha": "1eb58c49a50674d514b0497f50c7ee1ce40bd3bf",
         "healthy": true,
         "deploymentId": "a6491246-e13f-4bc3-844d-a2112f367585"
-      },
-      {
-        "kind": "deploy",
-        "at": "2026-10-22T16:53:44.566Z",
-        "by": "JCardzZ",
-        "runId": 39817563644,
-        "runNumber": 80,
-        "sha": "3efe853ee04b4720b379da85c363a654ad912872",
-        "healthy": true,
-        "deploymentId": "9f4e5c31-6ed7-4aad-adbd-cffa95297a44"
       }
     ],
     "backend": [
