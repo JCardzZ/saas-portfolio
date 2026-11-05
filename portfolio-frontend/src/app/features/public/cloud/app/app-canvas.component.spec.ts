@@ -31,6 +31,7 @@ describe('AppCanvasComponent', () => {
 
   beforeEach(() => {
     localStorage.removeItem('studio-app-canvas');
+    localStorage.removeItem('studio.app-auto-tidy');
     fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
   });
@@ -51,6 +52,29 @@ describe('AppCanvasComponent', () => {
     expect($('[data-node="cache-1"]')).not.toBeNull();
     expect(($('[data-testid="appc-inspector"] input') as HTMLInputElement).placeholder).toBe('Caché');
     expect(JSON.parse(localStorage.getItem('studio-app-canvas')!).graph.nodes.length).toBe(5);
+  });
+
+  it('arranges itself when a piece is added, unless automatic layout is switched off', () => {
+    const toggle = $('[data-testid="appc-auto-tidy"]') as HTMLButtonElement;
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    const component = fixture.debugElement.children[0].componentInstance as AppCanvasComponent;
+
+    (fixture.nativeElement.querySelector('[data-piece="cache"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const tidy = component.graph().nodes.map(({ id, x, y }) => ({ id, x, y }));
+    // Ya está ordenado: ordenar otra vez no mueve nada.
+    component.arrange();
+    expect(component.graph().nodes.map(({ id, x, y }) => ({ id, x, y }))).toEqual(tidy);
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(localStorage.getItem('studio.app-auto-tidy')).toBe('false');
+    const before = component.graph().nodes.map(({ id, x, y }) => ({ id, x, y }));
+    (fixture.nativeElement.querySelector('[data-piece="queue"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    // Apagado: lo que había no se mueve.
+    expect(component.graph().nodes.filter((node) => before.some((old) => old.id === node.id)).map(({ id, x, y }) => ({ id, x, y }))).toEqual(before);
   });
 
   it('filters the catalog as you type', () => {

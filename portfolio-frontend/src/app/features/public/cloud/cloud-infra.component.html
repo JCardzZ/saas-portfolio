@@ -141,6 +141,15 @@
       </li>
       @if (smartRules()) {
         <li>
+          <button type="button" class="project-item" [attr.aria-pressed]="autoTidy()" data-testid="auto-tidy" (click)="toggleAutoTidy(); menu.set(null)">
+            <span class="flex items-center justify-between gap-3">
+              {{ 'Orden automático' | t }}
+              <span class="ui-switch-mini" [class.ui-switch-mini-on]="autoTidy()" aria-hidden="true"></span>
+            </span>
+            <span class="block text-caption font-normal text-ink-2">{{ 'Se reordena solo al añadir o quitar piezas y conexiones' | t }}</span>
+          </button>
+        </li>
+        <li>
           <button type="button" class="project-item" [attr.aria-pressed]="fitted()" (click)="fitted.set(!fitted()); menu.set(null)">
             {{ fitted() ? ('Ver el lienzo completo' | t) : ('Ajustar a pantalla' | t) }}
             <span class="block text-caption font-normal text-ink-2">{{ fitted() ? ('Vuelve al tamaño de trabajo' | t) : ('El diagrama entero, sin desplazar' | t) }}</span>

@@ -1,4 +1,4 @@
-import { CloudLink, CloudNode, NODE_WIDTH, ZONE_SLOTS, ZoneId } from './cloud-topology.data';
+import { CloudLink, CloudNode, NODE_HEIGHT, NODE_WIDTH, ZONE_SLOTS, ZoneId } from './cloud-topology.data';
 import { StudioZone, zoneAt } from './studio-project';
 
 /** Separación entre filas y entre columnas de la rejilla en la que quedan alineados los nodos. */
@@ -129,18 +129,40 @@ function placeInRow(
 ): void {
   const zone = group.zone;
   const y = zone ? Math.round(zone.y + zone.h / 2) : ZONE_SLOTS[group.role][0][1];
+  // Las columnas de siempre; en una franja, las que caen dentro. Si no cae ninguna (un recuadro ya
+  // ajustado a su contenido), las que salen del propio recuadro.
   const inside = (x: number) => !zone || (x - NODE_WIDTH / 2 >= zone.x && x + NODE_WIDTH / 2 <= zone.x + zone.w);
-  const candidates = (group.role === 'global' ? ZONE_SLOTS.global.map(([x]) => x) : SLOT_XS).filter(inside);
+  const usual = (group.role === 'global' ? ZONE_SLOTS.global.map(([x]) => x) : SLOT_XS).filter(inside);
+  const candidates = zone && usual.length === 0 ? columnsOf(zone) : usual;
+  // Lo que otros grupos ya han puesto en esta fila también ocupa sitio.
+  const busy = (x: number) => [...placed.values()].some((other) =>
+    Math.abs(other.y - y) < NODE_HEIGHT && Math.abs(other.x - x) < NODE_WIDTH + 8);
   const taken = new Set<number>();
   for (const node of [...group.nodes].sort((a, b) => index.get(a.id)! - index.get(b.id)!)) {
     const wanted = barycentre(node.id, 'x') ?? node.x;
-    const free = candidates.filter((x) => !taken.has(x));
+    const free = candidates.filter((x) => !taken.has(x) && !busy(x));
     // A igual distancia gana la columna de la derecha: el diagrama se lee de izquierda a derecha.
+    // Si no queda ninguna, a la derecha de lo último que hay en la fila.
+    const inRow = [...placed.values()].filter((other) => Math.abs(other.y - y) < NODE_HEIGHT).map((other) => other.x);
     const x = free.sort((a, b) => Math.abs(a - wanted) - Math.abs(b - wanted) || b - a)[0]
-      ?? (Math.max(...taken, candidates[0] ?? 402) + COLUMN_STEP);
+      ?? (Math.max(...taken, ...inRow, (candidates[0] ?? 402) - COLUMN_STEP) + COLUMN_STEP);
     taken.add(x);
     placed.set(node.id, { x, y });
   }
+}
+
+/** Columnas de una franja: tantas como quepan en su ancho, o su centro si solo cabe una pieza. */
+function columnsOf(zone: StudioZone): number[] {
+  const first = zone.x + NODE_WIDTH / 2 + 12;
+  const last = zone.x + zone.w - NODE_WIDTH / 2 - 12;
+  if (last < first) {
+    return [Math.round(zone.x + zone.w / 2)];
+  }
+  const columns: number[] = [];
+  for (let x = first; x <= last + 0.5; x += COLUMN_STEP) {
+    columns.push(Math.round(x));
+  }
+  return columns;
 }
 
 /** Sin recuadros: capas por el camino más largo desde los nodos sin entradas, ordenadas por baricentro. */

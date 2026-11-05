@@ -1,12 +1,29 @@
 import { autoLayout } from './auto-layout';
-import { CLOUD_LINKS, CLOUD_NODES, CloudLink, CloudNode } from './cloud-topology.data';
+import { CLOUD_LINKS, CLOUD_NODES, CloudLink, CloudNode, NODE_HEIGHT, NODE_WIDTH } from './cloud-topology.data';
 import { BASE_ZONES, STUDIO_PRESETS, StudioZone, resizeZone, roleAt } from './studio-project';
+import { SYSTEM_TEMPLATES } from './system/system-templates';
+import { breathe } from './zone-breathe';
 
 const positions = (nodes: CloudNode[]) => Object.fromEntries(nodes.map((node) => [node.id, [node.x, node.y]]));
 const plain = (id: string, x: number, y: number, zone: CloudNode['zone'] = 'external'): CloudNode =>
   ({ id, type: 't', x, y, zone, role: '', service: id, icon: null, terraform: null, why: '' });
 
 describe('autoLayout', () => {
+  it('never stacks two pieces, in any design the studio ships, once the zones are fitted to their content', () => {
+    const stacked: string[] = [];
+    for (const project of [...STUDIO_PRESETS.map((preset) => preset.build()), ...SYSTEM_TEMPLATES.map((template) => template.build())]) {
+      // Como en el estudio con reglas inteligentes: el diseño cargado respira, se ordena y vuelve a respirar.
+      const loaded = breathe(project.zones, project.nodes);
+      const arranged = breathe(loaded.zones, autoLayout(loaded.nodes, project.links, loaded.zones)).nodes;
+      arranged.forEach((a, i) => arranged.slice(i + 1).forEach((b) => {
+        if (Math.abs(a.x - b.x) < NODE_WIDTH && Math.abs(a.y - b.y) < NODE_HEIGHT) {
+          stacked.push(`${a.id} × ${b.id}`);
+        }
+      }));
+    }
+    expect(stacked).toEqual([]);
+  });
+
   it('leaves the reference architecture and every preset exactly where they were drawn', () => {
     expect(positions(autoLayout(CLOUD_NODES, CLOUD_LINKS, BASE_ZONES))).toEqual(positions(CLOUD_NODES));
     for (const preset of STUDIO_PRESETS.filter((candidate) => candidate.id !== 'blank')) {

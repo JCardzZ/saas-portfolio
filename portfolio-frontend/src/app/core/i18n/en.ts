@@ -417,6 +417,8 @@ export const EN: Readonly<Record<string, string>> = {
   'Lectura': 'Read',
   'Listo': 'Done',
   'Minimizar ': 'Minimise ',
+  'Orden automático': 'Automatic layout',
+  'Se reordena solo al añadir o quitar piezas y conexiones': 'Rearranges itself when pieces or connections are added or removed',
   'para salir': 'to exit',
   'Mostrar catálogo': 'Show catalog',
   'Nadie': 'Nobody',
