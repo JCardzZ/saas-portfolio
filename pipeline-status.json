@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-11-05T04:13:16.023Z",
+  "updatedAt": "2026-11-05T04:16:17.684Z",
   "workflows": {
     "ci": {
-      "runId": 41966021980,
-      "runNumber": 294,
-      "sha": "15a89294a87cb5e9eec9ab402a15a00eeabb2946",
+      "runId": 41966451088,
+      "runNumber": 295,
+      "sha": "67d07668e6f632105197c05485bce1f7d854ed87",
       "event": "push",
-      "startedAt": "2026-11-05T04:09:22Z",
-      "finishedAt": "2026-11-05T04:12:08.340Z",
-      "durationSeconds": 166,
+      "startedAt": "2026-11-05T04:13:23Z",
+      "finishedAt": "2026-11-05T04:16:17.684Z",
+      "durationSeconds": 175,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 7,
+          "durationSeconds": 9,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 10,
+          "durationSeconds": 11,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 123,
+          "durationSeconds": 138,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 32,
+          "durationSeconds": 26,
           "runs": 1
         },
         {
@@ -71,7 +71,7 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 64,
+          "durationSeconds": 68,
           "runs": 3,
           "metrics": {
             "tests": 893
@@ -80,11 +80,11 @@
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 37,
+          "durationSeconds": 41,
           "runs": 1,
           "metrics": {
-            "bundleKb": 341.2,
-            "bundleGzipKb": 79.3
+            "bundleKb": 342.6,
+            "bundleGzipKb": 79.4
           }
         },
         {
@@ -126,7 +126,7 @@
         {
           "id": "gate",
           "status": "success",
-          "durationSeconds": 3,
+          "durationSeconds": 4,
           "runs": 1
         }
       ]
@@ -494,6 +494,113 @@
     ]
   },
   "merges": [
+    {
+      "number": 119,
+      "title": "feat(frontend): list rows cascade in when a theater card expands or collapses",
+      "branch": "feat/theater-list-cascade",
+      "author": "JCardzZ",
+      "mergedAt": "2026-11-05T04:13:21Z",
+      "sha": "67d07668e6f632105197c05485bce1f7d854ed87",
+      "additions": 64,
+      "deletions": 6,
+      "changedFiles": 5,
+      "ci": {
+        "runId": 41966451088,
+        "runNumber": 295,
+        "conclusion": "success",
+        "durationSeconds": 175,
+        "jobs": [
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "skipped"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "success"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "success"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
     {
       "number": 120,
       "title": "feat(frontend): automatic layout in both studios",
@@ -1581,116 +1688,19 @@
           }
         ]
       }
-    },
-    {
-      "number": 108,
-      "title": "feat(frontend): live status line with the version and the release in the delivery section",
-      "branch": "feat/release-status-and-delivery",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-29T03:23:15Z",
-      "sha": "c9df1a20c8f7a962372261a97edd1e3ac3e76345",
-      "additions": 357,
-      "deletions": 140,
-      "changedFiles": 9,
-      "ci": {
-        "runId": 40811848084,
-        "runNumber": 259,
-        "conclusion": "success",
-        "durationSeconds": 288,
-        "jobs": [
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "67d07668e6f632105197c05485bce1f7d854ed87",
+      "parents": [
+        "15a89294a87cb5e9eec9ab402a15a00eeabb2946",
+        "4ad36e320c3596285a5272f190a1eaff240703ef"
+      ],
+      "subject": "Merge pull request #119 from JCardzZ/feat/theater-list-cascade",
+      "author": "JCardzZ",
+      "date": "2026-11-05T04:13:20Z"
+    },
     {
       "sha": "15a89294a87cb5e9eec9ab402a15a00eeabb2946",
       "parents": [
@@ -1709,6 +1719,15 @@
       "subject": "feat(frontend): automatic layout in both studios",
       "author": "JCardzZ",
       "date": "2026-11-04T17:23:50Z"
+    },
+    {
+      "sha": "4ad36e320c3596285a5272f190a1eaff240703ef",
+      "parents": [
+        "efabf9868459d722c9a381ec93b07dfc2fd7295b"
+      ],
+      "subject": "feat(frontend): list rows cascade in when a theater card expands or collapses",
+      "author": "JCardzZ",
+      "date": "2026-11-04T17:03:31Z"
     },
     {
       "sha": "efabf9868459d722c9a381ec93b07dfc2fd7295b",
@@ -2224,24 +2243,6 @@
       "subject": "Merge pull request #109 from JCardzZ/feat/v1-and-version-mark",
       "author": "JCardzZ",
       "date": "2026-10-29T03:51:17Z"
-    },
-    {
-      "sha": "b4125423f44cdd7bea6a198d1920cc0a3603c8d8",
-      "parents": [
-        "132ff5f5c264a5886c6cba80f0ed80c836286db7"
-      ],
-      "subject": "feat(cd): honour a Release-As footer and declare the first stable release",
-      "author": "JCardzZ",
-      "date": "2026-10-29T03:43:18Z"
-    },
-    {
-      "sha": "132ff5f5c264a5886c6cba80f0ed80c836286db7",
-      "parents": [
-        "c9df1a20c8f7a962372261a97edd1e3ac3e76345"
-      ],
-      "subject": "feat(frontend): highlight which SemVer part went up in the release",
-      "author": "JCardzZ",
-      "date": "2026-10-29T03:43:18Z"
     }
   ]
 }
