@@ -59,7 +59,7 @@ function readAutoTidy(): boolean {
     return true;
   }
 }
-const MIN_FRAME_RATIO = 0.6;
+const MIN_FRAME_RATIO = 0.45;
 
 /** Vista de una pieza ya resuelta: su ficha del catálogo, su capa y su color. */
 interface NodeView {
@@ -353,7 +353,7 @@ interface NodeView {
 
     .appc-stage { position: relative; min-width: 0; }
     .appc-svg { display: block; width: 100%; max-height: calc(100dvh - 12rem); touch-action: none; user-select: none;
-      background-image: radial-gradient(var(--border-subtle) 1px, transparent 1px); background-size: 24px 24px; }
+      background-image: radial-gradient(rgb(var(--c-ink-1) / 0.06) 1px, transparent 1px); background-size: 28px 28px; }
     .appc-svg:focus { outline: none; }
     .appc-empty { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; font-size: 0.875rem; color: var(--text-3); }
 
@@ -443,12 +443,14 @@ export class AppCanvasComponent implements OnInit {
       return FULL_VIEW;
     }
     const bounds = contentBounds(nodes, boxes, 640);
-    const pad = 56;
+    const pad = 40;
+    // Arriba, además, el título de las bandas (que queda por encima de las piezas).
+    const top = pad + (this.lanes().length ? LANE_HEADER : 0);
     const x = Math.max(0, bounds.x - pad);
     const w = Math.min(CANVAS_WIDTH, bounds.x + bounds.w + pad) - x;
     // Proporción mínima: un diagrama muy apaisado no deja el lienzo bajito con un hueco debajo;
     // se centra en vertical, al mismo tamaño, con sitio para soltar piezas.
-    const content = { y: Math.max(0, bounds.y - pad), h: Math.min(CANVAS_HEIGHT, bounds.y + bounds.h + pad) - Math.max(0, bounds.y - pad) };
+    const content = { y: Math.max(0, bounds.y - top), h: Math.min(CANVAS_HEIGHT, bounds.y + bounds.h + pad) - Math.max(0, bounds.y - top) };
     const h = Math.min(CANVAS_HEIGHT, Math.max(content.h, w * MIN_FRAME_RATIO));
     const y = Math.round(content.y - (h - content.h) / 2);
     return { x, y, w, h };
