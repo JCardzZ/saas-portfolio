@@ -484,6 +484,7 @@
       @for (node of nodes(); track node.id) {
         <g
           class="node"
+          [class.node-lift]="smartRules() && !editing()"
           [class.node-active]="emphasis() && node.id === activeId()"
           [class.node-custom]="node.custom"
           [class.node-editing]="editing()"

@@ -1228,3 +1228,21 @@ body:has(.qc-drawer) [data-testid="demo-notice-fallback"] { display: none; }
 .appc-lane rect { fill: color-mix(in srgb, var(--layer) 5%, transparent); stroke: color-mix(in srgb, var(--layer) 22%, transparent); stroke-width: 1; }
 .appc-lane circle { fill: var(--layer); }
 .appc-lane-label { fill: var(--text-2); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+/* Al pasar el ratón, la pieza se eleva 2 px y su sombra se alarga (su sombra se queda en su sitio). */
+.node.node-lift, .appc-node-body { transition: transform var(--duration-base) var(--ease-standard); }
+.node.node-lift:hover { transform: translateY(-2px); }
+.node.node-lift rect.node-shadow, .appc-node-shadow { transition: transform var(--duration-base) var(--ease-standard), opacity var(--duration-base) var(--ease-standard); }
+.node.node-lift:hover rect.node-shadow { transform: translateY(4px); fill: rgb(0 0 0 / 0.34) !important; }
+.appc-node:hover .appc-node-body { transform: translateY(-2px); }
+.appc-node:hover .appc-node-shadow { transform: translateY(2px); fill: rgb(0 0 0 / 0.34) !important; }
+@media (prefers-reduced-motion: reduce) {
+  .node.node-lift, .appc-node-body, .node.node-lift rect.node-shadow, .appc-node-shadow { transition: none; }
+}
+/* Leyenda del lienzo de Aplicación. */
+.appc-legend { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; padding: 0.625rem 1rem; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: var(--text-2); }
+.appc-legend li { display: inline-flex; align-items: center; gap: 0.5rem; }
+.appc-legend svg { width: 1.75rem; height: 0.375rem; }
+.appc-legend-line { fill: none; stroke: var(--text-3); stroke-width: 1.5; }
+.appc-legend-async { stroke-dasharray: 5 3; }
+.appc-legend-runs { color: var(--accent-text); font-size: 0.75rem; }
+.appc-legend-mark { width: 0.625rem; height: 0.625rem; border-radius: 9999px; background: var(--status-warn); }

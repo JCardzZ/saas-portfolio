@@ -192,9 +192,9 @@ interface NodeView {
             }
 
             @for (wire of wires(); track wire.key) {
-              <g class="appc-wire" [class.appc-wire-on]="wire.active" [class.appc-wire-async]="wire.async" [attr.data-link]="wire.key">
+              <g class="appc-wire" [class.appc-wire-on]="wire.active || touches(wire.key)" [class.appc-wire-async]="wire.async" [attr.data-link]="wire.key">
                 <path class="appc-wire-hit" [attr.d]="wire.path" (pointerdown)="select($event, wire.key)" />
-                <path class="appc-wire-line" [attr.d]="wire.path" [attr.marker-end]="wire.active ? 'url(#appc-arrow-on)' : 'url(#appc-arrow)'" />
+                <path class="appc-wire-line" [attr.d]="wire.path" [attr.marker-end]="wire.active || touches(wire.key) ? 'url(#appc-arrow-on)' : 'url(#appc-arrow)'" />
                 <g class="appc-wire-label" [attr.transform]="'translate(' + wire.label[0] + ' ' + wire.label[1] + ')'" (pointerdown)="select($event, wire.key)" (dblclick)="cycle(wire.key)">
                   <!-- Solo el texto, con un halo del color del fondo; el rectángulo, invisible, es la zona de clic. -->
                   <rect class="appc-wire-label-hit" [attr.x]="-wire.labelWidth / 2" y="-10" [attr.width]="wire.labelWidth" height="20" rx="10" />
@@ -216,10 +216,14 @@ interface NodeView {
                 [class.appc-dim]="highlight() && !highlight()!.has(item.node.id)"
                 [style.--layer]="item.color" [attr.data-node]="item.node.id" [attr.aria-label]="item.name + ', ' + item.tech"
                 [attr.transform]="'translate(' + (item.node.x - w / 2) + ' ' + (item.node.y - h / 2) + ')'"
-                (pointerdown)="startNode($event, item.node)" (focus)="selected.set(item.node.id)">
+                (pointerdown)="startNode($event, item.node)" (focus)="selected.set(item.node.id)"
+                (pointerenter)="hovered.set(item.node.id)" (pointerleave)="hovered.set(null)">
                 <!-- El mismo lenguaje que el lienzo de Infraestructura: logo arriba, nombre y tecnología
                      centrados, y debajo del borde, dónde corre. La capa, en una línea fina de su color. -->
                 <rect class="appc-node-shadow" y="2" [attr.width]="w" [attr.height]="h" rx="10" aria-hidden="true" />
+                <!-- El cuerpo va en su propio grupo: es lo que se eleva al pasar el ratón (la posición de la
+                     pieza está en el transform del grupo de fuera y no se toca). -->
+                <g class="appc-node-body">
                 <rect class="appc-node-card" [attr.width]="w" [attr.height]="h" rx="10" />
                 <rect class="appc-node-sheen" [attr.width]="w" [attr.height]="h / 2" rx="10" fill="url(#appc-sheen)" aria-hidden="true" />
                 <rect class="appc-node-bar" x="18" y="0" [attr.width]="w - 36" height="2" rx="1" />
@@ -245,6 +249,7 @@ interface NodeView {
                 @if (review().marks.get(item.node.id); as level) {
                   <circle class="appc-mark" [attr.data-level]="level" [attr.cx]="w - 10" cy="10" r="5"><title>{{ markTitle(level) }}</title></circle>
                 }
+                </g>
                 <g class="appc-handle" (pointerdown)="startConnect($event, item.node)" [attr.transform]="'translate(' + w + ' ' + h / 2 + ')'">
                   <circle r="11" class="appc-handle-hit" />
                   <circle r="6" class="appc-handle-dot" />
@@ -258,6 +263,15 @@ interface NodeView {
               <span><strong class="font-semibold text-ink-1">{{ message.title }}</strong> {{ message.reason }} <span class="text-ink-1">{{ message.suggestion }}</span></span>
               <button type="button" class="ui-btn-ghost" (click)="notice.set(null)">Entendido</button>
             </div>
+          }
+          @if (graph().nodes.length) {
+            <!-- Cómo leer el lienzo, en una línea. -->
+            <ul class="appc-legend" data-testid="appc-legend">
+              <li><svg viewBox="0 0 28 6" aria-hidden="true"><path class="appc-legend-line" d="M1 3h26" /></svg>Llamada síncrona</li>
+              <li><svg viewBox="0 0 28 6" aria-hidden="true"><path class="appc-legend-line appc-legend-async" d="M1 3h26" /></svg>Asíncrona (eventos y colas)</li>
+              <li><span class="appc-legend-runs" aria-hidden="true">▸</span>Dónde corre, en Infraestructura</li>
+              <li><span class="appc-legend-mark" aria-hidden="true"></span>Aviso del asistente</li>
+            </ul>
           }
           @if (!graph().nodes.length) {
             <p class="appc-empty">Arrastra aquí una pieza del catálogo, o pulsa «Desde las decisiones».</p>
@@ -722,6 +736,15 @@ export class AppCanvasComponent implements OnInit {
       this.autoFrame.set(true);
     }
     this.edited.set(true);
+  }
+
+  /** Pieza bajo el cursor: sus cables se resaltan mientras tanto. */
+  readonly hovered = signal<string | null>(null);
+
+  /** ¿Sale o llega este cable a la pieza bajo el cursor? */
+  touches(key: string): boolean {
+    const id = this.hovered();
+    return !!id && (key.startsWith(`${id}>`) || key.endsWith(`>${id}`));
   }
 
   /** Orden automático: el lienzo se ordena solo al añadir o quitar piezas o conexiones. */
