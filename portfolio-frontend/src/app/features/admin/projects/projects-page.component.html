@@ -120,7 +120,7 @@
         } @empty {
           <tr>
             <td class="table-cell text-center text-slate-500" colspan="4">
-              {{ store.loading() ? 'Cargando…' : 'Aún no hay proyectos.' }}
+              @if (store.loading()) { <app-skeleton shape="rows" label="Cargando…" /> } @else { {{ 'Aún no hay proyectos.' }} }
             </td>
           </tr>
         }

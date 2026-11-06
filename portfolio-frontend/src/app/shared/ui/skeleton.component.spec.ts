@@ -30,5 +30,8 @@ describe('SkeletonComponent', () => {
     expect(render('list-card').querySelectorAll('.dot').length).toBe(3);
     expect(render('timeline').querySelectorAll('.stop').length).toBe(3);
     expect(render('code').querySelectorAll('.code .line').length).toBeGreaterThan(4);
+    // Filas de una tabla y un artículo (fecha, titular y párrafos).
+    expect(render('rows').querySelectorAll('.line-row').length).toBe(4);
+    expect(render('article').querySelectorAll('.h-headline').length).toBe(2);
   });
 });

@@ -10,9 +10,10 @@ import { RouterLink } from '@angular/router';
 const EXCERPT_LENGTH = 170;
 
 /** Hub de artículos: tarjetas con las publicaciones de `GET /public/articles`; cada una lleva a su página. */
+import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 @Component({
     selector: 'app-articles-hub',
-    imports: [TranslatePipe, DatePipe, RouterLink],
+    imports: [SkeletonComponent, TranslatePipe, DatePipe, RouterLink],
     templateUrl: './articles-hub.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

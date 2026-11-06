@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /** Forma de la silueta: la de lo que va a aparecer, para que la página no salte al cargar. */
-export type SkeletonShape = 'studio' | 'tabs' | 'card' | 'list-card' | 'timeline' | 'code';
+export type SkeletonShape = 'studio' | 'tabs' | 'card' | 'list-card' | 'timeline' | 'code' | 'rows' | 'article';
 
 /**
  * Silueta de carga (skeleton), como en Instagram: la forma de lo que viene, con un brillo que la
@@ -71,6 +71,23 @@ export type SkeletonShape = 'studio' | 'tabs' | 'card' | 'list-card' | 'timeline
             }
           </div>
         }
+        @case ('rows') {
+          <div aria-hidden="true">
+            @for (item of rows; track item) {
+              <div class="row line-row"><span class="bone line w-24"></span><span class="bone line w-40"></span><span class="grow"></span><span class="bone line w-20"></span></div>
+            }
+          </div>
+        }
+        @case ('article') {
+          <div class="article" aria-hidden="true">
+            <span class="bone line w-24"></span>
+            <span class="bone h-headline w-80 mt-12"></span>
+            <span class="bone h-headline w-56 mt-8"></span>
+            @for (item of codeLines; track item) {
+              <span class="bone line mt-12" [style.width.%]="item + 16"></span>
+            }
+          </div>
+        }
         @case ('code') {
           <div aria-hidden="true">
             <span class="bone h-line w-40"></span>
@@ -103,6 +120,9 @@ export type SkeletonShape = 'studio' | 'tabs' | 'card' | 'list-card' | 'timeline
     .line { height: 0.75rem; }
     .h-line { height: 1.1rem; }
     .h-title { height: 1.5rem; }
+    .h-headline { height: 2.25rem; }
+    .line-row { padding: 0.75rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .article { max-width: 44rem; margin: 0 auto; padding-top: 2.5rem; }
     .pill { height: 2.25rem; border-radius: 0.75rem; flex: none; }
     .pill.accent { opacity: 0.8; }
     .chip { width: 4.5rem; height: 1.5rem; border-radius: 9999px; }
@@ -134,5 +154,6 @@ export class SkeletonComponent {
 
   readonly cells = [0, 1, 2, 3, 4, 5, 6, 7];
   readonly items = [0, 1, 2];
+  readonly rows = [0, 1, 2, 3];
   readonly codeLines = [62, 78, 45, 70, 54, 84, 38];
 }

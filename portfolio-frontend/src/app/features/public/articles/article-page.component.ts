@@ -34,13 +34,14 @@ interface TocEntry {
  * Graph. Ojo: el sitio es una SPA sin renderizado en servidor, así que Google las ve (ejecuta
  * JavaScript) pero LinkedIn y otras redes, que leen solo el HTML, no.
  */
+import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 @Component({
   selector: 'app-article-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   // Sin encapsulación: los estilos del cuerpo afectan al HTML que pinta el Markdown (todo bajo `.article-page`).
   encapsulation: ViewEncapsulation.None,
-  imports: [RouterLink, DatePipe, TranslatePipe, MarkdownComponent, LanguageSwitchComponent, SocialLinksComponent],
+  imports: [SkeletonComponent, RouterLink, DatePipe, TranslatePipe, MarkdownComponent, LanguageSwitchComponent, SocialLinksComponent],
   host: { '(window:scroll)': 'onScroll()' },
   template: `
     <div class="article-page dark safe-x min-h-dvh bg-canvas text-ink-1">
@@ -58,11 +59,7 @@ interface TocEntry {
             <button type="button" class="ui-btn-secondary mt-4" (click)="load()">{{ 'Reintentar' | t }}</button>
           </div>
         } @else if (loading()) {
-          <div class="mx-auto max-w-[44rem] space-y-4 pt-10" aria-hidden="true">
-            <div class="h-4 w-40 animate-pulse rounded-control bg-surface-2"></div>
-            <div class="h-14 w-full animate-pulse rounded-control bg-surface-2"></div>
-            <div class="h-64 animate-pulse rounded-card bg-surface-2"></div>
-          </div>
+          <app-skeleton shape="article" [label]="'Cargando…' | t" />
         } @else if (article(); as current) {
           <article class="layout" data-testid="article">
             <div class="head">

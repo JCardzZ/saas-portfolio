@@ -126,6 +126,9 @@
       @defer (on viewport; prefetch on idle) {
         <!-- Una tarjeta con cuatro pestañas (como el Estudio): la sección no ocupa cuatro pantallas. -->
         <app-delivery-tabs class="animate-slide-up" />
+      } @loading (after 120ms; minimum 500ms) {
+        <!-- Si la sección tarda, su silueta se queda un mínimo: o no se ve, o se ve sin parpadear. -->
+        <app-skeleton class="bento-card min-h-[24rem]" shape="tabs" [label]="i18n.t(copy.deliveryLoading)" />
       } @placeholder {
         <!-- Silueta de lo que llega (pestañas y un diagrama): la sección no salta al cargar. -->
         <app-skeleton class="bento-card min-h-[24rem]" shape="tabs" [label]="i18n.t(copy.deliveryLoading)" />
@@ -140,6 +143,9 @@
       @defer (on idle) {
         <!-- Una tarjeta con pestañas (como Entrega) y la telemetría al lado: antes, seis tarjetas apiladas. -->
         <app-platform-tabs class="animate-slide-up" />
+      } @loading (after 120ms; minimum 500ms) {
+        <!-- Si la sección tarda, su silueta se queda un mínimo: o no se ve, o se ve sin parpadear. -->
+        <app-skeleton class="bento-card min-h-[40rem]" shape="tabs" [label]="i18n.t(copy.platformLoading)" />
       } @placeholder {
         <app-skeleton class="bento-card min-h-[40rem]" shape="tabs" [label]="i18n.t(copy.platformLoading)" />
       }
@@ -153,6 +159,9 @@
           <app-cloud-infra class="animate-slide-up" />
           <app-data-blueprints class="animate-slide-up" />
         </div>
+      } @loading (after 120ms; minimum 500ms) {
+        <!-- Si la sección tarda, su silueta se queda un mínimo: o no se ve, o se ve sin parpadear. -->
+        <app-skeleton class="bento-card min-h-[36rem]" shape="studio" [label]="i18n.t(copy.cloudLoading)" />
       } @placeholder {
         <app-skeleton class="bento-card min-h-[36rem]" shape="studio" [label]="i18n.t(copy.cloudLoading)" />
       }
@@ -310,6 +319,9 @@
         <app-section-header headingId="mcp-titulo" overline="Model Context Protocol" [title]="i18n.t(copy.mcpTitle)" [intro]="i18n.t(copy.mcpIntro)" />
         @defer (on viewport; prefetch on idle) {
           <app-mcp-section class="animate-slide-up" />
+        } @loading (after 120ms; minimum 500ms) {
+          <!-- Si la sección tarda, su silueta se queda un mínimo: o no se ve, o se ve sin parpadear. -->
+          <app-skeleton class="bento-card min-h-[24rem]" shape="code" [label]="i18n.t(copy.mcpLoading)" />
         } @placeholder {
           <app-skeleton class="bento-card min-h-[24rem]" shape="code" [label]="i18n.t(copy.mcpLoading)" />
         }

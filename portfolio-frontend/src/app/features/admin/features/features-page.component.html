@@ -108,7 +108,7 @@
       </section>
     } @empty {
       <p class="card text-center text-sm text-slate-500">
-        {{ loading() ? 'Cargando…' : flags().length ? 'Ninguna flag coincide con la búsqueda.' : 'No hay flags.' }}
+        @if (loading()) { <app-skeleton shape="rows" label="Cargando…" /> } @else { {{ flags().length ? 'Ninguna flag coincide con la búsqueda.' : 'No hay flags.' }} }
       </p>
     }
   } @else {
@@ -153,7 +153,7 @@
             </tr>
           } @empty {
             <tr>
-              <td class="table-cell text-center text-slate-500" colspan="4">{{ loading() ? 'Cargando…' : 'No hay flags.' }}</td>
+              <td class="table-cell text-center text-slate-500" colspan="4">@if (loading()) { <app-skeleton shape="rows" label="Cargando…" /> } @else { {{ 'No hay flags.' }} }</td>
             </tr>
           }
         </tbody>
@@ -183,7 +183,7 @@
             </tr>
           } @empty {
             <tr>
-              <td class="table-cell text-center text-slate-500" colspan="4">{{ loading() ? 'Cargando…' : 'Nadie ha cambiado una flag todavía.' }}</td>
+              <td class="table-cell text-center text-slate-500" colspan="4">@if (loading()) { <app-skeleton shape="rows" label="Cargando…" /> } @else { {{ 'Nadie ha cambiado una flag todavía.' }} }</td>
             </tr>
           }
         </tbody>

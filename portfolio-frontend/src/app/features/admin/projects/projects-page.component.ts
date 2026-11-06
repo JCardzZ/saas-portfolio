@@ -6,9 +6,10 @@ import { AlertComponent } from '../../../shared/ui/alert.component';
 import { ProjectsStore } from '../data/projects.store';
 import { TechnologiesStore } from '../data/technologies.store';
 
+import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 @Component({
     selector: 'app-projects-page',
-    imports: [ReactiveFormsModule, AlertComponent],
+    imports: [SkeletonComponent, ReactiveFormsModule, AlertComponent],
     providers: [ProjectsStore, TechnologiesStore],
     templateUrl: './projects-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
