@@ -27,7 +27,7 @@ import { autoLayout } from './auto-layout';
 import { contentBounds, directNodes, reflow, resizeToContent } from './zone-layout';
 import { ZONE_PADDING, hasConflict, settleZones, zoneParents } from './zone-solver';
 import { breathe } from './zone-breathe';
-import { Rect as WireRect, labelBox, labelPoint, labelWidth, nodeRect, roundedPath, routeAll } from './wire-router';
+import { Rect as WireRect, labelBox, labelPoint, labelWidth, nodeRect, roundedPath, routeAll, zoneBorders } from './wire-router';
 import { FULL_VIEW, Point, View, panView, placementVerdict, resolveCollision, withFriction, zoomView } from './studio-physics';
 import { CHAOS_PHASE_MS, CHAOS_SCENARIOS, CHAOS_SETTLE_MS, ChaosLevel, ChaosScenario } from './chaos-scenarios';
 import { CatalogItem } from './cloud-catalog.data';
@@ -321,7 +321,8 @@ export class CloudInfraComponent {
     // Reglas inteligentes: cables en ángulo recto que esquivan nodos, con puntos de salida repartidos.
     const smart = this.smartRules();
     const texts = smart ? this.fixedTexts() : [];
-    const routes = smart ? routeAll(this.links(), byId, undefined, this.moving(), texts) : null;
+    // Los bordes de las zonas también cuentan: un cable no corre pegado a ellos.
+    const routes = smart ? routeAll(this.links(), byId, undefined, this.moving(), texts, zoneBorders(this.zones())) : null;
     // Camino de la petición: lo que se alcanza desde los visitantes sin pasar por una pieza de apoyo
     // ni por un flujo asíncrono. Lo demás va en segundo plano para que el ojo sepa por dónde empezar.
     const onPath = new Set(this.nodes().filter((node) => node.type === 'users').map((node) => node.id));

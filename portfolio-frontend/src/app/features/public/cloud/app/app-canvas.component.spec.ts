@@ -77,6 +77,17 @@ describe('AppCanvasComponent', () => {
     expect(component.graph().nodes.filter((node) => before.some((old) => old.id === node.id)).map(({ id, x, y }) => ({ id, x, y }))).toEqual(before);
   });
 
+  it('segments the architecture into lanes, left to right and without overlapping', () => {
+    const lanes = all('[data-lane]');
+    expect(lanes.map((lane) => lane.dataset['lane'])).toEqual(['frontend', 'edge', 'backend', 'data']);
+    expect(lanes.map((lane) => lane.querySelector('text')!.textContent!.trim())).toEqual(['Frontend', 'Entrada', 'Backend', 'Datos']);
+    const spans = lanes.map((lane) => {
+      const rect = lane.querySelector('rect')!;
+      return [Number(rect.getAttribute('x')), Number(rect.getAttribute('x')) + Number(rect.getAttribute('width'))];
+    });
+    spans.slice(1).forEach(([left], index) => expect(left).toBeGreaterThanOrEqual(spans[index][1]));
+  });
+
   it('filters the catalog as you type', () => {
     const search = $('#appc-search') as HTMLInputElement;
     search.value = 'kafka';

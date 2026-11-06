@@ -4,7 +4,7 @@ import { FULL_VIEW, View, panView, zoomView } from '../studio-physics';
 import { contentBounds } from '../zone-layout';
 import { SystemDesign } from '../system/system-design';
 import { labelPoint, nodeRect, roundedPath, routeAll } from '../wire-router';
-import { APP_BOXES, APP_LAYERS, APP_PIECES, AppBoxKind, AppPiece, layerOf, pieceOf } from './app-catalog.data';
+import { APP_BOXES, APP_LAYERS, APP_PIECES, AppBoxKind, AppLayer, AppPiece, layerOf, pieceOf } from './app-catalog.data';
 import {
   AppBox, AppGraph, AppNode, addBox, addNode, clampPoint, connect, cycleProtocol, graphFromDesign, isAsync, linkKey, moveBox, moveNode,
   removeBox, removeLink, removeNode, resizeBox, sanitizeGraph, updateNode,
@@ -30,6 +30,21 @@ function designSignature(design: SystemDesign): string {
 }
 const WIRE_GAP = { from: 4, to: 10 };
 /** Preferencia del orden automático del lienzo de aplicación, guardada en este navegador. */
+/** Segmentos de la arquitectura y las capas que reúne cada uno, en el orden en que se leen. */
+interface Segment { key: string; name: string; layers: AppLayer[] }
+const SEGMENTS: Segment[] = [
+  { key: 'frontend', name: 'Frontend', layers: ['client'] },
+  { key: 'edge', name: 'Entrada', layers: ['edge'] },
+  { key: 'backend', name: 'Backend', layers: ['service'] },
+  { key: 'data', name: 'Datos', layers: ['data', 'messaging'] },
+  { key: 'platform', name: 'Plataforma', layers: ['identity', 'observability', 'external'] },
+];
+interface Lane { key: string; name: string; color: string; x: number; y: number; w: number; h: number }
+/** Margen de una banda alrededor de sus piezas, hueco entre bandas y sitio para su título. */
+const LANE_PAD = 12;
+const LANE_GAP = 20;
+const LANE_HEADER = 50;
+
 const APP_AUTO_TIDY_KEY = 'studio.app-auto-tidy';
 
 /** Piezas y conexiones como texto ordenado: cambia solo si se añade o quita alguna. */
@@ -149,8 +164,23 @@ interface NodeView {
             (dragover)="onDragOver($event)" (drop)="onDrop($event)" (wheel)="onWheel($event)" (keydown)="onKeydown($event)" (pointerdown)="onBackground($event)">
             <defs>
               <marker id="appc-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" class="appc-arrow" /></marker>
+              <!-- Brillo suave en la mitad de arriba de cada pieza: profundidad sin filtros. -->
+              <linearGradient id="appc-sheen" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" class="studio-sheen-top" />
+                <stop offset="1" class="studio-sheen-bottom" />
+              </linearGradient>
               <marker id="appc-arrow-on" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" class="appc-arrow-on" /></marker>
             </defs>
+
+            <!-- Segmentos de la arquitectura: una banda por capa (frontend, entrada, backend, datos,
+                 plataforma), del ancho de sus piezas y con su título arriba. -->
+            @for (lane of lanes(); track lane.key) {
+              <g class="appc-lane" [style.--layer]="lane.color" [attr.data-lane]="lane.key" aria-hidden="true">
+                <rect [attr.x]="lane.x" [attr.y]="lane.y" [attr.width]="lane.w" [attr.height]="lane.h" rx="16" />
+                <circle [attr.cx]="lane.x + 16" [attr.cy]="lane.y + 18" r="3.5" />
+                <text [attr.x]="lane.x + 26" [attr.y]="lane.y + 22" class="appc-lane-label">{{ lane.name }}</text>
+              </g>
+            }
 
             @for (box of graph().boxes; track box.id) {
               <g class="appc-box" [attr.data-kind]="box.kind" [class.appc-selected]="selected() === box.id" [attr.data-box]="box.id">
@@ -166,7 +196,8 @@ interface NodeView {
                 <path class="appc-wire-hit" [attr.d]="wire.path" (pointerdown)="select($event, wire.key)" />
                 <path class="appc-wire-line" [attr.d]="wire.path" [attr.marker-end]="wire.active ? 'url(#appc-arrow-on)' : 'url(#appc-arrow)'" />
                 <g class="appc-wire-label" [attr.transform]="'translate(' + wire.label[0] + ' ' + wire.label[1] + ')'" (pointerdown)="select($event, wire.key)" (dblclick)="cycle(wire.key)">
-                  <rect [attr.x]="-wire.labelWidth / 2" y="-10" [attr.width]="wire.labelWidth" height="20" rx="10" />
+                  <!-- Solo el texto, con un halo del color del fondo; el rectángulo, invisible, es la zona de clic. -->
+                  <rect class="appc-wire-label-hit" [attr.x]="-wire.labelWidth / 2" y="-10" [attr.width]="wire.labelWidth" height="20" rx="10" />
                   <text text-anchor="middle" y="4">{{ wire.protocol }}</text>
                 </g>
               </g>
@@ -186,22 +217,31 @@ interface NodeView {
                 [style.--layer]="item.color" [attr.data-node]="item.node.id" [attr.aria-label]="item.name + ', ' + item.tech"
                 [attr.transform]="'translate(' + (item.node.x - w / 2) + ' ' + (item.node.y - h / 2) + ')'"
                 (pointerdown)="startNode($event, item.node)" (focus)="selected.set(item.node.id)">
+                <!-- El mismo lenguaje que el lienzo de Infraestructura: logo arriba, nombre y tecnología
+                     centrados, y debajo del borde, dónde corre. La capa, en una línea fina de su color. -->
+                <rect class="appc-node-shadow" y="2" [attr.width]="w" [attr.height]="h" rx="10" aria-hidden="true" />
                 <rect class="appc-node-card" [attr.width]="w" [attr.height]="h" rx="10" />
-                <rect class="appc-node-bar" x="0" y="10" width="3" [attr.height]="h - 20" rx="1.5" />
-                <g transform="translate(12 12)">
-                  <rect class="appc-node-chip" width="24" height="24" rx="7" />
+                <rect class="appc-node-sheen" [attr.width]="w" [attr.height]="h / 2" rx="10" fill="url(#appc-sheen)" aria-hidden="true" />
+                <rect class="appc-node-bar" x="18" y="0" [attr.width]="w - 36" height="2" rx="1" />
+                <g [attr.transform]="'translate(' + (w / 2 - 10) + ' 6)'">
                   @if (item.logo?.image; as image) {
-                    <image [attr.href]="image" x="3" y="3" width="18" height="18" data-logo="image" />
+                    <image [attr.href]="image" width="20" height="20" data-logo="image" />
                   } @else if (item.logo?.path; as path) {
-                    <g transform="translate(3 3) scale(0.75)"><path [attr.d]="path" [attr.fill]="item.logo?.color" data-logo="path" /></g>
+                    <g transform="translate(1 1) scale(0.75)"><path [attr.d]="path" [attr.fill]="item.logo?.color" data-logo="path" /></g>
                   } @else {
-                    <g transform="translate(4 4) scale(0.6667)"><path class="appc-node-icon" [attr.d]="item.piece.icon" /></g>
+                    <g transform="translate(1 1) scale(0.75)"><path class="appc-node-icon" [attr.d]="item.piece.icon" /></g>
                   }
                 </g>
-                <!-- Arriba, dónde corre (la capa ya la dice el color); si no corre en ninguna parte, la capa. -->
-                <text x="44" y="21" class="appc-node-layer" [class.appc-node-runs]="item.node.runsOn">{{ item.node.runsOn ? '▸ ' + clip(infraName(item.node.runsOn), 12) : clip(item.layer, 13) }}</text>
-                <text x="44" y="36" class="appc-node-name">{{ clip(item.name, 13) }}</text>
-                <text x="12" y="59" class="appc-node-tech">{{ clip(item.tech, 18) }}</text>
+                <text [attr.x]="w / 2" y="41" text-anchor="middle" class="appc-node-name">{{ clip(item.name, 16) }}</text>
+                <text [attr.x]="w / 2" y="56" text-anchor="middle" class="appc-node-tech">{{ clip(item.tech, 18) }}</text>
+                @if (item.node.runsOn) {
+                  @let runs = '▸ ' + clip(infraName(item.node.runsOn), 15);
+                  <g class="appc-node-runs-chip" aria-hidden="true">
+                    <title>{{ 'Corre en ' + infraName(item.node.runsOn) }}</title>
+                    <rect [attr.x]="w / 2 - (runs.length * 6.8 + 16) / 2" [attr.y]="h - 9" [attr.width]="runs.length * 6.8 + 16" height="18" rx="9" />
+                    <text [attr.x]="w / 2" [attr.y]="h + 4" text-anchor="middle" class="appc-node-runs">{{ runs }}</text>
+                  </g>
+                }
                 @if (review().marks.get(item.node.id); as level) {
                   <circle class="appc-mark" [attr.data-level]="level" [attr.cx]="w - 10" cy="10" r="5"><title>{{ markTitle(level) }}</title></circle>
                 }
@@ -326,9 +366,6 @@ interface NodeView {
     .appc-arrow { fill: var(--text-3); }
     .appc-arrow-on { fill: var(--accent-text); }
     .appc-wire-label { cursor: pointer; }
-    .appc-wire-label rect { fill: var(--bg-surface-1); stroke: var(--border-strong); }
-    .appc-wire-label text { fill: var(--text-2); font-size: 12px; font-family: var(--font-mono); }
-    .appc-wire-on .appc-wire-label rect { stroke: var(--accent-text); }
     .appc-wire-on .appc-wire-label text { fill: var(--accent-text); }
     .appc-preview { fill: none; stroke: var(--accent-text); stroke-width: 1.5; stroke-dasharray: 5 4; pointer-events: none; }
     .appc-preview-no { stroke: var(--status-danger); }
@@ -337,11 +374,9 @@ interface NodeView {
     .appc-node-card { fill: var(--bg-surface-2); stroke: var(--border-subtle); transition: stroke var(--duration-fast); }
     .appc-node:hover .appc-node-card { stroke: var(--border-strong); }
     .appc-node.appc-selected .appc-node-card, .appc-node:focus-visible .appc-node-card { stroke: var(--layer); stroke-width: 1.5; }
-    .appc-node-bar { fill: var(--layer); }
-    .appc-node-chip { fill: color-mix(in srgb, var(--layer) 18%, transparent); }
+    .appc-node-bar { fill: var(--layer); opacity: 0.9; }
     .appc-node-icon { fill: none; stroke: var(--layer); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-    .appc-node-layer { fill: var(--text-3); font-size: 12px; }
-    .appc-node-name { fill: var(--text-1); font-size: 12.5px; font-weight: 600; }
+    .appc-node-name { fill: var(--text-1); font-size: 12px; font-weight: 600; }
     .appc-node-tech { fill: var(--text-2); font-size: 12px; }
     .appc-node text { pointer-events: none; }
     .appc-handle { cursor: crosshair; opacity: 0; transition: opacity var(--duration-fast); }
@@ -359,7 +394,7 @@ interface NodeView {
     .appc-mark[data-level='risk'] { fill: var(--status-danger); }
     .appc-mark[data-level='warn'] { fill: var(--status-warn); }
     .appc-mark[data-level='tip'] { fill: var(--accent-text); }
-    .appc-node-runs { fill: var(--accent-text); }
+    .appc-node-runs { fill: var(--accent-text); font-size: 12px; }
     .appc-hl .appc-node-card { stroke: var(--layer); stroke-width: 2; }
     .appc-dim { opacity: 0.3; }
     .appc-notice-ok { border-color: rgb(var(--c-status-ok) / 0.35); }
@@ -446,6 +481,44 @@ export class AppCanvasComponent implements OnInit {
     return [{ node, piece, color: layer.color, layer: layer.name, name: node.name?.trim() || piece.name, tech, logo: logoFor(tech, this.provider()) }];
   }));
 
+  /**
+   * Segmentos de la arquitectura, de izquierda a derecha: una banda por grupo de capas con piezas, del
+   * ancho de esas piezas. Si dos grupos se mezclan (una pieza movida a mano), la frontera queda en medio.
+   */
+  readonly lanes = computed<Lane[]>(() => {
+    const views = this.views();
+    if (views.length < 2) {
+      return [];
+    }
+    const groups = new Map<string, { segment: Segment; min: number; max: number }>();
+    for (const view of views) {
+      const segment = SEGMENTS.find((candidate) => candidate.layers.includes(view.piece.layer))!;
+      const group = groups.get(segment.key) ?? { segment, min: Infinity, max: -Infinity };
+      group.min = Math.min(group.min, view.node.x - NODE_WIDTH / 2);
+      group.max = Math.max(group.max, view.node.x + NODE_WIDTH / 2);
+      groups.set(segment.key, group);
+    }
+    const ordered = [...groups.values()].sort((a, b) => a.min + a.max - (b.min + b.max));
+    if (ordered.length < 2) {
+      return [];
+    }
+    for (let i = 1; i < ordered.length; i++) {
+      const [left, right] = [ordered[i - 1], ordered[i]];
+      if (left.max + LANE_GAP > right.min) {
+        const middle = (left.max + right.min) / 2;
+        left.max = middle - LANE_GAP / 2;
+        right.min = middle + LANE_GAP / 2;
+      }
+    }
+    const { nodes, boxes } = this.graph();
+    const top = Math.min(...nodes.map((node) => node.y - NODE_HEIGHT / 2), ...boxes.map((box) => box.y)) - LANE_HEADER;
+    const bottom = Math.max(...nodes.map((node) => node.y + NODE_HEIGHT / 2 + 9), ...boxes.map((box) => box.y + box.h)) + 22;
+    return ordered.map(({ segment, min, max }) => ({
+      key: segment.key, name: segment.name, color: layerOf(segment.layers[0]).color,
+      x: Math.round(min - LANE_PAD), y: Math.round(top), w: Math.round(max - min + LANE_PAD * 2), h: Math.round(bottom - top),
+    }));
+  });
+
   /** Mientras se traza una conexión: qué piezas la admiten (verde) y cuáles no (atenuadas). */
   readonly targets = computed(() => {
     const from = this.connecting()?.from;
@@ -462,11 +535,15 @@ export class AppCanvasComponent implements OnInit {
     // Todos a la vez, para que no se crucen; con aire en los dos extremos: el cable no nace pegado a la
     // pieza y la punta no toca el borde. Los títulos de las cajas son obstáculos: un cable no pasa por
     // encima de «Red privada».
-    const titles = this.graph().boxes.map((box) => ({ x: box.x + 8, y: box.y + 4, w: (box.label || this.boxName(box.kind)).length * 7.6 + 16, h: 22 }));
+    const titles = [
+      ...this.graph().boxes.map((box) => ({ x: box.x + 8, y: box.y + 4, w: (box.label || this.boxName(box.kind)).length * 7.6 + 16, h: 22 })),
+      ...this.lanes().map((lane) => ({ x: lane.x + 8, y: lane.y + 6, w: lane.name.length * 8.4 + 30, h: 24 })),
+    ];
     const routes = routeAll(links, byId, WIRE_GAP, this.frozen() !== null, titles);
     const selected = this.selected();
     // La pastilla del protocolo se pinta 4 px más alta que la caja de `labelBox`: ese margen alrededor de cada pieza.
-    const taken = [...nodes.map((node) => nodeRect(node, 4)), ...this.graph().boxes.flatMap((box) => [
+    // La pastilla de «dónde corre» asoma 7 px bajo cada pieza: también se reserva.
+    const taken = [...nodes.map((node) => ({ ...nodeRect(node, 4), h: nodeRect(node, 4).h + 8 })), ...this.graph().boxes.flatMap((box) => [
       { x: box.x, y: box.y, w: box.w, h: 30 },
       // Los otros tres bordes de la caja: una pastilla encima de la línea discontinua se lee mal.
       { x: box.x - 2, y: box.y, w: 4, h: box.h }, { x: box.x + box.w - 2, y: box.y, w: 4, h: box.h }, { x: box.x, y: box.y + box.h - 2, w: box.w, h: 4 },
@@ -482,7 +559,7 @@ export class AppCanvasComponent implements OnInit {
         return [];
       }
       const key = linkKey(link);
-      const labelWidth = link.protocol.length * 7.4 + 16;
+      const labelWidth = link.protocol.length * 7 + 12;
       const others = [...lines].filter(([other]) => other !== key).flatMap(([, rects]) => rects);
       const label = labelPoint(points, [...taken, ...others], labelWidth);
       // Lo que ocupa la pastilla pintada (de -10 a +10), con el mismo margen que las piezas.

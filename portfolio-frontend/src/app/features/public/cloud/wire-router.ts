@@ -92,7 +92,7 @@ const segmentHits = (a: Pt, b: Pt, r: Rect) => {
   return x2 > r.x && x1 < r.x + r.w && y2 > r.y && y1 < r.y + r.h;
 };
 
-type Segment = [Pt, Pt];
+export type Segment = [Pt, Pt];
 
 const segmentsOf = (points: Pt[]): Segment[] => points.slice(1).map((point, i) => [points[i], point]);
 const isVertical = ([a, b]: Segment) => a[0] === b[0];
@@ -129,7 +129,31 @@ function clashes(points: Pt[], placed: Segment[]): number {
   return total;
 }
 
-function cost(points: Pt[], obstacles: Rect[], placed: Segment[] = [], texts: Rect[] = []): number {
+/**
+ * Correr pegado al borde de una zona: el cable se confunde con el recuadro. Cruzarlo para entrar o
+ * salir sí está bien; solo cuenta el tramo que va paralelo y a menos de `LANE` del borde.
+ */
+const ALONG_BORDER = 1600;
+
+function alongBorders(points: Pt[], borders: Segment[]): number {
+  let total = 0;
+  for (const segment of segmentsOf(points)) {
+    for (const border of borders) {
+      const shared = sharedLength(segment, border);
+      if (shared > 0) total += ALONG_BORDER + shared * 8;
+    }
+  }
+  return total;
+}
+
+/** Los cuatro bordes de cada zona, como tramos: lo que un cable no debe recorrer pegado. */
+export function zoneBorders(zones: Rect[]): Segment[] {
+  return zones.flatMap(({ x, y, w, h }): Segment[] => [
+    [[x, y], [x + w, y]], [[x, y + h], [x + w, y + h]], [[x, y], [x, y + h]], [[x + w, y], [x + w, y + h]],
+  ]);
+}
+
+function cost(points: Pt[], obstacles: Rect[], placed: Segment[] = [], texts: Rect[] = [], borders: Segment[] = []): number {
   let hits = 0;
   let overText = 0;
   let length = 0;
@@ -138,7 +162,7 @@ function cost(points: Pt[], obstacles: Rect[], placed: Segment[] = [], texts: Re
     hits += obstacles.filter((rect) => segmentHits(points[i - 1], points[i], rect)).length;
     overText += texts.filter((rect) => segmentHits(points[i - 1], points[i], rect)).length;
   }
-  return hits * 10_000 + overText * TEXT_HIT + clashes(points, placed) + length + (points.length - 2) * 24;
+  return hits * 10_000 + overText * TEXT_HIT + clashes(points, placed) + alongBorders(points, borders) + length + (points.length - 2) * 24;
 }
 
 /** Quita puntos repetidos y los que están en línea con sus vecinos. */
@@ -229,7 +253,9 @@ function candidateRoutes(start: Pt, end: Pt, sides: [Side, Side], obstacles: Rec
  * demás fijos, hasta que nada mejora. Un grafo muy conectado puede no admitir cero cruces: se minimizan.
  * `quick` es para mientras se arrastra: un solo orden y una sola pasada, para que el gesto siga fluido.
  */
-export function routeAll(links: Linked[], nodes: Map<string, Placed>, gap: WireGap = DEFAULT_GAP, quick = false, texts: Rect[] = []): Map<string, Pt[]> {
+export function routeAll(
+  links: Linked[], nodes: Map<string, Placed>, gap: WireGap = DEFAULT_GAP, quick = false, texts: Rect[] = [], borders: Segment[] = [],
+): Map<string, Pt[]> {
   const ports = assignPorts(links, nodes);
   const wires = [...ports].flatMap(([key, port]) => {
     const [fromId, toId] = key.split('>');
@@ -251,8 +277,8 @@ export function routeAll(links: Linked[], nodes: Map<string, Placed>, gap: WireG
     return [{ key, obstacles, routes, others, reach }];
   });
   const pick = (wire: (typeof wires)[number], placed: Segment[]) => {
-    const best = cheapest(wire.routes, wire.obstacles, placed, texts);
-    return hitsAny(best, wire.obstacles) ? cheapest([best, ...wire.others()], wire.obstacles, placed, texts) : best;
+    const best = cheapest(wire.routes, wire.obstacles, placed, texts, borders);
+    return hitsAny(best, wire.obstacles) ? cheapest([best, ...wire.others()], wire.obstacles, placed, texts, borders) : best;
   };
   const place = (order: typeof wires) => {
     const chosen = new Map<string, Pt[]>();
@@ -266,7 +292,7 @@ export function routeAll(links: Linked[], nodes: Map<string, Placed>, gap: WireG
       for (const wire of wires) {
         const placed = [...chosen].filter(([key]) => key !== wire.key).flatMap(([, points]) => segmentsOf(points));
         const better = pick(wire, placed);
-        if (cost(better, wire.obstacles, placed, texts) < cost(chosen.get(wire.key)!, wire.obstacles, placed, texts)) {
+        if (cost(better, wire.obstacles, placed, texts, borders) < cost(chosen.get(wire.key)!, wire.obstacles, placed, texts, borders)) {
           chosen.set(wire.key, better);
           improved = true;
         }
@@ -291,11 +317,11 @@ const sidePoint = (node: Placed, side: Side): Pt => [node.x + normal[side][0] * 
 /** ¿Atraviesa la ruta alguno de estos rectángulos? */
 const hitsAny = (points: Pt[], rects: Rect[]) => points.some((point, i) => i > 0 && rects.some((rect) => segmentHits(points[i - 1], point, rect)));
 
-function cheapest(routes: Pt[][], obstacles: Rect[], placed: Segment[], texts: Rect[] = []): Pt[] {
+function cheapest(routes: Pt[][], obstacles: Rect[], placed: Segment[], texts: Rect[] = [], borders: Segment[] = []): Pt[] {
   let best = routes[0];
   let bestCost = Infinity;
   for (const route of routes) {
-    const value = cost(route, obstacles, placed, texts);
+    const value = cost(route, obstacles, placed, texts, borders);
     if (value < bestCost) {
       best = route;
       bestCost = value;

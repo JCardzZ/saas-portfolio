@@ -1199,3 +1199,22 @@ body:has(.qc-drawer) [data-testid="demo-notice-fallback"] { display: none; }
 .ui-switch-mini::after { content: ''; position: absolute; top: 2px; left: 2px; width: 0.75rem; height: 0.75rem; border-radius: 999px; background: var(--bg-surface-1); transition: transform var(--duration-base) var(--ease-standard); }
 .ui-switch-mini-on { background: var(--accent-text); }
 .ui-switch-mini-on::after { transform: translateX(0.75rem); }
+
+/* Lienzos del Estudio (Infraestructura y Aplicación): profundidad y legibilidad compartidas. */
+/* Brillo suave en la mitad de arriba de cada pieza, del color del texto principal casi transparente. */
+.studio-sheen-top { stop-color: rgb(var(--c-ink-1)); stop-opacity: 0.05; }
+.studio-sheen-bottom { stop-color: rgb(var(--c-ink-1)); stop-opacity: 0; }
+/* Sombra corta bajo cada pieza, sin filtros; por encima de cualquier estado de borde o relleno. */
+.node rect.node-shadow, .appc-node-shadow { fill: rgb(0 0 0 / 0.22) !important; stroke: none !important; pointer-events: none; }
+.node rect.node-sheen, .appc-node-sheen { stroke: none !important; pointer-events: none; }
+/* Halo del color del fondo bajo cada cable: lo separa de los bordes y de los cables que cruza. */
+.wire-halo { fill: none; stroke: var(--bg-canvas); stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
+/* Lienzo de Aplicación: dónde corre cada pieza y la etiqueta del protocolo, ligera y con halo. */
+.appc-node-runs-chip rect { fill: var(--bg-surface-1); stroke: var(--border-subtle); }
+.appc-wire-label-hit { fill: transparent; }
+.appc-wire-label text { fill: var(--text-3); font-size: 12px; font-weight: 500; paint-order: stroke; stroke: var(--bg-surface-1); stroke-width: 4px; stroke-linejoin: round; }
+.appc-wire-label:hover text { fill: var(--text-1); }
+/* Segmentos del lienzo de Aplicación: un tinte muy suave del color de la capa y su título arriba. */
+.appc-lane rect { fill: color-mix(in srgb, var(--layer) 5%, transparent); stroke: color-mix(in srgb, var(--layer) 22%, transparent); stroke-width: 1; }
+.appc-lane circle { fill: var(--layer); }
+.appc-lane-label { fill: var(--text-2); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }

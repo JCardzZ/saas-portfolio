@@ -451,8 +451,20 @@
             </marker>
           }
         </defs>
+        <!-- Brillo suave en la mitad de arriba de cada pieza: le da profundidad sin filtros. -->
+        <defs>
+          <linearGradient id="node-sheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" class="studio-sheen-top" />
+            <stop offset="1" class="studio-sheen-bottom" />
+          </linearGradient>
+        </defs>
       }
       @for (wire of wires(); track wire.from + '>' + wire.to) {
+        @if (smartRules()) {
+          <!-- Halo del color del fondo bajo el cable: junto a un borde de zona o al cruzar otro cable,
+               los separa como un pequeño puente y cada línea se lee por sí sola. -->
+          <path class="wire-halo" [attr.d]="wire.path" aria-hidden="true" />
+        }
         <path class="wire" [class.wire-smart]="smartRules()" [class.wire-support]="wire.support" [class.wire-main]="smartRules() && !wire.support" [class.wire-dim]="smartRules() && emphasis() && !!activeId() && !isWireActive(wire)"
           [attr.marker-end]="smartRules() ? 'url(#wire-arrow-' + (wire.chaos === 'down' ? 'down' : wire.chaos === 'warn' ? 'warn' : isWireActive(wire) || wire.glow ? 'active' : wire.support ? 'support' : 'base') + ')' : null"
           [class.wire-active]="isWireActive(wire)" [class.wire-glow]="wire.glow" [class.wire-warn]="wire.chaos === 'warn'" [class.wire-down]="wire.chaos === 'down'" [style.--glow]="wire.glow" [style.--flow]="isWireActive(wire) ? activeColor() : null" [attr.data-kind]="wire.kind ?? null" [attr.d]="wire.path" />
@@ -529,7 +541,14 @@
           (pointercancel)="onNodePointerUp()"
           (keydown)="onNodeKeydown($event, node)"
         >
+          @if (smartRules()) {
+            <!-- Profundidad: una sombra corta debajo y un brillo suave arriba, sin filtros (no cuestan al pintar). -->
+            <rect class="node-shadow" [attr.x]="node.x - width / 2" [attr.y]="node.y - height / 2 + 2" [attr.width]="width" [attr.height]="height" rx="8" aria-hidden="true" />
+          }
           <rect [attr.x]="node.x - width / 2" [attr.y]="node.y - height / 2" [attr.width]="width" [attr.height]="height" rx="8" />
+          @if (smartRules()) {
+            <rect class="node-sheen" [attr.x]="node.x - width / 2" [attr.y]="node.y - height / 2" [attr.width]="width" [attr.height]="height / 2" rx="8" fill="url(#node-sheen)" aria-hidden="true" />
+          }
           @if (iconOf(node); as icon) {
             @if (icon.image) {
               <image class="node-icon" [attr.href]="icon.image" [attr.x]="node.x - 10" [attr.y]="node.y - 31" width="20" height="20" aria-hidden="true" />
