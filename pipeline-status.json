@@ -2,16 +2,16 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-11-06T01:07:45.680Z",
+  "updatedAt": "2026-11-06T02:17:48.644Z",
   "workflows": {
     "ci": {
-      "runId": 42141115790,
-      "runNumber": 304,
-      "sha": "ec4e1352144a2100b0179867616d4510da035c2c",
+      "runId": 42149106760,
+      "runNumber": 306,
+      "sha": "cee88a50621529a4f75820aa277ad16e52b7c1f6",
       "event": "push",
-      "startedAt": "2026-11-06T01:02:46Z",
-      "finishedAt": "2026-11-06T01:06:22.671Z",
-      "durationSeconds": 217,
+      "startedAt": "2026-11-06T02:15:04Z",
+      "finishedAt": "2026-11-06T02:17:48.644Z",
+      "durationSeconds": 165,
       "conclusion": "success",
       "jobs": [
         {
@@ -23,13 +23,13 @@
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 9,
+          "durationSeconds": 10,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 152,
+          "durationSeconds": 123,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 26,
+          "durationSeconds": 30,
           "runs": 1
         },
         {
@@ -71,20 +71,20 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 67,
+          "durationSeconds": 65,
           "runs": 3,
           "metrics": {
-            "tests": 896
+            "tests": 897
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 29,
+          "durationSeconds": 34,
           "runs": 1,
           "metrics": {
-            "bundleKb": 342.5,
-            "bundleGzipKb": 79.5
+            "bundleKb": 343.5,
+            "bundleGzipKb": 79.6
           }
         },
         {
@@ -494,6 +494,113 @@
     ]
   },
   "merges": [
+    {
+      "number": 124,
+      "title": "Feat/studio visual polish",
+      "branch": "feat/studio-visual-polish",
+      "author": "JCardzZ",
+      "mergedAt": "2026-11-06T02:15:02Z",
+      "sha": "cee88a50621529a4f75820aa277ad16e52b7c1f6",
+      "additions": 89,
+      "deletions": 39,
+      "changedFiles": 4,
+      "ci": {
+        "runId": 42149106760,
+        "runNumber": 306,
+        "conclusion": "success",
+        "durationSeconds": 165,
+        "jobs": [
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "skipped"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "success"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
     {
       "number": 121,
       "title": "feat(frontend): one visual language and more depth for both studio canvases",
@@ -1403,116 +1510,55 @@
           }
         ]
       }
-    },
-    {
-      "number": 112,
-      "title": "feat: architecture decision records published at /decisiones behind site.adr",
-      "branch": "feat/architecture-decisions",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-29T06:30:40Z",
-      "sha": "27f96c373595ebfb21dac9d693fbdc3763b7cf92",
-      "additions": 2079,
-      "deletions": 4,
-      "changedFiles": 37,
-      "ci": {
-        "runId": 40829649063,
-        "runNumber": 267,
-        "conclusion": "success",
-        "durationSeconds": 272,
-        "jobs": [
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "success"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "success"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})",
-            "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "cee88a50621529a4f75820aa277ad16e52b7c1f6",
+      "parents": [
+        "ec4e1352144a2100b0179867616d4510da035c2c",
+        "3ed207ff937a4ed495c9a6d137c19b2574696fbd"
+      ],
+      "subject": "Merge pull request #124 from JCardzZ/feat/studio-visual-polish",
+      "author": "JCardzZ",
+      "date": "2026-11-06T02:15:01Z"
+    },
+    {
+      "sha": "3ed207ff937a4ed495c9a6d137c19b2574696fbd",
+      "parents": [
+        "739b248526818c237f953510fbb4092c3a9afe9b"
+      ],
+      "subject": "feat(frontend): tighter framing and a quieter grid on the application canvas",
+      "author": "JCardzZ",
+      "date": "2026-11-06T01:56:02Z"
+    },
+    {
+      "sha": "739b248526818c237f953510fbb4092c3a9afe9b",
+      "parents": [
+        "14db8068cf9f80b56c3c39bfb74a6ee8c36989e5"
+      ],
+      "subject": "feat(frontend): minimal look for the application canvas",
+      "author": "JCardzZ",
+      "date": "2026-11-06T01:24:49Z"
+    },
+    {
+      "sha": "14db8068cf9f80b56c3c39bfb74a6ee8c36989e5",
+      "parents": [
+        "d664e7cda37601c86146fe71f91415ed27491d99"
+      ],
+      "subject": "feat(frontend): lighter application cards and stronger lanes",
+      "author": "JCardzZ",
+      "date": "2026-11-06T01:17:31Z"
+    },
+    {
+      "sha": "d664e7cda37601c86146fe71f91415ed27491d99",
+      "parents": [
+        "ab56bddc4c2354282218679f84e97e5ba6ac68f5"
+      ],
+      "subject": "feat(frontend): pieces lift on hover and the application canvas gets a legend",
+      "author": "JCardzZ",
+      "date": "2026-11-06T01:08:10Z"
+    },
     {
       "sha": "ec4e1352144a2100b0179867616d4510da035c2c",
       "parents": [
@@ -2019,52 +2065,6 @@
       "subject": "feat(frontend): elastic studio boxes that make room for each other behind studio.smart-rules",
       "author": "JCardzZ",
       "date": "2026-10-31T03:17:25Z"
-    },
-    {
-      "sha": "2a4acc7270421c428955d1633c9f94dd2e041cfe",
-      "parents": [
-        "ea008f3402d33e56c9b42297bc8237afd98acc72"
-      ],
-      "subject": "fix(frontend): show a visible skeleton while the lazy sections load",
-      "author": "JCardzZ",
-      "date": "2026-10-29T06:50:09Z"
-    },
-    {
-      "sha": "ea008f3402d33e56c9b42297bc8237afd98acc72",
-      "parents": [
-        "27f96c373595ebfb21dac9d693fbdc3763b7cf92"
-      ],
-      "subject": "feat(frontend): make the studio canvas physical and explain where pieces cannot go behind studio.smart-rules",
-      "author": "JCardzZ",
-      "date": "2026-10-29T06:50:09Z"
-    },
-    {
-      "sha": "27f96c373595ebfb21dac9d693fbdc3763b7cf92",
-      "parents": [
-        "7bb3dacb30425f3fc92037bc11b567a5ddfd4ae5",
-        "43583b3ad26d46458ef3c5308af11719bc33128e"
-      ],
-      "subject": "Merge pull request #112 from JCardzZ/feat/architecture-decisions",
-      "author": "JCardzZ",
-      "date": "2026-10-29T06:30:40Z"
-    },
-    {
-      "sha": "43583b3ad26d46458ef3c5308af11719bc33128e",
-      "parents": [
-        "c472b684f9e588ea904680a907148f2d804ab4bc"
-      ],
-      "subject": "feat(frontend): publish the architecture decisions at /decisiones behind site.adr",
-      "author": "JCardzZ",
-      "date": "2026-10-29T06:09:30Z"
-    },
-    {
-      "sha": "c472b684f9e588ea904680a907148f2d804ab4bc",
-      "parents": [
-        "7bb3dacb30425f3fc92037bc11b567a5ddfd4ae5"
-      ],
-      "subject": "docs(adr): record the platform's architecture decisions",
-      "author": "JCardzZ",
-      "date": "2026-10-29T06:09:29Z"
     }
   ]
 }
