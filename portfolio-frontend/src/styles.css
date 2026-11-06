@@ -1224,3 +1224,7 @@ body:has(.qc-drawer) [data-testid="demo-notice-fallback"] { display: none; }
 .appc-wire-label-hit { fill: transparent; }
 .appc-wire-label text { fill: var(--text-3); font-size: 12px; font-weight: 500; paint-order: stroke; stroke: var(--bg-surface-1); stroke-width: 4px; stroke-linejoin: round; }
 .appc-wire-label:hover text { fill: var(--text-1); }
+/* Segmentos del lienzo de Aplicación: un tinte muy suave del color de la capa y su título arriba. */
+.appc-lane rect { fill: color-mix(in srgb, var(--layer) 5%, transparent); stroke: color-mix(in srgb, var(--layer) 22%, transparent); stroke-width: 1; }
+.appc-lane circle { fill: var(--layer); }
+.appc-lane-label { fill: var(--text-2); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }

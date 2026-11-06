@@ -4,7 +4,7 @@ import { FULL_VIEW, View, panView, zoomView } from '../studio-physics';
 import { contentBounds } from '../zone-layout';
 import { SystemDesign } from '../system/system-design';
 import { labelPoint, nodeRect, roundedPath, routeAll } from '../wire-router';
-import { APP_BOXES, APP_LAYERS, APP_PIECES, AppBoxKind, AppPiece, layerOf, pieceOf } from './app-catalog.data';
+import { APP_BOXES, APP_LAYERS, APP_PIECES, AppBoxKind, AppLayer, AppPiece, layerOf, pieceOf } from './app-catalog.data';
 import {
   AppBox, AppGraph, AppNode, addBox, addNode, clampPoint, connect, cycleProtocol, graphFromDesign, isAsync, linkKey, moveBox, moveNode,
   removeBox, removeLink, removeNode, resizeBox, sanitizeGraph, updateNode,
@@ -30,6 +30,21 @@ function designSignature(design: SystemDesign): string {
 }
 const WIRE_GAP = { from: 4, to: 10 };
 /** Preferencia del orden automático del lienzo de aplicación, guardada en este navegador. */
+/** Segmentos de la arquitectura y las capas que reúne cada uno, en el orden en que se leen. */
+interface Segment { key: string; name: string; layers: AppLayer[] }
+const SEGMENTS: Segment[] = [
+  { key: 'frontend', name: 'Frontend', layers: ['client'] },
+  { key: 'edge', name: 'Entrada', layers: ['edge'] },
+  { key: 'backend', name: 'Backend', layers: ['service'] },
+  { key: 'data', name: 'Datos', layers: ['data', 'messaging'] },
+  { key: 'platform', name: 'Plataforma', layers: ['identity', 'observability', 'external'] },
+];
+interface Lane { key: string; name: string; color: string; x: number; y: number; w: number; h: number }
+/** Margen de una banda alrededor de sus piezas, hueco entre bandas y sitio para su título. */
+const LANE_PAD = 12;
+const LANE_GAP = 20;
+const LANE_HEADER = 50;
+
 const APP_AUTO_TIDY_KEY = 'studio.app-auto-tidy';
 
 /** Piezas y conexiones como texto ordenado: cambia solo si se añade o quita alguna. */
@@ -156,6 +171,16 @@ interface NodeView {
               </linearGradient>
               <marker id="appc-arrow-on" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" class="appc-arrow-on" /></marker>
             </defs>
+
+            <!-- Segmentos de la arquitectura: una banda por capa (frontend, entrada, backend, datos,
+                 plataforma), del ancho de sus piezas y con su título arriba. -->
+            @for (lane of lanes(); track lane.key) {
+              <g class="appc-lane" [style.--layer]="lane.color" [attr.data-lane]="lane.key" aria-hidden="true">
+                <rect [attr.x]="lane.x" [attr.y]="lane.y" [attr.width]="lane.w" [attr.height]="lane.h" rx="16" />
+                <circle [attr.cx]="lane.x + 16" [attr.cy]="lane.y + 18" r="3.5" />
+                <text [attr.x]="lane.x + 26" [attr.y]="lane.y + 22" class="appc-lane-label">{{ lane.name }}</text>
+              </g>
+            }
 
             @for (box of graph().boxes; track box.id) {
               <g class="appc-box" [attr.data-kind]="box.kind" [class.appc-selected]="selected() === box.id" [attr.data-box]="box.id">
@@ -456,6 +481,44 @@ export class AppCanvasComponent implements OnInit {
     return [{ node, piece, color: layer.color, layer: layer.name, name: node.name?.trim() || piece.name, tech, logo: logoFor(tech, this.provider()) }];
   }));
 
+  /**
+   * Segmentos de la arquitectura, de izquierda a derecha: una banda por grupo de capas con piezas, del
+   * ancho de esas piezas. Si dos grupos se mezclan (una pieza movida a mano), la frontera queda en medio.
+   */
+  readonly lanes = computed<Lane[]>(() => {
+    const views = this.views();
+    if (views.length < 2) {
+      return [];
+    }
+    const groups = new Map<string, { segment: Segment; min: number; max: number }>();
+    for (const view of views) {
+      const segment = SEGMENTS.find((candidate) => candidate.layers.includes(view.piece.layer))!;
+      const group = groups.get(segment.key) ?? { segment, min: Infinity, max: -Infinity };
+      group.min = Math.min(group.min, view.node.x - NODE_WIDTH / 2);
+      group.max = Math.max(group.max, view.node.x + NODE_WIDTH / 2);
+      groups.set(segment.key, group);
+    }
+    const ordered = [...groups.values()].sort((a, b) => a.min + a.max - (b.min + b.max));
+    if (ordered.length < 2) {
+      return [];
+    }
+    for (let i = 1; i < ordered.length; i++) {
+      const [left, right] = [ordered[i - 1], ordered[i]];
+      if (left.max + LANE_GAP > right.min) {
+        const middle = (left.max + right.min) / 2;
+        left.max = middle - LANE_GAP / 2;
+        right.min = middle + LANE_GAP / 2;
+      }
+    }
+    const { nodes, boxes } = this.graph();
+    const top = Math.min(...nodes.map((node) => node.y - NODE_HEIGHT / 2), ...boxes.map((box) => box.y)) - LANE_HEADER;
+    const bottom = Math.max(...nodes.map((node) => node.y + NODE_HEIGHT / 2 + 9), ...boxes.map((box) => box.y + box.h)) + 22;
+    return ordered.map(({ segment, min, max }) => ({
+      key: segment.key, name: segment.name, color: layerOf(segment.layers[0]).color,
+      x: Math.round(min - LANE_PAD), y: Math.round(top), w: Math.round(max - min + LANE_PAD * 2), h: Math.round(bottom - top),
+    }));
+  });
+
   /** Mientras se traza una conexión: qué piezas la admiten (verde) y cuáles no (atenuadas). */
   readonly targets = computed(() => {
     const from = this.connecting()?.from;
@@ -472,7 +535,10 @@ export class AppCanvasComponent implements OnInit {
     // Todos a la vez, para que no se crucen; con aire en los dos extremos: el cable no nace pegado a la
     // pieza y la punta no toca el borde. Los títulos de las cajas son obstáculos: un cable no pasa por
     // encima de «Red privada».
-    const titles = this.graph().boxes.map((box) => ({ x: box.x + 8, y: box.y + 4, w: (box.label || this.boxName(box.kind)).length * 7.6 + 16, h: 22 }));
+    const titles = [
+      ...this.graph().boxes.map((box) => ({ x: box.x + 8, y: box.y + 4, w: (box.label || this.boxName(box.kind)).length * 7.6 + 16, h: 22 })),
+      ...this.lanes().map((lane) => ({ x: lane.x + 8, y: lane.y + 6, w: lane.name.length * 8.4 + 30, h: 24 })),
+    ];
     const routes = routeAll(links, byId, WIRE_GAP, this.frozen() !== null, titles);
     const selected = this.selected();
     // La pastilla del protocolo se pinta 4 px más alta que la caja de `labelBox`: ese margen alrededor de cada pieza.
