@@ -2,16 +2,16 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-11-06T01:04:33.033Z",
+  "updatedAt": "2026-11-06T01:06:22.671Z",
   "workflows": {
     "ci": {
-      "runId": 42140829970,
-      "runNumber": 302,
-      "sha": "43e60e52da5f461b0d7ffbdda88bd058f72e132e",
+      "runId": 42141115790,
+      "runNumber": 304,
+      "sha": "ec4e1352144a2100b0179867616d4510da035c2c",
       "event": "push",
-      "startedAt": "2026-11-06T01:00:19Z",
-      "finishedAt": "2026-11-06T01:03:24.356Z",
-      "durationSeconds": 185,
+      "startedAt": "2026-11-06T01:02:46Z",
+      "finishedAt": "2026-11-06T01:06:22.671Z",
+      "durationSeconds": 217,
       "conclusion": "success",
       "jobs": [
         {
@@ -23,13 +23,13 @@
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 8,
+          "durationSeconds": 9,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 167,
+          "durationSeconds": 152,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 30,
+          "durationSeconds": 26,
           "runs": 1
         },
         {
@@ -71,20 +71,20 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 83,
+          "durationSeconds": 67,
           "runs": 3,
           "metrics": {
-            "tests": 895
+            "tests": 896
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 28,
+          "durationSeconds": 29,
           "runs": 1,
           "metrics": {
-            "bundleKb": 341.5,
-            "bundleGzipKb": 79.2
+            "bundleKb": 342.5,
+            "bundleGzipKb": 79.5
           }
         },
         {
