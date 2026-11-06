@@ -9,9 +9,10 @@ import { TechIconComponent } from '../../../shared/ui/tech-icon.component';
 import { TechIcon, techIconFor } from '../../../shared/ui/tech-icons';
 
 /** Línea de tiempo profesional. Los hitos salen de `GET /public/career-timeline`. */
+import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 @Component({
     selector: 'app-career-timeline',
-    imports: [TranslatePipe, TechIconComponent],
+    imports: [TranslatePipe, TechIconComponent, SkeletonComponent],
     template: `
     @if (error(); as message) {
       <div class="border border-line-subtle bg-surface-1 max-w-md rounded-card p-6 text-center" role="alert">
@@ -21,10 +22,7 @@ import { TechIcon, techIconFor } from '../../../shared/ui/tech-icons';
         </button>
       </div>
     } @else if (loading()) {
-      <div class="space-y-4" aria-hidden="true">
-        <div class="border border-line-subtle bg-surface-1 h-32 animate-pulse rounded-card"></div>
-        <div class="border border-line-subtle bg-surface-1 h-32 animate-pulse rounded-card"></div>
-      </div>
+      <app-skeleton shape="timeline" [label]="'Cargando…' | t" />
     } @else {
       <!-- Una fila por puesto: periodo, rol y empresa, y el stack principal. Se despliega al pulsar;
            el puesto actual viene abierto. El detalle está siempre en la página (oculto, no ausente). -->

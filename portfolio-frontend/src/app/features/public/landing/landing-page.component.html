@@ -127,7 +127,8 @@
         <!-- Una tarjeta con cuatro pestañas (como el Estudio): la sección no ocupa cuatro pantallas. -->
         <app-delivery-tabs class="animate-slide-up" />
       } @placeholder {
-        <div class="bento-card section-skeleton min-h-[24rem]" role="status" aria-live="polite"><span class="skeleton-bar w-1/3"></span><span class="skeleton-bar w-2/3"></span><span class="skeleton-block"></span><span class="skeleton-label"><span class="skeleton-spinner" aria-hidden="true"></span>{{ i18n.t(copy.deliveryLoading) }}</span></div>
+        <!-- Silueta de lo que llega (pestañas y un diagrama): la sección no salta al cargar. -->
+        <app-skeleton class="bento-card min-h-[24rem]" shape="tabs" [label]="i18n.t(copy.deliveryLoading)" />
       }
     </section>
 
@@ -140,7 +141,7 @@
         <!-- Una tarjeta con pestañas (como Entrega) y la telemetría al lado: antes, seis tarjetas apiladas. -->
         <app-platform-tabs class="animate-slide-up" />
       } @placeholder {
-        <div class="bento-card section-skeleton min-h-[40rem]" role="status" aria-live="polite"><span class="skeleton-bar w-1/3"></span><span class="skeleton-bar w-2/3"></span><span class="skeleton-block"></span><span class="skeleton-label"><span class="skeleton-spinner" aria-hidden="true"></span>{{ i18n.t(copy.platformLoading) }}</span></div>
+        <app-skeleton class="bento-card min-h-[40rem]" shape="tabs" [label]="i18n.t(copy.platformLoading)" />
       }
     </section>
 
@@ -153,7 +154,7 @@
           <app-data-blueprints class="animate-slide-up" />
         </div>
       } @placeholder {
-        <div class="bento-card section-skeleton min-h-[36rem]" role="status" aria-live="polite"><span class="skeleton-bar w-1/3"></span><span class="skeleton-bar w-2/3"></span><span class="skeleton-block"></span><span class="skeleton-label"><span class="skeleton-spinner" aria-hidden="true"></span>{{ i18n.t(copy.cloudLoading) }}</span></div>
+        <app-skeleton class="bento-card min-h-[36rem]" shape="studio" [label]="i18n.t(copy.cloudLoading)" />
       }
     </section>
 
@@ -165,7 +166,7 @@
         <div class="bento-grid">
           @if (catalog.loading()) {
             @for (skeleton of skeletons; track skeleton) {
-              <div class="h-44 animate-pulse rounded-card border border-line-subtle bg-surface-1 md:col-span-2" aria-hidden="true"></div>
+              <app-skeleton class="bento-card min-h-44 md:col-span-2" shape="card" [label]="$first ? i18n.t(copy.projectsTitle) : ''" [attr.aria-hidden]="$first ? null : 'true'" />
             }
           } @else {
             @for (project of catalog.projects(); track project.id; let index = $index) {
@@ -252,7 +253,7 @@
         <div class="bento-grid">
           @if (catalog.loading()) {
             @for (skeleton of skeletons; track skeleton) {
-              <div class="h-36 animate-pulse rounded-card border border-line-subtle bg-surface-1 md:col-span-2" aria-hidden="true"></div>
+              <app-skeleton class="bento-card min-h-36 md:col-span-2" shape="list-card" [label]="$first ? i18n.t(copy.technologiesTitle) : ''" [attr.aria-hidden]="$first ? null : 'true'" />
             }
           } @else {
             @for (group of catalog.technologyGroups(); track group.category; let index = $index) {
@@ -310,7 +311,7 @@
         @defer (on viewport; prefetch on idle) {
           <app-mcp-section class="animate-slide-up" />
         } @placeholder {
-          <div class="bento-card flex min-h-[24rem] items-center justify-center text-body-sm text-ink-3">{{ i18n.t(copy.mcpLoading) }}</div>
+          <app-skeleton class="bento-card min-h-[24rem]" shape="code" [label]="i18n.t(copy.mcpLoading)" />
         }
       </section>
     }
