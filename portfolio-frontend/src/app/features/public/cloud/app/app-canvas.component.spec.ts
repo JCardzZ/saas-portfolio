@@ -88,6 +88,20 @@ describe('AppCanvasComponent', () => {
     spans.slice(1).forEach(([left], index) => expect(left).toBeGreaterThanOrEqual(spans[index][1]));
   });
 
+  it('lifts a piece and highlights its wires under the cursor, and explains the lines in a legend', () => {
+    const backend = $('[data-node="backend"]')!;
+    backend.dispatchEvent(new PointerEvent('pointerenter'));
+    fixture.detectChanges();
+    const lit = all('.appc-wire.appc-wire-on').map((wire) => wire.dataset['link']);
+    expect(lit).toContain('entry>backend');
+    expect(lit).toContain('backend>database');
+    expect(lit).not.toContain('client>entry');
+    backend.dispatchEvent(new PointerEvent('pointerleave'));
+    fixture.detectChanges();
+    expect(all('.appc-wire.appc-wire-on').length).toBe(0);
+    expect($('[data-testid="appc-legend"]')!.textContent).toContain('Asíncrona');
+  });
+
   it('filters the catalog as you type', () => {
     const search = $('#appc-search') as HTMLInputElement;
     search.value = 'kafka';

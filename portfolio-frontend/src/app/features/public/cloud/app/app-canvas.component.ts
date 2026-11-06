@@ -59,7 +59,7 @@ function readAutoTidy(): boolean {
     return true;
   }
 }
-const MIN_FRAME_RATIO = 0.6;
+const MIN_FRAME_RATIO = 0.45;
 
 /** Vista de una pieza ya resuelta: su ficha del catálogo, su capa y su color. */
 interface NodeView {
@@ -164,20 +164,15 @@ interface NodeView {
             (dragover)="onDragOver($event)" (drop)="onDrop($event)" (wheel)="onWheel($event)" (keydown)="onKeydown($event)" (pointerdown)="onBackground($event)">
             <defs>
               <marker id="appc-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" class="appc-arrow" /></marker>
-              <!-- Brillo suave en la mitad de arriba de cada pieza: profundidad sin filtros. -->
-              <linearGradient id="appc-sheen" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" class="studio-sheen-top" />
-                <stop offset="1" class="studio-sheen-bottom" />
-              </linearGradient>
               <marker id="appc-arrow-on" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" class="appc-arrow-on" /></marker>
             </defs>
 
             <!-- Segmentos de la arquitectura: una banda por capa (frontend, entrada, backend, datos,
                  plataforma), del ancho de sus piezas y con su título arriba. -->
-            @for (lane of lanes(); track lane.key) {
-              <g class="appc-lane" [style.--layer]="lane.color" [attr.data-lane]="lane.key" aria-hidden="true">
+            @for (lane of lanes(); track lane.key; let odd = $odd) {
+              <g class="appc-lane" [class.appc-lane-alt]="odd" [style.--layer]="lane.color" [attr.data-lane]="lane.key" aria-hidden="true">
                 <rect [attr.x]="lane.x" [attr.y]="lane.y" [attr.width]="lane.w" [attr.height]="lane.h" rx="16" />
-                <circle [attr.cx]="lane.x + 16" [attr.cy]="lane.y + 18" r="3.5" />
+                <circle [attr.cx]="lane.x + 16" [attr.cy]="lane.y + 18" r="3" />
                 <text [attr.x]="lane.x + 26" [attr.y]="lane.y + 22" class="appc-lane-label">{{ lane.name }}</text>
               </g>
             }
@@ -192,9 +187,9 @@ interface NodeView {
             }
 
             @for (wire of wires(); track wire.key) {
-              <g class="appc-wire" [class.appc-wire-on]="wire.active" [class.appc-wire-async]="wire.async" [attr.data-link]="wire.key">
+              <g class="appc-wire" [class.appc-wire-on]="wire.active || touches(wire.key)" [class.appc-wire-async]="wire.async" [attr.data-link]="wire.key">
                 <path class="appc-wire-hit" [attr.d]="wire.path" (pointerdown)="select($event, wire.key)" />
-                <path class="appc-wire-line" [attr.d]="wire.path" [attr.marker-end]="wire.active ? 'url(#appc-arrow-on)' : 'url(#appc-arrow)'" />
+                <path class="appc-wire-line" [attr.d]="wire.path" [attr.marker-end]="wire.active || touches(wire.key) ? 'url(#appc-arrow-on)' : 'url(#appc-arrow)'" />
                 <g class="appc-wire-label" [attr.transform]="'translate(' + wire.label[0] + ' ' + wire.label[1] + ')'" (pointerdown)="select($event, wire.key)" (dblclick)="cycle(wire.key)">
                   <!-- Solo el texto, con un halo del color del fondo; el rectángulo, invisible, es la zona de clic. -->
                   <rect class="appc-wire-label-hit" [attr.x]="-wire.labelWidth / 2" y="-10" [attr.width]="wire.labelWidth" height="20" rx="10" />
@@ -216,14 +211,17 @@ interface NodeView {
                 [class.appc-dim]="highlight() && !highlight()!.has(item.node.id)"
                 [style.--layer]="item.color" [attr.data-node]="item.node.id" [attr.aria-label]="item.name + ', ' + item.tech"
                 [attr.transform]="'translate(' + (item.node.x - w / 2) + ' ' + (item.node.y - h / 2) + ')'"
-                (pointerdown)="startNode($event, item.node)" (focus)="selected.set(item.node.id)">
+                (pointerdown)="startNode($event, item.node)" (focus)="selected.set(item.node.id)"
+                (pointerenter)="hovered.set(item.node.id)" (pointerleave)="hovered.set(null)">
                 <!-- El mismo lenguaje que el lienzo de Infraestructura: logo arriba, nombre y tecnología
                      centrados, y debajo del borde, dónde corre. La capa, en una línea fina de su color. -->
-                <rect class="appc-node-shadow" y="2" [attr.width]="w" [attr.height]="h" rx="10" aria-hidden="true" />
-                <rect class="appc-node-card" [attr.width]="w" [attr.height]="h" rx="10" />
-                <rect class="appc-node-sheen" [attr.width]="w" [attr.height]="h / 2" rx="10" fill="url(#appc-sheen)" aria-hidden="true" />
-                <rect class="appc-node-bar" x="18" y="0" [attr.width]="w - 36" height="2" rx="1" />
-                <g [attr.transform]="'translate(' + (w / 2 - 10) + ' 6)'">
+                <!-- Tarjeta ligera: borde fino y casi sin relleno; el icono, sobre un halo del color de su capa.
+                     El cuerpo va en su propio grupo: es lo que se eleva al pasar el ratón (la posición de la
+                     pieza está en el transform del grupo de fuera y no se toca). -->
+                <g class="appc-node-body">
+                <rect class="appc-node-card" [attr.width]="w" [attr.height]="h" rx="12" />
+                <circle class="appc-node-halo" [attr.cx]="w / 2" cy="21" r="15" aria-hidden="true" />
+                <g [attr.transform]="'translate(' + (w / 2 - 10) + ' 11)'">
                   @if (item.logo?.image; as image) {
                     <image [attr.href]="image" width="20" height="20" data-logo="image" />
                   } @else if (item.logo?.path; as path) {
@@ -232,19 +230,18 @@ interface NodeView {
                     <g transform="translate(1 1) scale(0.75)"><path class="appc-node-icon" [attr.d]="item.piece.icon" /></g>
                   }
                 </g>
-                <text [attr.x]="w / 2" y="41" text-anchor="middle" class="appc-node-name">{{ clip(item.name, 16) }}</text>
-                <text [attr.x]="w / 2" y="56" text-anchor="middle" class="appc-node-tech">{{ clip(item.tech, 18) }}</text>
+                <text [attr.x]="w / 2" y="50" text-anchor="middle" class="appc-node-name">{{ clip(item.name, 16) }}</text>
+                <text [attr.x]="w / 2" y="64" text-anchor="middle" class="appc-node-tech">{{ clip(item.tech, 18) }}</text>
                 @if (item.node.runsOn) {
-                  @let runs = '▸ ' + clip(infraName(item.node.runsOn), 15);
-                  <g class="appc-node-runs-chip" aria-hidden="true">
-                    <title>{{ 'Corre en ' + infraName(item.node.runsOn) }}</title>
-                    <rect [attr.x]="w / 2 - (runs.length * 6.8 + 16) / 2" [attr.y]="h - 9" [attr.width]="runs.length * 6.8 + 16" height="18" rx="9" />
-                    <text [attr.x]="w / 2" [attr.y]="h + 4" text-anchor="middle" class="appc-node-runs">{{ runs }}</text>
-                  </g>
+                  <!-- Dónde corre: una línea fina bajo la tarjeta, sin caja. -->
+                  <text [attr.x]="w / 2" [attr.y]="h + 15" text-anchor="middle" class="appc-node-runs">
+                    <title>{{ 'Corre en ' + infraName(item.node.runsOn) }}</title>▸ {{ clip(infraName(item.node.runsOn), 17) }}
+                  </text>
                 }
                 @if (review().marks.get(item.node.id); as level) {
                   <circle class="appc-mark" [attr.data-level]="level" [attr.cx]="w - 10" cy="10" r="5"><title>{{ markTitle(level) }}</title></circle>
                 }
+                </g>
                 <g class="appc-handle" (pointerdown)="startConnect($event, item.node)" [attr.transform]="'translate(' + w + ' ' + h / 2 + ')'">
                   <circle r="11" class="appc-handle-hit" />
                   <circle r="6" class="appc-handle-dot" />
@@ -258,6 +255,15 @@ interface NodeView {
               <span><strong class="font-semibold text-ink-1">{{ message.title }}</strong> {{ message.reason }} <span class="text-ink-1">{{ message.suggestion }}</span></span>
               <button type="button" class="ui-btn-ghost" (click)="notice.set(null)">Entendido</button>
             </div>
+          }
+          @if (graph().nodes.length) {
+            <!-- Cómo leer el lienzo, en una línea. -->
+            <ul class="appc-legend" data-testid="appc-legend">
+              <li><svg viewBox="0 0 28 6" aria-hidden="true"><path class="appc-legend-line" d="M1 3h26" /></svg>Llamada síncrona</li>
+              <li><svg viewBox="0 0 28 6" aria-hidden="true"><path class="appc-legend-line appc-legend-async" d="M1 3h26" /></svg>Asíncrona (eventos y colas)</li>
+              <li><span class="appc-legend-runs" aria-hidden="true">▸</span>Dónde corre, en Infraestructura</li>
+              <li><span class="appc-legend-mark" aria-hidden="true"></span>Aviso del asistente</li>
+            </ul>
           }
           @if (!graph().nodes.length) {
             <p class="appc-empty">Arrastra aquí una pieza del catálogo, o pulsa «Desde las decisiones».</p>
@@ -347,16 +353,16 @@ interface NodeView {
 
     .appc-stage { position: relative; min-width: 0; }
     .appc-svg { display: block; width: 100%; max-height: calc(100dvh - 12rem); touch-action: none; user-select: none;
-      background-image: radial-gradient(var(--border-subtle) 1px, transparent 1px); background-size: 24px 24px; }
+      background-image: radial-gradient(rgb(var(--c-ink-1) / 0.06) 1px, transparent 1px); background-size: 28px 28px; }
     .appc-svg:focus { outline: none; }
     .appc-empty { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; font-size: 0.875rem; color: var(--text-3); }
 
-    .appc-box rect:first-child { fill: rgb(var(--c-surface-2) / 0.35); stroke: var(--border-strong); stroke-dasharray: 6 5; }
+    .appc-box rect:first-child { fill: transparent; stroke: var(--border-subtle); stroke-dasharray: 4 4; }
     .appc-box[data-kind='public'] rect:first-child { stroke-dasharray: none; }
     .appc-box[data-kind='domain'] rect:first-child { fill: rgb(var(--c-accent-solid) / 0.03); stroke: rgb(var(--c-accent-solid) / 0.35); }
     .appc-box.appc-selected rect:first-child { stroke: var(--accent-text); stroke-dasharray: none; }
     .appc-box-grip { fill: transparent; cursor: move; }
-    .appc-box-label { fill: var(--text-2); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; pointer-events: none; }
+    .appc-box-label { fill: var(--text-3); font-size: 12px; font-weight: 500; pointer-events: none; }
     .appc-box-corner { fill: var(--bg-surface-3); stroke: var(--border-strong); cursor: nwse-resize; }
 
     .appc-wire-line { fill: none; stroke: var(--text-3); stroke-width: 1.25; }
@@ -371,10 +377,10 @@ interface NodeView {
     .appc-preview-no { stroke: var(--status-danger); }
 
     .appc-node { cursor: grab; outline: none; }
-    .appc-node-card { fill: var(--bg-surface-2); stroke: var(--border-subtle); transition: stroke var(--duration-fast); }
+    .appc-node-card { fill: rgb(var(--c-surface-1) / 0.7); stroke: var(--border-subtle); transition: stroke var(--duration-fast); }
     .appc-node:hover .appc-node-card { stroke: var(--border-strong); }
+    .appc-node-halo { fill: rgb(var(--c-ink-1) / 0.06); }
     .appc-node.appc-selected .appc-node-card, .appc-node:focus-visible .appc-node-card { stroke: var(--layer); stroke-width: 1.5; }
-    .appc-node-bar { fill: var(--layer); opacity: 0.9; }
     .appc-node-icon { fill: none; stroke: var(--layer); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
     .appc-node-name { fill: var(--text-1); font-size: 12px; font-weight: 600; }
     .appc-node-tech { fill: var(--text-2); font-size: 12px; }
@@ -394,7 +400,7 @@ interface NodeView {
     .appc-mark[data-level='risk'] { fill: var(--status-danger); }
     .appc-mark[data-level='warn'] { fill: var(--status-warn); }
     .appc-mark[data-level='tip'] { fill: var(--accent-text); }
-    .appc-node-runs { fill: var(--accent-text); font-size: 12px; }
+    .appc-node-runs { fill: var(--text-3); font-size: 12px; }
     .appc-hl .appc-node-card { stroke: var(--layer); stroke-width: 2; }
     .appc-dim { opacity: 0.3; }
     .appc-notice-ok { border-color: rgb(var(--c-status-ok) / 0.35); }
@@ -437,12 +443,14 @@ export class AppCanvasComponent implements OnInit {
       return FULL_VIEW;
     }
     const bounds = contentBounds(nodes, boxes, 640);
-    const pad = 56;
+    const pad = 40;
+    // Arriba, además, el título de las bandas (que queda por encima de las piezas).
+    const top = pad + (this.lanes().length ? LANE_HEADER : 0);
     const x = Math.max(0, bounds.x - pad);
     const w = Math.min(CANVAS_WIDTH, bounds.x + bounds.w + pad) - x;
     // Proporción mínima: un diagrama muy apaisado no deja el lienzo bajito con un hueco debajo;
     // se centra en vertical, al mismo tamaño, con sitio para soltar piezas.
-    const content = { y: Math.max(0, bounds.y - pad), h: Math.min(CANVAS_HEIGHT, bounds.y + bounds.h + pad) - Math.max(0, bounds.y - pad) };
+    const content = { y: Math.max(0, bounds.y - top), h: Math.min(CANVAS_HEIGHT, bounds.y + bounds.h + pad) - Math.max(0, bounds.y - top) };
     const h = Math.min(CANVAS_HEIGHT, Math.max(content.h, w * MIN_FRAME_RATIO));
     const y = Math.round(content.y - (h - content.h) / 2);
     return { x, y, w, h };
@@ -543,7 +551,7 @@ export class AppCanvasComponent implements OnInit {
     const selected = this.selected();
     // La pastilla del protocolo se pinta 4 px más alta que la caja de `labelBox`: ese margen alrededor de cada pieza.
     // La pastilla de «dónde corre» asoma 7 px bajo cada pieza: también se reserva.
-    const taken = [...nodes.map((node) => ({ ...nodeRect(node, 4), h: nodeRect(node, 4).h + 8 })), ...this.graph().boxes.flatMap((box) => [
+    const taken = [...nodes.map((node) => ({ ...nodeRect(node, 4), h: nodeRect(node, 4).h + 18 })), ...this.graph().boxes.flatMap((box) => [
       { x: box.x, y: box.y, w: box.w, h: 30 },
       // Los otros tres bordes de la caja: una pastilla encima de la línea discontinua se lee mal.
       { x: box.x - 2, y: box.y, w: 4, h: box.h }, { x: box.x + box.w - 2, y: box.y, w: 4, h: box.h }, { x: box.x, y: box.y + box.h - 2, w: box.w, h: 4 },
@@ -722,6 +730,15 @@ export class AppCanvasComponent implements OnInit {
       this.autoFrame.set(true);
     }
     this.edited.set(true);
+  }
+
+  /** Pieza bajo el cursor: sus cables se resaltan mientras tanto. */
+  readonly hovered = signal<string | null>(null);
+
+  /** ¿Sale o llega este cable a la pieza bajo el cursor? */
+  touches(key: string): boolean {
+    const id = this.hovered();
+    return !!id && (key.startsWith(`${id}>`) || key.endsWith(`>${id}`));
   }
 
   /** Orden automático: el lienzo se ordena solo al añadir o quitar piezas o conexiones. */
