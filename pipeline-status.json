@@ -2,34 +2,34 @@
   "schema": 1,
   "repository": "JCardzZ/saas-portfolio",
   "public": true,
-  "updatedAt": "2026-11-05T04:17:23.439Z",
+  "updatedAt": "2026-11-06T01:03:24.356Z",
   "workflows": {
     "ci": {
-      "runId": 41966451088,
-      "runNumber": 295,
-      "sha": "67d07668e6f632105197c05485bce1f7d854ed87",
+      "runId": 42140829970,
+      "runNumber": 302,
+      "sha": "43e60e52da5f461b0d7ffbdda88bd058f72e132e",
       "event": "push",
-      "startedAt": "2026-11-05T04:13:23Z",
-      "finishedAt": "2026-11-05T04:16:17.684Z",
-      "durationSeconds": 175,
+      "startedAt": "2026-11-06T01:00:19Z",
+      "finishedAt": "2026-11-06T01:03:24.356Z",
+      "durationSeconds": 185,
       "conclusion": "success",
       "jobs": [
         {
           "id": "changes",
           "status": "success",
-          "durationSeconds": 9,
+          "durationSeconds": 7,
           "runs": 1
         },
         {
           "id": "gitleaks",
           "status": "success",
-          "durationSeconds": 11,
+          "durationSeconds": 8,
           "runs": 1
         },
         {
           "id": "codeql",
           "status": "success",
-          "durationSeconds": 138,
+          "durationSeconds": 167,
           "runs": 2
         },
         {
@@ -47,7 +47,7 @@
         {
           "id": "spec-codegen",
           "status": "success",
-          "durationSeconds": 26,
+          "durationSeconds": 30,
           "runs": 1
         },
         {
@@ -71,20 +71,20 @@
         {
           "id": "frontend-test",
           "status": "success",
-          "durationSeconds": 68,
+          "durationSeconds": 83,
           "runs": 3,
           "metrics": {
-            "tests": 893
+            "tests": 895
           }
         },
         {
           "id": "frontend-build",
           "status": "success",
-          "durationSeconds": 41,
+          "durationSeconds": 28,
           "runs": 1,
           "metrics": {
-            "bundleKb": 342.6,
-            "bundleGzipKb": 79.4
+            "bundleKb": 341.5,
+            "bundleGzipKb": 79.2
           }
         },
         {
@@ -126,7 +126,7 @@
         {
           "id": "gate",
           "status": "success",
-          "durationSeconds": 4,
+          "durationSeconds": 3,
           "runs": 1
         }
       ]
@@ -494,6 +494,149 @@
     ]
   },
   "merges": [
+    {
+      "number": 121,
+      "title": "feat(frontend): one visual language and more depth for both studio canvases",
+      "branch": "feat/studio-visual-polish",
+      "author": "JCardzZ",
+      "mergedAt": "2026-11-06T01:02:44Z",
+      "sha": "ec4e1352144a2100b0179867616d4510da035c2c",
+      "additions": 187,
+      "deletions": 34,
+      "changedFiles": 6,
+      "ci": {
+        "runId": 42141115790,
+        "runNumber": 304,
+        "conclusion": "pending",
+        "durationSeconds": 2,
+        "jobs": []
+      }
+    },
+    {
+      "number": 122,
+      "title": "feat(frontend): group labels with icons on the infrastructure canvas",
+      "branch": "feat/studio-zone-tags",
+      "author": "JCardzZ",
+      "mergedAt": "2026-11-06T01:01:03Z",
+      "sha": "bb2c80d96e8afa28adedbc890b7d4a0c629243b1",
+      "additions": 58,
+      "deletions": 6,
+      "changedFiles": 4,
+      "ci": {
+        "runId": 42140922663,
+        "runNumber": 303,
+        "conclusion": "cancelled",
+        "durationSeconds": 102,
+        "jobs": []
+      }
+    },
+    {
+      "number": 123,
+      "title": "feat(frontend): content-shaped loading skeletons with a shared shimmer",
+      "branch": "feat/skeleton-loading",
+      "author": "JCardzZ",
+      "mergedAt": "2026-11-06T01:00:17Z",
+      "sha": "43e60e52da5f461b0d7ffbdda88bd058f72e132e",
+      "additions": 244,
+      "deletions": 42,
+      "changedFiles": 19,
+      "ci": {
+        "runId": 42140829970,
+        "runNumber": 302,
+        "conclusion": "success",
+        "durationSeconds": 185,
+        "jobs": [
+          {
+            "name": "🔍 Cambios",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (javascript-typescript)",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ CodeQL (java-kotlin)",
+            "status": "success"
+          },
+          {
+            "name": "🛡️ gitleaks",
+            "status": "success"
+          },
+          {
+            "name": "📜 Codegen",
+            "status": "success"
+          },
+          {
+            "name": "📜 Breaking",
+            "status": "skipped"
+          },
+          {
+            "name": "📜 Lint spec",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Frontend (3/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (1/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Frontend (2/3)",
+            "status": "success"
+          },
+          {
+            "name": "🧪 Integración",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 ArchUnit",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Imagen + Trivy",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Backend unit",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Publicar imagen",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Insignia de cobertura",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Build front",
+            "status": "success"
+          },
+          {
+            "name": "📦 Lighthouse",
+            "status": "skipped"
+          },
+          {
+            "name": "📦 Preview URL",
+            "status": "skipped"
+          },
+          {
+            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})",
+            "status": "skipped"
+          },
+          {
+            "name": "✅ CI gate",
+            "status": "success"
+          },
+          {
+            "name": "📦 Estado del pipeline",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
     {
       "number": 119,
       "title": "feat(frontend): list rows cascade in when a theater card expands or collapses",
@@ -1367,330 +1510,84 @@
           }
         ]
       }
-    },
-    {
-      "number": 111,
-      "title": "feat(frontend): live production hologram and broader role title behind site.refresh",
-      "branch": "feat/live-hologram",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-29T05:45:04Z",
-      "sha": "7bb3dacb30425f3fc92037bc11b567a5ddfd4ae5",
-      "additions": 482,
-      "deletions": 6,
-      "changedFiles": 8,
-      "ci": {
-        "runId": 40825183890,
-        "runNumber": 265,
-        "conclusion": "success",
-        "durationSeconds": 181,
-        "jobs": [
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
-    },
-    {
-      "number": 110,
-      "title": "feat(frontend): redesign the landing without template tells behind site.refresh",
-      "branch": "feat/site-refresh",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-29T05:07:52Z",
-      "sha": "083bb7777dddcb17f8cc3e22681ce14b18ab5e5e",
-      "additions": 209,
-      "deletions": 25,
-      "changedFiles": 15,
-      "ci": {
-        "runId": 40821601927,
-        "runNumber": 263,
-        "conclusion": "success",
-        "durationSeconds": 260,
-        "jobs": [
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
-    },
-    {
-      "number": 109,
-      "title": "feat: declare v1.0.0 and highlight the SemVer bump in the release",
-      "branch": "feat/v1-and-version-mark",
-      "author": "JCardzZ",
-      "mergedAt": "2026-10-29T03:51:17Z",
-      "sha": "62c9d5667916ff347bd6ff39738a2fc9003d3eb2",
-      "additions": 112,
-      "deletions": 4,
-      "changedFiles": 6,
-      "ci": {
-        "runId": 40814468105,
-        "runNumber": 261,
-        "conclusion": "success",
-        "durationSeconds": 296,
-        "jobs": [
-          {
-            "name": "🔍 Cambios",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (javascript-typescript)",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ gitleaks",
-            "status": "success"
-          },
-          {
-            "name": "🛡️ CodeQL (java-kotlin)",
-            "status": "success"
-          },
-          {
-            "name": "📜 Codegen",
-            "status": "success"
-          },
-          {
-            "name": "📜 Breaking",
-            "status": "skipped"
-          },
-          {
-            "name": "📜 Lint spec",
-            "status": "skipped"
-          },
-          {
-            "name": "🧪 Integración",
-            "status": "success"
-          },
-          {
-            "name": "📦 Imagen + Trivy",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (1/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Backend unit",
-            "status": "success"
-          },
-          {
-            "name": "🧪 ArchUnit",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (3/3)",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Frontend (2/3)",
-            "status": "success"
-          },
-          {
-            "name": "📦 Build front",
-            "status": "success"
-          },
-          {
-            "name": "🧪 Móvil (${{ matrix.engine }} · ${{ matrix.shard }})",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Preview URL",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Lighthouse",
-            "status": "skipped"
-          },
-          {
-            "name": "📦 Insignia de cobertura",
-            "status": "success"
-          },
-          {
-            "name": "📦 Publicar imagen",
-            "status": "success"
-          },
-          {
-            "name": "✅ CI gate",
-            "status": "success"
-          },
-          {
-            "name": "📦 Estado del pipeline",
-            "status": "in_progress"
-          }
-        ]
-      }
     }
   ],
   "commits": [
+    {
+      "sha": "ec4e1352144a2100b0179867616d4510da035c2c",
+      "parents": [
+        "bb2c80d96e8afa28adedbc890b7d4a0c629243b1",
+        "ab56bddc4c2354282218679f84e97e5ba6ac68f5"
+      ],
+      "subject": "Merge pull request #121 from JCardzZ/feat/studio-visual-polish",
+      "author": "JCardzZ",
+      "date": "2026-11-06T01:02:43Z"
+    },
+    {
+      "sha": "bb2c80d96e8afa28adedbc890b7d4a0c629243b1",
+      "parents": [
+        "43e60e52da5f461b0d7ffbdda88bd058f72e132e",
+        "a95bb3d1722de33db2dbee63b8f718d5e8832251"
+      ],
+      "subject": "Merge pull request #122 from JCardzZ/feat/studio-zone-tags",
+      "author": "JCardzZ",
+      "date": "2026-11-06T01:01:03Z"
+    },
+    {
+      "sha": "43e60e52da5f461b0d7ffbdda88bd058f72e132e",
+      "parents": [
+        "67d07668e6f632105197c05485bce1f7d854ed87",
+        "48992f99be3ec275b8209402d809d770e3711af6"
+      ],
+      "subject": "Merge pull request #123 from JCardzZ/feat/skeleton-loading",
+      "author": "JCardzZ",
+      "date": "2026-11-06T01:00:17Z"
+    },
+    {
+      "sha": "48992f99be3ec275b8209402d809d770e3711af6",
+      "parents": [
+        "e79fe0796d9e9070ddda238d28981311e4db091f"
+      ],
+      "subject": "feat(frontend): skeletons without flicker, in articles and in the admin tables",
+      "author": "JCardzZ",
+      "date": "2026-11-06T00:35:52Z"
+    },
+    {
+      "sha": "ab56bddc4c2354282218679f84e97e5ba6ac68f5",
+      "parents": [
+        "89af98a39a5eb78f0d1e12647b173f89ca01b319"
+      ],
+      "subject": "feat(frontend): segment the application canvas into architecture lanes",
+      "author": "JCardzZ",
+      "date": "2026-11-06T00:33:24Z"
+    },
+    {
+      "sha": "e79fe0796d9e9070ddda238d28981311e4db091f",
+      "parents": [
+        "67d07668e6f632105197c05485bce1f7d854ed87"
+      ],
+      "subject": "feat(frontend): content-shaped loading skeletons with a shared shimmer",
+      "author": "JCardzZ",
+      "date": "2026-11-06T00:17:35Z"
+    },
+    {
+      "sha": "a95bb3d1722de33db2dbee63b8f718d5e8832251",
+      "parents": [
+        "67d07668e6f632105197c05485bce1f7d854ed87"
+      ],
+      "subject": "feat(frontend): group labels with icons on the infrastructure canvas",
+      "author": "JCardzZ",
+      "date": "2026-11-05T23:59:42Z"
+    },
+    {
+      "sha": "89af98a39a5eb78f0d1e12647b173f89ca01b319",
+      "parents": [
+        "67d07668e6f632105197c05485bce1f7d854ed87"
+      ],
+      "subject": "feat(frontend): one visual language and more depth for both studio canvases",
+      "author": "JCardzZ",
+      "date": "2026-11-05T23:23:18Z"
+    },
     {
       "sha": "67d07668e6f632105197c05485bce1f7d854ed87",
       "parents": [
@@ -2168,81 +2065,6 @@
       "subject": "docs(adr): record the platform's architecture decisions",
       "author": "JCardzZ",
       "date": "2026-10-29T06:09:29Z"
-    },
-    {
-      "sha": "7bb3dacb30425f3fc92037bc11b567a5ddfd4ae5",
-      "parents": [
-        "083bb7777dddcb17f8cc3e22681ce14b18ab5e5e",
-        "a1de9546b35f7d74b870c6fd2e734b10ef5c047a"
-      ],
-      "subject": "Merge pull request #111 from JCardzZ/feat/live-hologram",
-      "author": "JCardzZ",
-      "date": "2026-10-29T05:45:03Z"
-    },
-    {
-      "sha": "a1de9546b35f7d74b870c6fd2e734b10ef5c047a",
-      "parents": [
-        "ee291788ff69be47e510ebfcea2ed7148d9ae467"
-      ],
-      "subject": "feat(frontend): introduce the broader role title in the redesigned hero",
-      "author": "JCardzZ",
-      "date": "2026-10-29T05:43:11Z"
-    },
-    {
-      "sha": "ee291788ff69be47e510ebfcea2ed7148d9ae467",
-      "parents": [
-        "083bb7777dddcb17f8cc3e22681ce14b18ab5e5e"
-      ],
-      "subject": "feat(frontend): turn the robot's hologram into a live view of production behind site.refresh",
-      "author": "JCardzZ",
-      "date": "2026-10-29T05:43:11Z"
-    },
-    {
-      "sha": "083bb7777dddcb17f8cc3e22681ce14b18ab5e5e",
-      "parents": [
-        "62c9d5667916ff347bd6ff39738a2fc9003d3eb2",
-        "6305a76c868437007d7ef7e4e742462e3df3ae55"
-      ],
-      "subject": "Merge pull request #110 from JCardzZ/feat/site-refresh",
-      "author": "JCardzZ",
-      "date": "2026-10-29T05:07:52Z"
-    },
-    {
-      "sha": "6305a76c868437007d7ef7e4e742462e3df3ae55",
-      "parents": [
-        "3a13abf60895b085ab89d00a92db0b8b08e65f28"
-      ],
-      "subject": "feat(frontend): keep the hero text clear of the robot in the redesign",
-      "author": "JCardzZ",
-      "date": "2026-10-29T04:59:21Z"
-    },
-    {
-      "sha": "3a13abf60895b085ab89d00a92db0b8b08e65f28",
-      "parents": [
-        "d5897c4f5fceed85fa5b3a5b31ebd421d31f3f60"
-      ],
-      "subject": "feat(frontend): redesign the landing without template tells behind site.refresh",
-      "author": "JCardzZ",
-      "date": "2026-10-29T04:29:28Z"
-    },
-    {
-      "sha": "d5897c4f5fceed85fa5b3a5b31ebd421d31f3f60",
-      "parents": [
-        "62c9d5667916ff347bd6ff39738a2fc9003d3eb2"
-      ],
-      "subject": "fix(frontend): translate the cloud studio's leftover Spanish labels",
-      "author": "JCardzZ",
-      "date": "2026-10-29T04:29:28Z"
-    },
-    {
-      "sha": "62c9d5667916ff347bd6ff39738a2fc9003d3eb2",
-      "parents": [
-        "c9df1a20c8f7a962372261a97edd1e3ac3e76345",
-        "b4125423f44cdd7bea6a198d1920cc0a3603c8d8"
-      ],
-      "subject": "Merge pull request #109 from JCardzZ/feat/v1-and-version-mark",
-      "author": "JCardzZ",
-      "date": "2026-10-29T03:51:17Z"
     }
   ]
 }
