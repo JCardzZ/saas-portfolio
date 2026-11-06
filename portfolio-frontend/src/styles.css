@@ -1215,28 +1215,26 @@ body:has(.qc-drawer) [data-testid="demo-notice-fallback"] { display: none; }
 .studio-sheen-top { stop-color: rgb(var(--c-ink-1)); stop-opacity: 0.05; }
 .studio-sheen-bottom { stop-color: rgb(var(--c-ink-1)); stop-opacity: 0; }
 /* Sombra corta bajo cada pieza, sin filtros; por encima de cualquier estado de borde o relleno. */
-.node rect.node-shadow, .appc-node-shadow { fill: rgb(0 0 0 / 0.22) !important; stroke: none !important; pointer-events: none; }
-.node rect.node-sheen, .appc-node-sheen { stroke: none !important; pointer-events: none; }
+.node rect.node-shadow { fill: rgb(0 0 0 / 0.22) !important; stroke: none !important; pointer-events: none; }
+.node rect.node-sheen { stroke: none !important; pointer-events: none; }
 /* Halo del color del fondo bajo cada cable: lo separa de los bordes y de los cables que cruza. */
 .wire-halo { fill: none; stroke: var(--bg-canvas); stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
 /* Lienzo de Aplicación: dónde corre cada pieza y la etiqueta del protocolo, ligera y con halo. */
-.appc-node-runs-chip rect { fill: var(--bg-surface-1); stroke: var(--border-subtle); }
 .appc-wire-label-hit { fill: transparent; }
 .appc-wire-label text { fill: var(--text-3); font-size: 12px; font-weight: 500; paint-order: stroke; stroke: var(--bg-surface-1); stroke-width: 4px; stroke-linejoin: round; }
 .appc-wire-label:hover text { fill: var(--text-1); }
 /* Segmentos del lienzo de Aplicación: un tinte muy suave del color de la capa y su título arriba. */
-.appc-lane rect { fill: color-mix(in srgb, var(--layer) 5%, transparent); stroke: color-mix(in srgb, var(--layer) 22%, transparent); stroke-width: 1; }
+.appc-lane rect { fill: color-mix(in srgb, var(--layer) 7%, transparent); stroke: color-mix(in srgb, var(--layer) 38%, transparent); stroke-width: 1; }
 .appc-lane circle { fill: var(--layer); }
-.appc-lane-label { fill: var(--text-2); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.appc-lane-label { fill: var(--text-1); font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
 /* Al pasar el ratón, la pieza se eleva 2 px y su sombra se alarga (su sombra se queda en su sitio). */
 .node.node-lift, .appc-node-body { transition: transform var(--duration-base) var(--ease-standard); }
 .node.node-lift:hover { transform: translateY(-2px); }
-.node.node-lift rect.node-shadow, .appc-node-shadow { transition: transform var(--duration-base) var(--ease-standard), opacity var(--duration-base) var(--ease-standard); }
+.node.node-lift rect.node-shadow { transition: transform var(--duration-base) var(--ease-standard), opacity var(--duration-base) var(--ease-standard); }
 .node.node-lift:hover rect.node-shadow { transform: translateY(4px); fill: rgb(0 0 0 / 0.34) !important; }
 .appc-node:hover .appc-node-body { transform: translateY(-2px); }
-.appc-node:hover .appc-node-shadow { transform: translateY(2px); fill: rgb(0 0 0 / 0.34) !important; }
 @media (prefers-reduced-motion: reduce) {
-  .node.node-lift, .appc-node-body, .node.node-lift rect.node-shadow, .appc-node-shadow { transition: none; }
+  .node.node-lift, .appc-node-body, .node.node-lift rect.node-shadow { transition: none; }
 }
 /* Leyenda del lienzo de Aplicación. */
 .appc-legend { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; padding: 0.625rem 1rem; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: var(--text-2); }

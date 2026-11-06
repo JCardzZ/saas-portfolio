@@ -164,11 +164,6 @@ interface NodeView {
             (dragover)="onDragOver($event)" (drop)="onDrop($event)" (wheel)="onWheel($event)" (keydown)="onKeydown($event)" (pointerdown)="onBackground($event)">
             <defs>
               <marker id="appc-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" class="appc-arrow" /></marker>
-              <!-- Brillo suave en la mitad de arriba de cada pieza: profundidad sin filtros. -->
-              <linearGradient id="appc-sheen" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" class="studio-sheen-top" />
-                <stop offset="1" class="studio-sheen-bottom" />
-              </linearGradient>
               <marker id="appc-arrow-on" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" class="appc-arrow-on" /></marker>
             </defs>
 
@@ -220,14 +215,13 @@ interface NodeView {
                 (pointerenter)="hovered.set(item.node.id)" (pointerleave)="hovered.set(null)">
                 <!-- El mismo lenguaje que el lienzo de Infraestructura: logo arriba, nombre y tecnología
                      centrados, y debajo del borde, dónde corre. La capa, en una línea fina de su color. -->
-                <rect class="appc-node-shadow" y="2" [attr.width]="w" [attr.height]="h" rx="10" aria-hidden="true" />
-                <!-- El cuerpo va en su propio grupo: es lo que se eleva al pasar el ratón (la posición de la
+                <!-- Tarjeta ligera: borde fino y casi sin relleno; el icono, sobre un halo del color de su capa.
+                     El cuerpo va en su propio grupo: es lo que se eleva al pasar el ratón (la posición de la
                      pieza está en el transform del grupo de fuera y no se toca). -->
                 <g class="appc-node-body">
-                <rect class="appc-node-card" [attr.width]="w" [attr.height]="h" rx="10" />
-                <rect class="appc-node-sheen" [attr.width]="w" [attr.height]="h / 2" rx="10" fill="url(#appc-sheen)" aria-hidden="true" />
-                <rect class="appc-node-bar" x="18" y="0" [attr.width]="w - 36" height="2" rx="1" />
-                <g [attr.transform]="'translate(' + (w / 2 - 10) + ' 6)'">
+                <rect class="appc-node-card" [attr.width]="w" [attr.height]="h" rx="12" />
+                <circle class="appc-node-halo" [attr.cx]="w / 2" cy="21" r="15" aria-hidden="true" />
+                <g [attr.transform]="'translate(' + (w / 2 - 10) + ' 11)'">
                   @if (item.logo?.image; as image) {
                     <image [attr.href]="image" width="20" height="20" data-logo="image" />
                   } @else if (item.logo?.path; as path) {
@@ -236,15 +230,13 @@ interface NodeView {
                     <g transform="translate(1 1) scale(0.75)"><path class="appc-node-icon" [attr.d]="item.piece.icon" /></g>
                   }
                 </g>
-                <text [attr.x]="w / 2" y="41" text-anchor="middle" class="appc-node-name">{{ clip(item.name, 16) }}</text>
-                <text [attr.x]="w / 2" y="56" text-anchor="middle" class="appc-node-tech">{{ clip(item.tech, 18) }}</text>
+                <text [attr.x]="w / 2" y="50" text-anchor="middle" class="appc-node-name">{{ clip(item.name, 16) }}</text>
+                <text [attr.x]="w / 2" y="64" text-anchor="middle" class="appc-node-tech">{{ clip(item.tech, 18) }}</text>
                 @if (item.node.runsOn) {
-                  @let runs = '▸ ' + clip(infraName(item.node.runsOn), 15);
-                  <g class="appc-node-runs-chip" aria-hidden="true">
-                    <title>{{ 'Corre en ' + infraName(item.node.runsOn) }}</title>
-                    <rect [attr.x]="w / 2 - (runs.length * 6.8 + 16) / 2" [attr.y]="h - 9" [attr.width]="runs.length * 6.8 + 16" height="18" rx="9" />
-                    <text [attr.x]="w / 2" [attr.y]="h + 4" text-anchor="middle" class="appc-node-runs">{{ runs }}</text>
-                  </g>
+                  <!-- Dónde corre: una línea fina bajo la tarjeta, sin caja. -->
+                  <text [attr.x]="w / 2" [attr.y]="h + 15" text-anchor="middle" class="appc-node-runs">
+                    <title>{{ 'Corre en ' + infraName(item.node.runsOn) }}</title>▸ {{ clip(infraName(item.node.runsOn), 17) }}
+                  </text>
                 }
                 @if (review().marks.get(item.node.id); as level) {
                   <circle class="appc-mark" [attr.data-level]="level" [attr.cx]="w - 10" cy="10" r="5"><title>{{ markTitle(level) }}</title></circle>
@@ -385,10 +377,10 @@ interface NodeView {
     .appc-preview-no { stroke: var(--status-danger); }
 
     .appc-node { cursor: grab; outline: none; }
-    .appc-node-card { fill: var(--bg-surface-2); stroke: var(--border-subtle); transition: stroke var(--duration-fast); }
-    .appc-node:hover .appc-node-card { stroke: var(--border-strong); }
+    .appc-node-card { fill: rgb(var(--c-surface-1) / 0.55); stroke: color-mix(in srgb, var(--layer) 30%, var(--border-subtle)); transition: stroke var(--duration-fast); }
+    .appc-node:hover .appc-node-card { stroke: color-mix(in srgb, var(--layer) 65%, transparent); }
+    .appc-node-halo { fill: color-mix(in srgb, var(--layer) 16%, transparent); }
     .appc-node.appc-selected .appc-node-card, .appc-node:focus-visible .appc-node-card { stroke: var(--layer); stroke-width: 1.5; }
-    .appc-node-bar { fill: var(--layer); opacity: 0.9; }
     .appc-node-icon { fill: none; stroke: var(--layer); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
     .appc-node-name { fill: var(--text-1); font-size: 12px; font-weight: 600; }
     .appc-node-tech { fill: var(--text-2); font-size: 12px; }
@@ -557,7 +549,7 @@ export class AppCanvasComponent implements OnInit {
     const selected = this.selected();
     // La pastilla del protocolo se pinta 4 px más alta que la caja de `labelBox`: ese margen alrededor de cada pieza.
     // La pastilla de «dónde corre» asoma 7 px bajo cada pieza: también se reserva.
-    const taken = [...nodes.map((node) => ({ ...nodeRect(node, 4), h: nodeRect(node, 4).h + 8 })), ...this.graph().boxes.flatMap((box) => [
+    const taken = [...nodes.map((node) => ({ ...nodeRect(node, 4), h: nodeRect(node, 4).h + 18 })), ...this.graph().boxes.flatMap((box) => [
       { x: box.x, y: box.y, w: box.w, h: 30 },
       // Los otros tres bordes de la caja: una pastilla encima de la línea discontinua se lee mal.
       { x: box.x - 2, y: box.y, w: 4, h: box.h }, { x: box.x + box.w - 2, y: box.y, w: 4, h: box.h }, { x: box.x, y: box.y + box.h - 2, w: box.w, h: 4 },
