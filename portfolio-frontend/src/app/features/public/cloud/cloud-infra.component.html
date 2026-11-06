@@ -367,7 +367,36 @@
           [attr.x]="zone.x" [attr.y]="zone.y" [attr.width]="zone.w" [attr.height]="zone.h"
           [attr.rx]="zone.kind === 'cloud' || zone.kind === 'region' ? 18 : zone.kind === 'vpc' ? 14 : 10"
         />
-        @if (zone.kind === 'public' || zone.kind === 'private') {
+        @if (smartRules()) {
+          <!-- Rótulos de grupo, como en los diagramas de AWS o Google Cloud: la nube, la región y la red
+               llevan una pestaña con su icono en la esquina; cada subred, su tipo (pública o privada). -->
+          @let name = zoneLabelOf(zone) | t;
+          @if (zone.kind === 'public' || zone.kind === 'private') {
+            <!-- El icono, pegado al inicio del texto centrado (unos 5,6 px por carácter a 12 px). -->
+            <g class="zone-kind" [class.zone-kind-public]="zone.kind === 'public'" aria-hidden="true">
+              <svg [attr.x]="zone.x + zone.w / 2 + 8 - name.length * 2.8 - 19" [attr.y]="zone.y + 5" width="14" height="14" viewBox="0 0 24 24">
+                <path [attr.d]="zone.kind === 'public' ? zoneIcons.globe : zoneIcons.lock" />
+              </svg>
+            </g>
+            <text class="zone-sub" [attr.x]="zone.x + zone.w / 2 + 8" [attr.y]="zone.y + 16" text-anchor="middle">{{ name }}</text>
+          } @else {
+            <g class="zone-tag" aria-hidden="true">
+              <rect [attr.x]="zone.x + 10" [attr.y]="zone.y + 8" [attr.width]="labelWidth(name) + 26" height="24" rx="7" />
+              @if (zone.kind === 'cloud' && icons[selectedId()]; as mark) {
+                @if (mark.image) {
+                  <image [attr.href]="mark.image" [attr.x]="zone.x + 18" [attr.y]="zone.y + 13" width="14" height="14" />
+                } @else {
+                  <svg [attr.x]="zone.x + 18" [attr.y]="zone.y + 13" width="14" height="14" viewBox="0 0 24 24"><path [attr.d]="mark.path" [attr.fill]="mark.color" /></svg>
+                }
+              } @else {
+                <svg class="zone-tag-icon" [attr.x]="zone.x + 18" [attr.y]="zone.y + 13" width="14" height="14" viewBox="0 0 24 24">
+                  <path [attr.d]="zone.kind === 'region' ? zoneIcons.pin : zoneIcons.network" />
+                </svg>
+              }
+            </g>
+            <text class="zone-label" [attr.x]="zone.x + 38" [attr.y]="zone.y + 24.5">{{ name }}</text>
+          }
+        } @else if (zone.kind === 'public' || zone.kind === 'private') {
           <text class="zone-sub" [attr.x]="zone.x + zone.w / 2" [attr.y]="zone.y + 16" text-anchor="middle">{{ zoneLabelOf(zone) | t }}</text>
         } @else {
           <text class="zone-label" [attr.x]="zone.x + 16" [attr.y]="zone.y + 20">{{ zoneLabelOf(zone) | t }}</text>

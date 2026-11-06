@@ -29,7 +29,7 @@ const LANE = 8;
 const CROSSING = 2000;
 const OVERLAP = 2500;
 /** Pasar por encima de un rótulo: se evita, pero menos que atravesar una pieza. */
-const TEXT_HIT = 3000;
+const TEXT_HIT = 5000;
 
 /** Por qué lados sale y entra la conexión: el que mira al otro nodo. */
 export function sidesFor(from: Placed, to: Placed): [Side, Side] {
@@ -365,7 +365,8 @@ export function labelPoint(points: Pt[], avoid: Rect[] = [], width = LABEL_WIDTH
         ? [[x + width / 2 + 6, y + 4], [x - width / 2 - 6, y + 4], [x + width / 2 + 20, y + 4], [x - width / 2 - 20, y + 4], [x, y + 4]]
         // Encima y debajo, cada vez más lejos; y si hace falta, un poco a un lado para no pisar un cable vecino.
         : [0, 15, -15, 30, -30, 45, -45].flatMap((dx) => [[x + dx, y - 7], [x + dx, y + 17], [x + dx, y - 22], [x + dx, y + 32]] as Pt[])
-          .concat([0, 20, -20, 40, -40, 60, -60].flatMap((dx) => [[x + dx, y - 48], [x + dx, y + 58]] as Pt[]));
+          .concat([0, 20, -20, 40, -40, 60, -60].flatMap((dx) => [[x + dx, y - 48], [x + dx, y + 58]] as Pt[]))
+          .concat([0, 30, -30, 60, -60].flatMap((dx) => [[x + dx, y - 72], [x + dx, y + 82]] as Pt[]));
       for (const at of spots) {
         const covered = avoid.reduce((sum, rect) => sum + overlapArea(labelBox(at, width), rect), 0);
         if (covered === 0) return [round(at[0]), round(at[1])];

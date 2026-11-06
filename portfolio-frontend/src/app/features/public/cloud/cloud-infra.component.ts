@@ -99,6 +99,14 @@ const PULSE_DASH = 10;
 const STREAK_LENGTH = 36;
 const STREAK_SPEED = 110;
 
+/** Iconos de trazo (24 × 24) de los rótulos de grupo del lienzo. */
+const ZONE_ICONS = {
+  pin: 'M12 21s-6.5-5.6-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21Zm0-8.7a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z',
+  network: 'M7 18.5h10.5a4 4 0 0 0 .6-7.95 6 6 0 0 0-11.4-1.4A4.6 4.6 0 0 0 7 18.5Zm3-2.5v-3h4v3m-5-3h6',
+  globe: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm-9 9h18M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9c-2.4-2.5-3.6-5.5-3.6-9S9.6 5.5 12 3Z',
+  lock: 'M7.5 11V8a4.5 4.5 0 0 1 9 0v3M6 11h12v9H6z',
+} as const;
+
 /** Preferencia del orden automático, guardada en este navegador. */
 const AUTO_TIDY_KEY = 'studio.auto-tidy';
 
@@ -183,6 +191,10 @@ export class CloudInfraComponent {
     provider.id !== 'oci' || this.flags.isEnabled('cloud.oracle') || this.selectedId() === 'oci'));
   readonly scenarios = CHAOS_SCENARIOS;
   readonly icons = TECH_ICONS;
+  /** Iconos de los rótulos de grupo (trazos de 24 × 24): región, red, subred pública y privada. */
+  readonly zoneIcons = ZONE_ICONS;
+  /** Ancho de un rótulo con este texto: el mismo cálculo que reserva su sitio a los cables. */
+  readonly labelWidth = labelWidth;
   /** Pantalla táctil: las asas del lienzo reciben una zona de toque mayor que su dibujo. */
   readonly touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
   /**
@@ -281,9 +293,16 @@ export class CloudInfraComponent {
       const w = labelWidth(text);
       return { x: centered ? x - w / 2 : x - 6, y: baseline - 15, w, h: 20 };
     };
-    const zones = this.zones().map((zone) => zone.kind === 'public' || zone.kind === 'private'
-      ? box(zone.x + zone.w / 2, zone.y + 16, this.painted(this.zoneLabelOf(zone)), true)
-      : box(zone.x + 16, zone.y + 20, this.painted(this.zoneLabelOf(zone)), false));
+    // Con reglas inteligentes los rótulos llevan icono: la subred, a la izquierda del texto; la nube,
+    // la región y la red, en una pestaña. Lo reservado cubre también eso.
+    const zones = this.zones().map((zone) => {
+      const text = this.painted(this.zoneLabelOf(zone));
+      if (zone.kind === 'public' || zone.kind === 'private') {
+        const label = box(zone.x + zone.w / 2, zone.y + 16, text, true);
+        return this.smartRules() ? { ...label, x: label.x - 10, w: label.w + 18 } : label;
+      }
+      return this.smartRules() ? { x: zone.x + 10, y: zone.y + 8, w: labelWidth(text) + 26, h: 24 } : box(zone.x + 16, zone.y + 20, text, false);
+    });
     const managed = this.managedLabel();
     return managed ? [...zones, box(managed.x, managed.y, this.painted('Servicios gestionados'), true)] : zones;
   });
