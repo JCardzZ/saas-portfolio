@@ -169,10 +169,10 @@ interface NodeView {
 
             <!-- Segmentos de la arquitectura: una banda por capa (frontend, entrada, backend, datos,
                  plataforma), del ancho de sus piezas y con su título arriba. -->
-            @for (lane of lanes(); track lane.key) {
-              <g class="appc-lane" [style.--layer]="lane.color" [attr.data-lane]="lane.key" aria-hidden="true">
+            @for (lane of lanes(); track lane.key; let odd = $odd) {
+              <g class="appc-lane" [class.appc-lane-alt]="odd" [style.--layer]="lane.color" [attr.data-lane]="lane.key" aria-hidden="true">
                 <rect [attr.x]="lane.x" [attr.y]="lane.y" [attr.width]="lane.w" [attr.height]="lane.h" rx="16" />
-                <circle [attr.cx]="lane.x + 16" [attr.cy]="lane.y + 18" r="3.5" />
+                <circle [attr.cx]="lane.x + 16" [attr.cy]="lane.y + 18" r="3" />
                 <text [attr.x]="lane.x + 26" [attr.y]="lane.y + 22" class="appc-lane-label">{{ lane.name }}</text>
               </g>
             }
@@ -357,12 +357,12 @@ interface NodeView {
     .appc-svg:focus { outline: none; }
     .appc-empty { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; font-size: 0.875rem; color: var(--text-3); }
 
-    .appc-box rect:first-child { fill: rgb(var(--c-surface-2) / 0.35); stroke: var(--border-strong); stroke-dasharray: 6 5; }
+    .appc-box rect:first-child { fill: transparent; stroke: var(--border-subtle); stroke-dasharray: 4 4; }
     .appc-box[data-kind='public'] rect:first-child { stroke-dasharray: none; }
     .appc-box[data-kind='domain'] rect:first-child { fill: rgb(var(--c-accent-solid) / 0.03); stroke: rgb(var(--c-accent-solid) / 0.35); }
     .appc-box.appc-selected rect:first-child { stroke: var(--accent-text); stroke-dasharray: none; }
     .appc-box-grip { fill: transparent; cursor: move; }
-    .appc-box-label { fill: var(--text-2); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; pointer-events: none; }
+    .appc-box-label { fill: var(--text-3); font-size: 12px; font-weight: 500; pointer-events: none; }
     .appc-box-corner { fill: var(--bg-surface-3); stroke: var(--border-strong); cursor: nwse-resize; }
 
     .appc-wire-line { fill: none; stroke: var(--text-3); stroke-width: 1.25; }
@@ -377,9 +377,9 @@ interface NodeView {
     .appc-preview-no { stroke: var(--status-danger); }
 
     .appc-node { cursor: grab; outline: none; }
-    .appc-node-card { fill: rgb(var(--c-surface-1) / 0.55); stroke: color-mix(in srgb, var(--layer) 30%, var(--border-subtle)); transition: stroke var(--duration-fast); }
-    .appc-node:hover .appc-node-card { stroke: color-mix(in srgb, var(--layer) 65%, transparent); }
-    .appc-node-halo { fill: color-mix(in srgb, var(--layer) 16%, transparent); }
+    .appc-node-card { fill: rgb(var(--c-surface-1) / 0.7); stroke: var(--border-subtle); transition: stroke var(--duration-fast); }
+    .appc-node:hover .appc-node-card { stroke: var(--border-strong); }
+    .appc-node-halo { fill: rgb(var(--c-ink-1) / 0.06); }
     .appc-node.appc-selected .appc-node-card, .appc-node:focus-visible .appc-node-card { stroke: var(--layer); stroke-width: 1.5; }
     .appc-node-icon { fill: none; stroke: var(--layer); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
     .appc-node-name { fill: var(--text-1); font-size: 12px; font-weight: 600; }
@@ -400,7 +400,7 @@ interface NodeView {
     .appc-mark[data-level='risk'] { fill: var(--status-danger); }
     .appc-mark[data-level='warn'] { fill: var(--status-warn); }
     .appc-mark[data-level='tip'] { fill: var(--accent-text); }
-    .appc-node-runs { fill: var(--accent-text); font-size: 12px; }
+    .appc-node-runs { fill: var(--text-3); font-size: 12px; }
     .appc-hl .appc-node-card { stroke: var(--layer); stroke-width: 2; }
     .appc-dim { opacity: 0.3; }
     .appc-notice-ok { border-color: rgb(var(--c-status-ok) / 0.35); }
