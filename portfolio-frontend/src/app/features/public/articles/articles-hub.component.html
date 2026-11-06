@@ -9,7 +9,7 @@
   <div class="bento-grid">
     @if (loading()) {
       @for (skeleton of skeletons; track skeleton) {
-        <div class="border border-line-subtle bg-surface-1 h-44 animate-pulse rounded-card md:col-span-2" aria-hidden="true"></div>
+        <app-skeleton class="bento-card min-h-44 md:col-span-2" shape="card" [label]="$first ? ('Cargando…' | t) : ''" [attr.aria-hidden]="$first ? null : 'true'" />
       }
     } @else {
       @for (article of articles(); track article.id; let index = $index) {

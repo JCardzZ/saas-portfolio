@@ -5,9 +5,10 @@ import { Technology } from '../../../core/api';
 import { AlertComponent } from '../../../shared/ui/alert.component';
 import { TechnologiesStore } from '../data/technologies.store';
 
+import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 @Component({
     selector: 'app-technologies-page',
-    imports: [ReactiveFormsModule, AlertComponent],
+    imports: [SkeletonComponent, ReactiveFormsModule, AlertComponent],
     providers: [TechnologiesStore],
     templateUrl: './technologies-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

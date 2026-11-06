@@ -13,9 +13,10 @@ const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
  * Publicación de artículos. El contrato solo define crear (admin) y listar (público):
  * todavía no hay edición ni borrado.
  */
+import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 @Component({
     selector: 'app-articles-page',
-    imports: [ReactiveFormsModule, DatePipe, AlertComponent],
+    imports: [SkeletonComponent, ReactiveFormsModule, DatePipe, AlertComponent],
     templateUrl: './articles-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

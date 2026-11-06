@@ -57,7 +57,7 @@
           </tr>
         } @empty {
           <tr>
-            <td class="table-cell text-center text-slate-500" colspan="3">{{ loading() ? 'Cargando…' : 'Aún no hay artículos.' }}</td>
+            <td class="table-cell text-center text-slate-500" colspan="3">@if (loading()) { <app-skeleton shape="rows" label="Cargando…" /> } @else { {{ 'Aún no hay artículos.' }} }</td>
           </tr>
         }
       </tbody>

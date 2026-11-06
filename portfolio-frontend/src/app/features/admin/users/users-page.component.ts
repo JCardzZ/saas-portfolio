@@ -15,9 +15,10 @@ const MAX_PASSWORD = 72;
  * Usuarios del panel: quién puede entrar y con qué rol. No hay registro público; las cuentas se
  * crean aquí. Las contraseñas solo viajan al crearlas o cambiarlas: la API nunca las devuelve.
  */
+import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 @Component({
     selector: 'app-users-page',
-    imports: [DatePipe, ReactiveFormsModule, AlertComponent],
+    imports: [SkeletonComponent, DatePipe, ReactiveFormsModule, AlertComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './users-page.component.html'
 })

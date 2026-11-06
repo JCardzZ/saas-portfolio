@@ -30,10 +30,12 @@ import { HeroProofComponent } from './hero-proof.component';
 import { SocialLinksComponent } from '../../../shared/ui/social-links.component';
 import { ScrollBuddyComponent } from './scroll-buddy.component';
 
+import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 @Component({
     selector: 'app-landing-page',
     imports: [
         RouterLink,
+        SkeletonComponent,
         SocialLinksComponent,
         ReleaseBadgeComponent,
         HeroProofComponent,

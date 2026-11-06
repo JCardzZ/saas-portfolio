@@ -35,9 +35,10 @@ export interface FlagGroup {
  * Feature flags: lo nuevo llega apagado y se enciende aquí, sin desplegar. Cada cambio queda
  * en la auditoría con el cliente que lo hizo.
  */
+import { SkeletonComponent } from '../../../shared/ui/skeleton.component';
 @Component({
     selector: 'app-features-page',
-    imports: [DatePipe, AlertComponent],
+    imports: [SkeletonComponent, DatePipe, AlertComponent],
     templateUrl: './features-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
